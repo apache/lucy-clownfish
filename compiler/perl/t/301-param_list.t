@@ -16,9 +16,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 
 BEGIN { use_ok('Clownfish::CFC::Model::ParamList') }
+
+ok( Clownfish::CFC::Model::ParamList->new, 'new' );
 
 my $parser = Clownfish::CFC::Parser->new;
 $parser->parse('parcel Neato;')
