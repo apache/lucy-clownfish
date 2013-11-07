@@ -30,6 +30,8 @@
 #include "Clownfish/VArray.h"
 #include "Clownfish/VTable.h"
 
+static TestBatchRunner *TestBatchRunner_current = NULL;
+
 struct try_run_tests_context {
     TestBatchRunner *runner;
     TestBatch       *batch;
@@ -41,6 +43,11 @@ S_try_run_tests(void *context);
 static bool
 S_vtest_true(TestBatchRunner *self, bool condition, const char *pattern,
              va_list args);
+
+TestBatchRunner*
+TestBatchRunner_get_current() {
+    return TestBatchRunner_current;
+}
 
 TestBatchRunner*
 TestBatchRunner_new(TestFormatter *formatter) {
@@ -74,7 +81,10 @@ TestBatchRunner_Run_Batch_IMP(TestBatchRunner *self, TestBatch *batch) {
     struct try_run_tests_context args;
     args.runner = self;
     args.batch  = batch;
+    TestBatchRunner_current = self;
     Err *err = Err_trap(S_try_run_tests, &args);
+    TestBatchRunner_current = NULL;
+
 
     bool failed = false;
     if (err) {

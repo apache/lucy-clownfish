@@ -32,6 +32,12 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
     inert TestBatchRunner*
     init(TestBatchRunner *self, TestFormatter *formatter);
 
+    /** Return the TestBatchRunner which is currently in the midst of
+     * Run_Batch().
+     */
+    public inert TestBatchRunner*
+    get_current();
+
     public void
     Destroy(TestBatchRunner *self);
 
@@ -120,7 +126,20 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
 }
 
 __C__
+
+static CFISH_INLINE bool
+cfish_TestBatchRunner_ok(bool condition, const char *pattern, ...) {
+    cfish_TestBatchRunner *current = cfish_TestBatchRunner_get_current();
+    va_list args;
+    va_start(args, pattern);
+    bool result
+        = CFISH_TestBatchRunner_VTest_True(current, condition, pattern, args);
+    va_end(args);
+    return result;
+}
+
 #ifdef CFISH_USE_SHORT_NAMES
+  #define OK                   cfish_TestBatchRunner_ok
   #define TEST_TRUE            cfish_TestBatchRunner_test_true
   #define TEST_FALSE           cfish_TestBatchRunner_test_false
   #define TEST_INT_EQ          cfish_TestBatchRunner_test_int_equals
