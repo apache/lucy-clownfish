@@ -65,22 +65,22 @@ test_Cat(TestBatchRunner *runner) {
     CharBuf *got    = S_get_cb("");
 
     CB_Cat(got, wanted);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Cat");
+    OK(S_cb_equals(got, wanted), "Cat");
     DECREF(got);
 
     got = S_get_cb("a");
     CB_Cat_Char(got, 0x263A);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Cat_Char");
+    OK(S_cb_equals(got, wanted), "Cat_Char");
     DECREF(got);
 
     got = S_get_cb("a");
     CB_Cat_Utf8(got, smiley, smiley_len);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Cat_Utf8");
+    OK(S_cb_equals(got, wanted), "Cat_Utf8");
     DECREF(got);
 
     got = S_get_cb("a");
     CB_Cat_Trusted_Utf8(got, smiley, smiley_len);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Cat_Trusted_Utf8");
+    OK(S_cb_equals(got, wanted), "Cat_Trusted_Utf8");
     DECREF(got);
 
     DECREF(wanted);
@@ -93,21 +93,21 @@ test_Mimic_and_Clone(TestBatchRunner *runner) {
     CharBuf *got       = S_get_cb("bar");
 
     CB_Mimic(got, (Obj*)wanted);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Mimic String");
+    OK(S_cb_equals(got, wanted), "Mimic String");
     DECREF(got);
 
     got = S_get_cb("bar");
     CB_Mimic(got, (Obj*)wanted_cb);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Mimic CharBuf");
+    OK(S_cb_equals(got, wanted), "Mimic CharBuf");
     DECREF(got);
 
     got = S_get_cb("bar");
     CB_Mimic_Utf8(got, "foo", 3);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Mimic_Utf8");
+    OK(S_cb_equals(got, wanted), "Mimic_Utf8");
     DECREF(got);
 
     got = CB_Clone(wanted_cb);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Clone");
+    OK(S_cb_equals(got, wanted), "Clone");
     DECREF(got);
 
     DECREF(wanted);
@@ -119,7 +119,7 @@ test_Truncate(TestBatchRunner *runner) {
     String  *wanted = Str_newf("a%s", smiley);
     CharBuf *got    = CB_newf("a%s%sb%sc", smiley, smiley, smiley);
     CB_Truncate(got, 2);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Truncate");
+    OK(S_cb_equals(got, wanted), "Truncate");
     DECREF(wanted);
     DECREF(got);
 }
@@ -130,7 +130,7 @@ test_vcatf_s(TestBatchRunner *runner) {
     String  *wanted = S_get_str("foo bar bizzle baz");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %s baz", "bizzle");
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%s");
+    OK(S_cb_equals(got, wanted), "%%s");
     DECREF(wanted);
     DECREF(got);
 }
@@ -140,7 +140,7 @@ test_vcatf_null_string(TestBatchRunner *runner) {
     String  *wanted = S_get_str("foo bar [NULL] baz");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %s baz", NULL);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%s NULL");
+    OK(S_cb_equals(got, wanted), "%%s NULL");
     DECREF(wanted);
     DECREF(got);
 }
@@ -151,7 +151,7 @@ test_vcatf_str(TestBatchRunner *runner) {
     String  *catworthy = S_get_str("ZEKE");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %o baz", catworthy);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%o CharBuf");
+    OK(S_cb_equals(got, wanted), "%%o CharBuf");
     DECREF(catworthy);
     DECREF(wanted);
     DECREF(got);
@@ -163,7 +163,7 @@ test_vcatf_obj(TestBatchRunner *runner) {
     Integer32 *i32 = Int32_new(20);
     CharBuf   *got = S_get_cb("ooga");
     CB_catf(got, " %o booga", i32);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%o Obj");
+    OK(S_cb_equals(got, wanted), "%%o Obj");
     DECREF(i32);
     DECREF(wanted);
     DECREF(got);
@@ -174,7 +174,7 @@ test_vcatf_null_obj(TestBatchRunner *runner) {
     String  *wanted = S_get_str("foo bar [NULL] baz");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %o baz", NULL);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%o NULL");
+    OK(S_cb_equals(got, wanted), "%%o NULL");
     DECREF(wanted);
     DECREF(got);
 }
@@ -185,7 +185,7 @@ test_vcatf_i8(TestBatchRunner *runner) {
     int8_t num = -3;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %i8 baz", num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%i8");
+    OK(S_cb_equals(got, wanted), "%%i8");
     DECREF(wanted);
     DECREF(got);
 }
@@ -196,7 +196,7 @@ test_vcatf_i32(TestBatchRunner *runner) {
     int32_t num = -100000;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %i32 baz", num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%i32");
+    OK(S_cb_equals(got, wanted), "%%i32");
     DECREF(wanted);
     DECREF(got);
 }
@@ -207,7 +207,7 @@ test_vcatf_i64(TestBatchRunner *runner) {
     int64_t num = INT64_C(-5000000000);
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %i64 baz", num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%i64");
+    OK(S_cb_equals(got, wanted), "%%i64");
     DECREF(wanted);
     DECREF(got);
 }
@@ -218,7 +218,7 @@ test_vcatf_u8(TestBatchRunner *runner) {
     uint8_t num = 3;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %u8 baz", num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%u8");
+    OK(S_cb_equals(got, wanted), "%%u8");
     DECREF(wanted);
     DECREF(got);
 }
@@ -229,7 +229,7 @@ test_vcatf_u32(TestBatchRunner *runner) {
     uint32_t num = 100000;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %u32 baz", num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%u32");
+    OK(S_cb_equals(got, wanted), "%%u32");
     DECREF(wanted);
     DECREF(got);
 }
@@ -240,7 +240,7 @@ test_vcatf_u64(TestBatchRunner *runner) {
     uint64_t num = UINT64_C(5000000000);
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %u64 baz", num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%u64");
+    OK(S_cb_equals(got, wanted), "%%u64");
     DECREF(wanted);
     DECREF(got);
 }
@@ -254,7 +254,7 @@ test_vcatf_f64(TestBatchRunner *runner) {
     sprintf(buf, "foo bar %g baz", num);
     wanted = Str_new_from_trusted_utf8(buf, strlen(buf));
     CB_catf(got, "bar %f64 baz", num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%f64");
+    OK(S_cb_equals(got, wanted), "%%f64");
     DECREF(wanted);
     DECREF(got);
 }
@@ -272,7 +272,7 @@ test_vcatf_x32(TestBatchRunner *runner) {
 #endif
     wanted = Str_new_from_trusted_utf8(buf, strlen(buf));
     CB_catf(got, "bar %x32 baz", (uint32_t)num);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%x32");
+    OK(S_cb_equals(got, wanted), "%%x32");
     DECREF(wanted);
     DECREF(got);
 }

@@ -67,7 +67,7 @@ static void
 test_To_String(TestBatchRunner *runner) {
     Obj *testobj = S_new_testobj();
     String *string = Obj_To_String(testobj);
-    TEST_TRUE(runner, Str_Find_Utf8(string, "TestObj", 7) >= 0, "To_String");
+    OK(Str_Find_Utf8(string, "TestObj", 7) >= 0, "To_String");
     DECREF(string);
     DECREF(testobj);
 }
@@ -77,8 +77,7 @@ test_Equals(TestBatchRunner *runner) {
     Obj *testobj = S_new_testobj();
     Obj *other   = S_new_testobj();
 
-    TEST_TRUE(runner, Obj_Equals(testobj, testobj),
-              "Equals is true for the same object");
+    OK(Obj_Equals(testobj, testobj), "Equals is true for the same object");
     TEST_FALSE(runner, Obj_Equals(testobj, other),
                "Distinct objects are not equal");
 
@@ -91,8 +90,7 @@ test_Hash_Sum(TestBatchRunner *runner) {
     Obj *testobj = S_new_testobj();
     int64_t address64 = PTR_TO_I64(testobj);
     int32_t address32 = (int32_t)address64;
-    TEST_TRUE(runner, (Obj_Hash_Sum(testobj) == address32),
-              "Hash_Sum uses memory address");
+    OK((Obj_Hash_Sum(testobj) == address32), "Hash_Sum uses memory address");
     DECREF(testobj);
 }
 
@@ -102,11 +100,10 @@ test_Is_A(TestBatchRunner *runner) {
     VTable *str_vtable = Str_Get_VTable(string);
     String *klass      = Str_Get_Class_Name(string);
 
-    TEST_TRUE(runner, Str_Is_A(string, STRING), "String Is_A String.");
-    TEST_TRUE(runner, Str_Is_A(string, OBJ), "String Is_A Obj.");
-    TEST_TRUE(runner, str_vtable == STRING, "Get_VTable");
-    TEST_TRUE(runner, Str_Equals(VTable_Get_Name(STRING), (Obj*)klass),
-              "Get_Class_Name");
+    OK(Str_Is_A(string, STRING), "String Is_A String.");
+    OK(Str_Is_A(string, OBJ), "String Is_A Obj.");
+    OK(str_vtable == STRING, "Get_VTable");
+    OK(Str_Equals(VTable_Get_Name(STRING), (Obj*)klass), "Get_Class_Name");
 
     DECREF(string);
 }
@@ -147,10 +144,10 @@ S_verify_abstract_error(TestBatchRunner *runner, Err_Attempt_t routine,
     char message[100];
     sprintf(message, "%s() is abstract", name);
     Err *error = Err_trap(routine, context);
-    TEST_TRUE(runner, error != NULL
-              && Err_Is_A(error, ERR) 
-              && Str_Find_Utf8(Err_Get_Mess(error), "bstract", 7) != -1,
-              message);
+    OK(error != NULL
+       && Err_Is_A(error, ERR) 
+       && Str_Find_Utf8(Err_Get_Mess(error), "bstract", 7) != -1,
+       message);
     DECREF(error);
 }
 

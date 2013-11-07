@@ -35,8 +35,7 @@ test_To_String(TestBatchRunner *runner) {
     String *message = Str_newf("oops");
     Err *error = Err_new(message);
     String *string = Err_To_String(error);
-    TEST_TRUE(runner, Str_Equals(message, (Obj*)string),
-              "Stringifies as message");
+    OK(Str_Equals(message, (Obj*)string), "Stringifies as message");
     DECREF(string);
     DECREF(error);
 }

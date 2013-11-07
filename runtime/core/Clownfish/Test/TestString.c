@@ -80,19 +80,19 @@ test_Cat(TestBatchRunner *runner) {
 
     source = S_get_str("");
     got = Str_Cat(source, wanted);
-    TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "Cat");
+    OK(Str_Equals(wanted, (Obj*)got), "Cat");
     DECREF(got);
     DECREF(source);
 
     source = S_get_str("a");
     got = Str_Cat_Utf8(source, smiley, smiley_len);
-    TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "Cat_Utf8");
+    OK(Str_Equals(wanted, (Obj*)got), "Cat_Utf8");
     DECREF(got);
     DECREF(source);
 
     source = S_get_str("a");
     got = Str_Cat_Trusted_Utf8(source, smiley, smiley_len);
-    TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "Cat_Trusted_Utf8");
+    OK(Str_Equals(wanted, (Obj*)got), "Cat_Trusted_Utf8");
     DECREF(got);
     DECREF(source);
 
@@ -105,7 +105,7 @@ test_Clone(TestBatchRunner *runner) {
     String *got    = S_get_str("bar");
 
     got = Str_Clone(wanted);
-    TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "Clone");
+    OK(Str_Equals(wanted, (Obj*)got), "Clone");
     DECREF(got);
 
     DECREF(wanted);
@@ -117,22 +117,22 @@ test_Find(TestBatchRunner *runner) {
     String *substring = S_get_str("foo");
 
     string = S_get_str("");
-    TEST_TRUE(runner, Str_Find(string, substring) == -1, "Not in empty string");
+    OK(Str_Find(string, substring) == -1, "Not in empty string");
     DECREF(string);
 
     string = S_get_str("foo");
-    TEST_TRUE(runner, Str_Find(string, substring) == 0, "Find complete string");
+    OK(Str_Find(string, substring) == 0, "Find complete string");
     DECREF(string);
 
     string = S_get_str("afoo");
-    TEST_TRUE(runner, Str_Find(string, substring) == 1, "Find after first");
+    OK(Str_Find(string, substring) == 1, "Find after first");
     // TODO: Enable this test when we have real substrings.
     /*Str_Set_Size(string, 3);
-    TEST_TRUE(runner, Str_Find(string, substring) == -1, "Don't overrun");*/
+    OK(Str_Find(string, substring) == -1, "Don't overrun");*/
     DECREF(string);
 
     string = S_get_str("afood");
-    TEST_TRUE(runner, Str_Find(string, substring) == 1, "Find in middle");
+    OK(Str_Find(string, substring) == 1, "Find in middle");
     DECREF(string);
 
     DECREF(substring);
@@ -163,7 +163,7 @@ test_SubString(TestBatchRunner *runner) {
     String *string = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
     String *wanted = Str_newf("%sb%s", smiley, smiley);
     String *got = Str_SubString(string, 2, 3);
-    TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "SubString");
+    OK(Str_Equals(wanted, (Obj*)got), "SubString");
     DECREF(wanted);
     DECREF(got);
     DECREF(string);
@@ -178,44 +178,41 @@ test_Trim(TestBatchRunner *runner) {
     String *got;
 
     got = Str_Trim(ws_smiley);
-    TEST_TRUE(runner, Str_Equals_Utf8(got, smiley, smiley_len), "Trim");
+    OK(Str_Equals_Utf8(got, smiley, smiley_len), "Trim");
     DECREF(got);
 
     got = Str_Trim_Top(ws_foo);
-    TEST_TRUE(runner, Str_Equals_Utf8(got, "foo  ", 5), "Trim_Top");
+    OK(Str_Equals_Utf8(got, "foo  ", 5), "Trim_Top");
     DECREF(got);
 
     got = Str_Trim_Tail(ws_foo);
-    TEST_TRUE(runner, Str_Equals_Utf8(got, "  foo", 5), "Trim_Tail");
+    OK(Str_Equals_Utf8(got, "  foo", 5), "Trim_Tail");
     DECREF(got);
 
     got = Str_Trim(ws_only);
-    TEST_TRUE(runner, Str_Equals_Utf8(got, "", 0), "Trim with only whitespace");
+    OK(Str_Equals_Utf8(got, "", 0), "Trim with only whitespace");
     DECREF(got);
 
     got = Str_Trim_Top(ws_only);
-    TEST_TRUE(runner, Str_Equals_Utf8(got, "", 0),
-              "Trim_Top with only whitespace");
+    OK(Str_Equals_Utf8(got, "", 0), "Trim_Top with only whitespace");
     DECREF(got);
 
     got = Str_Trim_Tail(ws_only);
-    TEST_TRUE(runner, Str_Equals_Utf8(got, "", 0),
-              "Trim_Tail with only whitespace");
+    OK(Str_Equals_Utf8(got, "", 0), "Trim_Tail with only whitespace");
     DECREF(got);
 
     got = Str_Trim(trimmed);
-    TEST_TRUE(runner, Str_Equals(got, (Obj*)trimmed),
-              "Trim doesn't change trimmed string");
+    OK(Str_Equals(got, (Obj*)trimmed), "Trim doesn't change trimmed string");
     DECREF(got);
 
     got = Str_Trim_Top(trimmed);
-    TEST_TRUE(runner, Str_Equals(got, (Obj*)trimmed),
-              "Trim_Top doesn't change trimmed string");
+    OK(Str_Equals(got, (Obj*)trimmed),
+       "Trim_Top doesn't change trimmed string");
     DECREF(got);
 
     got = Str_Trim_Tail(trimmed);
-    TEST_TRUE(runner, Str_Equals(got, (Obj*)trimmed),
-              "Trim_Tail doesn't change trimmed string");
+    OK(Str_Equals(got, (Obj*)trimmed),
+       "Trim_Tail doesn't change trimmed string");
     DECREF(got);
 
     DECREF(trimmed);
@@ -231,13 +228,13 @@ test_To_F64(TestBatchRunner *runner) {
     string = S_get_str("1.5");
     double difference = 1.5 - Str_To_F64(string);
     if (difference < 0) { difference = 0 - difference; }
-    TEST_TRUE(runner, difference < 0.001, "To_F64");
+    OK(difference < 0.001, "To_F64");
     DECREF(string);
 
     string = S_get_str("-1.5");
     difference = 1.5 + Str_To_F64(string);
     if (difference < 0) { difference = 0 - difference; }
-    TEST_TRUE(runner, difference < 0.001, "To_F64 negative");
+    OK(difference < 0.001, "To_F64 negative");
     DECREF(string);
 
     // TODO: Enable this test when we have real substrings.
@@ -245,8 +242,7 @@ test_To_F64(TestBatchRunner *runner) {
     double value_full = Str_To_F64(string);
     Str_Set_Size(string, 3);
     double value_short = Str_To_F64(string);
-    TEST_TRUE(runner, value_short < value_full,
-              "TO_F64 doesn't run past end of string");
+    OK(value_short < value_full, "TO_F64 doesn't run past end of string");
     DECREF(string);*/
 }
 
@@ -255,11 +251,11 @@ test_To_I64(TestBatchRunner *runner) {
     String *string;
 
     string = S_get_str("10");
-    TEST_TRUE(runner, Str_To_I64(string) == 10, "To_I64");
+    OK(Str_To_I64(string) == 10, "To_I64");
     DECREF(string);
 
     string = S_get_str("-10");
-    TEST_TRUE(runner, Str_To_I64(string) == -10, "To_I64 negative");
+    OK(Str_To_I64(string) == -10, "To_I64 negative");
     DECREF(string);
 }
 
@@ -267,8 +263,7 @@ static void
 test_To_Utf8(TestBatchRunner *runner) {
     String *string = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
     char *buf = Str_To_Utf8(string);
-    TEST_TRUE(runner, strcmp(buf, "a" SMILEY SMILEY "b" SMILEY "c") == 0,
-              "To_Utf8");
+    OK(strcmp(buf, "a" SMILEY SMILEY "b" SMILEY "c") == 0, "To_Utf8");
     FREEMEM(buf);
     DECREF(string);
 }
@@ -286,16 +281,11 @@ test_Compare_To(TestBatchRunner *runner) {
     String *ab  = Str_newf("a%s%sb", smiley, smiley);
     String *ac  = Str_newf("a%s%sc", smiley, smiley);
 
-    TEST_TRUE(runner, Str_Compare_To(abc, (Obj*)abc) == 0,
-              "Compare_To abc abc");
-    TEST_TRUE(runner, Str_Compare_To(ab, (Obj*)abc) < 0,
-              "Compare_To ab abc");
-    TEST_TRUE(runner, Str_Compare_To(abc, (Obj*)ab) > 0,
-              "Compare_To abc ab");
-    TEST_TRUE(runner, Str_Compare_To(ab, (Obj*)ac) < 0,
-              "Compare_To ab ac");
-    TEST_TRUE(runner, Str_Compare_To(ac, (Obj*)ab) > 0,
-              "Compare_To ac ab");
+    OK(Str_Compare_To(abc, (Obj*)abc) == 0, "Compare_To abc abc");
+    OK(Str_Compare_To(ab, (Obj*)abc) < 0, "Compare_To ab abc");
+    OK(Str_Compare_To(abc, (Obj*)ab) > 0, "Compare_To abc ab");
+    OK(Str_Compare_To(ab, (Obj*)ac) < 0, "Compare_To ab ac");
+    OK(Str_Compare_To(ac, (Obj*)ab) > 0, "Compare_To ac ab");
 
     DECREF(ac);
     DECREF(ab);
@@ -307,7 +297,7 @@ test_Swap_Chars(TestBatchRunner *runner) {
     String *source = S_get_str("aXXbXc");
     String *got    = Str_Swap_Chars(source, 'X', smiley_cp);
     String *wanted = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
-    TEST_TRUE(runner, Str_Equals(got, (Obj*)wanted), "Swap_Chars");
+    OK(Str_Equals(got, (Obj*)wanted), "Swap_Chars");
     DECREF(wanted);
     DECREF(got);
     DECREF(source);
@@ -346,10 +336,10 @@ test_iterator(TestBatchRunner *runner) {
                     "Compare_To top == top");
 
         StringIterator *clone = StrIter_Clone(top);
-        TEST_TRUE(runner, StrIter_Equals(clone, (Obj*)top), "Clone");
+        OK(StrIter_Equals(clone, (Obj*)top), "Clone");
 
         StrIter_Assign(clone, tail);
-        TEST_TRUE(runner, StrIter_Equals(clone, (Obj*)tail), "Assign");
+        OK(StrIter_Equals(clone, (Obj*)tail), "Assign");
 
         DECREF(clone);
         DECREF(top);
@@ -360,18 +350,17 @@ test_iterator(TestBatchRunner *runner) {
         StringIterator *iter = Str_Top(string);
 
         for (size_t i = 0; i < num_code_points; ++i) {
-            TEST_TRUE(runner, StrIter_Has_Next(iter), "Has_Next %d", i);
+            OK(StrIter_Has_Next(iter), "Has_Next %d", i);
             int32_t code_point = StrIter_Next(iter);
             TEST_INT_EQ(runner, code_point, code_points[i], "Next %d", i);
         }
 
-        TEST_TRUE(runner, !StrIter_Has_Next(iter),
-                  "Has_Next at end of string");
+        OK(!StrIter_Has_Next(iter), "Has_Next at end of string");
         TEST_INT_EQ(runner, StrIter_Next(iter), STRITER_DONE,
                     "Next at end of string");
 
         StringIterator *tail = Str_Tail(string);
-        TEST_TRUE(runner, StrIter_Equals(iter, (Obj*)tail), "Equals tail");
+        OK(StrIter_Equals(iter, (Obj*)tail), "Equals tail");
 
         DECREF(tail);
         DECREF(iter);
@@ -381,18 +370,17 @@ test_iterator(TestBatchRunner *runner) {
         StringIterator *iter = Str_Tail(string);
 
         for (int i = num_code_points - 1; i >= 0; --i) {
-            TEST_TRUE(runner, StrIter_Has_Prev(iter), "Has_Prev %d", i);
+            OK(StrIter_Has_Prev(iter), "Has_Prev %d", i);
             int32_t code_point = StrIter_Prev(iter);
             TEST_INT_EQ(runner, code_point, code_points[i], "Prev %d", i);
         }
 
-        TEST_TRUE(runner, !StrIter_Has_Prev(iter),
-                  "Has_Prev at end of string");
+        OK(!StrIter_Has_Prev(iter), "Has_Prev at end of string");
         TEST_INT_EQ(runner, StrIter_Prev(iter), STRITER_DONE,
                     "Prev at start of string");
 
         StringIterator *top = Str_Top(string);
-        TEST_TRUE(runner, StrIter_Equals(iter, (Obj*)top), "Equals top");
+        OK(StrIter_Equals(iter, (Obj*)top), "Equals top");
 
         DECREF(top);
         DECREF(iter);
@@ -460,8 +448,8 @@ test_iterator_substring(TestBatchRunner *runner) {
 
     {
         String *substring = StrIter_substring(start, end);
-        TEST_TRUE(runner, Str_Equals(substring, (Obj*)string),
-                  "StrIter_substring whole string");
+        OK(Str_Equals(substring, (Obj*)string),
+           "StrIter_substring whole string");
         DECREF(substring);
     }
 
@@ -471,11 +459,9 @@ test_iterator_substring(TestBatchRunner *runner) {
     {
         String *substring = StrIter_substring(start, end);
         String *wanted = Str_newf("b%sc", smiley);
-        TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring");
-
-        TEST_TRUE(runner, StrIter_Starts_With(start, wanted), "Starts_With");
-        TEST_TRUE(runner, StrIter_Ends_With(end, wanted), "Ends_With");
+        OK(Str_Equals(substring, (Obj*)wanted), "StrIter_substring");
+        OK(StrIter_Starts_With(start, wanted), "Starts_With");
+        OK(StrIter_Ends_With(end, wanted), "Ends_With");
 
         DECREF(wanted);
         DECREF(substring);
@@ -484,8 +470,8 @@ test_iterator_substring(TestBatchRunner *runner) {
     {
         String *substring = StrIter_substring(end, NULL);
         String *wanted = Str_newf("%sd", smiley);
-        TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring with NULL tail");
+        OK(Str_Equals(substring, (Obj*)wanted),
+           "StrIter_substring with NULL tail");
         DECREF(wanted);
         DECREF(substring);
     }
@@ -493,8 +479,8 @@ test_iterator_substring(TestBatchRunner *runner) {
     {
         String *substring = StrIter_substring(NULL, start);
         String *wanted = Str_newf("a%s", smiley);
-        TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring with NULL top");
+        OK(Str_Equals(substring, (Obj*)wanted),
+           "StrIter_substring with NULL top");
         DECREF(wanted);
         DECREF(substring);
     }

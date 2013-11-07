@@ -126,16 +126,16 @@ test_c32(TestBatchRunner *runner) {
             NumUtil_skip_cint(&skip);
             if (target > limit) { THROW(ERR, "overrun"); }
         }
-        TEST_TRUE(runner, skip == target, "skip %lu == %lu",
-                  (unsigned long)skip, (unsigned long)target);
+        OK(skip == target, "skip %lu == %lu",
+           (unsigned long)skip, (unsigned long)target);
 
         target = encoded;
         for (size_t i = 0; i < count; i++) {
             NumUtil_encode_padded_c32((uint32_t)ints[i], &target);
         }
-        TEST_TRUE(runner, target == limit,
-                  "padded c32 uses 5 bytes (%lu == %lu)", (unsigned long)target,
-                  (unsigned long)limit);
+        OK(target == limit,
+           "padded c32 uses 5 bytes (%lu == %lu)", (unsigned long)target,
+           (unsigned long)limit);
         target = encoded;
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
@@ -144,8 +144,8 @@ test_c32(TestBatchRunner *runner) {
             NumUtil_skip_cint(&skip);
             if (target > limit) { THROW(ERR, "overrun"); }
         }
-        TEST_TRUE(runner, skip == target, "skip padded %lu == %lu",
-                  (unsigned long)skip, (unsigned long)target);
+        OK(skip == target, "skip padded %lu == %lu",
+           (unsigned long)skip, (unsigned long)target);
     }
 
     target = encoded;
@@ -182,13 +182,12 @@ test_c64(TestBatchRunner *runner) {
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
             uint64_t got = NumUtil_decode_c64(&target);
-            TEST_TRUE(runner, got == ints[i],
-                      "c64 %" PRIu64 " == %" PRIu64, got, ints[i]);
+            OK(got == ints[i], "c64 %" PRIu64 " == %" PRIu64, got, ints[i]);
             if (target > limit) { THROW(ERR, "overrun"); }
             NumUtil_skip_cint(&skip);
         }
-        TEST_TRUE(runner, skip == target, "skip %lu == %lu",
-                  (unsigned long)skip, (unsigned long)target);
+        OK(skip == target, "skip %lu == %lu",
+           (unsigned long)skip, (unsigned long)target);
     }
 
     target = encoded;
@@ -196,7 +195,7 @@ test_c64(TestBatchRunner *runner) {
     target = encoded;
 
     uint64_t got = NumUtil_decode_c64(&target);
-    TEST_TRUE(runner, got == UINT64_MAX, "c64 UINT64_MAX");
+    OK(got == UINT64_MAX, "c64 UINT64_MAX");
 
     FREEMEM(encoded);
     FREEMEM(ints);
@@ -276,7 +275,7 @@ test_bigend_u64(TestBatchRunner *runner) {
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         uint64_t got = NumUtil_decode_bigend_u64(target);
-        TEST_TRUE(runner, got == ints[i], "bigend u64");
+        OK(got == ints[i], "bigend u64");
         target += sizeof(uint64_t);
     }
 
@@ -305,7 +304,7 @@ test_bigend_f32(TestBatchRunner *runner) {
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         float got = NumUtil_decode_bigend_f32(target);
-        TEST_TRUE(runner, got == source[i], "bigend f32");
+        OK(got == source[i], "bigend f32");
         target += sizeof(float);
     }
 
@@ -339,7 +338,7 @@ test_bigend_f64(TestBatchRunner *runner) {
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         double got = NumUtil_decode_bigend_f64(target);
-        TEST_TRUE(runner, got == source[i], "bigend f64");
+        OK(got == source[i], "bigend f64");
         target += sizeof(double);
     }
 

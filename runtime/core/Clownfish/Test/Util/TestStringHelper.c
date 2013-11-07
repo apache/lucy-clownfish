@@ -201,7 +201,7 @@ S_test_validity(TestBatchRunner *runner, const char *content, size_t size,
         FAIL(runner, "Disagreement: %s", description);
     }
     else {
-        TEST_TRUE(runner, sane == expected, "%s", description);
+        OK(sane == expected, "%s", description);
     }
 }
 
@@ -258,13 +258,12 @@ test_utf8_valid(TestBatchRunner *runner) {
 
 static void
 test_is_whitespace(TestBatchRunner *runner) {
-    TEST_TRUE(runner, StrHelp_is_whitespace(' '), "space is whitespace");
-    TEST_TRUE(runner, StrHelp_is_whitespace('\n'), "newline is whitespace");
-    TEST_TRUE(runner, StrHelp_is_whitespace('\t'), "tab is whitespace");
-    TEST_TRUE(runner, StrHelp_is_whitespace('\v'),
-              "vertical tab is whitespace");
-    TEST_TRUE(runner, StrHelp_is_whitespace(0x180E),
-              "Mongolian vowel separator is whitespace");
+    OK(StrHelp_is_whitespace(' '), "space is whitespace");
+    OK(StrHelp_is_whitespace('\n'), "newline is whitespace");
+    OK(StrHelp_is_whitespace('\t'), "tab is whitespace");
+    OK(StrHelp_is_whitespace('\v'), "vertical tab is whitespace");
+    OK(StrHelp_is_whitespace(0x180E),
+       "Mongolian vowel separator is whitespace");
     TEST_FALSE(runner, StrHelp_is_whitespace('a'), "'a' isn't whitespace");
     TEST_FALSE(runner, StrHelp_is_whitespace(0), "NULL isn't whitespace");
     TEST_FALSE(runner, StrHelp_is_whitespace(0x263A),
@@ -277,12 +276,11 @@ test_back_utf8_char(TestBatchRunner *runner) {
     char *buf = buffer + 1;
     uint32_t len = StrHelp_encode_utf8_char(0x263A, buffer);
     char *end = buffer + len;
-    TEST_TRUE(runner, StrHelp_back_utf8_char(end, buffer) == buffer,
-              "back_utf8_char");
-    TEST_TRUE(runner, StrHelp_back_utf8_char(end, buf) == NULL,
-              "back_utf8_char returns NULL rather than back up beyond start");
-    TEST_TRUE(runner, StrHelp_back_utf8_char(buffer, buffer) == NULL,
-              "back_utf8_char returns NULL when end == start");
+    OK(StrHelp_back_utf8_char(end, buffer) == buffer, "back_utf8_char");
+    OK(StrHelp_back_utf8_char(end, buf) == NULL,
+       "back_utf8_char returns NULL rather than back up beyond start");
+    OK(StrHelp_back_utf8_char(buffer, buffer) == NULL,
+       "back_utf8_char returns NULL when end == start");
 }
 
 void

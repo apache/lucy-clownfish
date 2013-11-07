@@ -42,16 +42,15 @@ test_Equals(TestBatchRunner *runner) {
     Hash *other = Hash_new(0);
     StackString *stuff = SSTR_WRAP_UTF8("stuff", 5);
 
-    TEST_TRUE(runner, Hash_Equals(hash, (Obj*)other),
-              "Empty hashes are equal");
+    OK(Hash_Equals(hash, (Obj*)other), "Empty hashes are equal");
 
     Hash_Store_Utf8(hash, "foo", 3, (Obj*)CFISH_TRUE);
     TEST_FALSE(runner, Hash_Equals(hash, (Obj*)other),
                "Add one pair and Equals returns false");
 
     Hash_Store_Utf8(other, "foo", 3, (Obj*)CFISH_TRUE);
-    TEST_TRUE(runner, Hash_Equals(hash, (Obj*)other),
-              "Add a matching pair and Equals returns true");
+    OK(Hash_Equals(hash, (Obj*)other),
+       "Add a matching pair and Equals returns true");
 
     Hash_Store_Utf8(other, "foo", 3, INCREF(stuff));
     TEST_FALSE(runner, Hash_Equals(hash, (Obj*)other),
@@ -78,7 +77,7 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
         Hash_Store(dupe, (Obj*)str, INCREF(str));
         VA_Push(expected, INCREF(str));
     }
-    TEST_TRUE(runner, Hash_Equals(hash, (Obj*)dupe), "Equals");
+    OK(Hash_Equals(hash, (Obj*)dupe), "Equals");
 
     TEST_INT_EQ(runner, Hash_Get_Capacity(hash), starting_cap,
                 "Initial capacity sufficient (no rebuilds)");
@@ -89,38 +88,36 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
         VA_Push(got, (Obj*)INCREF(elem));
     }
 
-    TEST_TRUE(runner, VA_Equals(got, (Obj*)expected),
-              "basic Store and Fetch");
+    OK(VA_Equals(got, (Obj*)expected), "basic Store and Fetch");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
                 "size incremented properly by Hash_Store");
 
-    TEST_TRUE(runner, Hash_Fetch(hash, (Obj*)foo) == NULL,
-              "Fetch against non-existent key returns NULL");
+    OK(Hash_Fetch(hash, (Obj*)foo) == NULL,
+       "Fetch against non-existent key returns NULL");
 
     Obj *stored_foo = INCREF(foo);
     Hash_Store(hash, (Obj*)forty, stored_foo);
-    TEST_TRUE(runner, SStr_Equals(foo, Hash_Fetch(hash, (Obj*)forty)),
-              "Hash_Store replaces existing value");
+    OK(SStr_Equals(foo, Hash_Fetch(hash, (Obj*)forty)),
+       "Hash_Store replaces existing value");
     TEST_FALSE(runner, Hash_Equals(hash, (Obj*)dupe),
                "replacement value spoils equals");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
                 "size unaffected after value replaced");
 
-    TEST_TRUE(runner, Hash_Delete(hash, (Obj*)forty) == stored_foo,
-              "Delete returns value");
+    OK(Hash_Delete(hash, (Obj*)forty) == stored_foo, "Delete returns value");
     DECREF(stored_foo);
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
                 "size decremented by successful Delete");
-    TEST_TRUE(runner, Hash_Delete(hash, (Obj*)forty) == NULL,
-              "Delete returns NULL when key not found");
+    OK(Hash_Delete(hash, (Obj*)forty) == NULL,
+       "Delete returns NULL when key not found");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
                 "size not decremented by unsuccessful Delete");
     DECREF(Hash_Delete(dupe, (Obj*)forty));
-    TEST_TRUE(runner, VA_Equals(got, (Obj*)expected), "Equals after Delete");
+    OK(VA_Equals(got, (Obj*)expected), "Equals after Delete");
 
     Hash_Clear(hash);
-    TEST_TRUE(runner, Hash_Fetch(hash, (Obj*)twenty) == NULL, "Clear");
-    TEST_TRUE(runner, Hash_Get_Size(hash) == 0, "size is 0 after Clear");
+    OK(Hash_Fetch(hash, (Obj*)twenty) == NULL, "Clear");
+    OK(Hash_Get_Size(hash) == 0, "size is 0 after Clear");
 
     DECREF(hash);
     DECREF(dupe);
@@ -147,8 +144,8 @@ test_Keys_Values_Iter(TestBatchRunner *runner) {
     values = Hash_Values(hash);
     VA_Sort(keys, NULL, NULL);
     VA_Sort(values, NULL, NULL);
-    TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "Keys");
-    TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values");
+    OK(VA_Equals(keys, (Obj*)expected), "Keys");
+    OK(VA_Equals(values, (Obj*)expected), "Values");
     VA_Clear(keys);
     VA_Clear(values);
 
@@ -164,17 +161,16 @@ test_Keys_Values_Iter(TestBatchRunner *runner) {
 
     VA_Sort(keys, NULL, NULL);
     VA_Sort(values, NULL, NULL);
-    TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "Keys from Iter");
-    TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values from Iter");
+    OK(VA_Equals(keys, (Obj*)expected), "Keys from Iter");
+    OK(VA_Equals(values, (Obj*)expected), "Values from Iter");
 
     {
         StackString *forty = SSTR_WRAP_UTF8("40", 2);
         StackString *nope  = SSTR_WRAP_UTF8("nope", 4);
         Obj *key = Hash_Find_Key(hash, (Obj*)forty, SStr_Hash_Sum(forty));
-        TEST_TRUE(runner, Obj_Equals(key, (Obj*)forty), "Find_Key");
+        OK(Obj_Equals(key, (Obj*)forty), "Find_Key");
         key = Hash_Find_Key(hash, (Obj*)nope, SStr_Hash_Sum(nope)),
-        TEST_TRUE(runner, key == NULL,
-                  "Find_Key returns NULL for non-existent key");
+        OK(key == NULL, "Find_Key returns NULL for non-existent key");
     }
 
     DECREF(hash);
@@ -212,8 +208,8 @@ test_stress(TestBatchRunner *runner) {
     values = Hash_Values(hash);
     VA_Sort(keys, NULL, NULL);
     VA_Sort(values, NULL, NULL);
-    TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "stress Keys");
-    TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "stress Values");
+    OK(VA_Equals(keys, (Obj*)expected), "stress Keys");
+    OK(VA_Equals(values, (Obj*)expected), "stress Values");
 
     DECREF(keys);
     DECREF(values);
