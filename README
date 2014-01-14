@@ -1,0 +1,15 @@
+Clownfish
+=========
+
+OVERVIEW
+
+Clownfish is a "symbiotic" object system for C which is designed to pair with
+a "host" dynamic language environment, facilitating the development of high
+performance host language extensions.  Currently, it is a subproject of Apache
+Lucy.
+
+INSTALLATION
+
+To build and install Clownfish, follow the instructions in the accompanying
+"INSTALL" document.
+
