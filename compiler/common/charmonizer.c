@@ -7094,7 +7094,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     const char *exe_ext  = chaz_OS_exe_ext();
     const char *obj_ext  = chaz_CC_obj_ext();
 
-    char *lemon_dir    = chaz_Util_join(dir_sep, base_dir, "..", "..", "lemon",
+    char *lemon_dir    = chaz_Util_join(dir_sep, base_dir, "..", "lemon",
                                         NULL);
     char *src_dir      = chaz_Util_join(dir_sep, base_dir, "src", NULL);
     char *include_dir  = chaz_Util_join(dir_sep, base_dir, "include", NULL);
