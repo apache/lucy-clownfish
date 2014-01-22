@@ -27,6 +27,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SYS_INCLUDE_DIR "share/clownfish/include"
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  #define UNIX_FILESYSTEM 0
+#else
+  #define UNIX_FILESYSTEM 1
+#endif
+
 struct CFCArgs {
     char  *dest;
     int    num_source_dirs;
@@ -159,6 +167,7 @@ main(int argc, char **argv) {
     CFCC         *c_binding;
     char         *header = NULL;
     char         *footer = NULL;
+    const char   *include_env;
 
     S_parse_arguments(argc, argv, &args);
 
@@ -169,6 +178,32 @@ main(int argc, char **argv) {
     }
     for (i = 0; args.include_dirs[i]; ++i) {
         CFCHierarchy_add_include_dir(hierarchy, args.include_dirs[i]);
+    }
+
+    /* Add include dirs from environment variable CLOWNFISH_INCLUDE. */
+    include_env = getenv("CLOWNFISH_INCLUDE");
+    if (include_env != NULL) {
+        char *include_env_copy = CFCUtil_strdup(include_env);
+        const char *include_dir;
+
+        for (include_dir = strtok(include_env_copy, ":");
+             include_dir != NULL;
+             include_dir = strtok(NULL, ":")
+        ) {
+            if (include_dir[0] != '\0') {
+                CFCHierarchy_add_include_dir(hierarchy, include_dir);
+            }
+        }
+
+        FREEMEM(include_env_copy);
+    }
+    else if (UNIX_FILESYSTEM) {
+        /*
+         * Only add system include dirs if CLOWNFISH_INCLUDE is unset to
+         * avoid errors when a parcel is found in multiple locations.
+         */
+        CFCHierarchy_add_include_dir(hierarchy, "/usr/local/" SYS_INCLUDE_DIR);
+        CFCHierarchy_add_include_dir(hierarchy, "/usr/" SYS_INCLUDE_DIR);
     }
 
     CFCHierarchy_build(hierarchy);
