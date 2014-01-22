@@ -53,19 +53,27 @@ if [ -z "$prefix" ]; then
     exit 1
 fi
 
-case $(uname) in
+if ! mkdir -p "$prefix"; then
+    echo "Can't create directory: $prefix"
+    exit 1
+fi
+
+prefix=`cd "$prefix" && pwd`
+
+# Install libraries.
+case `uname` in
     Darwin*)
         lib_file=libcfish.$version.dylib
         if [ ! -f $lib_file ]; then
             echo "$lib_file not found. Did you run make?"
             exit 1
         fi
-        mkdir -p $prefix/lib
-        cp $lib_file $prefix/lib
+        mkdir -p "$prefix/lib"
+        cp $lib_file "$prefix/lib"
         install_name=$prefix/lib/libcfish.$major_version.dylib
-        ln -sf $lib_file $install_name
-        ln -sf $lib_file $prefix/lib/libcfish.dylib
-        install_name_tool -id $install_name $prefix/lib/$lib_file
+        ln -sf $lib_file "$install_name"
+        ln -sf $lib_file "$prefix/lib/libcfish.dylib"
+        install_name_tool -id "$install_name" "$prefix/lib/$lib_file"
         ;;
     *)
         lib_file=libcfish.so.$version
@@ -73,19 +81,37 @@ case $(uname) in
             echo "$lib_file not found. Did you run make?"
             exit 1
         fi
-        mkdir -p $prefix/lib
-        cp $lib_file $prefix/lib
+        mkdir -p "$prefix/lib"
+        cp $lib_file "$prefix/lib"
         soname=libcfish.so.$major_version
-        ln -sf $lib_file $prefix/lib/$soname
-        ln -sf $soname $prefix/lib/libcfish.so
+        ln -sf $lib_file "$prefix/lib/$soname"
+        ln -sf $soname "$prefix/lib/libcfish.so"
         ;;
 esac
 
-mkdir -p $prefix/include
-cp autogen/include/cfish_hostdefs.h $prefix/include
-cp autogen/include/cfish_parcel.h $prefix/include
-cp autogen/include/cfish_platform.h $prefix/include
-cp -R autogen/include/Clownfish $prefix/include
+# Install executables.
+mkdir -p "$prefix/bin"
+cp ../../compiler/c/cfc "$prefix/bin/cfc"
 
-cp -R autogen/man $prefix
+# Install Clownfish header files.
+for src in `find ../core -name '*.cf[hp]'`; do
+    file=${src#../core/}
+    dest=$prefix/share/clownfish/include/$file
+    dir=`dirname "$dest"`
+    mkdir -p "$dir"
+    cp $src "$dest"
+done
+
+# Install man pages.
+cp -R autogen/man "$prefix"
+
+# Create pkg-config file.
+mkdir -p "$prefix/lib/pkgconfig"
+cat <<EOF >"$prefix/lib/pkgconfig/clownfish.pc"
+Name: Clownfish
+Description: Symbiotic object system
+Version: $version
+URL: http://lucy.apache.org/
+Libs: -L$prefix/lib -lcfish
+EOF
 
