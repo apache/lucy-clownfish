@@ -25,7 +25,10 @@ package Clownfish::Build;
 # yet. So we look in 'clownfish/compiler/perl/lib' directly and cleanup @INC
 # afterwards.
 use lib '../../compiler/perl/lib';
-use base qw( Clownfish::CFC::Perl::Build );
+use base qw(
+    Clownfish::CFC::Perl::Build
+    Clownfish::CFC::Perl::Build::Charmonic
+);
 no lib '../../compiler/perl/lib';
 
 our $VERSION = '0.003000';
@@ -97,20 +100,38 @@ sub ACTION_cfc {
 sub ACTION_copy_clownfish_includes {
     my $self = shift;
 
-    $self->depends_on('charmony');
-
     $self->SUPER::ACTION_copy_clownfish_includes;
 
-    $self->cf_copy_include_file( 'charmony.h' );
     $self->cf_copy_include_file( 'XSBind.h' );
 }
 
 sub ACTION_clownfish {
     my $self = shift;
 
-    $self->depends_on(qw( charmony cfc ));
+    $self->depends_on('cfc');
 
     $self->SUPER::ACTION_clownfish;
+}
+
+sub ACTION_compile_custom_xs {
+    my $self = shift;
+
+    $self->depends_on('charmony');
+
+    # Add extra compiler flags from Charmonizer.
+    my $charm_cflags = $self->charmony('EXTRA_CFLAGS');
+    if ($charm_cflags) {
+        my $cf_cflags = $self->clownfish_params('cflags');
+        if ($cf_cflags) {
+            $cf_cflags .= " $charm_cflags";
+        }
+        else {
+            $cf_cflags = $charm_cflags;
+        }
+        $self->clownfish_params( cflags => $cf_cflags );
+    }
+
+    $self->SUPER::ACTION_compile_custom_xs;
 }
 
 sub ACTION_suppressions {
