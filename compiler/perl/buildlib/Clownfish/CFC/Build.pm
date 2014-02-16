@@ -95,7 +95,7 @@ sub ACTION_lemon {
 # Run all .y files through lemon.
 sub ACTION_parsers {
     my $self = shift;
-    $self->dispatch('lemon');
+    $self->depends_on('lemon');
     my $y_files = $self->rscan_dir( $CFC_SOURCE_DIR, qr/\.y$/ );
     for my $y_file (@$y_files) {
         my $c_file = $y_file;
@@ -133,9 +133,7 @@ sub ACTION_lexers {
 sub ACTION_code {
     my $self = shift;
 
-    $self->dispatch('charmony');
-    $self->dispatch('ppport');
-    $self->dispatch('parsers');
+    $self->depends_on(qw( charmony ppport parsers ));
 
     my @flags = $self->split_like_shell($self->charmony("EXTRA_CFLAGS"));
     # The flag for the MSVC6 hack contains spaces. Make sure it stays quoted.
