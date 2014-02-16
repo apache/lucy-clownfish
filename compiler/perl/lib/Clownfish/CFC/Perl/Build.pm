@@ -376,14 +376,7 @@ sub ACTION_compile_custom_xs {
     for my $source_dir (@$source_dirs) {
         push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
     }
-    # Compile with -fvisibility=hidden on GCC >= 4.0
-    my $extra_cflags = $self->clownfish_params('cflags') || '';
-    if ( $self->config('gccversion') && $Config{dlext} ne 'dll' ) {
-        my @version_nums = split( /\./, $self->config('gccversion') );
-        if ( $version_nums[0] >= 4 ) {
-            $extra_cflags .= ' -fvisibility=hidden';
-        }
-    }
+    my $extra_cflags = $self->clownfish_params('cflags');
     for my $c_file (@$c_files) {
         my $o_file   = $c_file;
         my $ccs_file = $c_file;
@@ -419,7 +412,7 @@ sub ACTION_compile_custom_xs {
     unshift @objects, $perl_binding_o_file;
     $self->add_to_cleanup($perl_binding_o_file);
     if ( !$self->up_to_date( $perl_binding_c_file, $perl_binding_o_file ) ) {
-        # Don't use -fvisibility=hidden for XS
+        # Don't use Clownfish compiler flags for XS
         $cbuilder->compile(
             source               => $perl_binding_c_file,
             extra_compiler_flags => $self->extra_compiler_flags,
