@@ -58,11 +58,6 @@ my $BUILDLIB_DIR = 'buildlib';
 sub new {
     my $self = shift->SUPER::new( @_ );
 
-    # Define HAS_BOOL, so that the Perl headers don't redefine 'bool'.
-    my $extra_ccflags = $self->extra_compiler_flags;
-    push @$extra_ccflags, '-DHAS_BOOL';
-    $self->extra_compiler_flags(@$extra_ccflags);
-
     # TODO: use Charmonizer to determine whether pthreads are userland.
     if ( $Config{osname} =~ /openbsd/i && $Config{usethreads} ) {
         my $extra_ldflags = $self->extra_linker_flags;

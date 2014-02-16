@@ -29,6 +29,8 @@
 #include "Clownfish/VArray.h"
 #include "Clownfish/VTable.h"
 
+/* Avoid conflicts with Clownfish bool type. */
+#define HAS_BOOL
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
