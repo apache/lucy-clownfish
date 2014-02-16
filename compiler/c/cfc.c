@@ -225,9 +225,11 @@ main(int argc, char **argv) {
     CFCBindCore_write_all_modified(core_binding, 0);
 
     c_binding = CFCC_new(hierarchy, header, footer);
-    CFCC_write_callbacks(c_binding);
     CFCC_write_hostdefs(c_binding);
-    CFCC_write_man_pages(c_binding);
+    if (args.num_source_dirs != 0) {
+        CFCC_write_callbacks(c_binding);
+        CFCC_write_man_pages(c_binding);
+    }
 
     CFCBase_decref((CFCBase*)c_binding);
     CFCBase_decref((CFCBase*)core_binding);
