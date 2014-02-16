@@ -58,16 +58,8 @@ my $BUILDLIB_DIR = 'buildlib';
 sub new {
     my $self = shift->SUPER::new( @_ );
 
-    my $extra_ccflags = $self->extra_compiler_flags;
-    if ( $self->config('cc') =~ /^cl\b/ ) {
-        # Compile as C++ under MSVC.
-        push @$extra_ccflags, qw(
-            -TP -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS
-        );
-        # Redefine 'for' to fix broken 'for' scoping under MSVC6.
-        push @$extra_ccflags, '-Dfor="if(0);else for"';
-    }
     # Define HAS_BOOL, so that the Perl headers don't redefine 'bool'.
+    my $extra_ccflags = $self->extra_compiler_flags;
     push @$extra_ccflags, '-DHAS_BOOL';
     $self->extra_compiler_flags(@$extra_ccflags);
 
