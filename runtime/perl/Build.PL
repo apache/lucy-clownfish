@@ -57,7 +57,6 @@ my $builder = Clownfish::Build->new(
         ],
         include => [], # Don't use default includes.
     },
-    extra_compiler_flags => '-DCFP_CFISH -DCFP_TESTCFISH',
     add_to_cleanup => [
         qw(
             Clownfish-*

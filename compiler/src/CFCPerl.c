@@ -399,11 +399,23 @@ S_add_xs_init(char *xs_init, CFCPerlSub *xsub) {
 
 void
 CFCPerl_write_bindings(CFCPerl *self) {
-    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCParcel    **parcels  = CFCParcel_all_parcels();
+    CFCClass     **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
     CFCPerlClass **registry = CFCPerlClass_registry();
     char *hand_rolled_xs   = CFCUtil_strdup("");
     char *generated_xs     = CFCUtil_strdup("");
     char *xs_init          = CFCUtil_strdup("");
+
+    // Bake the parcel privacy defines into the XS, so it can be compiled
+    // without any extra compiler flags.
+    for (size_t i = 0; parcels[i]; ++i) {
+        if (!CFCParcel_included(parcels[i])) {
+            const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
+            generated_xs = CFCUtil_cat(generated_xs, "#define ", privacy_sym,
+                                       "\n", NULL);
+        }
+    }
+    generated_xs = CFCUtil_cat(generated_xs, "\n", NULL);
 
     // Pound-includes for generated headers.
     for (size_t i = 0; ordered[i] != NULL; i++) {
