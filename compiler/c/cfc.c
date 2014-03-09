@@ -231,6 +231,8 @@ main(int argc, char **argv) {
         CFCC_write_man_pages(c_binding);
     }
 
+    CFCHierarchy_write_log(hierarchy);
+
     CFCBase_decref((CFCBase*)c_binding);
     CFCBase_decref((CFCBase*)core_binding);
     CFCBase_decref((CFCBase*)hierarchy);

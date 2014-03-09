@@ -71,6 +71,14 @@ CFCHierarchy_build(CFCHierarchy *self);
 int
 CFCHierarchy_propagate_modified(CFCHierarchy *self, int modified);
 
+/** Write a JSON files with statistics about the class hierarchy. At the
+ * moment, this file is empty. It is only used for reliable dependency
+ * handling in the Makefiles of the C build. Thus, the log file should only
+ * be updated after all other files were written successfully.
+ */
+void
+CFCHierarchy_write_log(CFCHierarchy *self);
+
 /** Return all Classes as an array with the property that every parent class
  * will precede all of its children.
  */

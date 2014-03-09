@@ -479,6 +479,20 @@ CFCHierarchy_ordered_classes(CFCHierarchy *self) {
     return ladder;
 }
 
+void
+CFCHierarchy_write_log(CFCHierarchy *self) {
+    // For now, we only write an empty file that can be used as a Makefile
+    // target. It might be useful to add statistics about the class hierarchy
+    // later.
+    const char *file_content = "{}\n";
+
+    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "hierarchy.json",
+                                     self->dest);
+    remove(filepath);
+    CFCUtil_write_file(filepath, file_content, strlen(file_content));
+    FREEMEM(filepath);
+}
+
 static CFCFile*
 S_fetch_file(CFCHierarchy *self, const char *path_part) {
     for (size_t i = 0; self->files[i] != NULL; i++) {
