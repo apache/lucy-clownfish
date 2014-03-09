@@ -7151,6 +7151,8 @@ S_write_makefile(struct chaz_CLIArgs *args) {
                                            exe_ext, NULL);
     char *autogen_inc_dir = chaz_Util_join(dir_sep, "autogen", "include",
                                            NULL);
+    char *autogen_target  = chaz_Util_join(dir_sep, "autogen",
+                                           "hierarchy.json", NULL);
 
     chaz_MakeFile *makefile;
     chaz_MakeVar  *var;
@@ -7235,27 +7237,23 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     rule = chaz_MakeFile_add_rule(makefile, cfc_exe, NULL);
     chaz_MakeRule_add_make_command(rule, cfc_dir, NULL);
 
-    rule = chaz_MakeFile_add_rule(makefile, "autogen", cfc_exe);
+    rule = chaz_MakeFile_add_rule(makefile, autogen_target, cfc_exe);
     chaz_MakeRule_add_prereq(rule, "$(CLOWNFISH_HEADERS)");
     scratch = chaz_Util_join("", cfc_exe, " --source=", core_dir,
                              " --dest=autogen --header=cfc_header", NULL);
     chaz_MakeRule_add_command(rule, scratch);
-    /* TODO: Find a way to touch the autogen directory on Windows. */
-    if (chaz_Make_shell_type() == CHAZ_OS_POSIX) {
-        chaz_MakeRule_add_command(rule, "touch autogen");
-    }
     free(scratch);
 
     /* Needed for parallel builds. */
     scratch = chaz_Util_join(dir_sep, "autogen", "source", "cfish_parcel.c",
                              NULL);
-    rule = chaz_MakeFile_add_rule(makefile, scratch, "autogen");
+    rule = chaz_MakeFile_add_rule(makefile, scratch, autogen_target);
     scratch = chaz_Util_join(dir_sep, "autogen", "source",
                              "testcfish_parcel.c", NULL);
-    rule = chaz_MakeFile_add_rule(makefile, scratch, "autogen");
+    rule = chaz_MakeFile_add_rule(makefile, scratch, autogen_target);
     free(scratch);
 
-    chaz_MakeFile_add_rule(makefile, "$(CLOWNFISH_OBJS)", "autogen");
+    chaz_MakeFile_add_rule(makefile, "$(CLOWNFISH_OBJS)", autogen_target);
 
     link_flags = chaz_CC_new_cflags();
     chaz_CFlags_enable_debugging(link_flags);
@@ -7334,6 +7332,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     free(cfc_exe);
     free(test_cfish_exe);
     free(autogen_inc_dir);
+    free(autogen_target);
     free(lib_filename);
     free(test_command);
 }
