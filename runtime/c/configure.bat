@@ -17,12 +17,15 @@ rem limitations under the License.
 
 cd ..\..\compiler\c
 call configure.bat
-cd ..\..\..\c
+cd ..\..\runtime\c
 echo.
 
 echo Configuring Clownfish runtime...
 
+setlocal
+set CL=
 cl >nul 2>nul
+endlocal
 if not errorlevel 1 goto found_cl
 
 gcc -v >nul 2>nul

@@ -17,7 +17,10 @@ rem limitations under the License.
 
 echo Configuring Clownfish compiler...
 
+setlocal
+set CL=
 cl >nul 2>nul
+endlocal
 if not errorlevel 1 goto found_cl
 
 gcc -v >nul 2>nul
