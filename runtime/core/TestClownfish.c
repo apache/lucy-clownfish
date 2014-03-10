@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "testcfish_parcel.h"
+
 void
 testcfish_init_parcel() {
 }
