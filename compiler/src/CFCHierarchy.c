@@ -67,6 +67,9 @@ static void
 S_parse_parcel_files(const char *path, void *context);
 
 static void
+S_check_prereqs(void);
+
+static void
 S_do_make_path(const char *path);
 
 static void
@@ -189,6 +192,7 @@ CFCHierarchy_add_include_dir(CFCHierarchy *self, const char *include_dir) {
 
 void
 CFCHierarchy_build(CFCHierarchy *self) {
+    // Read .cfp files.
     CFCParseParcelFilesContext context;
     context.is_included = false;
     for (size_t i = 0; self->sources[i] != NULL; i++) {
@@ -198,15 +202,21 @@ CFCHierarchy_build(CFCHierarchy *self) {
     for (size_t i = 0; self->includes[i] != NULL; i++) {
         CFCUtil_walk(self->includes[i], S_parse_parcel_files, &context);
     }
+
+    S_check_prereqs();
+
+    // Read .cfh files.
     for (size_t i = 0; self->sources[i] != NULL; i++) {
         S_parse_cf_files(self, self->sources[i], 0);
     }
     for (size_t i = 0; self->includes[i] != NULL; i++) {
         S_parse_cf_files(self, self->includes[i], 1);
     }
+
     for (int i = 0; self->classes[i] != NULL; i++) {
         CFCClass_resolve_types(self->classes[i], self->classes);
     }
+
     S_connect_classes(self);
     for (size_t i = 0; self->trees[i] != NULL; i++) {
         CFCClass_grow_tree(self->trees[i]);
@@ -248,6 +258,20 @@ S_parse_parcel_files(const char *path, void *arg) {
         }
         CFCBase_decref((CFCBase*)parcel);
     }
+}
+
+static void
+S_check_prereqs() {
+    CFCParcel **parcels = CFCParcel_all_parcels();
+
+    for (int i = 0; parcels[i]; ++i) {
+        CFCParcel *parcel = parcels[i];
+        if (!CFCParcel_included(parcel)) {
+            CFCParcel_check_prereqs(parcel);
+        }
+    }
+
+    FREEMEM(parcels);
 }
 
 static void

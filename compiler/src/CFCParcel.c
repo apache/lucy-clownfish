@@ -39,6 +39,7 @@ struct CFCParcel {
     char *PREFIX;
     char *privacy_sym;
     int is_included;
+    int is_required;
     char **dependent_parcels;
     size_t num_dependent_parcels;
     char **inherited_parcels;
@@ -247,8 +248,9 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     }
     self->privacy_sym[privacy_sym_len] = '\0';
 
-    // Set is_included.
+    // Initialize flags.
     self->is_included = is_included;
+    self->is_required = false;
 
     // Initialize dependencies.
     self->dependent_parcels = (char**)CALLOCATE(1, sizeof(char*));
@@ -461,6 +463,11 @@ CFCParcel_included(CFCParcel *self) {
     return self->is_included;
 }
 
+int
+CFCParcel_required(CFCParcel *self) {
+    return self->is_required;
+}
+
 void
 CFCParcel_add_dependent_parcel(CFCParcel *self, CFCParcel *dependent) {
     const char *name     = CFCParcel_get_name(self);
@@ -535,6 +542,40 @@ CFCParcel_inherited_parcels(CFCParcel *self) {
 CFCPrereq**
 CFCParcel_get_prereqs(CFCParcel *self) {
     return self->prereqs;
+}
+
+void
+CFCParcel_check_prereqs(CFCParcel *self) {
+    // This is essentially a depth-first search of the dependency graph.
+
+    if (self->is_required) { return; }
+    self->is_required = true;
+
+    const char *name = CFCParcel_get_name(self);
+
+    for (int i = 0; self->prereqs[i]; ++i) {
+        CFCPrereq *prereq = self->prereqs[i];
+
+        const char *req_name   = CFCPrereq_get_name(prereq);
+        CFCParcel  *req_parcel = CFCParcel_fetch(req_name);
+        if (!req_parcel) {
+            // TODO: Add include path to error message.
+            CFCUtil_die("Parcel '%s' required by '%s' not found", req_name,
+                        name);
+        }
+
+        CFCVersion *version     = req_parcel->version;
+        CFCVersion *req_version = CFCPrereq_get_version(prereq);
+        if (CFCVersion_compare_to(version, req_version) < 0) {
+            const char *vstring     = CFCVersion_get_vstring(version);
+            const char *req_vstring = CFCVersion_get_vstring(req_version);
+            CFCUtil_die("Version %s of parcel '%s' required by '%s' is lower"
+                        " than required version %s",
+                        vstring, req_name, name, req_vstring);
+        }
+
+        CFCParcel_check_prereqs(req_parcel);
+    }
 }
 
 /**************************************************************************/

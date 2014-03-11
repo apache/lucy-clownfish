@@ -39,7 +39,7 @@ S_run_parcel_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    23,
+    26,
     S_run_tests
 };
 
@@ -136,6 +136,7 @@ S_run_parcel_tests(CFCTest *test) {
 
         CFCBase_decref((CFCBase*)thing);
         CFCBase_decref((CFCBase*)parcel);
+        CFCParcel_reap_singletons();
     }
 
     {
@@ -178,6 +179,36 @@ S_run_parcel_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)parcel);
     }
 
-    CFCParcel_reap_singletons();
+    {
+        CFCParcel *foo = CFCParcel_new("Foo", NULL, NULL, true);
+        CFCParcel_register(foo);
+
+        CFCVersion *cfish_version = CFCVersion_new("v0.8.7");
+        CFCParcel *cfish
+            = CFCParcel_new("Clownfish", NULL, cfish_version, true);
+        CFCParcel_register(cfish);
+
+        const char *crust_json =
+            "        {\n"
+            "            \"name\": \"Crustacean\",\n"
+            "            \"version\": \"v0.1.0\",\n"
+            "            \"prerequisites\": {\n"
+            "                \"Clownfish\": \"v0.8.5\",\n"
+            "            }\n"
+            "        }\n";
+        CFCParcel *crust = CFCParcel_new_from_json(crust_json, false);
+        CFCParcel_register(crust);
+
+        CFCParcel_check_prereqs(crust);
+        INT_EQ(test, CFCParcel_required(foo), false, "parcel not required");
+        INT_EQ(test, CFCParcel_required(cfish), true, "prereq required");
+        INT_EQ(test, CFCParcel_required(crust), true, "self required");
+
+        CFCBase_decref((CFCBase*)crust);
+        CFCBase_decref((CFCBase*)cfish_version);
+        CFCBase_decref((CFCBase*)cfish);
+        CFCBase_decref((CFCBase*)foo);
+        CFCParcel_reap_singletons();
+    }
 }
 

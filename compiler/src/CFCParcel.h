@@ -121,6 +121,12 @@ CFCParcel_get_privacy_sym(CFCParcel *self);
 int
 CFCParcel_included(CFCParcel *self);
 
+/** Return true if the parcel is required. This is only valid after all
+ * prerequisites were checked.
+ */
+int
+CFCParcel_required(CFCParcel *self);
+
 /** Add another Parcel that the Parcel depends on.
  */
 void
@@ -148,6 +154,12 @@ CFCParcel_inherited_parcels(CFCParcel *self);
  */
 CFCPrereq**
 CFCParcel_get_prereqs(CFCParcel *self);
+
+/** Recursively verify that all prerequisite parcels are present in the
+ * required version. Mark all needed parcels including 'self' as required.
+ */
+void
+CFCParcel_check_prereqs(CFCParcel *self);
 
 /**************************************************************************/
 
