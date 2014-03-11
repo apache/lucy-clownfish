@@ -43,6 +43,8 @@ struct CFCParcel {
     size_t num_dependent_parcels;
     char **inherited_parcels;
     size_t num_inherited_parcels;
+    CFCPrereq **prereqs;
+    size_t num_prereqs;
 };
 
 static CFCParcel *default_parcel = NULL;
@@ -57,6 +59,9 @@ typedef struct JSONNode {
     struct JSONNode **kids;
     size_t num_kids;
 } JSONNode;
+
+static void
+S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path);
 
 static JSONNode*
 S_parse_json_for_parcel(const char *json);
@@ -251,6 +256,10 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
     self->num_inherited_parcels = 0;
 
+    // Initialize prereqs.
+    self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
+    self->num_prereqs = 0;
+
     return self;
 }
 
@@ -266,6 +275,7 @@ S_new_from_json(const char *json, const char *path, int is_included) {
     const char *name     = NULL;
     const char *nickname = NULL;
     CFCVersion *version  = NULL;
+    JSONNode   *prereqs  = NULL;
     for (size_t i = 0, max = parsed->num_kids; i < max; i += 2) {
         JSONNode *key   = parsed->kids[i];
         JSONNode *value = parsed->kids[i + 1];
@@ -292,6 +302,13 @@ S_new_from_json(const char *json, const char *path, int is_included) {
             }
             version = CFCVersion_new(value->string);
         }
+        else if (strcmp(key->string, "prerequisites") == 0) {
+            if (value->type != JSON_HASH) {
+                CFCUtil_die("'prerequisites' must be a hash (filepath %s)",
+                            path);
+            }
+            prereqs = value;
+        }
         else {
             CFCUtil_die("Unrecognized key: '%s' (filepath '%s')",
                         key->string, path);
@@ -304,10 +321,47 @@ S_new_from_json(const char *json, const char *path, int is_included) {
         CFCUtil_die("Missing required key 'version' (filepath '%s')", path);
     }
     CFCParcel *self = CFCParcel_new(name, nickname, version, is_included);
+    if (prereqs) {
+        S_set_prereqs(self, prereqs, path);
+    }
     CFCBase_decref((CFCBase*)version);
 
     S_destroy_json(parsed);
     return self;
+}
+
+static void
+S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path) {
+    size_t num_prereqs = node->num_kids / 2;
+    CFCPrereq **prereqs
+        = (CFCPrereq**)MALLOCATE((num_prereqs + 1) * sizeof(CFCPrereq*));
+
+    for (size_t i = 0; i < num_prereqs; ++i) {
+        JSONNode *key = node->kids[2*i];
+        if (key->type != JSON_STRING) {
+            CFCUtil_die("Prereq key must be a string (filepath '%s')", path);
+        }
+        const char *name = key->string;
+
+        JSONNode *value = node->kids[2*i+1];
+        CFCVersion *version = NULL;
+        if (value->type == JSON_STRING) {
+            version = CFCVersion_new(value->string);
+        }
+        else if (value->type != JSON_NULL) {
+            CFCUtil_die("Invalid prereq value (filepath '%s')", path);
+        }
+
+        prereqs[i] = CFCPrereq_new(name, version);
+
+        CFCBase_decref((CFCBase*)version);
+    }
+    prereqs[num_prereqs] = NULL;
+
+    // Assume that prereqs are empty.
+    FREEMEM(self->prereqs);
+    self->prereqs     = prereqs;
+    self->num_prereqs = num_prereqs;
 }
 
 CFCParcel*
@@ -341,6 +395,10 @@ CFCParcel_destroy(CFCParcel *self) {
         FREEMEM(self->inherited_parcels[i]);
     }
     FREEMEM(self->inherited_parcels);
+    for (size_t i = 0; self->prereqs[i]; ++i) {
+        CFCBase_decref((CFCBase*)self->prereqs[i]);
+    }
+    FREEMEM(self->prereqs);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -472,6 +530,67 @@ CFCParcel_inherited_parcels(CFCParcel *self) {
     }
 
     return parcels;
+}
+
+CFCPrereq**
+CFCParcel_get_prereqs(CFCParcel *self) {
+    return self->prereqs;
+}
+
+/**************************************************************************/
+
+struct CFCPrereq {
+    CFCBase base;
+    char *name;
+    CFCVersion *version;
+};
+
+static const CFCMeta CFCPREREQ_META = {
+    "Clownfish::CFC::Model::Prereq",
+    sizeof(CFCPrereq),
+    (CFCBase_destroy_t)CFCPrereq_destroy
+};
+
+CFCPrereq*
+CFCPrereq_new(const char *name, CFCVersion *version) {
+    CFCPrereq *self = (CFCPrereq*)CFCBase_allocate(&CFCPREREQ_META);
+    return CFCPrereq_init(self, name, version);
+}
+
+CFCPrereq*
+CFCPrereq_init(CFCPrereq *self, const char *name, CFCVersion *version) {
+    // Validate name.
+    if (!name || !S_validate_name_or_cnick(name)) {
+        CFCUtil_die("Invalid name: '%s'", name ? name : "[NULL]");
+    }
+    self->name = CFCUtil_strdup(name);
+
+    // Default to version v0.
+    if (version) {
+        self->version = (CFCVersion*)CFCBase_incref((CFCBase*)version);
+    }
+    else {
+        self->version = CFCVersion_new("v0");
+    }
+
+    return self;
+}
+
+void
+CFCPrereq_destroy(CFCPrereq *self) {
+    FREEMEM(self->name);
+    CFCBase_decref((CFCBase*)self->version);
+    CFCBase_destroy((CFCBase*)self);
+}
+
+const char*
+CFCPrereq_get_name(CFCPrereq *self) {
+    return self->name;
+}
+
+CFCVersion*
+CFCPrereq_get_version(CFCPrereq *self) {
+    return self->version;
 }
 
 /*****************************************************************************

@@ -31,14 +31,51 @@
 static void
 S_run_tests(CFCTest *test);
 
+static void
+S_run_prereq_tests(CFCTest *test);
+
+static void
+S_run_parcel_tests(CFCTest *test);
+
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    12,
+    23,
     S_run_tests
 };
 
 static void
 S_run_tests(CFCTest *test) {
+    S_run_prereq_tests(test);
+    S_run_parcel_tests(test);
+}
+
+static void
+S_run_prereq_tests(CFCTest *test) {
+    {
+        CFCVersion *v77_66_55 = CFCVersion_new("v77.66.55");
+        CFCPrereq *prereq = CFCPrereq_new("Flour", v77_66_55);
+        const char *name = CFCPrereq_get_name(prereq);
+        STR_EQ(test, name, "Flour", "prereq get_name");
+        CFCVersion *version = CFCPrereq_get_version(prereq);
+        INT_EQ(test, CFCVersion_compare_to(version, v77_66_55), 0,
+               "prereq get_version");
+        CFCBase_decref((CFCBase*)prereq);
+        CFCBase_decref((CFCBase*)v77_66_55);
+    }
+
+    {
+        CFCVersion *v0 = CFCVersion_new("v0");
+        CFCPrereq *prereq = CFCPrereq_new("Sugar", NULL);
+        CFCVersion *version = CFCPrereq_get_version(prereq);
+        INT_EQ(test, CFCVersion_compare_to(version, v0), 0,
+               "prereq with default version");
+        CFCBase_decref((CFCBase*)prereq);
+        CFCBase_decref((CFCBase*)v0);
+    }
+}
+
+static void
+S_run_parcel_tests(CFCTest *test) {
     {
         CFCParcel *parcel = CFCParcel_new("Foo", NULL, NULL, false);
         OK(test, parcel != NULL, "new");
@@ -98,6 +135,46 @@ S_run_tests(CFCTest *test) {
                "get_PREFIX with parcel");
 
         CFCBase_decref((CFCBase*)thing);
+        CFCBase_decref((CFCBase*)parcel);
+    }
+
+    {
+        const char *json =
+            "        {\n"
+            "            \"name\": \"Crustacean\",\n"
+            "            \"version\": \"v0.1.0\",\n"
+            "            \"prerequisites\": {\n"
+            "                \"Clownfish\": null,\n"
+            "                \"Arthropod\": \"v30.104.5\"\n"
+            "            }\n"
+            "        }\n";
+        CFCParcel *parcel = CFCParcel_new_from_json(json, false);
+
+        CFCPrereq **prereqs = CFCParcel_get_prereqs(parcel);
+        OK(test, prereqs != NULL, "prereqs");
+
+        CFCPrereq *cfish = prereqs[0];
+        OK(test, cfish != NULL, "prereqs[0]");
+        const char *cfish_name = CFCPrereq_get_name(cfish);
+        STR_EQ(test, cfish_name, "Clownfish", "prereqs[0] name");
+        CFCVersion *v0            = CFCVersion_new("v0");
+        CFCVersion *cfish_version = CFCPrereq_get_version(cfish);
+        INT_EQ(test, CFCVersion_compare_to(cfish_version, v0), 0,
+               "prereqs[0] version");
+
+        CFCPrereq *apod = prereqs[1];
+        OK(test, apod != NULL, "prereqs[1]");
+        const char *apod_name = CFCPrereq_get_name(apod);
+        STR_EQ(test, apod_name, "Arthropod", "prereqs[1] name");
+        CFCVersion *v30_104_5    = CFCVersion_new("v30.104.5");
+        CFCVersion *apod_version = CFCPrereq_get_version(apod);
+        INT_EQ(test, CFCVersion_compare_to(apod_version, v30_104_5), 0,
+               "prereqs[1] version");
+
+        OK(test, prereqs[2] == NULL, "prereqs[2]");
+
+        CFCBase_decref((CFCBase*)v30_104_5);
+        CFCBase_decref((CFCBase*)v0);
         CFCBase_decref((CFCBase*)parcel);
     }
 

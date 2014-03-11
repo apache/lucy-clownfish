@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 typedef struct CFCParcel CFCParcel;
+typedef struct CFCPrereq CFCPrereq;
 struct CFCVersion;
 
 /** Return the parcel which has been registered for <code>name</code>.
@@ -142,6 +143,28 @@ CFCParcel_dependent_parcels(CFCParcel *self);
  */
 CFCParcel**
 CFCParcel_inherited_parcels(CFCParcel *self);
+
+/** Return a NULL-terminated array of all prerequisites.
+ */
+CFCPrereq**
+CFCParcel_get_prereqs(CFCParcel *self);
+
+/**************************************************************************/
+
+CFCPrereq*
+CFCPrereq_new(const char *name, struct CFCVersion *version);
+
+CFCPrereq*
+CFCPrereq_init(CFCPrereq *self, const char *name, struct CFCVersion *version);
+
+void
+CFCPrereq_destroy(CFCPrereq *self);
+
+const char*
+CFCPrereq_get_name(CFCPrereq *self);
+
+struct CFCVersion*
+CFCPrereq_get_version(CFCPrereq *self);
 
 #ifdef __cplusplus
 }
