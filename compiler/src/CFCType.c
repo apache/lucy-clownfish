@@ -273,26 +273,14 @@ CFCType_resolve(CFCType *self, CFCClass **classes) {
 
     char *specifier = self->specifier;
     if (isupper(specifier[0])) {
-        // Try to find class from class list.
-        CFCClass *klass = NULL;
-        for (size_t i = 0; classes[i]; ++i) {
-            CFCClass   *maybe_class = classes[i];
-            const char *struct_sym  = CFCClass_get_struct_sym(maybe_class);
-
-            if (strcmp(specifier, struct_sym) == 0) {
-                if (klass) {
-                    CFCUtil_die("Type '%s' is ambigious", specifier);
-                }
-                klass = maybe_class;
-            }
-        }
-
-        if (!klass) {
+        CFCParcel *parcel
+            = CFCParcel_lookup_struct_sym(self->parcel, specifier);
+        if (!parcel) {
             CFCUtil_die("No class found for type '%s'", specifier);
         }
 
         // Create actual specifier with prefix.
-        const char *prefix = CFCClass_get_prefix(klass);
+        const char *prefix = CFCParcel_get_prefix(parcel);
         self->specifier = CFCUtil_sprintf("%s%s", prefix, specifier);
         FREEMEM(specifier);
     }

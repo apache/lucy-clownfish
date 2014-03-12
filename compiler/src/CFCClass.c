@@ -202,6 +202,8 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     // Store in registry.
     S_register(self);
 
+    CFCParcel_add_struct_sym(parcel, self->struct_sym);
+
     return self;
 }
 

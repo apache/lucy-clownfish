@@ -161,6 +161,15 @@ CFCParcel_check_prereqs(CFCParcel *self);
 int
 CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel);
 
+void
+CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym);
+
+/** Search the parcel and all direct prerequisites for a class with
+ * struct_sym. Return the parcel in which the class was found or NULL.
+ */
+CFCParcel*
+CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym);
+
 /**************************************************************************/
 
 CFCPrereq*

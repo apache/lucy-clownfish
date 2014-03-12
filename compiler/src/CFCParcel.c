@@ -42,6 +42,8 @@ struct CFCParcel {
     int is_required;
     char **inherited_parcels;
     size_t num_inherited_parcels;
+    char **struct_syms;
+    size_t num_struct_syms;
     CFCPrereq **prereqs;
     size_t num_prereqs;
 };
@@ -253,6 +255,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     // Initialize arrays.
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
     self->num_inherited_parcels = 0;
+    self->struct_syms = (char**)CALLOCATE(1, sizeof(char*));
+    self->num_struct_syms = 0;
     self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
     self->num_prereqs = 0;
 
@@ -391,6 +395,10 @@ CFCParcel_destroy(CFCParcel *self) {
         CFCBase_decref((CFCBase*)self->prereqs[i]);
     }
     FREEMEM(self->prereqs);
+    for (size_t i = 0; self->struct_syms[i]; ++i) {
+        FREEMEM(self->struct_syms[i]);
+    }
+    FREEMEM(self->struct_syms);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -560,6 +568,49 @@ CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel) {
     }
 
     return false;
+}
+
+void
+CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym) {
+    size_t num_struct_syms = self->num_struct_syms + 1;
+    size_t size = (num_struct_syms + 1) * sizeof(char*);
+    char **struct_syms = (char**)REALLOCATE(self->struct_syms, size);
+    struct_syms[num_struct_syms-1] = CFCUtil_strdup(struct_sym);
+    struct_syms[num_struct_syms]   = NULL;
+    self->struct_syms     = struct_syms;
+    self->num_struct_syms = num_struct_syms;
+}
+
+static CFCParcel*
+S_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
+    for (size_t i = 0; self->struct_syms[i]; ++i) {
+        if (strcmp(self->struct_syms[i], struct_sym) == 0) {
+            return self;
+        }
+    }
+
+    return NULL;
+}
+
+CFCParcel*
+CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
+    CFCParcel *parcel = S_lookup_struct_sym(self, struct_sym);
+
+    for (size_t i = 0; self->prereqs[i]; ++i) {
+        const char *prereq_name   = CFCPrereq_get_name(self->prereqs[i]);
+        CFCParcel  *prereq_parcel = CFCParcel_fetch(prereq_name);
+        CFCParcel *maybe_parcel
+            = S_lookup_struct_sym(prereq_parcel, struct_sym);
+
+        if (maybe_parcel) {
+            if (parcel) {
+                CFCUtil_die("Type '%s' is ambigious", struct_sym);
+            }
+            parcel = maybe_parcel;
+        }
+    }
+
+    return parcel;
 }
 
 /**************************************************************************/

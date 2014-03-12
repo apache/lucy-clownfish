@@ -120,6 +120,7 @@ S_run_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)parsed_neato);
     }
 
+    CFCParser_set_parcel(parser, neato);
     CFCParser_set_class_name(parser, "Foo");
     CFCMethod *do_stuff
         = CFCTest_parse_method(test, parser, "void Do_Stuff(Foo *self);");

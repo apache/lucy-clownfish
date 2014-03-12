@@ -40,7 +40,7 @@ S_run_parcel_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    32,
+    35,
     S_run_tests
 };
 
@@ -214,6 +214,17 @@ S_run_parcel_tests(CFCTest *test) {
         OK(test, CFCParcel_has_prereq(crust, cfish), "has_prereq");
         OK(test, CFCParcel_has_prereq(crust, crust), "has_prereq self");
         OK(test, !CFCParcel_has_prereq(crust, foo), "has_prereq false");
+
+        CFCParcel_add_struct_sym(cfish, "Swim");
+        CFCParcel_add_struct_sym(crust, "Pinch");
+        CFCParcel_add_struct_sym(foo, "Bar");
+        CFCParcel *found;
+        found = CFCParcel_lookup_struct_sym(crust, "Swim");
+        OK(test, found == cfish, "lookup_struct_sym prereq");
+        found = CFCParcel_lookup_struct_sym(crust, "Pinch");
+        OK(test, found == crust, "lookup_struct_sym self");
+        found = CFCParcel_lookup_struct_sym(crust, "Bar");
+        OK(test, found == NULL, "lookup_struct_sym other");
 
         FREEMEM(prereq_parcels);
         CFCBase_decref((CFCBase*)crust);
