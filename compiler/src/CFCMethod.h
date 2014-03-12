@@ -71,7 +71,7 @@ CFCMethod_init(CFCMethod *self, struct CFCParcel *parcel,
                int is_abstract);
 
 void
-CFCMethod_resolve_types(CFCMethod *self, struct CFCClass **classes);
+CFCMethod_resolve_types(CFCMethod *self);
 
 void
 CFCMethod_destroy(CFCMethod *self);

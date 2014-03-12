@@ -149,8 +149,8 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
 }
 
 void
-CFCMethod_resolve_types(CFCMethod *self, struct CFCClass **classes) {
-    CFCFunction_resolve_types((CFCFunction*)self, classes);
+CFCMethod_resolve_types(CFCMethod *self) {
+    CFCFunction_resolve_types((CFCFunction*)self);
 }
 
 void

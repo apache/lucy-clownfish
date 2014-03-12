@@ -84,9 +84,9 @@ CFCFunction_init(CFCFunction *self, CFCParcel *parcel, const char *exposure,
 }
 
 void
-CFCFunction_resolve_types(CFCFunction *self, struct CFCClass **classes) {
-    CFCType_resolve(self->return_type, classes);
-    CFCParamList_resolve_types(self->param_list, classes);
+CFCFunction_resolve_types(CFCFunction *self) {
+    CFCType_resolve(self->return_type);
+    CFCParamList_resolve_types(self->param_list);
 }
 
 void

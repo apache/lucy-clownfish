@@ -38,7 +38,7 @@ CFCParamList*
 CFCParamList_init(CFCParamList *self, int variadic);
 
 void
-CFCParamList_resolve_types(CFCParamList *self, struct CFCClass **classes);
+CFCParamList_resolve_types(CFCParamList *self);
 
 void
 CFCParamList_destroy(CFCParamList *self);

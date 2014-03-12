@@ -268,15 +268,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-resolve_types(self, classes_sv)
+resolve_types(self)
     CFCClass *self;
-    SV *classes_sv;
 PPCODE:
-    CFCClass **classes
-        = (CFCClass**)S_av_to_array_of_cfcbase(classes_sv,
-                                               "Clownfish::CFC::Model::Class");
-    CFCClass_resolve_types(self, classes);
-    FREEMEM(classes);
+    CFCClass_resolve_types(self);
 
 void
 _set_or_get(self, ...)
@@ -662,15 +657,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-resolve_types(self, classes_sv)
+resolve_types(self)
     CFCFunction *self;
-    SV *classes_sv;
 PPCODE:
-    CFCClass **classes
-        = (CFCClass**)S_av_to_array_of_cfcbase(classes_sv,
-                                               "Clownfish::CFC::Model::Class");
-    CFCFunction_resolve_types(self, classes);
-    FREEMEM(classes);
+    CFCFunction_resolve_types(self);
 
 void
 _set_or_get(self, ...)
@@ -866,15 +856,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-resolve_types(self, classes_sv)
+resolve_types(self)
     CFCMethod *self;
-    SV *classes_sv;
 PPCODE:
-    CFCClass **classes
-        = (CFCClass**)S_av_to_array_of_cfcbase(classes_sv,
-                                               "Clownfish::CFC::Model::Class");
-    CFCMethod_resolve_types(self, classes);
-    FREEMEM(classes);
+    CFCMethod_resolve_types(self);
 
 void
 exclude_from_host(self)
@@ -996,15 +981,10 @@ PPCODE:
     CFCParamList_add_param(self, variable, value);
 
 void
-resolve_types(self, classes_sv)
+resolve_types(self)
     CFCParamList *self;
-    SV *classes_sv;
 PPCODE:
-    CFCClass **classes
-        = (CFCClass**)S_av_to_array_of_cfcbase(classes_sv,
-                                               "Clownfish::CFC::Model::Class");
-    CFCParamList_resolve_types(self, classes);
-    FREEMEM(classes);
+    CFCParamList_resolve_types(self);
 
 void
 _set_or_get(self, ...)
@@ -1550,15 +1530,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-resolve(self, classes_sv)
+resolve(self)
     CFCType *self;
-    SV *classes_sv;
 PPCODE:
-    CFCClass **classes
-        = (CFCClass**)S_av_to_array_of_cfcbase(classes_sv,
-                                               "Clownfish::CFC::Model::Class");
-    CFCType_resolve(self, classes);
-    FREEMEM(classes);
+    CFCType_resolve(self);
 
 void
 _set_or_get(self, ...)
@@ -1772,15 +1747,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-resolve_type(self, classes_sv)
+resolve_type(self)
     CFCVariable *self;
-    SV *classes_sv;
 PPCODE:
-    CFCClass **classes
-        = (CFCClass**)S_av_to_array_of_cfcbase(classes_sv,
-                                               "Clownfish::CFC::Model::Class");
-    CFCVariable_resolve_type(self, classes);
-    FREEMEM(classes);
+    CFCVariable_resolve_type(self);
 
 void
 _set_or_get(self, ...)

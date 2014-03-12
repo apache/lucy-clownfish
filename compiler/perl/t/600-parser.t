@@ -57,7 +57,7 @@ isa_ok( $parser->parse("bool"),
 for (qw( ByteBuf Obj ANDMatcher )) {
     my $class = $parser->parse("class $_ {}");
     my $type  = $parser->parse("$_*");
-    $type->resolve([ $class ]);
+    $type->resolve;
     is( $type->get_specifier, "crust_$_", "object_type_specifier $_" );
 }
 
@@ -134,7 +134,7 @@ ok( $parser->parse($_), "declaration statement: $_" )
 for (qw( Foo FooJr FooIII Foo4th )) {
     my $class = $parser->parse("class $_ {}");
     my $type  = $parser->parse("$_*");
-    $type->resolve([ $class ]);
+    $type->resolve;
     is( $type->get_specifier, "crust_$_", "object_type_specifier: $_" )
 }
 Clownfish::CFC::Model::Class->_clear_registry();

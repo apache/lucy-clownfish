@@ -290,7 +290,6 @@ S_run_object_tests(CFCTest *test) {
 
             char *class_code = CFCUtil_sprintf("class %s {}", specifier);
             CFCClass *klass = CFCTest_parse_class(test, parser, class_code);
-            CFCClass *class_list[2] = { klass, NULL };
             FREEMEM(class_code);
 
             static const char *prefixes[2] = { "", "neato_" };
@@ -298,7 +297,7 @@ S_run_object_tests(CFCTest *test) {
             for (int j = 0; j < 2; ++j) {
                 char *src = CFCUtil_sprintf("%s%s*", prefixes[j], specifier);
                 CFCType *type = CFCTest_parse_type(test, parser, src);
-                CFCType_resolve(type, class_list);
+                CFCType_resolve(type);
                 STR_EQ(test, CFCType_get_specifier(type), expect,
                        "object_type_specifier: %s", src);
                 OK(test, CFCType_is_object(type), "%s is_object", src);
@@ -332,13 +331,12 @@ S_run_object_tests(CFCTest *test) {
     CFCClass *foo_class
         = CFCClass_create(neato_parcel, NULL, "Foo", NULL, NULL, NULL, NULL,
                           NULL, false, false);
-    CFCClass *class_list[2] = { foo_class, NULL };
     CFCType *foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
-    CFCType_resolve(foo, class_list);
+    CFCType_resolve(foo);
 
     {
         CFCType *another_foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
-        CFCType_resolve(another_foo, class_list);
+        CFCType_resolve(another_foo);
         OK(test, CFCType_equals(foo, another_foo), "equals");
         CFCBase_decref((CFCBase*)another_foo);
     }
@@ -348,8 +346,7 @@ S_run_object_tests(CFCTest *test) {
             = CFCClass_create(neato_parcel, NULL, "Bar", NULL, NULL, NULL,
                               NULL, NULL, false, false);
         CFCType *bar = CFCType_new_object(0, neato_parcel, "Bar", 1);
-        CFCClass *bar_class_list[2] = { bar_class, NULL };
-        CFCType_resolve(bar, bar_class_list);
+        CFCType_resolve(bar);
         OK(test, !CFCType_equals(foo, bar),
            "different specifier spoils equals");
         CFCBase_decref((CFCBase*)bar);
@@ -362,9 +359,8 @@ S_run_object_tests(CFCTest *test) {
         CFCClass *foreign_foo_class
             = CFCClass_create(foreign_parcel, NULL, "Foreign::Foo", NULL, NULL,
                               NULL, NULL, NULL, false, false);
-        CFCClass *foreign_class_list[2] = { foreign_foo_class, NULL };
         CFCType *foreign_foo = CFCType_new_object(0, foreign_parcel, "Foo", 1);
-        CFCType_resolve(foreign_foo, foreign_class_list);
+        CFCType_resolve(foreign_foo);
         OK(test, !CFCType_equals(foo, foreign_foo),
            "different parcel spoils equals");
         STR_EQ(test, CFCType_get_specifier(foreign_foo), "foreign_Foo",
@@ -378,7 +374,7 @@ S_run_object_tests(CFCTest *test) {
         for (int i = 0; i < 4; ++i) {
             CFCType *modified_foo
                 = CFCType_new_object(flags[i], neato_parcel, "Foo", 1);
-            CFCType_resolve(modified_foo, class_list);
+            CFCType_resolve(modified_foo);
             OK(test, accessors[i](modified_foo), "%s", modifiers[i]);
             OK(test, !accessors[i](foo), "not %s", modifiers[i]);
             OK(test, !CFCType_equals(foo, modified_foo),
@@ -518,9 +514,8 @@ S_run_composite_tests(CFCTest *test) {
     }
 
     {
-        CFCClass *class_list[1] = { NULL };
         CFCType *foo_array = CFCTest_parse_type(test, parser, "foo_t[]");
-        CFCType_resolve(foo_array, class_list);
+        CFCType_resolve(foo_array);
         STR_EQ(test, CFCType_get_array(foo_array), "[]", "get_array");
         STR_EQ(test, CFCType_to_c(foo_array), "foo_t",
                "array subscripts not included by to_c");

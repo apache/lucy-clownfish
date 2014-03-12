@@ -70,8 +70,8 @@ my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     is( scalar @$classes, 3, "classes() filters blocks" );
     my $class = $classes->[0];
     my ( $foo, $bar ) = @{ $class->member_vars };
-    $foo->resolve_type($classes);
-    $bar->resolve_type($classes);
+    $foo->resolve_type;
+    $bar->resolve_type;
     is( $foo->get_type->get_specifier,
         'stuff_Foo', 'file production picked up parcel def' );
     is( $bar->get_type->get_specifier, 'stuff_Bar', 'parcel def is sticky' );

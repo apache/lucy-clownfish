@@ -262,9 +262,9 @@ CFCType_new_arbitrary(CFCParcel *parcel, const char *specifier) {
 }
 
 void
-CFCType_resolve(CFCType *self, CFCClass **classes) {
+CFCType_resolve(CFCType *self) {
     if (CFCType_is_composite(self)) {
-        CFCType_resolve(self->child, classes);
+        CFCType_resolve(self->child);
         return;
     }
     if (!CFCType_is_object(self)) {

@@ -97,11 +97,11 @@ S_run_tests(CFCTest *test) {
            "classes() filters blocks");
         CFCVariable **member_vars = CFCClass_member_vars(classes[0]);
         CFCType *foo_type = CFCVariable_get_type(member_vars[0]);
-        CFCType_resolve(foo_type, classes);
+        CFCType_resolve(foo_type);
         STR_EQ(test, CFCType_get_specifier(foo_type), "stuff_Foo",
                "file production picked up parcel def");
         CFCType *bar_type = CFCVariable_get_type(member_vars[1]);
-        CFCType_resolve(bar_type, classes);
+        CFCType_resolve(bar_type);
         STR_EQ(test, CFCType_get_specifier(bar_type), "stuff_Bar",
                "parcel def is sticky");
 

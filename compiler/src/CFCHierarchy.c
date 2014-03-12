@@ -214,7 +214,7 @@ CFCHierarchy_build(CFCHierarchy *self) {
     }
 
     for (int i = 0; self->classes[i] != NULL; i++) {
-        CFCClass_resolve_types(self->classes[i], self->classes);
+        CFCClass_resolve_types(self->classes[i]);
     }
 
     S_connect_classes(self);

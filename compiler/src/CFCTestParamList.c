@@ -38,12 +38,11 @@ S_run_tests(CFCTest *test) {
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
     CFCClass *obj_class = CFCTest_parse_class(test, parser, "class Obj {}");
-    CFCClass *class_list[2] = { obj_class, NULL };
 
     {
         CFCParamList *param_list
             = CFCTest_parse_param_list(test, parser, "(Obj *self, int num)");
-        CFCParamList_resolve_types(param_list, class_list);
+        CFCParamList_resolve_types(param_list);
         OK(test, !CFCParamList_variadic(param_list), "not variadic");
         STR_EQ(test, CFCParamList_to_c(param_list), "neato_Obj* self, int num",
                "to_c");
@@ -57,7 +56,7 @@ S_run_tests(CFCTest *test) {
         CFCParamList *param_list
             = CFCTest_parse_param_list(test, parser,
                                        "(Obj *self=NULL, int num, ...)");
-        CFCParamList_resolve_types(param_list, class_list);
+        CFCParamList_resolve_types(param_list);
         OK(test, CFCParamList_variadic(param_list), "variadic");
         STR_EQ(test, CFCParamList_to_c(param_list),
                "neato_Obj* self, int num, ...", "to_c");
@@ -77,7 +76,7 @@ S_run_tests(CFCTest *test) {
     {
         CFCParamList *param_list
             = CFCTest_parse_param_list(test, parser, "()");
-        CFCParamList_resolve_types(param_list, class_list);
+        CFCParamList_resolve_types(param_list);
         STR_EQ(test, CFCParamList_to_c(param_list), "void", "to_c");
         INT_EQ(test, CFCParamList_num_vars(param_list), 0, "num_vars");
         CFCVariable **variables = CFCParamList_get_variables(param_list);

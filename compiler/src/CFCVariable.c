@@ -85,8 +85,8 @@ CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
 }
 
 void
-CFCVariable_resolve_type(CFCVariable *self, struct CFCClass **classes) {
-    CFCType_resolve(self->type, classes);
+CFCVariable_resolve_type(CFCVariable *self) {
+    CFCType_resolve(self->type);
 }
 
 void

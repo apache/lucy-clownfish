@@ -33,14 +33,14 @@ isa_ok(
 my $obj_class = $parser->parse("class Obj {}");
 
 my $param_list = $parser->parse("(Obj *self, int num)");
-$param_list->resolve_types([ $obj_class ]);
+$param_list->resolve_types;
 isa_ok( $param_list, "Clownfish::CFC::Model::ParamList" );
 ok( !$param_list->variadic, "not variadic" );
 is( $param_list->to_c, 'neato_Obj* self, int num', "to_c" );
 is( $param_list->name_list, 'self, num', "name_list" );
 
 $param_list = $parser->parse("(Obj *self=NULL, int num, ...)");
-$param_list->resolve_types([ $obj_class ]);
+$param_list->resolve_types;
 ok( $param_list->variadic, "variadic" );
 is_deeply(
     $param_list->get_initial_values,

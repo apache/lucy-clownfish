@@ -57,7 +57,7 @@ CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
                  struct CFCType *type, int inert);
 
 void
-CFCVariable_resolve_type(CFCVariable *self, struct CFCClass **classes);
+CFCVariable_resolve_type(CFCVariable *self);
 
 void
 CFCVariable_destroy(CFCVariable *self);

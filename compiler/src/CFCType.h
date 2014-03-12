@@ -176,7 +176,7 @@ CFCType_new_arbitrary(struct CFCParcel *parcel, const char *specifier);
 /** Find the actual class of an object variable without prefix.
  */
 void
-CFCType_resolve(CFCType *self, struct CFCClass **classes);
+CFCType_resolve(CFCType *self);
 
 void
 CFCType_destroy(CFCType *self);

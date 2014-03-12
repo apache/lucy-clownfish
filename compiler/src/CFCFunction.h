@@ -114,7 +114,7 @@ CFCFunction_public(CFCFunction *self);
 /** Find the actual class of all object variables without prefix.
  */
 void
-CFCFunction_resolve_types(CFCFunction *self, struct CFCClass **classes);
+CFCFunction_resolve_types(CFCFunction *self);
 
 #ifdef __cplusplus
 }

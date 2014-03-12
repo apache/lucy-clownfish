@@ -38,11 +38,11 @@ for my $bad_specifier (qw( foo Foo_Bar FOOBAR 1Foo 1FOO )) {
 }
 
 my @specifiers = qw( Foo FooJr FooIII Foo4th );
-my @classes = map { $parser->parse("class $_ {}") } @specifiers;
+$parser->parse("class $_ {}") for @specifiers;
 
 for my $specifier (@specifiers) {
     my $type = $parser->parse("$specifier*");
-    $type->resolve(\@classes);
+    $type->resolve;
     is( $type->get_specifier, "neato_$specifier",
         "object_type_specifier: $specifier" );
     is( $parser->parse("neato_$specifier*")->get_specifier,
@@ -81,12 +81,12 @@ my $foo_type = Clownfish::CFC::Model::Type->new_object(
     parcel    => 'Neato',
     specifier => 'Foo',
 );
-$foo_type->resolve(\@classes);
+$foo_type->resolve;
 my $another_foo = Clownfish::CFC::Model::Type->new_object(
     parcel    => 'Neato',
     specifier => 'Foo',
 );
-$another_foo->resolve(\@classes);
+$another_foo->resolve;
 ok( $foo_type->equals($another_foo), "equals" );
 
 my $bar_class = Clownfish::CFC::Model::Class->create(
@@ -97,7 +97,7 @@ my $bar_type = Clownfish::CFC::Model::Type->new_object(
     parcel    => 'Neato',
     specifier => 'Bar',
 );
-$bar_type->resolve([ $bar_class ]);
+$bar_type->resolve;
 ok( !$foo_type->equals($bar_type), "different specifier spoils equals" );
 
 my $foreign_foo_class = Clownfish::CFC::Model::Class->create(
@@ -108,7 +108,7 @@ my $foreign_foo = Clownfish::CFC::Model::Type->new_object(
     parcel    => 'Foreign',
     specifier => 'Foo',
 );
-$foreign_foo->resolve([ $foreign_foo_class ]);
+$foreign_foo->resolve;
 ok( !$foo_type->equals($foreign_foo), "different parcel spoils equals" );
 is( $foreign_foo->get_specifier, "foreign_Foo",
     "prepend parcel prefix to specifier" );
@@ -118,7 +118,7 @@ my $incremented_foo = Clownfish::CFC::Model::Type->new_object(
     specifier   => 'Foo',
     incremented => 1,
 );
-$incremented_foo->resolve(\@classes);
+$incremented_foo->resolve;
 ok( $incremented_foo->incremented, "incremented" );
 ok( !$foo_type->incremented,       "not incremented" );
 ok( !$foo_type->equals($incremented_foo),
@@ -130,7 +130,7 @@ my $decremented_foo = Clownfish::CFC::Model::Type->new_object(
     specifier   => 'Foo',
     decremented => 1,
 );
-$decremented_foo->resolve(\@classes);
+$decremented_foo->resolve;
 ok( $decremented_foo->decremented, "decremented" );
 ok( !$foo_type->decremented,       "not decremented" );
 ok( !$foo_type->equals($decremented_foo),
@@ -142,7 +142,7 @@ my $const_foo = Clownfish::CFC::Model::Type->new_object(
     specifier => 'Foo',
     const     => 1,
 );
-$const_foo->resolve(\@classes);
+$const_foo->resolve;
 ok( !$foo_type->equals($const_foo), "different const spoils equals" );
 like( $const_foo->to_c, qr/const/, "const included in C representation" );
 

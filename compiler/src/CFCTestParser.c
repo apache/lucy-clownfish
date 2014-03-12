@@ -127,7 +127,7 @@ S_run_tests(CFCTest *test) {
             char *src      = CFCUtil_sprintf("%s*", class_name);
             char *expected = CFCUtil_sprintf("crust_%s", class_name);
             CFCType *type = CFCTest_parse_type(test, parser, src);
-            CFCType_resolve(type, class_list);
+            CFCType_resolve(type);
             STR_EQ(test, CFCType_get_specifier(type), expected,
                    "object_type_specifier: %s", class_name);
             FREEMEM(src);

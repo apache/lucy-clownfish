@@ -61,9 +61,9 @@ CFCParamList_init(CFCParamList *self, int variadic) {
 }
 
 void
-CFCParamList_resolve_types(CFCParamList *self, struct CFCClass **classes) {
+CFCParamList_resolve_types(CFCParamList *self) {
     for (size_t i = 0; self->variables[i]; ++i) {
-        CFCVariable_resolve_type(self->variables[i], classes);
+        CFCVariable_resolve_type(self->variables[i]);
     }
 }
 

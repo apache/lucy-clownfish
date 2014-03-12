@@ -126,12 +126,9 @@ S_run_tests(CFCTest *test) {
         = CFCTest_parse_method(test, parser, "void Do_Stuff(Foo *self);");
     CFCClass_add_method(foo, do_stuff);
 
-    CFCClass *class_list[6] = {
-        foo, foo_jr, final_foo, thing_class, widget_class, NULL
-    };
-    CFCClass_resolve_types(foo, class_list);
-    CFCClass_resolve_types(foo_jr, class_list);
-    CFCClass_resolve_types(final_foo, class_list);
+    CFCClass_resolve_types(foo);
+    CFCClass_resolve_types(foo_jr);
+    CFCClass_resolve_types(final_foo);
 
     CFCClass_add_child(foo, foo_jr);
     CFCClass_add_child(foo_jr, final_foo);

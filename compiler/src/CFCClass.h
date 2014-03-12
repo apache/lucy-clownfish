@@ -142,7 +142,7 @@ CFCClass_find_novel_method(CFCClass *self, const char *sym);
 /** Find the actual class of all object variables without prefix.
  */
 void
-CFCClass_resolve_types(CFCClass *self, CFCClass **classes);
+CFCClass_resolve_types(CFCClass *self);
 
 /** Bequeath all inherited methods and members to children.
  */
