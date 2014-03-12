@@ -256,6 +256,9 @@ S_new_from_json(const char *json, const char *path, int is_included) {
     if (!parsed) {
         CFCUtil_die("Invalid JSON parcel definition in '%s'", path);
     }
+    if (parsed->type != JSON_HASH) {
+        CFCUtil_die("Parcel definition must be a hash in '%s'", path);
+    }
     const char *name     = NULL;
     const char *nickname = NULL;
     CFCVersion *version  = NULL;
@@ -285,6 +288,10 @@ S_new_from_json(const char *json, const char *path, int is_included) {
             }
             version = CFCVersion_new(value->string);
         }
+        else {
+            CFCUtil_die("Unrecognized key: '%s' (filepath '%s')",
+                        key->string, path);
+        }
     }
     if (!name) {
         CFCUtil_die("Missing required key 'name' (filepath '%s')", path);
@@ -294,20 +301,6 @@ S_new_from_json(const char *json, const char *path, int is_included) {
     }
     CFCParcel *self = CFCParcel_new(name, nickname, version, is_included);
     CFCBase_decref((CFCBase*)version);
-
-    for (size_t i = 0, max = parsed->num_kids; i < max; i += 2) {
-        JSONNode *key   = parsed->kids[i];
-        if (strcmp(key->string, "name") == 0
-            || strcmp(key->string, "nickname") == 0
-            || strcmp(key->string, "version") == 0
-           ) {
-            ;
-        }
-        else {
-            CFCUtil_die("Unrecognized key: '%s' (filepath '%s')",
-                        key->string, path);
-        }
-    }
 
     S_destroy_json(parsed);
     return self;
