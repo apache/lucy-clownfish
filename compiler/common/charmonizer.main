@@ -136,6 +136,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     makefile_cflags = chaz_CC_new_cflags();
 
     chaz_CFlags_enable_optimization(makefile_cflags);
+    chaz_CFlags_enable_debugging(makefile_cflags);
     chaz_CFlags_add_include_dir(makefile_cflags, ".");
     chaz_CFlags_add_include_dir(makefile_cflags, include_dir);
     chaz_CFlags_add_include_dir(makefile_cflags, src_dir);
