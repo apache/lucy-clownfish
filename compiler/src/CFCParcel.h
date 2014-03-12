@@ -127,22 +127,11 @@ CFCParcel_included(CFCParcel *self);
 int
 CFCParcel_required(CFCParcel *self);
 
-/** Add another Parcel that the Parcel depends on.
- */
-void
-CFCParcel_add_dependent_parcel(CFCParcel *self, CFCParcel *dependent);
-
 /** Add another Parcel containing superclasses that subclasses in the Parcel
- * extend. Also adds the other Parcel to the Parcel's dependencies.
+ * extend.
  */
 void
 CFCParcel_add_inherited_parcel(CFCParcel *self, CFCParcel *inherited);
-
-/** Return a NULL-terminated array of all Parcels that the Parcel depends on.
- * Must be freed by the caller.
- */
-CFCParcel**
-CFCParcel_dependent_parcels(CFCParcel *self);
 
 /** Return a NULL-terminated array of all Parcels containing superclasses that
  * subclasses in the Parcel extend. Must be freed by the caller.
@@ -155,11 +144,22 @@ CFCParcel_inherited_parcels(CFCParcel *self);
 CFCPrereq**
 CFCParcel_get_prereqs(CFCParcel *self);
 
+/** Return a NULL-terminated array of all prerequisite Parcels. Must be freed
+ * by the caller.
+ */
+CFCParcel**
+CFCParcel_prereq_parcels(CFCParcel *self);
+
 /** Recursively verify that all prerequisite parcels are present in the
  * required version. Mark all needed parcels including 'self' as required.
  */
 void
 CFCParcel_check_prereqs(CFCParcel *self);
+
+/** Return true if parcel equals self or is a direct prerequisite of self.
+ */
+int
+CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel);
 
 /**************************************************************************/
 

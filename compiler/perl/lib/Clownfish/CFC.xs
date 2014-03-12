@@ -1148,13 +1148,6 @@ CODE:
 OUTPUT: RETVAL
 
 void
-add_dependent_parcel(self, dependent)
-    CFCParcel *self;
-    CFCParcel *dependent;
-PPCODE:
-    CFCParcel_add_dependent_parcel(self, dependent);
-
-void
 add_inherited_parcel(self, inherited)
     CFCParcel *self;
     CFCParcel *inherited;
@@ -1178,7 +1171,7 @@ ALIAS:
     get_PREFIX = 10
     get_version = 12
     included    = 14
-    dependent_parcels = 16
+    prereq_parcels    = 16
     inherited_parcels = 18
 PPCODE:
 {
@@ -1217,7 +1210,7 @@ PPCODE:
             retval = newSViv(CFCParcel_included(self));
             break;
         case 16: {
-                CFCParcel **parcels = CFCParcel_dependent_parcels(self);
+                CFCParcel **parcels = CFCParcel_prereq_parcels(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)parcels);
                 FREEMEM(parcels);
             }

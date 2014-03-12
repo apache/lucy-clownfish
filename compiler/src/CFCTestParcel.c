@@ -20,6 +20,7 @@
 #include "CFCBase.h"
 #include "CFCParcel.h"
 #include "CFCSymbol.h"
+#include "CFCUtil.h"
 #include "CFCVersion.h"
 #include "CFCTest.h"
 
@@ -39,7 +40,7 @@ S_run_parcel_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    26,
+    32,
     S_run_tests
 };
 
@@ -204,6 +205,17 @@ S_run_parcel_tests(CFCTest *test) {
         INT_EQ(test, CFCParcel_required(cfish), true, "prereq required");
         INT_EQ(test, CFCParcel_required(crust), true, "self required");
 
+        CFCParcel **prereq_parcels = CFCParcel_prereq_parcels(crust);
+        OK(test, prereq_parcels[0] != NULL, "prereq_parcels[0]");
+        const char *name = CFCParcel_get_name(prereq_parcels[0]);
+        STR_EQ(test, name, "Clownfish", "prereq_parcels[0] name");
+        OK(test, prereq_parcels[1] == NULL, "prereq_parcels[0]");
+
+        OK(test, CFCParcel_has_prereq(crust, cfish), "has_prereq");
+        OK(test, CFCParcel_has_prereq(crust, crust), "has_prereq self");
+        OK(test, !CFCParcel_has_prereq(crust, foo), "has_prereq false");
+
+        FREEMEM(prereq_parcels);
         CFCBase_decref((CFCBase*)crust);
         CFCBase_decref((CFCBase*)cfish_version);
         CFCBase_decref((CFCBase*)cfish);

@@ -361,6 +361,14 @@ CFCClass_add_child(CFCClass *self, CFCClass *child) {
     // Add parcel dependency.
     CFCParcel *parcel       = CFCClass_get_parcel(self);
     CFCParcel *child_parcel = CFCClass_get_parcel(child);
+    if (!CFCParcel_has_prereq(child_parcel, parcel)) {
+        CFCUtil_die("Class '%s' inherits from '%s', but parcel '%s' is not a"
+                    " prerequisite of '%s'",
+                    CFCClass_get_class_name(child),
+                    CFCClass_get_class_name(self),
+                    CFCParcel_get_name(parcel),
+                    CFCParcel_get_name(child_parcel));
+    }
     CFCParcel_add_inherited_parcel(child_parcel, parcel);
 }
 

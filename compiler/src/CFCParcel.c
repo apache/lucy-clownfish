@@ -40,8 +40,6 @@ struct CFCParcel {
     char *privacy_sym;
     int is_included;
     int is_required;
-    char **dependent_parcels;
-    size_t num_dependent_parcels;
     char **inherited_parcels;
     size_t num_inherited_parcels;
     CFCPrereq **prereqs;
@@ -252,13 +250,9 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     self->is_included = is_included;
     self->is_required = false;
 
-    // Initialize dependencies.
-    self->dependent_parcels = (char**)CALLOCATE(1, sizeof(char*));
-    self->num_dependent_parcels = 0;
+    // Initialize arrays.
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
     self->num_inherited_parcels = 0;
-
-    // Initialize prereqs.
     self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
     self->num_prereqs = 0;
 
@@ -389,10 +383,6 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->Prefix);
     FREEMEM(self->PREFIX);
     FREEMEM(self->privacy_sym);
-    for (size_t i = 0; self->dependent_parcels[i]; ++i) {
-        FREEMEM(self->dependent_parcels[i]);
-    }
-    FREEMEM(self->dependent_parcels);
     for (size_t i = 0; self->inherited_parcels[i]; ++i) {
         FREEMEM(self->inherited_parcels[i]);
     }
@@ -469,27 +459,6 @@ CFCParcel_required(CFCParcel *self) {
 }
 
 void
-CFCParcel_add_dependent_parcel(CFCParcel *self, CFCParcel *dependent) {
-    const char *name     = CFCParcel_get_name(self);
-    const char *dep_name = CFCParcel_get_name(dependent);
-
-    if (strcmp(name, dep_name) == 0) { return; }
-
-    for (size_t i = 0; self->dependent_parcels[i]; ++i) {
-        const char *other_name = self->dependent_parcels[i];
-        if (strcmp(other_name, dep_name) == 0) { return; }
-    }
-
-    size_t num_parcels = self->num_dependent_parcels;
-    self->dependent_parcels
-        = (char**)REALLOCATE(self->dependent_parcels,
-                             (num_parcels + 2) * sizeof(char*));
-    self->dependent_parcels[num_parcels]   = CFCUtil_strdup(dep_name);
-    self->dependent_parcels[num_parcels+1] = NULL;
-    self->num_dependent_parcels = num_parcels + 1;
-}
-
-void
 CFCParcel_add_inherited_parcel(CFCParcel *self, CFCParcel *inherited) {
     const char *name     = CFCParcel_get_name(self);
     const char *inh_name = CFCParcel_get_name(inherited);
@@ -508,22 +477,6 @@ CFCParcel_add_inherited_parcel(CFCParcel *self, CFCParcel *inherited) {
     self->inherited_parcels[num_parcels]   = CFCUtil_strdup(inh_name);
     self->inherited_parcels[num_parcels+1] = NULL;
     self->num_inherited_parcels = num_parcels + 1;
-
-    // Add to dependent parcels.
-    CFCParcel_add_dependent_parcel(self, inherited);
-}
-
-CFCParcel**
-CFCParcel_dependent_parcels(CFCParcel *self) {
-    CFCParcel **parcels
-        = (CFCParcel**)CALLOCATE(self->num_dependent_parcels + 1,
-                                 sizeof(CFCParcel*));
-
-    for (size_t i = 0; self->dependent_parcels[i]; ++i) {
-        parcels[i] = CFCParcel_fetch(self->dependent_parcels[i]);
-    }
-
-    return parcels;
 }
 
 CFCParcel**
@@ -542,6 +495,19 @@ CFCParcel_inherited_parcels(CFCParcel *self) {
 CFCPrereq**
 CFCParcel_get_prereqs(CFCParcel *self) {
     return self->prereqs;
+}
+
+CFCParcel**
+CFCParcel_prereq_parcels(CFCParcel *self) {
+    CFCParcel **parcels
+        = (CFCParcel**)CALLOCATE(self->num_prereqs + 1, sizeof(CFCParcel*));
+
+    for (size_t i = 0; self->prereqs[i]; ++i) {
+        const char *name = CFCPrereq_get_name(self->prereqs[i]);
+        parcels[i] = CFCParcel_fetch(name);
+    }
+
+    return parcels;
 }
 
 void
@@ -576,6 +542,24 @@ CFCParcel_check_prereqs(CFCParcel *self) {
 
         CFCParcel_check_prereqs(req_parcel);
     }
+}
+
+int
+CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel) {
+    const char *name = CFCParcel_get_name(parcel);
+
+    if (strcmp(CFCParcel_get_name(self), name) == 0) {
+        return true;
+    }
+
+    for (int i = 0; self->prereqs[i]; ++i) {
+        const char *prereq_name = CFCPrereq_get_name(self->prereqs[i]);
+        if (strcmp(prereq_name, name) == 0) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**************************************************************************/
