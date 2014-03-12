@@ -49,6 +49,7 @@ static CFCParcel *default_parcel = NULL;
 
 #define JSON_STRING 1
 #define JSON_HASH   2
+#define JSON_NULL   3
 
 typedef struct JSONNode {
     int type;
@@ -65,6 +66,9 @@ S_parse_json_hash(const char **json);
 
 static JSONNode*
 S_parse_json_string(const char **json);
+
+static JSONNode*
+S_parse_json_null(const char **json);
 
 static void
 S_skip_whitespace(const char **json);
@@ -543,6 +547,9 @@ S_parse_json_hash(const char **json) {
         else if (*text == '{') {
             value = S_parse_json_hash(&text);
         }
+        else if (*text == 'n') {
+            value = S_parse_json_null(&text);
+        }
         if (!value) {
             S_destroy_json(node);
             return NULL;
@@ -592,6 +599,24 @@ S_parse_json_string(const char **json) {
     // Move pointer.
     text++;
     *json = text;
+
+    return node;
+}
+
+// Parse a JSON null value.
+static JSONNode*
+S_parse_json_null(const char **json) {
+    static const char null_str[] = "null";
+
+    if (strncmp(*json, null_str, sizeof(null_str) - 1) != 0) {
+        return NULL;
+    }
+
+    JSONNode *node = (JSONNode*)calloc(1, sizeof(JSONNode));
+    node->type = JSON_NULL;
+
+    // Move pointer.
+    *json += sizeof(null_str) - 1;
 
     return node;
 }
