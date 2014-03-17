@@ -16,8 +16,21 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 21;
 use File::Spec::Functions qw( catfile );
+
+BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
+
+{
+    my $version = Clownfish::CFC::Model::Version->new( vstring => 'v34.5.67' );
+    my $prereq  = Clownfish::CFC::Model::Prereq->new(
+        name    => 'Flour',
+        version => $version,
+    );
+    ok( $prereq, "new prereq" );
+    is( $prereq->get_name, 'Flour', 'prereq get_name' );
+    is( $prereq->get_version->compare_to($version), 0, 'prereq get_version');
+}
 
 BEGIN { use_ok('Clownfish::CFC::Model::Parcel') }
 

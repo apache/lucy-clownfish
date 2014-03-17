@@ -390,6 +390,26 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
 }
 
 {
+    package Clownfish::CFC::Model::Prereq;
+    BEGIN { push our @ISA, 'Clownfish::CFC::Base' }
+    use Clownfish::CFC::Util qw( verify_args );
+    use Scalar::Util qw( blessed );
+    use Carp;
+
+    our %new_PARAMS = (
+        name        => undef,
+        version     => undef,
+    );
+
+    sub new {
+        my ( $either, %args ) = @_;
+        verify_args( \%new_PARAMS, %args ) or confess $@;
+        confess "no subclassing allowed" unless $either eq __PACKAGE__;
+        return _new( @args{qw( name version )} );
+    }
+}
+
+{
     package Clownfish::CFC::Model::Symbol;
     BEGIN { push our @ISA, 'Clownfish::CFC::Base' }
     use Clownfish::CFC::Util qw( verify_args );

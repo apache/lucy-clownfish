@@ -1205,6 +1205,42 @@ PPCODE:
 }
 
 
+MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Prereq
+
+SV*
+_new(name_sv, version)
+    SV *name_sv;
+    CFCVersion *version;
+CODE:
+    const char *name  = SvOK(name_sv)  ? SvPV_nolen(name_sv)  : NULL;
+    CFCPrereq *self = CFCPrereq_new(name, version);
+    RETVAL = S_cfcbase_to_perlref(self);
+    CFCBase_decref((CFCBase*)self);
+OUTPUT: RETVAL
+
+void
+_set_or_get(self, ...)
+    CFCPrereq *self;
+ALIAS:
+    get_name    = 2
+    get_version = 4
+PPCODE:
+{
+    START_SET_OR_GET_SWITCH
+        case 2: {
+                const char *name = CFCPrereq_get_name(self);
+                retval = newSVpvn(name, strlen(name));
+            }
+            break;
+        case 4: {
+                CFCVersion *value = CFCPrereq_get_version(self);
+                retval = S_cfcbase_to_perlref(value);
+            }
+            break;
+    END_SET_OR_GET_SWITCH
+}
+
+
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Symbol
 
 SV*
