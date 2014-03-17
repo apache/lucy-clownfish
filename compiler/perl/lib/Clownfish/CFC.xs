@@ -1135,6 +1135,35 @@ PPCODE:
     CFCParcel_add_inherited_parcel(self, inherited);
 
 void
+check_prereqs(self)
+    CFCParcel *self;
+PPCODE:
+    CFCParcel_check_prereqs(self);
+
+int
+has_prereq(self, parcel)
+    CFCParcel *self;
+    CFCParcel *parcel;
+CODE:
+    RETVAL = CFCParcel_has_prereq(self, parcel);
+OUTPUT: RETVAL
+
+void
+add_struct_sym(self, struct_sym)
+    CFCParcel  *self;
+    const char *struct_sym;
+PPCODE:
+    CFCParcel_add_struct_sym(self, struct_sym);
+
+CFCParcel*
+lookup_struct_sym(self, struct_sym)
+    CFCParcel  *self;
+    const char *struct_sym;
+CODE:
+    RETVAL = CFCParcel_lookup_struct_sym(self, struct_sym);
+OUTPUT: RETVAL
+
+void
 reap_singletons(...)
 PPCODE:
     CHY_UNUSED_VAR(items);
@@ -1144,15 +1173,17 @@ void
 _set_or_get(self, ...)
     CFCParcel *self;
 ALIAS:
-    get_name   = 2
-    get_cnick  = 4
-    get_prefix = 6
-    get_Prefix = 8
-    get_PREFIX = 10
-    get_version = 12
-    included    = 14
-    prereq_parcels    = 16
-    inherited_parcels = 18
+    get_name          = 2
+    get_cnick         = 4
+    get_prefix        = 6
+    get_Prefix        = 8
+    get_PREFIX        = 10
+    get_version       = 12
+    get_prereqs       = 14
+    included          = 16
+    required          = 18
+    prereq_parcels    = 20
+    inherited_parcels = 22
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -1186,16 +1217,24 @@ PPCODE:
                 retval = S_cfcbase_to_perlref(value);
             }
             break;
-        case 14:
+        case 14: {
+                CFCPrereq **prereqs = CFCParcel_get_prereqs(self);
+                retval = S_array_of_cfcbase_to_av((CFCBase**)prereqs);
+            }
+            break;
+        case 16:
             retval = newSViv(CFCParcel_included(self));
             break;
-        case 16: {
+        case 18:
+            retval = newSViv(CFCParcel_required(self));
+            break;
+        case 20: {
                 CFCParcel **parcels = CFCParcel_prereq_parcels(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)parcels);
                 FREEMEM(parcels);
             }
             break;
-        case 18: {
+        case 22: {
                 CFCParcel **parcels = CFCParcel_inherited_parcels(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)parcels);
                 FREEMEM(parcels);

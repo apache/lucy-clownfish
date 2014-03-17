@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 41;
 use File::Spec::Functions qw( catfile );
 
 BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
@@ -112,4 +112,95 @@ $thing = Clownfish::CFC::Model::Symbol->new(
 is( $thing->get_prefix, 'crust_', 'get_prefix with parcel' );
 is( $thing->get_Prefix, 'Crust_', 'get_Prefix with parcel' );
 is( $thing->get_PREFIX, 'CRUST_', 'get_PREFIx with parcel' );
+
+Clownfish::CFC::Model::Parcel->reap_singletons();
+
+{
+    my $json = qq|
+        {
+            "name": "Crustacean",
+            "version": "v0.1.0",
+            "prerequisites": {
+                "Clownfish": null,
+                "Arthropod": "v30.104.5"
+            }
+        }
+    |;
+    my $parcel = Clownfish::CFC::Model::Parcel->new_from_json( json => $json );
+
+    my $prereqs = $parcel->get_prereqs;
+    isa_ok( $prereqs, 'ARRAY', 'prereqs' );
+    is( scalar(@$prereqs), 2, 'number of prereqs' );
+
+    my $cfish = $prereqs->[0];
+    isa_ok( $cfish, 'Clownfish::CFC::Model::Prereq', 'prereqs[0]');
+    is( $cfish->get_name, 'Clownfish', 'prereqs[0] name');
+    my $v0 = Clownfish::CFC::Model::Version->new( vstring => 'v0' );
+    is( $cfish->get_version->compare_to($v0), 0, 'prereqs[0] version' );
+
+    my $apod = $prereqs->[1];
+    isa_ok( $apod, 'Clownfish::CFC::Model::Prereq', 'prereqs[1]');
+    is( $apod->get_name, 'Arthropod', 'prereqs[1] name');
+    my $v30_104_5 = Clownfish::CFC::Model::Version->new(
+        vstring => 'v30.104.5',
+    );
+    is( $apod->get_version->compare_to($v30_104_5), 0, 'prereqs[1] version' );
+}
+
+{
+    my $foo = Clownfish::CFC::Model::Parcel->new(
+        name        => 'Foo',
+        is_included => 1,
+    );
+    $foo->register;
+
+    my $cfish_version = Clownfish::CFC::Model::Version->new(
+        vstring => 'v0.8.7',
+    );
+    my $cfish = Clownfish::CFC::Model::Parcel->new(
+        name        => 'Clownfish',
+        version     => $cfish_version,
+        is_included => 1,
+    );
+    $cfish->register;
+
+    my $json = qq|
+        {
+            "name": "Crustacean",
+            "version": "v0.1.0",
+            "prerequisites": {
+                "Clownfish": "v0.8.5",
+            }
+        }
+    |;
+    my $crust = Clownfish::CFC::Model::Parcel->new_from_json( json => $json );
+    $crust->register;
+
+    $crust->check_prereqs;
+    ok( !$foo->required, 'parcel not required' );
+    ok( $cfish->required, 'prereq required' );
+    ok( $crust->required, 'self required' );
+
+    my $prereq_parcels = $crust->prereq_parcels;
+    isa_ok( $prereq_parcels, 'ARRAY', 'prereq_parcels' );
+    is( scalar(@$prereq_parcels), 1, 'number of prereq_parcels' );
+    is( $prereq_parcels->[0]->get_name, 'Clownfish', 'prereq_parcels[0]');
+
+    ok( $crust->has_prereq($cfish), 'has_prereq' );
+    ok( $crust->has_prereq($crust), 'has_prereq self' );
+    ok( !$crust->has_prereq($foo), 'has_prereq false' );
+
+    $cfish->add_struct_sym('Swim');
+    $crust->add_struct_sym('Pinch');
+    $foo->add_struct_sym('Bar');
+    my $found;
+    $found = $crust->lookup_struct_sym('Swim');
+    is( $found->get_name, 'Clownfish', 'lookup_struct_sym prereq' );
+    $found = $crust->lookup_struct_sym('Pinch');
+    is( $found->get_name, 'Crustacean', 'lookup_struct_sym self' );
+    $found = $crust->lookup_struct_sym('Bar');
+    ok( !$found, 'lookup_struct_sym other' );
+
+    Clownfish::CFC::Model::Parcel->reap_singletons();
+}
 
