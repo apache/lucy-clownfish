@@ -333,21 +333,27 @@ S_run_object_tests(CFCTest *test) {
         = CFCClass_create(neato_parcel, NULL, "Foo", NULL, NULL, NULL, NULL,
                           NULL, false, false);
     CFCClass *class_list[2] = { foo_class, NULL };
-    CFCType *foo = CFCType_new_object(0, NULL, "Foo", 1);
+    CFCType *foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
     CFCType_resolve(foo, class_list);
 
     {
-        CFCType *another_foo = CFCType_new_object(0, NULL, "Foo", 1);
+        CFCType *another_foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
         CFCType_resolve(another_foo, class_list);
         OK(test, CFCType_equals(foo, another_foo), "equals");
         CFCBase_decref((CFCBase*)another_foo);
     }
 
     {
-        CFCType *bar = CFCType_new_object(0, NULL, "Bar", 1);
+        CFCClass *bar_class
+            = CFCClass_create(neato_parcel, NULL, "Bar", NULL, NULL, NULL,
+                              NULL, NULL, false, false);
+        CFCType *bar = CFCType_new_object(0, neato_parcel, "Bar", 1);
+        CFCClass *bar_class_list[2] = { bar_class, NULL };
+        CFCType_resolve(bar, bar_class_list);
         OK(test, !CFCType_equals(foo, bar),
            "different specifier spoils equals");
         CFCBase_decref((CFCBase*)bar);
+        CFCBase_decref((CFCBase*)bar_class);
     }
 
     {
@@ -371,7 +377,8 @@ S_run_object_tests(CFCTest *test) {
     {
         for (int i = 0; i < 4; ++i) {
             CFCType *modified_foo
-                = CFCType_new_object(flags[i], NULL, "Foo", 1);
+                = CFCType_new_object(flags[i], neato_parcel, "Foo", 1);
+            CFCType_resolve(modified_foo, class_list);
             OK(test, accessors[i](modified_foo), "%s", modifiers[i]);
             OK(test, !accessors[i](foo), "not %s", modifiers[i]);
             OK(test, !CFCType_equals(foo, modified_foo),

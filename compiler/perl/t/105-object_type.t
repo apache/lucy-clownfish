@@ -69,6 +69,7 @@ like( $@, qr/specifier/i, "specifier required" );
 for ( 0, 2 ) {
     eval {
         my $type = Clownfish::CFC::Model::Type->new_object(
+            parcel      => 'Neato',
             specifier   => 'Foo',
             indirection => $_,
         );
@@ -76,12 +77,27 @@ for ( 0, 2 ) {
     like( $@, qr/indirection/i, "invalid indirection of $_" );
 }
 
-my $foo_type = Clownfish::CFC::Model::Type->new_object( specifier => 'Foo' );
-my $another_foo
-    = Clownfish::CFC::Model::Type->new_object( specifier => 'Foo' );
+my $foo_type = Clownfish::CFC::Model::Type->new_object(
+    parcel    => 'Neato',
+    specifier => 'Foo',
+);
+$foo_type->resolve(\@classes);
+my $another_foo = Clownfish::CFC::Model::Type->new_object(
+    parcel    => 'Neato',
+    specifier => 'Foo',
+);
+$another_foo->resolve(\@classes);
 ok( $foo_type->equals($another_foo), "equals" );
 
-my $bar_type = Clownfish::CFC::Model::Type->new_object( specifier => 'Bar' );
+my $bar_class = Clownfish::CFC::Model::Class->create(
+    parcel     => 'Neato',
+    class_name => 'Bar',
+);
+my $bar_type = Clownfish::CFC::Model::Type->new_object(
+    parcel    => 'Neato',
+    specifier => 'Bar',
+);
+$bar_type->resolve([ $bar_class ]);
 ok( !$foo_type->equals($bar_type), "different specifier spoils equals" );
 
 my $foreign_foo_class = Clownfish::CFC::Model::Class->create(
@@ -89,8 +105,8 @@ my $foreign_foo_class = Clownfish::CFC::Model::Class->create(
     class_name => 'Foreign::Foo',
 );
 my $foreign_foo = Clownfish::CFC::Model::Type->new_object(
-    specifier => 'Foo',
     parcel    => 'Foreign',
+    specifier => 'Foo',
 );
 $foreign_foo->resolve([ $foreign_foo_class ]);
 ok( !$foo_type->equals($foreign_foo), "different parcel spoils equals" );
@@ -98,9 +114,11 @@ is( $foreign_foo->get_specifier, "foreign_Foo",
     "prepend parcel prefix to specifier" );
 
 my $incremented_foo = Clownfish::CFC::Model::Type->new_object(
+    parcel      => 'Neato',
     specifier   => 'Foo',
     incremented => 1,
 );
+$incremented_foo->resolve(\@classes);
 ok( $incremented_foo->incremented, "incremented" );
 ok( !$foo_type->incremented,       "not incremented" );
 ok( !$foo_type->equals($incremented_foo),
@@ -108,9 +126,11 @@ ok( !$foo_type->equals($incremented_foo),
 );
 
 my $decremented_foo = Clownfish::CFC::Model::Type->new_object(
+    parcel      => 'Neato',
     specifier   => 'Foo',
     decremented => 1,
 );
+$decremented_foo->resolve(\@classes);
 ok( $decremented_foo->decremented, "decremented" );
 ok( !$foo_type->decremented,       "not decremented" );
 ok( !$foo_type->equals($decremented_foo),
@@ -118,6 +138,7 @@ ok( !$foo_type->equals($decremented_foo),
 );
 
 my $const_foo = Clownfish::CFC::Model::Type->new_object(
+    parcel    => 'Neato',
     specifier => 'Foo',
     const     => 1,
 );
