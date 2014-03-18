@@ -344,7 +344,7 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
         CFCFileSpec *file_spec = CFCFileSpec_new(source_dir, path_part,
                                                  is_included);
 
-        // Slurp, parse, add parsed file to pool.
+        // Slurp and parse file.
         size_t unused;
         char *content = CFCUtil_slurp_text(source_path, &unused);
         CFCFile *file = CFCParser_parse_file(self->parser, content, file_spec);
@@ -352,20 +352,13 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
         if (!file) {
             CFCUtil_die("parser error for %s", source_path);
         }
-        S_add_file(self, file);
 
-        CFCClass **classes_in_file = CFCFile_classes(file);
-        for (size_t j = 0; classes_in_file[j] != NULL; j++) {
-            if (self->num_classes == self->classes_cap) {
-                self->classes_cap += 10;
-                self->classes = (CFCClass**)REALLOCATE(
-                                  self->classes,
-                                  (self->classes_cap + 1) * sizeof(CFCClass*));
-            }
-            self->classes[self->num_classes++]
-                = (CFCClass*)CFCBase_incref((CFCBase*)classes_in_file[j]);
-            self->classes[self->num_classes] = NULL;
+        // Add parsed file to pool if it's from a required parcel.
+        CFCParcel *parcel = CFCFile_get_parcel(file);
+        if (CFCParcel_required(parcel)) {
+            S_add_file(self, file);
         }
+
         CFCBase_decref((CFCBase*)file);
         CFCBase_decref((CFCBase*)file_spec);
     }
@@ -530,6 +523,7 @@ static void
 S_add_file(CFCHierarchy *self, CFCFile *file) {
     CFCUTIL_NULL_CHECK(file);
     CFCClass **classes = CFCFile_classes(file);
+
     for (size_t i = 0; self->files[i] != NULL; i++) {
         CFCFile *existing = self->files[i];
         CFCClass **existing_classes = CFCFile_classes(existing);
@@ -545,12 +539,25 @@ S_add_file(CFCHierarchy *self, CFCFile *file) {
             }
         }
     }
+
     self->num_files++;
     size_t size = (self->num_files + 1) * sizeof(CFCFile*);
     self->files = (CFCFile**)REALLOCATE(self->files, size);
     self->files[self->num_files - 1]
         = (CFCFile*)CFCBase_incref((CFCBase*)file);
     self->files[self->num_files] = NULL;
+
+    for (size_t i = 0; classes[i] != NULL; i++) {
+        if (self->num_classes == self->classes_cap) {
+            self->classes_cap += 10;
+            self->classes = (CFCClass**)REALLOCATE(
+                              self->classes,
+                              (self->classes_cap + 1) * sizeof(CFCClass*));
+        }
+        self->classes[self->num_classes++]
+            = (CFCClass*)CFCBase_incref((CFCBase*)classes[i]);
+        self->classes[self->num_classes] = NULL;
+    }
 }
 
 struct CFCFile**

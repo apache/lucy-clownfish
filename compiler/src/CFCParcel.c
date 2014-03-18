@@ -480,6 +480,9 @@ CFCParcel_prereq_parcels(CFCParcel *self) {
 void
 CFCParcel_check_prereqs(CFCParcel *self) {
     // This is essentially a depth-first search of the dependency graph.
+    // It might be possible to skip indirect dependencies, at least if
+    // they're not part of the inheritance chain. But for now, all
+    // dependencies are marked recursively.
 
     if (self->is_required) { return; }
     self->is_required = true;
