@@ -56,19 +56,19 @@ CFCBindFile_write_h(CFCFile *file, const char *dest, const char *header,
     const char *include_guard_start = CFCFile_guard_start(file);
     const char *include_guard_close = CFCFile_guard_close(file);
 
-    // Aggregate block content.
+    // Include parcel header.
     char *content = CFCUtil_strdup("");
+    CFCParcel *parcel = CFCFile_get_parcel(file);
+    const char *prefix = CFCParcel_get_prefix(parcel);
+    content = CFCUtil_cat(content, "#include \"", prefix, "parcel.h\"\n\n",
+                          NULL);
+
+    // Aggregate block content.
     CFCBase **blocks = CFCFile_blocks(file);
     for (int i = 0; blocks[i] != NULL; i++) {
         const char *cfc_class = CFCBase_get_cfc_class(blocks[i]);
 
-        if (strcmp(cfc_class, "Clownfish::CFC::Model::Parcel") == 0) {
-            CFCParcel *parcel = (CFCParcel*)blocks[i];
-            const char *prefix = CFCParcel_get_prefix(parcel);
-            content = CFCUtil_cat(content, "#include \"", prefix,
-                                  "parcel.h\"\n\n", NULL);
-        }
-        else if (strcmp(cfc_class, "Clownfish::CFC::Model::Class") == 0) {
+        if (strcmp(cfc_class, "Clownfish::CFC::Model::Class") == 0) {
             CFCBindClass *class_binding
                 = CFCBindClass_new((CFCClass*)blocks[i]);
             char *c_header = CFCBindClass_to_c_header(class_binding);

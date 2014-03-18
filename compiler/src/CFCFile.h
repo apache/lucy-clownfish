@@ -31,15 +31,17 @@ typedef struct CFCFile CFCFile;
 struct CFCBase;
 struct CFCClass;
 struct CFCFileSpec;
+struct CFCParcel;
 
 /**
  * @param spec - A CFCFileSpec object describing the file
 */
 CFCFile*
-CFCFile_new(struct CFCFileSpec *spec);
+CFCFile_new(struct CFCParcel *parcel, struct CFCFileSpec *spec);
 
 CFCFile*
-CFCFile_init(CFCFile *self, struct CFCFileSpec *spec);
+CFCFile_init(CFCFile *self, struct CFCParcel *parcel,
+             struct CFCFileSpec *spec);
 
 void
 CFCFile_destroy(CFCFile *self);
@@ -66,6 +68,9 @@ CFCFile_h_path(CFCFile *self, const char *base_dir);
  */
 char*
 CFCFile_cfh_path(CFCFile *self, const char *base_dir);
+
+struct CFCParcel*
+CFCFile_get_parcel(CFCFile *self);
 
 /** Return all blocks as an array.
  */

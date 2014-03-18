@@ -172,13 +172,16 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
     use Clownfish::CFC::Util qw( verify_args );
     use Carp;
 
-    our %new_PARAMS = ( spec => undef );
+    our %new_PARAMS = (
+        parcel => undef,
+        spec   => undef,
+    );
 
     sub new {
         my ( $either, %args ) = @_;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
         verify_args( \%new_PARAMS, %args ) or confess $@;
-        return _new( $args{spec} );
+        return _new( @args{ qw( parcel spec ) } );
     }
 }
 

@@ -33,7 +33,7 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_FILE = {
     "Clownfish::CFC::Model::File",
-    21,
+    20,
     S_run_tests
 };
 
@@ -105,36 +105,19 @@ S_run_tests(CFCTest *test) {
         STR_EQ(test, CFCType_get_specifier(bar_type), "stuff_Bar",
                "parcel def is sticky");
 
+        CFCParcel *parcel = CFCFile_get_parcel(file);
+        STR_EQ(test, CFCParcel_get_name(parcel), "Stuff", "get_parcel");
+
         CFCBase **blocks = CFCFile_blocks(file);
         STR_EQ(test, CFCBase_get_cfc_class(blocks[0]),
-               "Clownfish::CFC::Model::Parcel", "blocks[0]");
+               "Clownfish::CFC::Model::Class", "blocks[0]");
         STR_EQ(test, CFCBase_get_cfc_class(blocks[1]),
                "Clownfish::CFC::Model::Class", "blocks[1]");
         STR_EQ(test, CFCBase_get_cfc_class(blocks[2]),
                "Clownfish::CFC::Model::Class", "blocks[2]");
         STR_EQ(test, CFCBase_get_cfc_class(blocks[3]),
-               "Clownfish::CFC::Model::Class", "blocks[3]");
-        STR_EQ(test, CFCBase_get_cfc_class(blocks[4]),
-               "Clownfish::CFC::Model::CBlock", "blocks[4]");
-        OK(test, blocks[5] == NULL, "blocks[5]");
-
-        CFCBase_decref((CFCBase*)file);
-
-        CFCClass_clear_registry();
-    }
-
-    {
-        const char *string =
-            "class Stuff::Thing {\n"
-            "    Foo *foo;\n"
-            "    Bar *bar;\n"
-            "}\n";
-        CFCFile *file = CFCParser_parse_file(parser, string, file_spec);
-        CFCClass **classes = CFCFile_classes(file);
-        CFCVariable **member_vars = CFCClass_member_vars(classes[0]);
-        CFCType *foo_type = CFCVariable_get_type(member_vars[0]);
-        STR_EQ(test, CFCType_get_specifier(foo_type), "Foo",
-               "file production resets parcel");
+               "Clownfish::CFC::Model::CBlock", "blocks[3]");
+        OK(test, blocks[4] == NULL, "blocks[4]");
 
         CFCBase_decref((CFCBase*)file);
 

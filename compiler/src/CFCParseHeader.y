@@ -309,9 +309,11 @@ result ::= file(A).
     CFCBase_decref((CFCBase*)A);
 }
 
-file(A) ::= FILE_START. /* Pseudo token, not passed by lexer. */
+/* FILE_START is a pseudo token, not passed by lexer. */
+file(A) ::= FILE_START parcel_definition(B).
 {
-    A = CFCFile_new(CFCParser_get_file_spec(state));
+    A = CFCFile_new(B, CFCParser_get_file_spec(state));
+    CFCBase_decref((CFCBase*)B);
 }
 file(A) ::= file(B) major_block(C).
 {
@@ -322,7 +324,6 @@ file(A) ::= file(B) major_block(C).
 
 major_block(A) ::= class_declaration(B). { A = (CFCBase*)B; }
 major_block(A) ::= cblock(B).            { A = (CFCBase*)B; }
-major_block(A) ::= parcel_definition(B). { A = (CFCBase*)B; }
 
 parcel_definition(A) ::= PARCEL qualified_id(B) SEMICOLON.
 {

@@ -29,11 +29,13 @@
 #include "CFCBase.h"
 #include "CFCFile.h"
 #include "CFCFileSpec.h"
+#include "CFCParcel.h"
 #include "CFCUtil.h"
 #include "CFCClass.h"
 
 struct CFCFile {
     CFCBase base;
+    CFCParcel *parcel;
     CFCBase **blocks;
     CFCClass **classes;
     CFCFileSpec *spec;
@@ -50,15 +52,17 @@ static const CFCMeta CFCFILE_META = {
 };
 
 CFCFile*
-CFCFile_new(CFCFileSpec *spec) {
+CFCFile_new(CFCParcel *parcel, CFCFileSpec *spec) {
 
     CFCFile *self = (CFCFile*)CFCBase_allocate(&CFCFILE_META);
-    return CFCFile_init(self, spec);
+    return CFCFile_init(self, parcel, spec);
 }
 
 CFCFile*
-CFCFile_init(CFCFile *self, CFCFileSpec *spec) {
+CFCFile_init(CFCFile *self, CFCParcel *parcel, CFCFileSpec *spec) {
+    CFCUTIL_NULL_CHECK(parcel);
     CFCUTIL_NULL_CHECK(spec);
+    self->parcel     = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
     self->modified   = false;
     self->spec       = (CFCFileSpec*)CFCBase_incref((CFCBase*)spec);
     self->blocks     = (CFCBase**)CALLOCATE(1, sizeof(CFCBase*));
@@ -90,6 +94,7 @@ CFCFile_init(CFCFile *self, CFCFileSpec *spec) {
 
 void
 CFCFile_destroy(CFCFile *self) {
+    CFCBase_decref((CFCBase*)self->parcel);
     for (size_t i = 0; self->blocks[i] != NULL; i++) {
         CFCBase_decref(self->blocks[i]);
     }
@@ -178,6 +183,11 @@ CFCFile_h_path(CFCFile *self, const char *base_dir) {
 char*
 CFCFile_cfh_path(CFCFile *self, const char *base_dir) {
     return S_some_path(self, base_dir, ".cfh");
+}
+
+CFCParcel*
+CFCFile_get_parcel(CFCFile *self) {
+    return self->parcel;
 }
 
 CFCBase**

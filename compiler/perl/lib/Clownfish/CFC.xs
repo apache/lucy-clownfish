@@ -481,10 +481,11 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::File
 
 SV*
-_new(spec)
+_new(parcel, spec)
+    CFCParcel *parcel;
     CFCFileSpec *spec;
 CODE:
-    CFCFile *self = CFCFile_new(spec);
+    CFCFile *self = CFCFile_new(parcel, spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
@@ -510,6 +511,7 @@ ALIAS:
     classes            = 14
     get_source_dir     = 16
     included           = 18
+    get_parcel         = 20
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -553,6 +555,11 @@ PPCODE:
             break;
         case 18:
             retval = newSViv(CFCFile_included(self));
+            break;
+        case 20: {
+                CFCParcel *parcel = CFCFile_get_parcel(self);
+                retval = S_cfcbase_to_perlref(parcel);
+            }
             break;
     END_SET_OR_GET_SWITCH
 }

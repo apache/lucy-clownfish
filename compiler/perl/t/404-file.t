@@ -76,22 +76,16 @@ my $file_spec = Clownfish::CFC::Model::FileSpec->new(
         'stuff_Foo', 'file production picked up parcel def' );
     is( $bar->get_type->get_specifier, 'stuff_Bar', 'parcel def is sticky' );
 
+    my $parcel = $file->get_parcel;
+    isa_ok( $parcel, "Clownfish::CFC::Model::Parcel" );
+    is( $parcel->get_name, "Stuff", "get_parcel" );
+
     my $blocks = $file->blocks;
-    is( scalar @$blocks, 5, "all five blocks" );
-    isa_ok( $blocks->[0], "Clownfish::CFC::Model::Parcel" );
+    is( scalar @$blocks, 4, "all five blocks" );
+    isa_ok( $blocks->[0], "Clownfish::CFC::Model::Class" );
     isa_ok( $blocks->[1], "Clownfish::CFC::Model::Class" );
     isa_ok( $blocks->[2], "Clownfish::CFC::Model::Class" );
-    isa_ok( $blocks->[3], "Clownfish::CFC::Model::Class" );
-    isa_ok( $blocks->[4], "Clownfish::CFC::Model::CBlock" );
-
-    Clownfish::CFC::Model::Class->_clear_registry();
-}
-
-{
-    my $file = $parser->_parse_file( $class_content, $file_spec );
-    my ($class) = @{ $file->classes };
-    my ( $foo, $bar ) = @{ $class->member_vars };
-    is( $foo->get_type->get_specifier, 'Foo', 'file production resets parcel' );
+    isa_ok( $blocks->[3], "Clownfish::CFC::Model::CBlock" );
 
     Clownfish::CFC::Model::Class->_clear_registry();
 }
