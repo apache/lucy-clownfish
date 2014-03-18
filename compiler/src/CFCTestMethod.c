@@ -97,7 +97,7 @@ S_run_basic_tests(CFCTest *test) {
             "(Foo *self, int32_t count = 0, int b)",
             "(Foo *self, int32_t count = 1)",
             "(Foo *self, int32_t count)",
-            "(Foo *self, int32_t countess)",
+            "(Foo *self, int32_t countess = 0)",
             "(Foo *self, uint32_t count = 0)"
         };
         static const char *test_names[5] = {

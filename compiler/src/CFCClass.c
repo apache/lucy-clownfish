@@ -118,7 +118,6 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     CFCUTIL_NULL_CHECK(class_name);
     exposure  = exposure  ? exposure  : "parcel";
     micro_sym = micro_sym ? micro_sym : "class";
-    parcel    = parcel    ? parcel    : CFCParcel_default_parcel();
     CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name, cnick,
                    micro_sym);
     if (!is_inert

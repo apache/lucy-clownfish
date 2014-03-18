@@ -54,8 +54,7 @@ int
 CFCSymbol_validate_class_name_component(const char *name);
 
 /**
- * @param parcel A Clownfish::CFC::Model::Parcel.  If not supplied, will be
- * assigned to the default Parcel.
+ * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param exposure The scope in which the symbol is exposed.  Must be
  * 'public', 'parcel', 'private', or 'local'.
  * @param class_name A optional class name, consisting of one or more

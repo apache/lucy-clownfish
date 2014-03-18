@@ -167,6 +167,7 @@ CFCType*
 CFCType_new_object(int flags, CFCParcel *parcel, const char *specifier,
                    int indirection) {
     // Validate params.
+    CFCUTIL_NULL_CHECK(parcel);
     if (indirection != 1) {
         CFCUtil_die("Parameter 'indirection' can only be 1");
     }
@@ -175,11 +176,6 @@ CFCType_new_object(int flags, CFCParcel *parcel, const char *specifier,
     }
     if ((flags & CFCTYPE_INCREMENTED) && (flags & CFCTYPE_DECREMENTED)) {
         CFCUtil_die("Can't be both incremented and decremented");
-    }
-
-    // Use default parcel if none supplied.
-    if (!parcel) {
-        parcel = CFCParcel_default_parcel();
     }
 
     // Add flags.

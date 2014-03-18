@@ -82,14 +82,14 @@ ok( !$method->compatible($missing_default),
 ok( !$missing_default->compatible($method), "... reversed" );
 
 my $param_name_differs = Clownfish::CFC::Model::Method->new( %args,
-    param_list => $parser->parse('(Foo *self, int32_t countess)'), );
+    param_list => $parser->parse('(Foo *self, int32_t countess = 0)'), );
 ok( !$method->compatible($param_name_differs),
     "different param name spoils compatible()"
 );
 ok( !$param_name_differs->compatible($method), "... reversed" );
 
 my $param_type_differs = Clownfish::CFC::Model::Method->new( %args,
-    param_list => $parser->parse('(Foo *self, uint32_t count)'), );
+    param_list => $parser->parse('(Foo *self, uint32_t count = 0)'), );
 ok( !$method->compatible($param_type_differs),
     "different param type spoils compatible()"
 );
