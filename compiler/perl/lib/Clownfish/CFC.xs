@@ -1118,20 +1118,11 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-default_parcel(...)
-CODE:
-    CHY_UNUSED_VAR(items);
-    CFCParcel *default_parcel = CFCParcel_default_parcel();
-    RETVAL = S_cfcbase_to_perlref(default_parcel);
-OUTPUT: RETVAL
-
-SV*
 all_parcels(...)
 CODE:
     CHY_UNUSED_VAR(items);
     CFCParcel **all_parcels = CFCParcel_all_parcels();
     RETVAL = S_array_of_cfcbase_to_av((CFCBase**)all_parcels);
-    FREEMEM(all_parcels);
 OUTPUT: RETVAL
 
 void

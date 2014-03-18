@@ -51,8 +51,7 @@ CFCParcel_fetch(const char *name);
 void
 CFCParcel_register(CFCParcel *self);
 
-/** Return a NULL-terminated list of all registered parcels. Must be freed by
- * the caller.
+/** Return a NULL-terminated list of all registered parcels.
  */
 CFCParcel**
 CFCParcel_all_parcels(void);
@@ -78,11 +77,6 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
 
 void
 CFCParcel_destroy(CFCParcel *self);
-
-/** Return the singleton for default parcel, which has no prefix.
- */
-CFCParcel*
-CFCParcel_default_parcel(void);
 
 int
 CFCParcel_equals(CFCParcel *self, CFCParcel *other);

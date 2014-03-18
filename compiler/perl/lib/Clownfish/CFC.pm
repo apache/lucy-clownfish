@@ -358,12 +358,12 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
 #    $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel_name_or_parcel_object);
 #
 # Aquire a parcel one way or another.  If the supplied argument is a
-# Parcel, return it.  If it's not defined, return the default Parcel.  If
-# it's a name, fetch an existing Parcel or register a new one.
+# Parcel, return it.  If it's a name, fetch an existing Parcel or register
+# a new one.
     sub acquire {
         my ( undef, $thing ) = @_;
         if ( !defined $thing ) {
-            return Clownfish::CFC::Model::Parcel->default_parcel;
+            confess("Missing required param 'parcel'");
         }
         elsif ( blessed($thing) ) {
             confess("Not a Clownfish::CFC::Model::Parcel")

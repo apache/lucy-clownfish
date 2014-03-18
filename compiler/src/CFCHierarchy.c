@@ -270,8 +270,6 @@ S_check_prereqs() {
             CFCParcel_check_prereqs(parcel);
         }
     }
-
-    FREEMEM(parcels);
 }
 
 static void

@@ -48,8 +48,6 @@ struct CFCParcel {
     size_t num_prereqs;
 };
 
-static CFCParcel *default_parcel = NULL;
-
 #define JSON_STRING 1
 #define JSON_HASH   2
 #define JSON_NULL   3
@@ -87,11 +85,6 @@ static size_t num_registered = 0;
 
 CFCParcel*
 CFCParcel_fetch(const char *name) {
-    // Return the default parcel for either a blank name or a NULL name.
-    if (!name || !strlen(name)) {
-        return CFCParcel_default_parcel();
-    }
-
     for (size_t i = 0; i < num_registered ; i++) {
         CFCParcel *existing = registry[i];
         if (strcmp(existing->name, name) == 0) {
@@ -118,14 +111,6 @@ CFCParcel_register(CFCParcel *self) {
         }
     }
 
-    if (!num_registered) {
-        // Init default parcel as first.
-        registry = (CFCParcel**)CALLOCATE(3, sizeof(CFCParcel*));
-        CFCParcel *def = CFCParcel_default_parcel();
-        registry[0] = (CFCParcel*)CFCBase_incref((CFCBase*)def);
-        num_registered++;
-    }
-
     size_t size = (num_registered + 2) * sizeof(CFCParcel*);
     registry = (CFCParcel**)REALLOCATE(registry, size);
     registry[num_registered++] = (CFCParcel*)CFCBase_incref((CFCBase*)self);
@@ -134,23 +119,7 @@ CFCParcel_register(CFCParcel *self) {
 
 CFCParcel**
 CFCParcel_all_parcels(void) {
-    size_t size = (num_registered + 1) * sizeof(CFCParcel*);
-    CFCParcel **parcels = (CFCParcel**)MALLOCATE(size);
-    size_t n = 0;
-
-    for (size_t i = 0; registry[i]; ++i) {
-        CFCParcel  *parcel = registry[i];
-        const char *prefix = CFCParcel_get_prefix(parcel);
-
-        // Skip default parcel.
-        if (*prefix) {
-            parcels[n++] = parcel;
-        }
-    }
-
-    parcels[n] = NULL;
-
-    return parcels;
+    return registry;
 }
 
 void
@@ -161,8 +130,6 @@ CFCParcel_reap_singletons(void) {
     FREEMEM(registry);
     num_registered = 0;
     registry = NULL;
-    CFCBase_decref((CFCBase*)default_parcel);
-    default_parcel = NULL;
 }
 
 static int
@@ -400,14 +367,6 @@ CFCParcel_destroy(CFCParcel *self) {
     }
     FREEMEM(self->struct_syms);
     CFCBase_destroy((CFCBase*)self);
-}
-
-CFCParcel*
-CFCParcel_default_parcel(void) {
-    if (default_parcel == NULL) {
-        default_parcel = CFCParcel_new("", "", NULL, false);
-    }
-    return default_parcel;
 }
 
 int

@@ -138,7 +138,6 @@ CFCBindCore_write_all_modified(CFCBindCore *self, int modified) {
                 S_write_parcel_c(self, parcel);
             }
         }
-        FREEMEM(parcels);
     }
 
     return modified;

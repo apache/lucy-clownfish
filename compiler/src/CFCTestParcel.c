@@ -40,7 +40,7 @@ S_run_parcel_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    35,
+    32,
     S_run_tests
 };
 
@@ -107,18 +107,6 @@ S_run_parcel_tests(CFCTest *test) {
         CFCParcel *parcel = CFCParcel_new_from_file(path, false);
         OK(test, parcel != NULL, "new_from_file");
         CFCBase_decref((CFCBase*)parcel);
-    }
-
-    {
-        CFCParcel *parcel = CFCParcel_default_parcel();
-        CFCSymbol *thing = CFCSymbol_new(parcel, "parcel", NULL, NULL, "sym");
-        STR_EQ(test, CFCSymbol_get_prefix(thing), "",
-               "get_prefix with no parcel");
-        STR_EQ(test, CFCSymbol_get_Prefix(thing), "",
-               "get_Prefix with no parcel");
-        STR_EQ(test, CFCSymbol_get_PREFIX(thing), "",
-               "get_PREFIX with no parcel");
-        CFCBase_decref((CFCBase*)thing);
     }
 
     {

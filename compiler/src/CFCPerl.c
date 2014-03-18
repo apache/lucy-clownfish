@@ -305,7 +305,6 @@ S_write_boot_c(CFCPerl *self) {
     FREEMEM(alias_adds);
     FREEMEM(bootstrap_code);
     FREEMEM(pound_includes);
-    FREEMEM(parcels);
     FREEMEM(ordered);
 }
 

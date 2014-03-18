@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 41;
+use Test::More tests => 38;
 use File::Spec::Functions qw( catfile );
 
 BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
@@ -97,14 +97,6 @@ $parcel->register;
 is( $parcel->get_version->get_vstring, 'v0', "get_version" );
 
 my $thing = Clownfish::CFC::Model::Symbol->new(
-    micro_sym => 'sym',
-    exposure  => 'parcel',
-);
-is( $thing->get_prefix, '', 'get_prefix with no parcel' );
-is( $thing->get_Prefix, '', 'get_Prefix with no parcel' );
-is( $thing->get_PREFIX, '', 'get_PREFIx with no parcel' );
-
-$thing = Clownfish::CFC::Model::Symbol->new(
     micro_sym => 'sym',
     parcel    => 'Crustacean',
     exposure  => 'parcel'
