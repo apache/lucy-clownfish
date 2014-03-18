@@ -132,10 +132,11 @@ CFCBindCore_write_all_modified(CFCBindCore *self, int modified) {
         CFCParcel **parcels = CFCParcel_all_parcels();
         for (size_t i = 0; parcels[i]; ++i) {
             CFCParcel *parcel = parcels[i];
-            // TODO: Skip parcels the source parcels don't depend on.
-            S_write_parcel_h(self, parcel);
-            if (!CFCParcel_included(parcel)) {
-                S_write_parcel_c(self, parcel);
+            if (CFCParcel_required(parcel)) {
+                S_write_parcel_h(self, parcel);
+                if (!CFCParcel_included(parcel)) {
+                    S_write_parcel_c(self, parcel);
+                }
             }
         }
     }
