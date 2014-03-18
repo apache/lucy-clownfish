@@ -1155,12 +1155,13 @@ add_struct_sym(self, struct_sym)
 PPCODE:
     CFCParcel_add_struct_sym(self, struct_sym);
 
-CFCParcel*
+SV*
 lookup_struct_sym(self, struct_sym)
     CFCParcel  *self;
     const char *struct_sym;
 CODE:
-    RETVAL = CFCParcel_lookup_struct_sym(self, struct_sym);
+    CFCParcel *parcel = CFCParcel_lookup_struct_sym(self, struct_sym);
+    RETVAL = S_cfcbase_to_perlref(parcel);
 OUTPUT: RETVAL
 
 void
