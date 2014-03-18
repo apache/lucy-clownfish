@@ -21,6 +21,7 @@ use Clownfish::CFC::Model::Type;
 use Clownfish::CFC::Parser;
 
 my $parser = Clownfish::CFC::Parser->new;
+my $parcel = $parser->parse("parcel Neato;");
 
 my @composite_type_strings = (
     qw(
@@ -49,7 +50,10 @@ for my $input (@composite_type_strings) {
 eval { my $type = Clownfish::CFC::Model::Type->new_composite };
 like( $@, qr/child/i, "child required" );
 
-my $foo_type = Clownfish::CFC::Model::Type->new_object( specifier => 'Foo' );
+my $foo_type = Clownfish::CFC::Model::Type->new_object(
+    parcel    => $parcel,
+    specifier => 'Foo',
+);
 my $composite_type = Clownfish::CFC::Model::Type->new_composite(
     child       => $foo_type,
     indirection => 1,
@@ -64,7 +68,10 @@ my $other = Clownfish::CFC::Model::Type->new_composite(
 ok( $composite_type->equals($other), "equals" );
 ok( $composite_type->is_composite,   "is_composite" );
 
-my $bar_type = Clownfish::CFC::Model::Type->new_object( specifier => 'Bar' );
+my $bar_type = Clownfish::CFC::Model::Type->new_object(
+    parcel    => $parcel,
+    specifier => 'Bar',
+);
 my $bar_composite = Clownfish::CFC::Model::Type->new_composite(
     child       => $bar_type,
     indirection => 1,

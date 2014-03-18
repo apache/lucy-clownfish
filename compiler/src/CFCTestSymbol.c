@@ -36,7 +36,7 @@ const CFCTestBatch CFCTEST_BATCH_SYMBOL = {
 
 static void
 S_run_tests(CFCTest *test) {
-    CFCParcel *parcel = CFCParcel_default_parcel();
+    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, false);
 
     {
         static const char *exposures[4] = {
@@ -145,6 +145,7 @@ S_run_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)eep);
     }
 
+    CFCBase_decref((CFCBase*)parcel);
     CFCParcel_reap_singletons();
 }
 

@@ -44,7 +44,7 @@ S_has_symbol(CFCSymbol **symbols, const char *micro_sym);
 
 const CFCTestBatch CFCTEST_BATCH_CLASS = {
     "Clownfish::CFC::Model::Class",
-    83,
+    85,
     S_run_tests
 };
 
@@ -52,7 +52,7 @@ static void
 S_run_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
 
-    CFCParcel *neato = CFCParcel_new("Neato", NULL, NULL, false);
+    CFCParcel *neato = CFCTest_parse_parcel(test, parser, "parcel Neato;");
     CFCFileSpec *file_spec = CFCFileSpec_new(".", "Foo/FooJr", 0);
     CFCClass *thing_class
         = CFCTest_parse_class(test, parser, "class Thing {}");
@@ -69,7 +69,7 @@ S_run_tests(CFCTest *test) {
                                 thing_type, 0);
 
         CFCType *widget_type = CFCTest_parse_type(test, parser, "Widget*");
-        widget = CFCVariable_new(NULL, NULL, "Widget", NULL, "widget",
+        widget = CFCVariable_new(neato, NULL, "Widget", NULL, "widget",
                                  widget_type, 0);
 
         CFCType *return_type = CFCTest_parse_type(test, parser, "void");

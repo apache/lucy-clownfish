@@ -21,13 +21,14 @@ use Test::More tests => 13;
 BEGIN { use_ok('Clownfish::CFC::Model::Variable') }
 
 my $parser = Clownfish::CFC::Parser->new;
-$parser->parse('parcel Neato;')
+my $parcel = $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
 
 sub new_type { $parser->parse(shift) }
 
 eval {
     my $death = Clownfish::CFC::Model::Variable->new(
+        parcel    => $parcel,
         micro_sym => 'foo',
         type      => new_type('int'),
         extra_arg => undef,
@@ -36,16 +37,22 @@ eval {
 like( $@, qr/extra_arg/, "Extra arg kills constructor" );
 
 eval {
-    my $death = Clownfish::CFC::Model::Variable->new( micro_sym => 'foo' );
+    my $death = Clownfish::CFC::Model::Variable->new(
+        parcel    => $parcel,
+        micro_sym => 'foo',
+    );
 };
 like( $@, qr/type/, "type is required" );
 eval {
-    my $death
-        = Clownfish::CFC::Model::Variable->new( type => new_type('int32_t') );
+    my $death = Clownfish::CFC::Model::Variable->new(
+        parcel => $parcel,
+        type   => new_type('int32_t'),
+    );
 };
 like( $@, qr/micro_sym/, "micro_sym is required" );
 
 my $var = Clownfish::CFC::Model::Variable->new(
+    parcel    => $parcel,
     micro_sym => 'foo',
     type      => new_type('float*')
 );
@@ -55,6 +62,7 @@ is( $var->local_declaration, 'float* foo;', "declaration" );
 ok( $var->local, "default to local access" );
 
 $var = Clownfish::CFC::Model::Variable->new(
+    parcel    => $parcel,
     micro_sym => 'foo',
     type      => new_type('float[1]')
 );

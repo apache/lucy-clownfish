@@ -112,7 +112,7 @@ S_run_basic_tests(CFCTest *test) {
 
 static void
 S_run_primitive_tests(CFCTest *test) {
-    CFCParcel *parcel = CFCParcel_default_parcel();
+    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, false);
     CFCType *type = CFCType_new(CFCTYPE_PRIMITIVE, parcel, "hump_t", 0);
     OK(test, CFCType_is_primitive(type), "is_primitive");
 
@@ -136,6 +136,7 @@ S_run_primitive_tests(CFCTest *test) {
     }
 
     CFCBase_decref((CFCBase*)type);
+    CFCBase_decref((CFCBase*)parcel);
 }
 
 static void
@@ -386,7 +387,8 @@ S_run_object_tests(CFCTest *test) {
     }
 
     {
-        CFCType *string_type = CFCType_new_object(0, NULL, "String", 1);
+        CFCType *string_type
+            = CFCType_new_object(0, neato_parcel, "String", 1);
         OK(test, CFCType_is_string_type(string_type), "%s", "is_string_type");
         OK(test, !CFCType_is_string_type(foo), "not %s", "not is_string_type");
         CFCBase_decref((CFCBase*)string_type);
@@ -462,6 +464,8 @@ S_run_arbitrary_tests(CFCTest *test) {
 static void
 S_run_composite_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
+    CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, false);
+    CFCParser_set_parcel(parser, neato_parcel);
 
     {
         static const char *type_strings[14] = {
@@ -490,8 +494,9 @@ S_run_composite_tests(CFCTest *test) {
     }
 
     {
-        CFCType *foo = CFCType_new_object(0, NULL, "Foo", 1);
-        CFCType *const_foo = CFCType_new_object(CFCTYPE_CONST, NULL, "Foo", 1);
+        CFCType *foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
+        CFCType *const_foo
+            = CFCType_new_object(CFCTYPE_CONST, neato_parcel, "Foo", 1);
 
         CFCType *composite = CFCType_new_composite(0, foo, 1, NULL);
         OK(test, CFCType_is_composite(composite), "is_composite");
@@ -542,6 +547,7 @@ S_run_composite_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)foo_star_star);
     }
 
+    CFCBase_decref((CFCBase*)neato_parcel);
     CFCBase_decref((CFCBase*)parser);
 }
 

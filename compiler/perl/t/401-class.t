@@ -21,6 +21,7 @@ use Clownfish::CFC::Model::Class;
 use Clownfish::CFC::Parser;
 
 my $parser = Clownfish::CFC::Parser->new;
+$parser->parse('parcel Neato;');
 
 my $thing = Clownfish::CFC::Model::Variable->new(
     parcel     => 'Neato',
@@ -29,6 +30,7 @@ my $thing = Clownfish::CFC::Model::Variable->new(
     micro_sym  => 'thing',
 );
 my $widget = Clownfish::CFC::Model::Variable->new(
+    parcel     => 'Neato',
     class_name => 'Widget',
     type       => $parser->parse('Widget*'),
     micro_sym  => 'widget',

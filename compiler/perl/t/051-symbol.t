@@ -19,6 +19,8 @@ use warnings;
 use Test::More tests => 40;
 use Clownfish::CFC;
 
+my $parcel = Clownfish::CFC::Model::Parcel->new( name => 'Parcel' );
+
 for (qw( foo 1Foo Foo_Bar 1FOOBAR )) {
     eval { my $thing = new_symbol( class_name => $_ ) };
     like( $@, qr/class_name/, "Reject invalid class name $_" );
@@ -76,6 +78,7 @@ is( $eep->full_sym,  "eep_Ork_ah_ah", "full_sym" );
 
 sub new_symbol {
     return Clownfish::CFC::Model::Symbol->new(
+        parcel    => $parcel,
         micro_sym => 'sym',
         exposure  => 'parcel',
         @_

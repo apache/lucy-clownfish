@@ -63,7 +63,9 @@ for my $specifier (@specifiers) {
         "nullable $specifier*" );
 }
 
-eval { my $type = Clownfish::CFC::Model::Type->new_object };
+eval {
+    my $type = Clownfish::CFC::Model::Type->new_object( parcel => 'Neato' );
+};
 like( $@, qr/specifier/i, "specifier required" );
 
 for ( 0, 2 ) {
@@ -146,8 +148,10 @@ $const_foo->resolve;
 ok( !$foo_type->equals($const_foo), "different const spoils equals" );
 like( $const_foo->to_c, qr/const/, "const included in C representation" );
 
-my $string_type
-    = Clownfish::CFC::Model::Type->new_object( specifier => 'String', );
+my $string_type = Clownfish::CFC::Model::Type->new_object(
+    parcel    => 'Neato',
+    specifier => 'String',
+);
 ok( !$foo_type->is_string_type,   "Not is_string_type" );
 ok( $string_type->is_string_type, "is_string_type" );
 
