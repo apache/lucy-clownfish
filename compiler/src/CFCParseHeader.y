@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "CFC.h"
+#include "CFCLexHeader.h"
 #ifndef true
   #define true 1
   #define false 0
@@ -221,6 +222,7 @@ S_new_type(CFCParser *state, int flags, char *type_name,
     (void)yymajor;
     (void)yyminor;
     CFCParser_set_errors(state, true);
+    CFCParser_set_lineno(state, yyget_lineno());
 }
 
 %type result                            {CFCBase*}

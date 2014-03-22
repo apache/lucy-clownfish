@@ -66,6 +66,11 @@ void
 CFCParser_set_errors(CFCParser *self, int errors);
 
 void
+CFCParser_set_lineno(CFCParser *self, int lineno);
+
+int
+CFCParser_get_lineno(CFCParser *self);
+void
 CFCParser_set_text(CFCParser *self, const char *text, size_t len);
 
 const char*

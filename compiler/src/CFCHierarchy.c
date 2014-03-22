@@ -350,7 +350,8 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
         CFCFile *file = CFCParser_parse_file(self->parser, content, file_spec);
         FREEMEM(content);
         if (!file) {
-            CFCUtil_die("parser error for %s", source_path);
+            int lineno = CFCParser_get_lineno(self->parser);
+            CFCUtil_die("%s:%d: parser error", source_path, lineno);
         }
 
         // Add parsed file to pool if it's from a required parcel.

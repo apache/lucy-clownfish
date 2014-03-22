@@ -38,6 +38,7 @@ struct CFCParser {
     void *header_parser;
     struct CFCBase *result;
     int errors;
+    int lineno;
     char *class_name;
     char *class_cnick;
     CFCFileSpec *file_spec;
@@ -65,6 +66,7 @@ CFCParser_init(CFCParser *self) {
     }
     self->result       = NULL;
     self->errors       = false;
+    self->lineno       = 0;
     self->class_name   = NULL;
     self->class_cnick  = NULL;
     self->file_spec    = NULL;
@@ -98,6 +100,7 @@ CFCParser_parse(CFCParser *self, const char *string) {
 
     // Zero out, then parse.
     self->errors = false;
+    self->lineno = 0;
     YY_BUFFER_STATE buffer = yy_scan_bytes(string, (int)strlen(string));
     yylex();
     yy_delete_buffer(buffer);
@@ -150,6 +153,16 @@ CFCParser_set_result(CFCParser *self, CFCBase *result) {
 void
 CFCParser_set_errors(CFCParser *self, int errors) {
     self->errors = errors;
+}
+
+void
+CFCParser_set_lineno(CFCParser *self, int lineno) {
+    self->lineno = lineno;
+}
+
+int
+CFCParser_get_lineno(CFCParser *self) {
+    return self->lineno;
 }
 
 void
