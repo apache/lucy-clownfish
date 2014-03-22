@@ -112,6 +112,8 @@ CFCParser_parse(CFCParser *self, const char *string) {
         CFCBase_decref((CFCBase*)result);
         result = NULL;
     }
+
+    yylex_destroy();
     return result;
 }
 

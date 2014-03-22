@@ -241,7 +241,6 @@ main(int argc, char **argv) {
 
     CFCClass_clear_registry();
     CFCParcel_reap_singletons();
-    yylex_destroy();
 
     S_free_arguments(&args);
 

@@ -26,7 +26,6 @@ main() {
     CFCTest_run_all(test);
     int pass = CFCTest_finish(test);
     CFCBase_decref((CFCBase*)test);
-    yylex_destroy();
 
     return pass ? EXIT_SUCCESS : EXIT_FAILURE;
 }
