@@ -119,6 +119,11 @@ CFCParcel_register(CFCParcel *self) {
 
 CFCParcel**
 CFCParcel_all_parcels(void) {
+    if (registry == NULL) {
+        registry = (CFCParcel**)MALLOCATE(sizeof(CFCParcel*));
+        registry[0] = NULL;
+    }
+
     return registry;
 }
 
