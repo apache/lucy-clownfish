@@ -52,7 +52,7 @@ for (qw( void float uint32_t int64_t uint8_t bool )) {
 }
 
 isa_ok( $parser->parse("bool"),
-    "Clownfish::CFC::Model::Type", "Charmony integer specifier bool" );
+    "Clownfish::CFC::Model::Type", "C99 integer specifier bool" );
 
 for (qw( ByteBuf Obj ANDMatcher )) {
     my $class = $parser->parse("class $_ {}");

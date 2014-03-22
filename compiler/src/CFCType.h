@@ -77,13 +77,10 @@ CFCType_init(CFCType *self, int flags, struct CFCParcel *parcel,
  *     int
  *     long
  *     size_t
+ *     bool
  *
  * Many others are not supported: "signed" or "unsigned" anything, "long
  * long", "ptrdiff_t", "off_t", etc.
- *
- * The following Charmonizer typedefs are supported:
- *
- *     bool
  *
  * @param flags Allowed flags: CONST, INTEGER, PRIMITIVE.
  * @param specifier Must match one of the supported types.

@@ -118,7 +118,7 @@ CFCType_new_integer(int flags, const char *specifier) {
              || !strcmp(specifier, "int")
              || !strcmp(specifier, "long")
              || !strcmp(specifier, "size_t")
-             || !strcmp(specifier, "bool") // Charmonizer type.
+             || !strcmp(specifier, "bool")
             ) {
         width = 0;
     }
