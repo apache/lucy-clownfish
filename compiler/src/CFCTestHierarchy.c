@@ -53,7 +53,7 @@ S_run_include_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_HIERARCHY = {
     "Clownfish::CFC::Model::Hierarchy",
-    39,
+    44,
     S_run_tests
 };
 
@@ -222,6 +222,35 @@ S_run_include_tests(CFCTest *test) {
         OK(test, rottweiler != NULL, "found rottweiler");
         STR_EQ(test, CFCClass_get_class_name(CFCClass_get_parent(rottweiler)),
                "Animal::Dog", "parent of class from second source");
+
+        FREEMEM(classes);
+        CFCBase_decref((CFCBase*)hierarchy);
+        CFCClass_clear_registry();
+        CFCParcel_reap_singletons();
+    }
+
+    {
+        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
+        CFCHierarchy_add_include_dir(hierarchy, T_CFBASE);
+        CFCHierarchy_add_include_dir(hierarchy, T_CFEXT);
+        CFCHierarchy_add_prereq(hierarchy, "AnimalExtension");
+
+        CFCHierarchy_build(hierarchy);
+
+        CFCParcel *animal = CFCParcel_fetch("Animal");
+        OK(test, animal != NULL, "parcel Animal registered");
+        OK(test, CFCParcel_required(animal), "parcel Animal required");
+        CFCParcel *animal_ext = CFCParcel_fetch("AnimalExtension");
+        OK(test, animal_ext != NULL, "parcel AnimalExtension registered");
+        OK(test, CFCParcel_required(animal_ext),
+           "parcel AnimalExtension required");
+
+        CFCClass **classes = CFCHierarchy_ordered_classes(hierarchy);
+        int num_classes = 0;
+        while (classes[num_classes]) {
+            ++num_classes;
+        }
+        INT_EQ(test, num_classes, 5, "class count");
 
         FREEMEM(classes);
         CFCBase_decref((CFCBase*)hierarchy);

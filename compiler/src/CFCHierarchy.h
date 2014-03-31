@@ -57,6 +57,11 @@ CFCHierarchy_add_source_dir(CFCHierarchy *self, const char *source_dir);
 void
 CFCHierarchy_add_include_dir(CFCHierarchy *self, const char *include_dir);
 
+/** Add parcel to the list of required parcel.
+ */
+void
+CFCHierarchy_add_prereq(CFCHierarchy *self, const char *parcel);
+
 /** Parse every Clownfish header file which can be found under any of the
  * source and include directories, building up the object hierarchy.
  */

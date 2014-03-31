@@ -41,6 +41,8 @@ struct CFCArgs {
     char **source_dirs;
     int    num_include_dirs;
     char **include_dirs;
+    int    num_parcels;
+    char **parcels;
     char  *header_filename;
     char  *footer_filename;
 };
@@ -99,10 +101,9 @@ S_parse_arguments(int argc, char **argv, CFCArgs *args) {
     int i;
 
     memset(args, 0, sizeof(CFCArgs));
-    args->source_dirs     = (char **)MALLOCATE(sizeof(char *));
-    args->source_dirs[0]  = NULL;
-    args->include_dirs    = (char **)MALLOCATE(sizeof(char *));
-    args->include_dirs[0] = NULL;
+    args->source_dirs  = (char**)CALLOCATE(1, sizeof(char*));
+    args->include_dirs = (char**)CALLOCATE(1, sizeof(char*));
+    args->parcels      = (char**)CALLOCATE(1, sizeof(char*));
 
     for (i = 1; i < argc; i++) {
         char *arg = argv[i];
@@ -125,6 +126,12 @@ S_parse_arguments(int argc, char **argv, CFCArgs *args) {
         if (S_parse_string_array_argument(arg, "--include",
                                           &args->num_include_dirs,
                                           &args->include_dirs)
+           ) {
+            continue;
+        }
+        if (S_parse_string_array_argument(arg, "--parcel",
+                                          &args->num_parcels,
+                                          &args->parcels)
            ) {
             continue;
         }
@@ -204,6 +211,10 @@ main(int argc, char **argv) {
          */
         CFCHierarchy_add_include_dir(hierarchy, "/usr/local/" SYS_INCLUDE_DIR);
         CFCHierarchy_add_include_dir(hierarchy, "/usr/" SYS_INCLUDE_DIR);
+    }
+
+    for (i = 0; args.parcels[i]; ++i) {
+        CFCHierarchy_add_prereq(hierarchy, args.parcels[i]);
     }
 
     CFCHierarchy_build(hierarchy);
