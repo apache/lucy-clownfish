@@ -78,13 +78,6 @@ sub new {
         $self->extra_linker_flags(@$extra_ldflags);
     }
 
-    my $include_dirs = $self->include_dirs;
-    push( @$include_dirs,
-        curdir(), # for ppport.h and charmony.h
-        catdir( $AUTOGEN_DIR, 'include' ),
-    );
-    $self->include_dirs($include_dirs);
-
     my $cf_source = $self->clownfish_params('source');
     if ( !defined($cf_source) ) {
         $cf_source = [];
@@ -97,12 +90,25 @@ sub new {
 
     my $cf_include = $self->clownfish_params('include');
     if ( !defined($cf_include) ) {
-        $cf_include = [];
+        if ($ENV{CLOWNFISH_INCLUDE}) {
+            $cf_include = [ split( /:/, $ENV{CLOWNFISH_INCLUDE} ) ];
+        }
+        else {
+            $cf_include = [ $self->cf_system_include_dirs ];
+        }
     }
     elsif ( !ref($cf_include) ) {
         $cf_include = [ $cf_include ];
     }
     $self->clownfish_params( include => $cf_include );
+
+    my $include_dirs = $self->include_dirs;
+    push( @$include_dirs,
+        curdir(), # for ppport.h and charmony.h
+        catdir( $AUTOGEN_DIR, 'include' ),
+        @$cf_include,
+    );
+    $self->include_dirs($include_dirs);
 
     my $autogen_header = $self->clownfish_params('autogen_header');
     if ( !defined($autogen_header) ) {

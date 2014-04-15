@@ -55,6 +55,7 @@ my $builder = Clownfish::Build->new(
             $CORE_SOURCE_DIR,
             $XS_SOURCE_DIR,
         ],
+        include => [], # Don't use default includes.
     },
     extra_compiler_flags => '-DCFP_CFISH -DCFP_TESTCFISH',
     add_to_cleanup => [
