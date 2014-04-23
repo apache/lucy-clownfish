@@ -132,7 +132,7 @@ class Clownfish::Float64 inherits Clownfish::FloatNum {
 
 /** 32-bit signed integer.
  */
-class Clownfish::Integer32 cnick Int32
+class Clownfish::Integer32 nickname Int32
     inherits Clownfish::IntNum {
 
     int32_t value;
@@ -171,7 +171,7 @@ class Clownfish::Integer32 cnick Int32
 /**
  * 64-bit signed integer.
  */
-class Clownfish::Integer64 cnick Int64
+class Clownfish::Integer64 nickname Int64
     inherits Clownfish::IntNum {
 
     int64_t value;
@@ -217,7 +217,7 @@ class Clownfish::Integer64 cnick Int64
  * There are only two singleton instances of this class: CFISH_TRUE and
  * CFISH_FALSE.
  */
-class Clownfish::BoolNum cnick Bool inherits Clownfish::IntNum {
+class Clownfish::BoolNum nickname Bool inherits Clownfish::IntNum {
     bool value;
     String *string;
 

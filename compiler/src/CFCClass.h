@@ -44,7 +44,7 @@ struct CFCFileSpec;
  * @param parcel See Clownfish::CFC::Model::Symbol.
  * @param exposure See Clownfish::CFC::Model::Symbol.
  * @param class_name See Clownfish::CFC::Model::Symbol.
- * @param cnick See Clownfish::CFC::Model::Symbol.
+ * @param nickname See Clownfish::CFC::Model::Symbol.
  * @param micro_sym Defaults to "class".
  * @param docucomment An optional Clownfish::CFC::Model::DocuComment attached
  * to this class.
@@ -58,7 +58,7 @@ struct CFCFileSpec;
  */
 CFCClass*
 CFCClass_create(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *cnick,
+                const char *class_name, const char *nickname,
                 const char *micro_sym, struct CFCDocuComment *docucomment,
                 struct CFCFileSpec *file_spec, const char *parent_class_name,
                 int is_final, int is_inert);
@@ -66,7 +66,7 @@ CFCClass_create(struct CFCParcel *parcel, const char *exposure,
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    const char *exposure, const char *class_name,
-                   const char *cnick, const char *micro_sym,
+                   const char *nickname, const char *micro_sym,
                    struct CFCDocuComment *docucomment,
                    struct CFCFileSpec *file_spec, const char *parent_class_name,
                    int is_final, int is_inert);
@@ -197,7 +197,7 @@ struct CFCVariable**
 CFCClass_inert_vars(CFCClass *self);
 
 const char*
-CFCClass_get_cnick(CFCClass *self);
+CFCClass_get_nickname(CFCClass *self);
 
 /** Set the parent Class. (Not class name, Class.)
  */

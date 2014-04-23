@@ -74,9 +74,9 @@ S_run_tests(CFCTest *test) {
         OK(test, !equal, "different class_name spoils equals");
         const char *foo_jr_name = CFCSymbol_get_class_name(foo_jr);
         STR_EQ(test, foo_jr_name, "Foo::FooJr", "get_class_name");
-        const char *foo_jr_cnick = CFCSymbol_get_class_cnick(foo_jr);
-        STR_EQ(test, foo_jr_cnick, "FooJr",
-               "derive class_cnick from class_name");
+        const char *foo_jr_nickname = CFCSymbol_get_class_nickname(foo_jr);
+        STR_EQ(test, foo_jr_nickname, "FooJr",
+               "derive class_nickname from class_name");
 
         CFCBase_decref((CFCBase*)foo);
         CFCBase_decref((CFCBase*)foo_jr);

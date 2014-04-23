@@ -72,7 +72,7 @@ eval {
     Clownfish::CFC::Model::Class->create(
         parcel     => 'Neato',
         class_name => 'Bar',
-        cnick      => 'Foo',
+        nickname   => 'Foo',
     );
 };
 like( $@, qr/class nickname conflict/i,
@@ -169,7 +169,7 @@ is( $parser->parse("class MissingInherits { }")->get_parent_class_name,
     "Clownfish::Obj", "class inherits from Clownfish::Obj by default" );
 
 my $class_content
-    = 'public class Foo::Foodie cnick Foodie inherits Foo { int num; }';
+    = 'public class Foo::Foodie nickname Foodie inherits Foo { int num; }';
 my $class = $parser->parse($class_content);
 isa_ok( $class, "Clownfish::CFC::Model::Class", "class_declaration FooJr" );
 ok( ( scalar grep { $_->micro_sym eq 'num' } @{ $class->member_vars } ),
@@ -234,7 +234,7 @@ is( ( scalar grep { $_->public } @{ $class->methods } ),
     6, "pass acl to Method constructor" );
 
 $class_content = qq|
-    inert class Rigor::Mortis cnick Mort {
+    inert class Rigor::Mortis nickname Mort {
         inert void lie_still();
     }|;
 $class = $parser->parse($class_content);

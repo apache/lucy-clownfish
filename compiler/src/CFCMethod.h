@@ -44,7 +44,7 @@ struct CFCDocuComment;
  * @param exposure See Clownfish::CFC::Model::Function.  Defaults to "parcel"
  * if not supplied.
  * @param class_name See Clownfish::CFC::Model::Function.
- * @param class_cnick See Clownfish::CFC::Model::Function.
+ * @param class_nickname See Clownfish::CFC::Model::Function.
  * @param macro_sym - The mixed case name which will be used when invoking the
  * method.
  * @param return_type See Clownfish::CFC::Model::Function.
@@ -56,7 +56,7 @@ struct CFCDocuComment;
  */
 CFCMethod*
 CFCMethod_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *class_cnick,
+              const char *class_name, const char *class_nickname,
               const char *macro_sym, struct CFCType *return_type,
               struct CFCParamList *param_list,
               struct CFCDocuComment *docucomment, int is_final,
@@ -65,7 +65,7 @@ CFCMethod_new(struct CFCParcel *parcel, const char *exposure,
 CFCMethod*
 CFCMethod_init(CFCMethod *self, struct CFCParcel *parcel,
                const char *exposure, const char *class_name,
-               const char *class_cnick, const char *macro_sym,
+               const char *class_nickname, const char *macro_sym,
                struct CFCType *return_type, struct CFCParamList *param_list,
                struct CFCDocuComment *docucomment, int is_final,
                int is_abstract);
@@ -219,7 +219,7 @@ const char*
 CFCMethod_get_class_name(CFCMethod *self);
 
 const char*
-CFCMethod_get_class_cnick(CFCMethod *self);
+CFCMethod_get_class_nickname(CFCMethod *self);
 
 int
 CFCMethod_public(CFCMethod *self);

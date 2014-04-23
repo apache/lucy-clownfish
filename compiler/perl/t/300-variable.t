@@ -72,11 +72,11 @@ is( $var->local_c, 'float foo[1]',
 
 my $foo_class = $parser->parse("class Foo {}");
 $var = Clownfish::CFC::Model::Variable->new(
-    parcel      => 'Neato',
-    micro_sym   => 'foo',
-    type        => new_type("Foo*"),
-    class_name  => 'Crustacean::Lobster::LobsterClaw',
-    class_cnick => 'LobClaw',
+    parcel         => 'Neato',
+    micro_sym      => 'foo',
+    type           => new_type("Foo*"),
+    class_name     => 'Crustacean::Lobster::LobsterClaw',
+    class_nickname => 'LobClaw',
 );
 $var->resolve_type;
 is( $var->global_c, 'neato_Foo* neato_LobClaw_foo', "global_c" );

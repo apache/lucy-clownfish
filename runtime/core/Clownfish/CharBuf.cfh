@@ -20,7 +20,7 @@ parcel Clownfish;
  * Growable buffer holding Unicode characters.
  */
 
-class Clownfish::CharBuf cnick CB
+class Clownfish::CharBuf nickname CB
     inherits Clownfish::Obj {
 
     char    *ptr;

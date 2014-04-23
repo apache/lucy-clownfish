@@ -32,7 +32,7 @@
 struct CFCParcel {
     CFCBase base;
     char *name;
-    char *cnick;
+    char *nickname;
     CFCVersion *version;
     char *prefix;
     char *Prefix;
@@ -97,8 +97,8 @@ CFCParcel_fetch(const char *name) {
 
 void
 CFCParcel_register(CFCParcel *self) {
-    const char *name  = self->name;
-    const char *cnick = self->cnick;
+    const char *name     = self->name;
+    const char *nickname = self->nickname;
 
     for (size_t i = 0; i < num_registered ; i++) {
         CFCParcel *other = registry[i];
@@ -106,8 +106,9 @@ CFCParcel_register(CFCParcel *self) {
         if (strcmp(other->name, name) == 0) {
             CFCUtil_die("Parcel '%s' already registered", name);
         }
-        if (strcmp(other->cnick, cnick) == 0) {
-            CFCUtil_die("Parcel with nickname '%s' already registered", cnick);
+        if (strcmp(other->nickname, nickname) == 0) {
+            CFCUtil_die("Parcel with nickname '%s' already registered",
+                        nickname);
         }
     }
 
@@ -138,7 +139,7 @@ CFCParcel_reap_singletons(void) {
 }
 
 static int
-S_validate_name_or_cnick(const char *orig) {
+S_validate_name_or_nickname(const char *orig) {
     const char *ptr = orig;
     for (; *ptr != 0; ptr++) {
         if (!isalpha(*ptr)) { return false; }
@@ -153,31 +154,31 @@ static const CFCMeta CFCPARCEL_META = {
 };
 
 CFCParcel*
-CFCParcel_new(const char *name, const char *cnick, CFCVersion *version,
+CFCParcel_new(const char *name, const char *nickname, CFCVersion *version,
               int is_included) {
     CFCParcel *self = (CFCParcel*)CFCBase_allocate(&CFCPARCEL_META);
-    return CFCParcel_init(self, name, cnick, version, is_included);
+    return CFCParcel_init(self, name, nickname, version, is_included);
 }
 
 CFCParcel*
-CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
+CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
                CFCVersion *version, int is_included) {
     // Validate name.
-    if (!name || !S_validate_name_or_cnick(name)) {
+    if (!name || !S_validate_name_or_nickname(name)) {
         CFCUtil_die("Invalid name: '%s'", name ? name : "[NULL]");
     }
     self->name = CFCUtil_strdup(name);
 
-    // Validate or derive cnick.
-    if (cnick) {
-        if (!S_validate_name_or_cnick(cnick)) {
-            CFCUtil_die("Invalid cnick: '%s'", cnick);
+    // Validate or derive nickname.
+    if (nickname) {
+        if (!S_validate_name_or_nickname(nickname)) {
+            CFCUtil_die("Invalid nickname: '%s'", nickname);
         }
-        self->cnick = CFCUtil_strdup(cnick);
+        self->nickname = CFCUtil_strdup(nickname);
     }
     else {
-        // Default cnick to name.
-        self->cnick = CFCUtil_strdup(name);
+        // Default nickname to name.
+        self->nickname = CFCUtil_strdup(name);
     }
 
     // Default to version v0.
@@ -189,19 +190,19 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     }
 
     // Derive prefix, Prefix, PREFIX.
-    size_t cnick_len  = strlen(self->cnick);
-    size_t prefix_len = cnick_len ? cnick_len + 1 : 0;
+    size_t nickname_len  = strlen(self->nickname);
+    size_t prefix_len = nickname_len ? nickname_len + 1 : 0;
     size_t amount     = prefix_len + 1;
     self->prefix = (char*)MALLOCATE(amount);
     self->Prefix = (char*)MALLOCATE(amount);
     self->PREFIX = (char*)MALLOCATE(amount);
-    memcpy(self->Prefix, self->cnick, cnick_len);
-    if (cnick_len) {
-        self->Prefix[cnick_len]  = '_';
-        self->Prefix[cnick_len + 1]  = '\0';
+    memcpy(self->Prefix, self->nickname, nickname_len);
+    if (nickname_len) {
+        self->Prefix[nickname_len]  = '_';
+        self->Prefix[nickname_len + 1]  = '\0';
     }
     else {
-        self->Prefix[cnick_len] = '\0';
+        self->Prefix[nickname_len] = '\0';
     }
     for (size_t i = 0; i < amount; i++) {
         self->prefix[i] = tolower(self->Prefix[i]);
@@ -212,11 +213,11 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     self->PREFIX[prefix_len] = '\0';
 
     // Derive privacy symbol.
-    size_t privacy_sym_len = cnick_len + 4;
+    size_t privacy_sym_len = nickname_len + 4;
     self->privacy_sym = (char*)MALLOCATE(privacy_sym_len + 1);
     memcpy(self->privacy_sym, "CFP_", 4);
-    for (size_t i = 0; i < cnick_len; i++) {
-        self->privacy_sym[i+4] = toupper(self->cnick[i]);
+    for (size_t i = 0; i < nickname_len; i++) {
+        self->privacy_sym[i+4] = toupper(self->nickname[i]);
     }
     self->privacy_sym[privacy_sym_len] = '\0';
 
@@ -353,7 +354,7 @@ CFCParcel_new_from_file(const char *path, int is_included) {
 void
 CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->name);
-    FREEMEM(self->cnick);
+    FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->version);
     FREEMEM(self->prefix);
     FREEMEM(self->Prefix);
@@ -377,7 +378,7 @@ CFCParcel_destroy(CFCParcel *self) {
 int
 CFCParcel_equals(CFCParcel *self, CFCParcel *other) {
     if (strcmp(self->name, other->name)) { return false; }
-    if (strcmp(self->cnick, other->cnick)) { return false; }
+    if (strcmp(self->nickname, other->nickname)) { return false; }
     if (CFCVersion_compare_to(self->version, other->version) != 0) {
         return false;
     }
@@ -391,8 +392,8 @@ CFCParcel_get_name(CFCParcel *self) {
 }
 
 const char*
-CFCParcel_get_cnick(CFCParcel *self) {
-    return self->cnick;
+CFCParcel_get_nickname(CFCParcel *self) {
+    return self->nickname;
 }
 
 CFCVersion*
@@ -603,7 +604,7 @@ CFCPrereq_new(const char *name, CFCVersion *version) {
 CFCPrereq*
 CFCPrereq_init(CFCPrereq *self, const char *name, CFCVersion *version) {
     // Validate name.
-    if (!name || !S_validate_name_or_cnick(name)) {
+    if (!name || !S_validate_name_or_nickname(name)) {
         CFCUtil_die("Invalid name: '%s'", name ? name : "[NULL]");
     }
     self->name = CFCUtil_strdup(name);

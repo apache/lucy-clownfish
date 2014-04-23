@@ -26,12 +26,12 @@ $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
 
 my %args = (
-    parcel      => 'Neato',
-    return_type => $parser->parse('Obj*'),
-    class_name  => 'Neato::Foo',
-    class_cnick => 'Foo',
-    param_list  => $parser->parse('(Foo *self, int32_t count = 0)'),
-    macro_sym   => 'Return_An_Obj',
+    parcel         => 'Neato',
+    return_type    => $parser->parse('Obj*'),
+    class_name     => 'Neato::Foo',
+    class_nickname => 'Foo',
+    param_list     => $parser->parse('(Foo *self, int32_t count = 0)'),
+    macro_sym      => 'Return_An_Obj',
 );
 
 my $method = Clownfish::CFC::Model::Method->new(%args);
@@ -97,9 +97,9 @@ ok( !$param_type_differs->compatible($method), "... reversed" );
 
 my $self_type_differs = Clownfish::CFC::Model::Method->new(
     %args,
-    class_name  => 'Neato::Bar',
-    class_cnick => 'Bar',
-    param_list  => $parser->parse('(Bar *self, int32_t count = 0)'),
+    class_name     => 'Neato::Bar',
+    class_nickname => 'Bar',
+    param_list     => $parser->parse('(Bar *self, int32_t count = 0)'),
 );
 ok( $method->compatible($self_type_differs),
     "different self type still compatible(), since can't test inheritance" );
@@ -119,7 +119,7 @@ for my $meth_meth (qw( short_method_sym full_method_sym full_offset_sym)) {
 }
 
 $parser->set_class_name("Neato::Obj");
-$parser->set_class_cnick("Obj");
+$parser->set_class_nickname("Obj");
 isa_ok(
     $parser->parse($_),
     "Clownfish::CFC::Model::Method",

@@ -41,7 +41,8 @@ my $foo    = new_symbol( class_name => 'Foo' );
 my $foo_jr = new_symbol( class_name => 'Foo::FooJr' );
 ok( !$foo->equals($foo_jr), "different class_name spoils equals" );
 is( $foo_jr->get_class_name, "Foo::FooJr", "get_class_name" );
-is( $foo_jr->get_class_cnick, "FooJr", "derive class_cnick from class_name" );
+is( $foo_jr->get_class_nickname, "FooJr",
+    "derive class_nickname from class_name" );
 
 my $public_exposure = new_symbol( exposure => 'public' );
 my $parcel_exposure = new_symbol( exposure => 'parcel' );

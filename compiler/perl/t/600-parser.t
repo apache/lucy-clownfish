@@ -31,8 +31,8 @@ isa_ok(
 
 # Set and leave parcel.
 my $registered = Clownfish::CFC::Model::Parcel->new(
-    name  => 'Crustacean',
-    cnick => 'Crust',
+    name     => 'Crustacean',
+    nickname => 'Crust',
 );
 $registered->register;
 my $parcel = $parser->parse('parcel Crustacean;')
@@ -121,10 +121,8 @@ is_deeply(
     "initial values"
 );
 
-my %sub_args = ( class => 'Stuff::Obj', cnick => 'Obj' );
-
 $parser->set_class_name('Stuff::Obj');
-$parser->set_class_cnick('Obj');
+$parser->set_class_nickname('Obj');
 ok( $parser->parse($_), "declaration statement: $_" )
     for (
     'public Foo* Spew_Foo(Obj *self, uint32_t *how_many);',
@@ -154,14 +152,14 @@ SKIP: {
         for (qw( foo fooBar Foo_Bar FOOBAR 1Foo 1FOO ));
 }
 
-is( $parser->parse(qq|class Foodie$_ cnick $_ { }|)->get_cnick,
-    $_, "cnick: $_" )
+is( $parser->parse(qq|class Foodie$_ nickname $_ { }|)->get_nickname,
+    $_, "nickname: $_" )
     for (qw( Food FF ));
 
 SKIP: {
-    skip( "Can't recover from bad cnick under flex/lemon parser", 3 );
-    is( !$parser->parse(qq|class Foodie$_ cnick $_ { }|),
-        "Illegal cnick: $_" )
+    skip( "Can't recover from bad nickname under flex/lemon parser", 3 );
+    is( !$parser->parse(qq|class Foodie$_ nickname $_ { }|),
+        "Illegal nickname: $_" )
         for (qw( foo fOO 1Foo ));
 }
 

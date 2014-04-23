@@ -16,7 +16,7 @@
 
 parcel TestClownfish;
 
-class Clownfish::Test::Util::TestStringHelper cnick TestStrHelp
+class Clownfish::Test::Util::TestStringHelper nickname TestStrHelp
     inherits Clownfish::TestHarness::TestBatch {
 
     inert incremented TestStringHelper*

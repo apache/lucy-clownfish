@@ -38,12 +38,12 @@ static const CFCMeta CFCFUNCTION_META = {
 
 CFCFunction*
 CFCFunction_new(CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_cnick,
+                const char *class_name, const char *class_nickname,
                 const char *micro_sym, CFCType *return_type,
                 CFCParamList *param_list, CFCDocuComment *docucomment,
                 int is_inline) {
     CFCFunction *self = (CFCFunction*)CFCBase_allocate(&CFCFUNCTION_META);
-    return CFCFunction_init(self, parcel, exposure, class_name, class_cnick,
+    return CFCFunction_init(self, parcel, exposure, class_name, class_nickname,
                             micro_sym, return_type, param_list, docucomment,
                             is_inline);
 }
@@ -61,7 +61,7 @@ S_validate_micro_sym(const char *micro_sym) {
 
 CFCFunction*
 CFCFunction_init(CFCFunction *self, CFCParcel *parcel, const char *exposure,
-                 const char *class_name, const char *class_cnick,
+                 const char *class_name, const char *class_nickname,
                  const char *micro_sym, CFCType *return_type,
                  CFCParamList *param_list, CFCDocuComment *docucomment,
                  int is_inline) {
@@ -75,7 +75,7 @@ CFCFunction_init(CFCFunction *self, CFCParcel *parcel, const char *exposure,
         CFCUtil_die("Invalid micro_sym: '%s'", micro_sym);
     }
     CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name,
-                   class_cnick, micro_sym);
+                   class_nickname, micro_sym);
     self->return_type = (CFCType*)CFCBase_incref((CFCBase*)return_type);
     self->param_list  = (CFCParamList*)CFCBase_incref((CFCBase*)param_list);
     self->docucomment = (CFCDocuComment*)CFCBase_incref((CFCBase*)docucomment);

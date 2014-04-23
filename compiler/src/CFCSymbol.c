@@ -35,10 +35,10 @@ static const CFCMeta CFCSYMBOL_META = {
 
 CFCSymbol*
 CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *class_cnick,
+              const char *class_name, const char *class_nickname,
               const char *micro_sym) {
     CFCSymbol *self = (CFCSymbol*)CFCBase_allocate(&CFCSYMBOL_META);
-    return CFCSymbol_init(self, parcel, exposure, class_name, class_cnick,
+    return CFCSymbol_init(self, parcel, exposure, class_name, class_nickname,
                           micro_sym);
 }
 
@@ -94,19 +94,19 @@ CFCSymbol_validate_class_name_component(const char *name) {
 }
 
 static int
-S_validate_class_cnick(const char *class_cnick) {
+S_validate_class_nickname(const char *class_nickname) {
     // Allow all caps.
     const char *ptr;
-    for (ptr = class_cnick; ; ptr++) {
+    for (ptr = class_nickname; ; ptr++) {
         if (*ptr == 0) {
-            if (strlen(class_cnick)) { return true; }
+            if (strlen(class_nickname)) { return true; }
             else { break; }
         }
         else if (!isupper(*ptr)) { break; }
     }
 
     // Same as one component of a class name.
-    return CFCSymbol_validate_class_name_component(class_cnick);
+    return CFCSymbol_validate_class_name_component(class_nickname);
 }
 
 static int
@@ -122,7 +122,7 @@ S_validate_identifier(const char *identifier) {
 CFCSymbol*
 CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
                const char *exposure, const char *class_name,
-               const char *class_cnick, const char *micro_sym) {
+               const char *class_nickname, const char *micro_sym) {
     // Validate.
     CFCUTIL_NULL_CHECK(parcel);
     if (!S_validate_exposure(exposure)) {
@@ -138,40 +138,40 @@ CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
         CFCUtil_die("Invalid micro_sym: '%s'",  micro_sym ? micro_sym : "[NULL]");
     }
 
-    // Derive class_cnick if necessary, then validate.
-    const char *real_cnick = NULL;
+    // Derive class_nickname if necessary, then validate.
+    const char *real_nickname = NULL;
     if (class_name) {
-        if (class_cnick) {
-            real_cnick = class_cnick;
+        if (class_nickname) {
+            real_nickname = class_nickname;
         }
         else {
             const char *last_colon = strrchr(class_name, ':');
-            real_cnick = last_colon ? last_colon + 1 : class_name;
+            real_nickname = last_colon ? last_colon + 1 : class_name;
         }
     }
-    else if (class_cnick) {
-        // Sanity check class_cnick without class_name.
+    else if (class_nickname) {
+        // Sanity check class_nickname without class_name.
         CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Can't supply class_cnick without class_name");
+        CFCUtil_die("Can't supply class_nickname without class_name");
     }
     else {
-        real_cnick = NULL;
+        real_nickname = NULL;
     }
-    if (real_cnick && !S_validate_class_cnick(real_cnick)) {
+    if (real_nickname && !S_validate_class_nickname(real_nickname)) {
         CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Invalid class_cnick: '%s'", real_cnick);
+        CFCUtil_die("Invalid class_nickname: '%s'", real_nickname);
     }
 
     // Assign.
-    self->parcel      = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
-    self->exposure    = CFCUtil_strdup(exposure);
-    self->class_name  = CFCUtil_strdup(class_name);
-    self->class_cnick = CFCUtil_strdup(real_cnick);
-    self->micro_sym   = CFCUtil_strdup(micro_sym);
+    self->parcel         = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
+    self->exposure       = CFCUtil_strdup(exposure);
+    self->class_name     = CFCUtil_strdup(class_name);
+    self->class_nickname = CFCUtil_strdup(real_nickname);
+    self->micro_sym      = CFCUtil_strdup(micro_sym);
 
     // Derive short_sym and full_sym.
-    char *cnick = self->class_cnick ? self->class_cnick : "";
-    self->short_sym = CFCUtil_sprintf("%s_%s", cnick, micro_sym);
+    char *nickname = self->class_nickname ? self->class_nickname : "";
+    self->short_sym = CFCUtil_sprintf("%s_%s", nickname, micro_sym);
     self->full_sym
         = CFCUtil_sprintf("%s%s", CFCParcel_get_prefix(self->parcel),
                           self->short_sym);
@@ -184,7 +184,7 @@ CFCSymbol_destroy(CFCSymbol *self) {
     CFCBase_decref((CFCBase*)self->parcel);
     FREEMEM(self->exposure);
     FREEMEM(self->class_name);
-    FREEMEM(self->class_cnick);
+    FREEMEM(self->class_nickname);
     FREEMEM(self->micro_sym);
     FREEMEM(self->short_sym);
     FREEMEM(self->full_sym);
@@ -249,8 +249,8 @@ CFCSymbol_get_class_name(CFCSymbol *self) {
 }
 
 const char*
-CFCSymbol_get_class_cnick(CFCSymbol *self) {
-    return self->class_cnick;
+CFCSymbol_get_class_nickname(CFCSymbol *self) {
+    return self->class_nickname;
 }
 
 const char*

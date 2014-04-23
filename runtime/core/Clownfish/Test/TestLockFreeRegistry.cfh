@@ -16,7 +16,7 @@
 
 parcel TestClownfish;
 
-class Clownfish::Test::TestLockFreeRegistry cnick TestLFReg
+class Clownfish::Test::TestLockFreeRegistry nickname TestLFReg
     inherits Clownfish::TestHarness::TestBatch {
 
     inert incremented TestLockFreeRegistry*

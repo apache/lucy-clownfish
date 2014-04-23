@@ -40,7 +40,7 @@ struct CFCParser {
     int errors;
     int lineno;
     char *class_name;
-    char *class_cnick;
+    char *class_nickname;
     CFCFileSpec *file_spec;
     CFCMemPool *pool;
     CFCParcel  *parcel;
@@ -64,14 +64,14 @@ CFCParser_init(CFCParser *self) {
     if (self->header_parser == NULL) {
         CFCUtil_die("Failed to allocate header parser");
     }
-    self->result       = NULL;
-    self->errors       = false;
-    self->lineno       = 0;
-    self->class_name   = NULL;
-    self->class_cnick  = NULL;
-    self->file_spec    = NULL;
-    self->pool         = NULL;
-    self->parcel       = NULL;
+    self->result         = NULL;
+    self->errors         = false;
+    self->lineno         = 0;
+    self->class_name     = NULL;
+    self->class_nickname = NULL;
+    self->file_spec      = NULL;
+    self->pool           = NULL;
+    self->parcel         = NULL;
     return self;
 }
 
@@ -79,7 +79,7 @@ void
 CFCParser_destroy(CFCParser *self) {
     CFCParseHeaderFree(self->header_parser, free);
     FREEMEM(self->class_name);
-    FREEMEM(self->class_cnick);
+    FREEMEM(self->class_nickname);
     CFCBase_decref((CFCBase*)self->file_spec);
     CFCBase_decref((CFCBase*)self->pool);
     CFCBase_decref(self->result);
@@ -194,19 +194,19 @@ CFCParser_get_class_name(CFCParser *self) {
 }
 
 void
-CFCParser_set_class_cnick(CFCParser *self, const char *class_cnick) {
-    FREEMEM(self->class_cnick);
-    if (class_cnick) {
-        self->class_cnick = CFCUtil_strdup(class_cnick);
+CFCParser_set_class_nickname(CFCParser *self, const char *class_nickname) {
+    FREEMEM(self->class_nickname);
+    if (class_nickname) {
+        self->class_nickname = CFCUtil_strdup(class_nickname);
     }
     else {
-        self->class_cnick = NULL;
+        self->class_nickname = NULL;
     }
 }
 
 const char*
-CFCParser_get_class_cnick(CFCParser *self) {
-    return self->class_cnick;
+CFCParser_get_class_nickname(CFCParser *self) {
+    return self->class_nickname;
 }
 
 void

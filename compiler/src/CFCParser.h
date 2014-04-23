@@ -89,10 +89,10 @@ const char*
 CFCParser_get_class_name(CFCParser *self);
 
 void
-CFCParser_set_class_cnick(CFCParser *self, const char *class_cnick);
+CFCParser_set_class_nickname(CFCParser *self, const char *class_nickname);
 
 const char*
-CFCParser_get_class_cnick(CFCParser *self);
+CFCParser_get_class_nickname(CFCParser *self);
 
 void
 CFCParser_set_file_spec(CFCParser *self, struct CFCFileSpec *file_spec);

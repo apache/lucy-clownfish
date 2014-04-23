@@ -20,7 +20,7 @@ parcel Clownfish;
  * Immutable string holding Unicode characters.
  */
 
-class Clownfish::String cnick Str
+class Clownfish::String nickname Str
     inherits Clownfish::Obj {
 
     const char *ptr;
@@ -280,7 +280,7 @@ class Clownfish::String cnick Str
     StackTail(String *self, void *allocation);
 }
 
-class Clownfish::StackString cnick SStr
+class Clownfish::StackString nickname SStr
     inherits Clownfish::String {
 
     /**
@@ -309,7 +309,7 @@ class Clownfish::StackString cnick SStr
     Destroy(StackString *self);
 }
 
-class Clownfish::StringIterator cnick StrIter
+class Clownfish::StringIterator nickname StrIter
     inherits Clownfish::Obj {
 
     String *string;
@@ -415,7 +415,7 @@ class Clownfish::StringIterator cnick StrIter
     Destroy(StringIterator *self);
 }
 
-class Clownfish::StackStringIterator cnick SStrIter
+class Clownfish::StackStringIterator nickname SStrIter
     inherits Clownfish::StringIterator {
 
     inert incremented StackStringIterator*

@@ -116,7 +116,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
     our %create_PARAMS = (
         file_spec         => undef,
         class_name        => undef,
-        cnick             => undef,
+        nickname          => undef,
         parent_class_name => undef,
         docucomment       => undef,
         inert             => undef,
@@ -154,7 +154,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _create(
             @args{
-                qw( parcel exposure class_name cnick micro_sym docucomment
+                qw( parcel exposure class_name nickname micro_sym docucomment
                     file_spec parent_class_name final inert)
                 }
         );
@@ -212,15 +212,15 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
     use Clownfish::CFC::Util qw( verify_args a_isa_b );
 
     my %new_PARAMS = (
-        return_type => undef,
-        class_name  => undef,
-        class_cnick => undef,
-        param_list  => undef,
-        micro_sym   => undef,
-        docucomment => undef,
-        parcel      => undef,
-        inline      => undef,
-        exposure    => undef,
+        return_type    => undef,
+        class_name     => undef,
+        class_nickname => undef,
+        param_list     => undef,
+        micro_sym      => undef,
+        docucomment    => undef,
+        parcel         => undef,
+        inline         => undef,
+        exposure       => undef,
     );
 
     sub new {
@@ -232,7 +232,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
             @args{
-                qw( parcel exposure class_name class_cnick micro_sym
+                qw( parcel exposure class_name class_nickname micro_sym
                     return_type param_list docucomment inline )
                 }
         );
@@ -264,16 +264,16 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
     use Carp;
 
     my %new_PARAMS = (
-        return_type => undef,
-        class_name  => undef,
-        class_cnick => undef,
-        param_list  => undef,
-        macro_sym   => undef,
-        docucomment => undef,
-        parcel      => undef,
-        abstract    => undef,
-        final       => undef,
-        exposure    => 'parcel',
+        return_type    => undef,
+        class_name     => undef,
+        class_nickname => undef,
+        param_list     => undef,
+        macro_sym      => undef,
+        docucomment    => undef,
+        parcel         => undef,
+        abstract       => undef,
+        final          => undef,
+        exposure       => 'parcel',
     );
 
     sub new {
@@ -286,7 +286,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
         $args{final} ||= 0;
         return _new(
             @args{
-                qw( parcel exposure class_name class_cnick macro_sym
+                qw( parcel exposure class_name class_nickname macro_sym
                     return_type param_list docucomment final abstract )
                 }
         );
@@ -319,7 +319,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
 
     our %new_PARAMS = (
         name        => undef,
-        cnick       => undef,
+        nickname    => undef,
         version     => undef,
         is_included => undef,
     );
@@ -328,7 +328,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
         my ( $either, %args ) = @_;
         verify_args( \%new_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
-        return _new( @args{qw( name cnick version is_included )} );
+        return _new( @args{qw( name nickname version is_included )} );
     }
 
     our %new_from_json_PARAMS = (
@@ -419,11 +419,11 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
     use Carp;
 
     my %new_PARAMS = (
-        parcel      => undef,
-        exposure    => undef,
-        class_name  => undef,
-        class_cnick => undef,
-        micro_sym   => undef,
+        parcel         => undef,
+        exposure       => undef,
+        class_name     => undef,
+        class_nickname => undef,
+        micro_sym      => undef,
     );
 
     sub new {
@@ -433,7 +433,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
         $args{parcel}
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
-            @args{qw( parcel exposure class_name class_cnick micro_sym )} );
+            @args{qw( parcel exposure class_name class_nickname micro_sym )} );
     }
 }
 
@@ -601,13 +601,13 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
     use Carp;
 
     our %new_PARAMS = (
-        type        => undef,
-        micro_sym   => undef,
-        parcel      => undef,
-        exposure    => 'local',
-        class_name  => undef,
-        class_cnick => undef,
-        inert       => undef,
+        type           => undef,
+        micro_sym      => undef,
+        parcel         => undef,
+        exposure       => 'local',
+        class_name     => undef,
+        class_nickname => undef,
+        inert          => undef,
     );
 
     sub new {
@@ -619,7 +619,8 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
             @args{
-                qw( parcel exposure class_name class_cnick micro_sym type inert )
+                qw( parcel exposure class_name class_nickname micro_sym type
+                    inert )
                 }
         );
     }

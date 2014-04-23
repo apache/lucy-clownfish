@@ -16,7 +16,7 @@
 
 parcel TestClownfish;
 
-class Clownfish::Test::TestCharBuf cnick TestCB
+class Clownfish::Test::TestCharBuf nickname TestCB
     inherits Clownfish::TestHarness::TestBatch {
 
     inert incremented TestCharBuf*

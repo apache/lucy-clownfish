@@ -99,12 +99,12 @@ static const CFCMeta CFCCLASS_META = {
 
 CFCClass*
 CFCClass_create(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *cnick,
+                const char *class_name, const char *nickname,
                 const char *micro_sym, CFCDocuComment *docucomment,
                 CFCFileSpec *file_spec, const char *parent_class_name,
                 int is_final, int is_inert) {
     CFCClass *self = (CFCClass*)CFCBase_allocate(&CFCCLASS_META);
-    return CFCClass_do_create(self, parcel, exposure, class_name, cnick,
+    return CFCClass_do_create(self, parcel, exposure, class_name, nickname,
                               micro_sym, docucomment, file_spec,
                               parent_class_name, is_final, is_inert);
 }
@@ -112,13 +112,13 @@ CFCClass_create(struct CFCParcel *parcel, const char *exposure,
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    const char *exposure, const char *class_name,
-                   const char *cnick, const char *micro_sym,
+                   const char *nickname, const char *micro_sym,
                    CFCDocuComment *docucomment, CFCFileSpec *file_spec,
                    const char *parent_class_name, int is_final, int is_inert) {
     CFCUTIL_NULL_CHECK(class_name);
     exposure  = exposure  ? exposure  : "parcel";
     micro_sym = micro_sym ? micro_sym : "class";
-    CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name, cnick,
+    CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name, nickname,
                    micro_sym);
     if (!is_inert
         && !parent_class_name
@@ -159,9 +159,10 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     self->full_struct_sym   = CFCUtil_sprintf("%s%s", prefix, self->struct_sym);
     self->ivars_struct      = CFCUtil_sprintf("%sIVARS", self->struct_sym);
     self->full_ivars_struct = CFCUtil_sprintf("%sIVARS", self->full_struct_sym);
-    self->ivars_func        = CFCUtil_sprintf("%s_IVARS", CFCClass_get_cnick(self));
+    self->ivars_func        = CFCUtil_sprintf("%s_IVARS",
+                                              CFCClass_get_nickname(self));
     self->full_ivars_func   = CFCUtil_sprintf("%s%s_IVARS", prefix,
-                                              CFCClass_get_cnick(self));
+                                              CFCClass_get_nickname(self));
     self->full_ivars_offset = CFCUtil_sprintf("%s_OFFSET", self->full_ivars_func);
     size_t full_struct_sym_len = strlen(self->full_struct_sym);
     self->full_vtable_var = (char*)MALLOCATE(full_struct_sym_len + 1);
@@ -263,7 +264,7 @@ S_register(CFCClass *self) {
     CFCParcel  *parcel     = CFCClass_get_parcel(self);
     const char *prefix     = CFCParcel_get_prefix(parcel);
     const char *class_name = CFCClass_get_class_name(self);
-    const char *cnick      = CFCClass_get_cnick(self);
+    const char *nickname   = CFCClass_get_nickname(self);
     const char *key        = self->full_struct_sym;
 
     for (size_t i = 0; i < registry_size; i++) {
@@ -271,7 +272,7 @@ S_register(CFCClass *self) {
         CFCParcel  *other_parcel     = CFCClass_get_parcel(other);
         const char *other_prefix     = CFCParcel_get_prefix(other_parcel);
         const char *other_class_name = CFCClass_get_class_name(other);
-        const char *other_cnick      = CFCClass_get_cnick(other);
+        const char *other_nickname   = CFCClass_get_nickname(other);
 
         if (strcmp(class_name, other_class_name) == 0) {
             CFCUtil_die("Two classes with name %s", class_name);
@@ -281,7 +282,7 @@ S_register(CFCClass *self) {
                         class_name, other_class_name);
         }
         if (strcmp(prefix, other_prefix) == 0
-            && strcmp(cnick, other_cnick) == 0
+            && strcmp(nickname, other_nickname) == 0
            ) {
             CFCUtil_die("Class nickname conflict between %s and %s",
                         class_name, other_class_name);
@@ -714,8 +715,8 @@ CFCClass_inert_vars(CFCClass *self) {
 }
 
 const char*
-CFCClass_get_cnick(CFCClass *self) {
-    return CFCSymbol_get_class_cnick((CFCSymbol*)self);
+CFCClass_get_nickname(CFCClass *self) {
+    return CFCSymbol_get_class_nickname((CFCSymbol*)self);
 }
 
 void

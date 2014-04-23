@@ -45,8 +45,8 @@ like( $@, qr/parcel .* already registered/i,
       "can't register two parcels with the same name" );
 
 my $same_nick = Clownfish::CFC::Model::Parcel->new(
-    name  => "OtherFoo",
-    cnick => "Foo",
+    name     => "OtherFoo",
+    nickname => "Foo",
 );
 eval { $same_nick->register; };
 like( $@, qr/parcel with nickname .* already registered/i,
@@ -90,8 +90,8 @@ isa_ok(
 
 # Register singleton.
 my $parcel = Clownfish::CFC::Model::Parcel->new(
-    name  => 'Crustacean',
-    cnick => 'Crust',
+    name     => 'Crustacean',
+    nickname => 'Crust',
 );
 $parcel->register;
 is( $parcel->get_version->get_vstring, 'v0', "get_version" );

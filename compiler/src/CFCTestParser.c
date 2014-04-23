@@ -262,7 +262,7 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCParser_set_class_name(parser, "Stuff::Obj");
-        CFCParser_set_class_cnick(parser, "Obj");
+        CFCParser_set_class_nickname(parser, "Obj");
 
         const char *method_string =
             "public Foo* Spew_Foo(Obj *self, uint32_t *how_many);";
@@ -293,14 +293,16 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        static const char *const cnicks[2] =  { "Food", "FF" };
+        static const char *const nicknames[2] =  { "Food", "FF" };
         for (int i = 0; i < 2; ++i) {
-            const char *cnick = cnicks[i];
+            const char *nickname = nicknames[i];
             char *class_string
-                = CFCUtil_sprintf("class Foodie%s cnick %s { }", cnick, cnick);
+                = CFCUtil_sprintf("class Foodie%s nickname %s { }", nickname,
+                                  nickname);
             CFCClass *klass
                 = CFCTest_parse_class(test, parser, class_string);
-            STR_EQ(test, CFCClass_get_cnick(klass), cnick, "cnick: %s", cnick);
+            STR_EQ(test, CFCClass_get_nickname(klass), nickname,
+                   "nickname: %s", nickname);
             FREEMEM(class_string);
             CFCBase_decref((CFCBase*)klass);
         }

@@ -233,7 +233,7 @@ S_run_tests(CFCTest *test) {
 
     {
         const char *class_src =
-            "public class Foo::Foodie cnick Foodie inherits Foo {\n"
+            "public class Foo::Foodie nickname Foodie inherits Foo {\n"
             "    int num;\n"
             "}\n";
         CFCClass *klass = CFCTest_parse_class(test, parser, class_src);
@@ -306,7 +306,7 @@ S_run_tests(CFCTest *test) {
 
     {
         const char *class_src =
-            "inert class Rigor::Mortis cnick Mort {\n"
+            "inert class Rigor::Mortis nickname Mort {\n"
             "    inert void lie_still();\n"
             "}\n";
         CFCClass *klass = CFCTest_parse_class(test, parser, class_src);

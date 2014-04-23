@@ -55,7 +55,7 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCParser_set_class_name(parser, "Neato::Obj");
-        CFCParser_set_class_cnick(parser, "Obj");
+        CFCParser_set_class_nickname(parser, "Obj");
         static const char *func_strings[2] = {
             "inert int running_count(int biscuit);",
             "public inert Hash* init_fave_hash(int32_t num_buckets,"

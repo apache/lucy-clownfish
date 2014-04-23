@@ -180,7 +180,7 @@ S_run_parser_tests(CFCTest *test) {
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
     CFCParser_set_class_name(parser, "Neato::Obj");
-    CFCParser_set_class_cnick(parser, "Obj");
+    CFCParser_set_class_nickname(parser, "Obj");
 
     {
         static const char *method_strings[4] = {

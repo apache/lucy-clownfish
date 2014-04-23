@@ -62,7 +62,7 @@ void
 CFCParcel_reap_singletons(void);
 
 CFCParcel*
-CFCParcel_new(const char *name, const char *cnick,
+CFCParcel_new(const char *name, const char *nickname,
               struct CFCVersion *version, int is_included);
 
 CFCParcel*
@@ -72,7 +72,7 @@ CFCParcel*
 CFCParcel_new_from_json(const char *json, int is_included);
 
 CFCParcel*
-CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
+CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
                struct CFCVersion *version, int is_included);
 
 void
@@ -85,7 +85,7 @@ const char*
 CFCParcel_get_name(CFCParcel *self);
 
 const char*
-CFCParcel_get_cnick(CFCParcel *self);
+CFCParcel_get_nickname(CFCParcel *self);
 
 struct CFCVersion*
 CFCParcel_get_version(CFCParcel *self);

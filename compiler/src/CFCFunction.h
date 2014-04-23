@@ -49,7 +49,7 @@ struct CFCFunction {
  * L<Clownfish::CFC::Model::Symbol>).
  * @param class_name The full name of the class in whose namespace the
  * function resides.
- * @param class_cnick The C nickname for the class.
+ * @param class_nickname The C nickname for the class.
  * @param micro_sym The lower case name of the function, without any
  * namespacing prefixes.
  * @param return_type A Clownfish::CFC::Model::Type representing the
@@ -63,7 +63,7 @@ struct CFCFunction {
  */
 CFCFunction*
 CFCFunction_new(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_cnick,
+                const char *class_name, const char *class_nickname,
                 const char *micro_sym, struct CFCType *return_type,
                 struct CFCParamList *param_list,
                 struct CFCDocuComment *docucomment, int is_inline);
@@ -71,7 +71,7 @@ CFCFunction_new(struct CFCParcel *parcel, const char *exposure,
 CFCFunction*
 CFCFunction_init(CFCFunction *self, struct CFCParcel *parcel,
                  const char *exposure, const char *class_name,
-                 const char *class_cnick, const char *micro_sym,
+                 const char *class_nickname, const char *micro_sym,
                  struct CFCType *return_type, struct CFCParamList *param_list,
                  struct CFCDocuComment *docucomment, int is_inline);
 

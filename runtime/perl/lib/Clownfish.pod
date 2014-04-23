@@ -188,7 +188,7 @@ following form:
     class-declaration = class-exposure-specifier?
                         class-modifier*
                         "class" class-name
-                        ("cnick" class-nickname)?
+                        ("nickname" class-nickname)?
                         ("inherits" class-name)?
                         "{" class-contents "}"
     class-exposure-specifier = "public"
@@ -215,7 +215,7 @@ Example of a class declaration:
 
     parcel Pathfinder;
 
-    public class Pathfinder::Graph::VisibilityGraph cnick VisGraph
+    public class Pathfinder::Graph::VisibilityGraph nickname VisGraph
         extends Clownfish::Obj {
         /* Variables and functions */
     }
@@ -340,7 +340,7 @@ final.
 
 Example:
 
-    public class Pathfinder::Graph::VisibilityGraph cnick VisGraph
+    public class Pathfinder::Graph::VisibilityGraph nickname VisGraph
         extends Clownfish::Obj {
 
         public inert incremented VisibilityGraph*
@@ -390,7 +390,7 @@ created for all subclasses whether they override a method or not.
 
 Example:
 
-    public class Pathfinder::Graph::VisibilityGraph cnick VisGraph
+    public class Pathfinder::Graph::VisibilityGraph nickname VisGraph
         extends Clownfish::Obj {
 
         public void

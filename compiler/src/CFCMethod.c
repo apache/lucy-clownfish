@@ -55,11 +55,11 @@ static const CFCMeta CFCMETHOD_META = {
 
 CFCMethod*
 CFCMethod_new(CFCParcel *parcel, const char *exposure, const char *class_name,
-              const char *class_cnick, const char *macro_sym,
+              const char *class_nickname, const char *macro_sym,
               CFCType *return_type, CFCParamList *param_list,
               CFCDocuComment *docucomment, int is_final, int is_abstract) {
     CFCMethod *self = (CFCMethod*)CFCBase_allocate(&CFCMETHOD_META);
-    return CFCMethod_init(self, parcel, exposure, class_name, class_cnick,
+    return CFCMethod_init(self, parcel, exposure, class_name, class_nickname,
                           macro_sym, return_type, param_list, docucomment,
                           is_final, is_abstract);
 }
@@ -88,7 +88,7 @@ S_validate_macro_sym(const char *macro_sym) {
 
 CFCMethod*
 CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
-               const char *class_name, const char *class_cnick,
+               const char *class_name, const char *class_nickname,
                const char *macro_sym, CFCType *return_type,
                CFCParamList *param_list, CFCDocuComment *docucomment,
                int is_final, int is_abstract) {
@@ -105,7 +105,7 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
 
     // Super-init and clean up derived micro_sym.
     CFCFunction_init((CFCFunction*)self, parcel, exposure, class_name,
-                     class_cnick, micro_sym, return_type, param_list,
+                     class_nickname, micro_sym, return_type, param_list,
                      docucomment, false);
     FREEMEM(micro_sym);
 
@@ -136,7 +136,7 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
 
     // Derive name of implementing function.
     self->short_imp_func
-        = CFCUtil_sprintf("%s_%s_IMP", CFCMethod_get_class_cnick(self),
+        = CFCUtil_sprintf("%s_%s_IMP", CFCMethod_get_class_nickname(self),
                           self->macro_sym);
     self->imp_func = CFCUtil_sprintf("%s%s", CFCMethod_get_PREFIX(self),
                                      self->short_imp_func);
@@ -238,12 +238,12 @@ CFCMethod_override(CFCMethod *self, CFCMethod *orig) {
 
 CFCMethod*
 CFCMethod_finalize(CFCMethod *self) {
-    CFCParcel  *parcel      = CFCMethod_get_parcel(self);
-    const char *exposure    = CFCMethod_get_exposure(self);
-    const char *class_name  = CFCMethod_get_class_name(self);
-    const char *class_cnick = CFCMethod_get_class_cnick(self);
+    CFCParcel  *parcel         = CFCMethod_get_parcel(self);
+    const char *exposure       = CFCMethod_get_exposure(self);
+    const char *class_name     = CFCMethod_get_class_name(self);
+    const char *class_nickname = CFCMethod_get_class_nickname(self);
     CFCMethod  *finalized
-        = CFCMethod_new(parcel, exposure, class_name, class_cnick,
+        = CFCMethod_new(parcel, exposure, class_name, class_nickname,
                         self->macro_sym, self->function.return_type,
                         self->function.param_list,
                         self->function.docucomment, true,
@@ -291,29 +291,29 @@ CFCMethod_excluded_from_host(CFCMethod *self) {
 
 static char*
 S_short_method_sym(CFCMethod *self, CFCClass *invoker, const char *postfix) {
-    const char *cnick;
+    const char *nickname;
     if (invoker) {
-        cnick = CFCClass_get_cnick(invoker);
+        nickname = CFCClass_get_nickname(invoker);
     }
     else {
-        cnick = CFCMethod_get_class_cnick(self);
+        nickname = CFCMethod_get_class_nickname(self);
     }
-    return CFCUtil_sprintf("%s_%s%s", cnick, self->macro_sym, postfix);
+    return CFCUtil_sprintf("%s_%s%s", nickname, self->macro_sym, postfix);
 }
 
 static char*
 S_full_method_sym(CFCMethod *self, CFCClass *invoker, const char *postfix) {
     const char *PREFIX;
-    const char *cnick;
+    const char *nickname;
     if (invoker) {
-        PREFIX = CFCClass_get_PREFIX(invoker);
-        cnick  = CFCClass_get_cnick(invoker);
+        PREFIX   = CFCClass_get_PREFIX(invoker);
+        nickname = CFCClass_get_nickname(invoker);
     }
     else {
-        PREFIX = CFCMethod_get_PREFIX(self);
-        cnick  = CFCMethod_get_class_cnick(self);
+        PREFIX   = CFCMethod_get_PREFIX(self);
+        nickname = CFCMethod_get_class_nickname(self);
     }
-    return CFCUtil_sprintf("%s%s_%s%s", PREFIX, cnick, self->macro_sym,
+    return CFCUtil_sprintf("%s%s_%s%s", PREFIX, nickname, self->macro_sym,
                            postfix);
 }
 
@@ -355,10 +355,10 @@ CFCMethod_full_typedef(CFCMethod *self, CFCClass *invoker) {
 const char*
 CFCMethod_full_override_sym(CFCMethod *self) {
     if (!self->full_override_sym) {
-        const char *Prefix = CFCMethod_get_Prefix(self);
-        const char *cnick  = CFCMethod_get_class_cnick(self);
+        const char *Prefix   = CFCMethod_get_Prefix(self);
+        const char *nickname = CFCMethod_get_class_nickname(self);
         self->full_override_sym
-            = CFCUtil_sprintf("%s%s_%s_OVERRIDE", Prefix, cnick,
+            = CFCUtil_sprintf("%s%s_%s_OVERRIDE", Prefix, nickname,
                               self->macro_sym);
     }
     return self->full_override_sym;
@@ -416,8 +416,8 @@ CFCMethod_get_class_name(CFCMethod *self) {
 }
 
 const char*
-CFCMethod_get_class_cnick(CFCMethod *self) {
-    return CFCSymbol_get_class_cnick((CFCSymbol*)self);
+CFCMethod_get_class_nickname(CFCMethod *self) {
+    return CFCSymbol_get_class_nickname((CFCSymbol*)self);
 }
 
 int

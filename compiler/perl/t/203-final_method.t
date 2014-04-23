@@ -25,12 +25,12 @@ $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
 
 my %args = (
-    return_type => $parser->parse('Obj*'),
-    class_name  => 'Neato::Foo',
-    class_cnick => 'Foo',
-    param_list  => $parser->parse('(Foo* self)'),
-    macro_sym   => 'Return_An_Obj',
-    parcel      => 'Neato',
+    return_type    => $parser->parse('Obj*'),
+    class_name     => 'Neato::Foo',
+    class_nickname => 'Foo',
+    param_list     => $parser->parse('(Foo* self)'),
+    macro_sym      => 'Return_An_Obj',
+    parcel         => 'Neato',
 );
 
 my $not_final_method = Clownfish::CFC::Model::Method->new(%args);
