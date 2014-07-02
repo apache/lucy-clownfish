@@ -32,7 +32,7 @@ class Clownfish::Class inherits Clownfish::Obj {
     size_t             obj_alloc_size;
     size_t             class_alloc_size;
     VArray            *methods;
-    cfish_method_t[1]  method_ptrs; /* flexible array */
+    cfish_method_t[1]  vtable; /* flexible array */
 
     inert LockFreeRegistry *registry;
     inert size_t offset_of_parent;

@@ -87,7 +87,7 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
 
         size_t novel_offset = parent
                               ? parent->class_alloc_size
-                              : offsetof(Class, method_ptrs);
+                              : offsetof(Class, vtable);
         size_t class_alloc_size = novel_offset
                                   + spec->num_novel_meths
                                     * sizeof(cfish_method_t);
@@ -100,9 +100,10 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
         klass->class_alloc_size = class_alloc_size;
 
         if (parent) {
-            size_t parent_ptrs_size = parent->class_alloc_size
-                                      - offsetof(Class, method_ptrs);
-            memcpy(klass->method_ptrs, parent->method_ptrs, parent_ptrs_size);
+            // Copy parent vtable.
+            size_t parent_vt_size = parent->class_alloc_size
+                                    - offsetof(Class, vtable);
+            memcpy(klass->vtable, parent->vtable, parent_vt_size);
         }
 
         for (size_t i = 0; i < spec->num_inherited_meths; ++i) {
