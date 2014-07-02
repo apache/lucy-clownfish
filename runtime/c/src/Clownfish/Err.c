@@ -27,7 +27,7 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 /* TODO: Thread safety */
 static Err *current_error;
@@ -74,8 +74,8 @@ Err_To_Host_IMP(Err *self) {
 }
 
 void
-Err_throw_mess(VTable *vtable, String *message) {
-    UNUSED_VAR(vtable);
+Err_throw_mess(Class *klass, String *message) {
+    UNUSED_VAR(klass);
     Err *err = Err_new(message);
     Err_do_throw(err);
 }

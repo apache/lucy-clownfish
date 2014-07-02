@@ -27,7 +27,7 @@
 #include "Clownfish/Hash.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/VArray.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 /* Avoid conflicts with Clownfish bool type. */
 #define HAS_BOOL
@@ -59,20 +59,20 @@ cfish_XSBind_sv_defined(SV *sv) {
 }
 
 /** If the SV contains a Clownfish object which passes an "isa" test against the
- * passed-in VTable, return a pointer to it.  If not, but
+ * passed-in Class, return a pointer to it.  If not, but
  * <code>allocation</code> is non-NULL and a StackString would satisfy the
  * "isa" test, stringify the SV, create a StackString using
  * <code>allocation</code>, assign the SV's string to it, and return that
  * instead.  If all else fails, throw an exception.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_sv_to_cfish_obj(SV *sv, cfish_VTable *vtable, void *allocation);
+cfish_XSBind_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation);
 
 /** As XSBind_sv_to_cfish_obj above, but returns NULL instead of throwing an
  * exception.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_VTable *vtable,
+cfish_XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_Class *klass,
                                    void *allocation);
 
 
@@ -187,9 +187,9 @@ cfish_XSBind_enable_overload(void *pobj);
  *
  * Use the following macro if a Clownfish object is desired:
  *
- *     ALLOT_OBJ(ptr, key, keylen, required, vtable, allocation)
+ *     ALLOT_OBJ(ptr, key, keylen, required, klass, allocation)
  *
- * The "vtable" argument must be the VTable corresponding to the class of the
+ * The "klass" argument must be the Class corresponding to the class of the
  * desired object.  The "allocation" argument must be a blob of memory
  * allocated on the stack sufficient to hold a StackString.  (Use
  * cfish_SStr_size() to find the allocation size.)
@@ -295,8 +295,8 @@ cfish_XSBind_allot_params(SV** stack, int32_t start,
     ptr, key, keylen, required, XSBIND_WANT_F32, NULL, NULL
 #define XSBIND_ALLOT_F64(ptr, key, keylen, required) \
     ptr, key, keylen, required, XSBIND_WANT_F64, NULL, NULL
-#define XSBIND_ALLOT_OBJ(ptr, key, keylen, required, vtable, allocation) \
-    ptr, key, keylen, required, XSBIND_WANT_OBJ, vtable, allocation
+#define XSBIND_ALLOT_OBJ(ptr, key, keylen, required, klass, allocation) \
+    ptr, key, keylen, required, XSBIND_WANT_OBJ, klass, allocation
 #define XSBIND_ALLOT_SV(ptr, key, keylen, required) \
     ptr, key, keylen, required, XSBIND_WANT_SV, NULL, NULL
 

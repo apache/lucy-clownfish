@@ -28,7 +28,7 @@
 #include "Clownfish/TestHarness/TestBatch.h"
 #include "Clownfish/TestHarness/TestFormatter.h"
 #include "Clownfish/VArray.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 struct try_run_tests_context {
     TestBatchRunner *runner;
@@ -44,7 +44,7 @@ S_vtest_true(TestBatchRunner *self, bool condition, const char *pattern,
 
 TestBatchRunner*
 TestBatchRunner_new(TestFormatter *formatter) {
-    TestBatchRunner *self = (TestBatchRunner*)VTable_Make_Obj(TESTBATCHRUNNER);
+    TestBatchRunner *self = (TestBatchRunner*)Class_Make_Obj(TESTBATCHRUNNER);
     return TestBatchRunner_init(self, formatter);
 }
 

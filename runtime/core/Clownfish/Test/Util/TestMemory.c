@@ -25,11 +25,11 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestMemory*
 TestMemory_new() {
-    return (TestMemory*)VTable_Make_Obj(TESTMEMORY);
+    return (TestMemory*)Class_Make_Obj(TESTMEMORY);
 }
 
 static void

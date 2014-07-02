@@ -31,14 +31,14 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 static char smiley[] = { (char)0xE2, (char)0x98, (char)0xBA, 0 };
 static uint32_t smiley_len = 3;
 
 TestCharBuf*
 TestCB_new() {
-    return (TestCharBuf*)VTable_Make_Obj(TESTCHARBUF);
+    return (TestCharBuf*)Class_Make_Obj(TESTCHARBUF);
 }
 
 static CharBuf*

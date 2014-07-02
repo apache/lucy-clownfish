@@ -232,17 +232,17 @@ S_write_boot_c(CFCPerl *self) {
         // to be read.
         CFCPerlClass *class_binding = CFCPerlClass_singleton(class_name);
         if (class_binding) {
-            const char *vtable_var = CFCClass_full_vtable_var(klass);
+            const char *class_var = CFCClass_full_class_var(klass);
             const char **aliases
                 = CFCPerlClass_get_class_aliases(class_binding);
             for (size_t j = 0; aliases[j] != NULL; j++) {
                 const char *alias = aliases[j];
                 size_t alias_len  = strlen(alias);
                 const char pattern[] =
-                    "    cfish_VTable_add_alias_to_registry("
+                    "    cfish_Class_add_alias_to_registry("
                     "%s, \"%s\", %u);\n";
                 char *alias_add
-                    = CFCUtil_sprintf(pattern, vtable_var, alias,
+                    = CFCUtil_sprintf(pattern, class_var, alias,
                                       (unsigned)alias_len);
                 alias_adds = CFCUtil_cat(alias_adds, alias_add, NULL);
                 FREEMEM(alias_add);
@@ -279,7 +279,7 @@ S_write_boot_c(CFCPerl *self) {
         "\n"
         "#include \"boot.h\"\n"
         "#include \"Clownfish/String.h\"\n"
-        "#include \"Clownfish/VTable.h\"\n"
+        "#include \"Clownfish/Class.h\"\n"
         "%s\n"
         "\n"
         "void\n"

@@ -188,21 +188,21 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "typedef void\n"
         "(*cfish_method_t)(const void *vself);\n"
         "\n"
-        "/* Access the function pointer for a given method from the vtable.\n"
+        "/* Access the function pointer for a given method from the class.\n"
         " */\n"
-        "#define CFISH_METHOD_PTR(_vtable, _full_meth) \\\n"
-        "     ((_full_meth ## _t)cfish_method(_vtable, _full_meth ## _OFFSET))\n"
+        "#define CFISH_METHOD_PTR(_class, _full_meth) \\\n"
+        "     ((_full_meth ## _t)cfish_method(_class, _full_meth ## _OFFSET))\n"
         "\n"
         "static CFISH_INLINE cfish_method_t\n"
-        "cfish_method(const void *vtable, size_t offset) {\n"
+        "cfish_method(const void *klass, size_t offset) {\n"
         "    union { char *cptr; cfish_method_t *fptr; } ptr;\n"
-        "    ptr.cptr = (char*)vtable + offset;\n"
+        "    ptr.cptr = (char*)klass + offset;\n"
         "    return ptr.fptr[0];\n"
         "}\n"
         "\n"
         "typedef struct cfish_Dummy {\n"
         "   CFISH_OBJ_HEAD\n"
-        "   void *vtable;\n"
+        "   void *klass;\n"
         "} cfish_Dummy;\n"
         "\n"
         "/* Access the function pointer for a given method from the object.\n"
@@ -210,25 +210,25 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "static CFISH_INLINE cfish_method_t\n"
         "cfish_obj_method(const void *object, size_t offset) {\n"
         "    cfish_Dummy *dummy = (cfish_Dummy*)object;\n"
-        "    return cfish_method(dummy->vtable, offset);\n"
+        "    return cfish_method(dummy->klass, offset);\n"
         "}\n"
         "\n"
-        "/* Access the function pointer for the given method in the superclass's\n"
-        " * vtable. */\n"
-        "#define CFISH_SUPER_METHOD_PTR(_vtable, _full_meth) \\\n"
-        "     ((_full_meth ## _t)cfish_super_method(_vtable, \\\n"
+        "/* Access the function pointer for the given method in the\n"
+        " * superclass. */\n"
+        "#define CFISH_SUPER_METHOD_PTR(_class, _full_meth) \\\n"
+        "     ((_full_meth ## _t)cfish_super_method(_class, \\\n"
         "                                           _full_meth ## _OFFSET))\n"
         "\n"
-        "extern CFISH_VISIBLE size_t cfish_VTable_offset_of_parent;\n"
+        "extern CFISH_VISIBLE size_t cfish_Class_offset_of_parent;\n"
         "static CFISH_INLINE cfish_method_t\n"
-        "cfish_super_method(const void *vtable, size_t offset) {\n"
-        "    char *vt_as_char = (char*)vtable;\n"
-        "    cfish_VTable **parent_ptr\n"
-        "        = (cfish_VTable**)(vt_as_char + cfish_VTable_offset_of_parent);\n"
+        "cfish_super_method(const void *klass, size_t offset) {\n"
+        "    char *class_as_char = (char*)klass;\n"
+        "    cfish_Class **parent_ptr\n"
+        "        = (cfish_Class**)(class_as_char + cfish_Class_offset_of_parent);\n"
         "    return cfish_method(*parent_ptr, offset);\n"
         "}\n"
         "\n"
-        "/* Structs for VTable initialization.\n"
+        "/* Structs for Class initialization.\n"
         " */\n"
         "\n"
         "typedef struct cfish_NovelMethSpec {\n"
@@ -249,19 +249,19 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "    size_t *parent_offset;\n"
         "} cfish_InheritedMethSpec;\n"
         "\n"
-        "typedef struct cfish_VTableSpec {\n"
-        "    cfish_VTable **vtable;\n"
-        "    cfish_VTable **parent;\n"
-        "    const char    *name;\n"
-        "    size_t         ivars_size;\n"
-        "    size_t        *ivars_offset_ptr;\n"
-        "    uint32_t       num_novel_meths;\n"
-        "    uint32_t       num_overridden_meths;\n"
-        "    uint32_t       num_inherited_meths;\n"
+        "typedef struct cfish_ClassSpec {\n"
+        "    cfish_Class **klass;\n"
+        "    cfish_Class **parent;\n"
+        "    const char   *name;\n"
+        "    size_t        ivars_size;\n"
+        "    size_t       *ivars_offset_ptr;\n"
+        "    uint32_t      num_novel_meths;\n"
+        "    uint32_t      num_overridden_meths;\n"
+        "    uint32_t      num_inherited_meths;\n"
         "    const cfish_NovelMethSpec      *novel_meth_specs;\n"
         "    const cfish_OverriddenMethSpec *overridden_meth_specs;\n"
         "    const cfish_InheritedMethSpec  *inherited_meth_specs;\n"
-        "} cfish_VTableSpec;\n"
+        "} cfish_ClassSpec;\n"
         "\n"
         "#ifdef CFISH_USE_SHORT_NAMES\n"
         "  #define METHOD_PTR               CFISH_METHOD_PTR\n"
@@ -269,7 +269,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "  #define NovelMethSpec            cfish_NovelMethSpec\n"
         "  #define OverriddenMethSpec       cfish_OverriddenMethSpec\n"
         "  #define InheritedMethSpec        cfish_InheritedMethSpec\n"
-        "  #define VTableSpec               cfish_VTableSpec\n"
+        "  #define ClassSpec                cfish_ClassSpec\n"
         "#endif\n"
         "\n";
 
@@ -359,8 +359,8 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     char *privacy_syms = CFCUtil_strdup("");
     char *includes     = CFCUtil_strdup("");
     char *c_data       = CFCUtil_strdup("");
-    char *vt_specs = CFCUtil_strdup(
-        "static const cfish_VTableSpec vtable_specs[] = {\n");
+    char *class_specs  = CFCUtil_strdup(
+        "static const cfish_ClassSpec class_specs[] = {\n");
     int num_specs = 0;
     CFCClass **ordered  = CFCHierarchy_ordered_classes(hierarchy);
     for (int i = 0; ordered[i] != NULL; i++) {
@@ -378,11 +378,11 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         FREEMEM(class_c_data);
         if (!CFCClass_inert(klass)) {
             if (num_specs != 0) {
-                vt_specs = CFCUtil_cat(vt_specs, ",\n", NULL);
+                class_specs = CFCUtil_cat(class_specs, ",\n", NULL);
             }
-            char *vt_spec = CFCBindClass_spec_def(class_binding);
-            vt_specs = CFCUtil_cat(vt_specs, vt_spec, NULL);
-            FREEMEM(vt_spec);
+            char *class_spec = CFCBindClass_spec_def(class_binding);
+            class_specs = CFCUtil_cat(class_specs, class_spec, NULL);
+            FREEMEM(class_spec);
             ++num_specs;
         }
         CFCBase_decref((CFCBase*)class_binding);
@@ -390,13 +390,13 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         privacy_syms = CFCUtil_cat(privacy_syms, "#define ",
                                    privacy_sym, "\n", NULL);
     }
-    vt_specs = CFCUtil_cat(vt_specs, "\n};\n", NULL);
+    class_specs = CFCUtil_cat(class_specs, "\n};\n", NULL);
     FREEMEM(ordered);
 
     // Bootstrapping code for prerequisite parcels.
     //
     // bootstrap_inheritance() first calls bootstrap_inheritance() for all
-    // parcels from which classes are inherited. Then the VTables of the parcel
+    // parcels from which classes are inherited. Then the Classes of the parcel
     // are initialized. It aborts on recursive invocation.
     //
     // bootstrap_parcel() first calls bootstrap_inheritance() of its own
@@ -423,7 +423,7 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     char pattern[] =
         "%s\n"
         "\n"
-        "#define C_CFISH_VTABLE\n"          // Needed for abstract methods.
+        "#define C_CFISH_CLASS\n"            // Needed for abstract methods.
         "#include <stdio.h>\n"
         "#include <stdlib.h>\n"
         "%s\n"
@@ -433,12 +433,12 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "#include \"Clownfish/Err.h\"\n"     // Needed for dump/load.
         "#include \"Clownfish/Num.h\"\n"     // Needed for dump/load.
         "#include \"Clownfish/VArray.h\"\n"  // Needed for dump/load.
-        "#include \"Clownfish/VTable.h\"\n"  // Needed for bootstrap.
+        "#include \"Clownfish/Class.h\"\n"   // Needed for bootstrap.
         "%s\n"
         "\n"
         "%s\n"
         "\n"
-        "/* VTableSpec structs for initialization.\n"
+        "/* ClassSpec structs for initialization.\n"
         " */\n"
         "%s\n"
         "\n"
@@ -454,7 +454,7 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "    if (bootstrap_state >= 2) { return; }\n"
         "    bootstrap_state = 1;\n"
         "%s" // Bootstrap inherited parcels.
-        "    cfish_VTable_bootstrap(vtable_specs, %d);\n"
+        "    cfish_Class_bootstrap(class_specs, %d);\n"
         "    bootstrap_state = 2;\n"
         "}\n"
         "\n"
@@ -470,7 +470,7 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "%s\n";
     char *file_content
         = CFCUtil_sprintf(pattern, self->header, privacy_syms, prefix,
-                          includes, c_data, vt_specs, prefix, inh_bootstrap,
+                          includes, c_data, class_specs, prefix, inh_bootstrap,
                           num_specs, prefix, prefix, prereq_bootstrap, prefix,
                           self->footer);
 
@@ -485,7 +485,7 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     FREEMEM(privacy_syms);
     FREEMEM(includes);
     FREEMEM(c_data);
-    FREEMEM(vt_specs);
+    FREEMEM(class_specs);
     FREEMEM(inh_bootstrap);
     FREEMEM(prereq_bootstrap);
     FREEMEM(file_content);

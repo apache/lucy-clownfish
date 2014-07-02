@@ -27,11 +27,11 @@
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestLockFreeRegistry*
 TestLFReg_new() {
-    return (TestLockFreeRegistry*)VTable_Make_Obj(TESTLOCKFREEREGISTRY);
+    return (TestLockFreeRegistry*)Class_Make_Obj(TESTLOCKFREEREGISTRY);
 }
 
 StupidHashCharBuf*

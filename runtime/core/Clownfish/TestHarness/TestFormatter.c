@@ -29,7 +29,7 @@
 #include "Clownfish/TestHarness/TestBatch.h"
 #include "Clownfish/TestHarness/TestSuiteRunner.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestFormatter*
 TestFormatter_init(TestFormatter *self) {
@@ -65,7 +65,7 @@ TestFormatter_batch_comment(TestFormatter *self, const char *fmt, ...) {
 TestFormatterCF*
 TestFormatterCF_new() {
     TestFormatterCF *self
-        = (TestFormatterCF*)VTable_Make_Obj(TESTFORMATTERCF);
+        = (TestFormatterCF*)Class_Make_Obj(TESTFORMATTERCF);
     return TestFormatterCF_init(self);
 }
 
@@ -140,7 +140,7 @@ TestFormatterCF_Summary_IMP(TestFormatterCF *self, TestSuiteRunner *runner) {
 TestFormatterTAP*
 TestFormatterTAP_new() {
     TestFormatterTAP *self
-        = (TestFormatterTAP*)VTable_Make_Obj(TESTFORMATTERTAP);
+        = (TestFormatterTAP*)Class_Make_Obj(TESTFORMATTERTAP);
     return TestFormatterTAP_init(self);
 }
 

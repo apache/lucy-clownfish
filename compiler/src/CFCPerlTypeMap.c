@@ -40,7 +40,7 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var) {
 
     if (CFCType_is_object(type)) {
         const char *struct_sym = CFCType_get_specifier(type);
-        const char *vtable_var = CFCType_get_vtable_var(type);
+        const char *class_var  = CFCType_get_class_var(type);
         const char *allocation;
         if (strcmp(struct_sym, "cfish_String") == 0
             || strcmp(struct_sym, "cfish_Obj") == 0
@@ -53,7 +53,7 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var) {
             allocation = "NULL";
         }
         const char pattern[] = "(%s*)XSBind_sv_to_cfish_obj(%s, %s, %s)";
-        result = CFCUtil_sprintf(pattern, struct_sym, xs_var, vtable_var,
+        result = CFCUtil_sprintf(pattern, struct_sym, xs_var, class_var,
                                  allocation);
     }
     else if (CFCType_is_primitive(type)) {
@@ -265,9 +265,9 @@ CFCPerlTypeMap_write_xs_typemap(CFCHierarchy *hierarchy) {
     for (int i = 0; classes[i] != NULL; i++) {
         CFCClass *klass = classes[i];
         const char *full_struct_sym = CFCClass_full_struct_sym(klass);
-        const char *vtable_var      = CFCClass_full_vtable_var(klass);
+        const char *class_var       = CFCClass_full_class_var(klass);
 
-        start = CFCUtil_cat(start, full_struct_sym, "*\t", vtable_var, "_\n",
+        start = CFCUtil_cat(start, full_struct_sym, "*\t", class_var, "_\n",
                             NULL);
         const char *allocation;
         if (strcmp(full_struct_sym, "cfish_String") == 0) {
@@ -278,12 +278,12 @@ CFCPerlTypeMap_write_xs_typemap(CFCHierarchy *hierarchy) {
         else {
             allocation = "NULL";
         }
-        input = CFCUtil_cat(input, vtable_var, "_\n"
+        input = CFCUtil_cat(input, class_var, "_\n"
                             "    $var = (", full_struct_sym,
-                            "*)XSBind_sv_to_cfish_obj($arg, ", vtable_var,
+                            "*)XSBind_sv_to_cfish_obj($arg, ", class_var,
                             ", ", allocation, ");\n\n", NULL);
 
-        output = CFCUtil_cat(output, vtable_var, "_\n"
+        output = CFCUtil_cat(output, class_var, "_\n"
                              "    $arg = (SV*)CFISH_Obj_To_Host((cfish_Obj*)$var);\n"
                              "    CFISH_DECREF($var);\n"
                              "\n", NULL);

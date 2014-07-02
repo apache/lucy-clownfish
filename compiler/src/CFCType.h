@@ -195,11 +195,11 @@ CFCType_set_specifier(CFCType *self, const char *specifier);
 const char*
 CFCType_get_specifier(CFCType *self);
 
-/** Return the name of the VTable variable which corresponds to the object
+/** Return the name of the Class variable which corresponds to the object
  * type.  Returns NULL for non-object types.
  */
 const char*
-CFCType_get_vtable_var(CFCType *self);
+CFCType_get_class_var(CFCType *self);
 
 int
 CFCType_get_indirection(CFCType *self);

@@ -32,7 +32,7 @@
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/StringHelper.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 // Helper function for throwing invalid UTF-8 error. Since THROW uses
 // a String internally, calling THROW with invalid UTF-8 would create an
@@ -50,7 +50,7 @@ S_die_invalid_pattern(const char *pattern);
 
 CharBuf*
 CB_new(size_t size) {
-    CharBuf *self = (CharBuf*)VTable_Make_Obj(CHARBUF);
+    CharBuf *self = (CharBuf*)Class_Make_Obj(CHARBUF);
     return CB_init(self, size);
 }
 
@@ -84,7 +84,7 @@ CB_new_from_utf8(const char *ptr, size_t size) {
 
 CharBuf*
 CB_new_from_trusted_utf8(const char *ptr, size_t size) {
-    CharBuf *self = (CharBuf*)VTable_Make_Obj(CHARBUF);
+    CharBuf *self = (CharBuf*)Class_Make_Obj(CHARBUF);
 
     // Derive.
     self->ptr = (char*)MALLOCATE(size + 1);

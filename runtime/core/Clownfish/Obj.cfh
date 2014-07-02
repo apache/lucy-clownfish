@@ -21,7 +21,7 @@ parcel Clownfish;
 
 public class Clownfish::Obj {
 
-    VTable *vtable;
+    Class *klass;
 
     /** Abstract initializer.
      */
@@ -79,13 +79,13 @@ public class Clownfish::Obj {
     public void
     Destroy(Obj *self);
 
-    /** Invoke the Destroy() method found in <code>vtable</code> on
+    /** Invoke the Destroy() method found in <code>klass</code> on
      * <code>self</code>.
      *
      * TODO: Eliminate this function if we can arrive at a proper SUPER syntax.
      */
     inert inline void
-    super_destroy(Obj *self, VTable *vtable);
+    super_destroy(Obj *self, Class *klass);
 
     /** Indicate whether two objects are the same.  By default, compares the
      * memory address.
@@ -111,10 +111,10 @@ public class Clownfish::Obj {
     public int32_t
     Hash_Sum(Obj *self);
 
-    /** Return the object's VTable.
+    /** Return the object's Class.
      */
-    public VTable*
-    Get_VTable(Obj *self);
+    public Class*
+    Get_Class(Obj *self);
 
     /** Return the name of the class that the object belongs to.
      */
@@ -124,7 +124,7 @@ public class Clownfish::Obj {
     /** Indicate whether the object is a descendent of <code>ancestor</code>.
      */
     public bool
-    Is_A(Obj *self, VTable *ancestor);
+    Is_A(Obj *self, Class *ancestor);
 
     /** Generic stringification: "ClassName@hex_mem_address".
      */
@@ -156,14 +156,14 @@ public class Clownfish::Obj {
 
 __C__
 static CFISH_INLINE void
-cfish_Obj_super_destroy(cfish_Obj *self, cfish_VTable *vtable) {
+cfish_Obj_super_destroy(cfish_Obj *self, cfish_Class *class) {
     CFISH_Obj_Destroy_t super_destroy
-        = CFISH_SUPER_METHOD_PTR(vtable, CFISH_Obj_Destroy);
+        = CFISH_SUPER_METHOD_PTR(class, CFISH_Obj_Destroy);
     super_destroy(self);
 }
 
-#define CFISH_SUPER_DESTROY(_self, _vtable) \
-    cfish_Obj_super_destroy((cfish_Obj*)_self, _vtable)
+#define CFISH_SUPER_DESTROY(_self, _class) \
+    cfish_Obj_super_destroy((cfish_Obj*)_self, _class)
 
 static CFISH_INLINE cfish_Obj*
 cfish_Obj_incref(cfish_Obj *self) {
@@ -182,7 +182,7 @@ cfish_Obj_decref(cfish_Obj *self) {
 #define CFISH_DECREF(_self) cfish_Obj_decref((cfish_Obj*)_self)
 
 #ifdef CFISH_USE_SHORT_NAMES
-  #define SUPER_DESTROY(_self, _vtable)   CFISH_SUPER_DESTROY(_self, _vtable)
+  #define SUPER_DESTROY(_self, _class)    CFISH_SUPER_DESTROY(_self, _class)
   #define INCREF(_self)                   CFISH_INCREF(_self)
   #define DECREF(_self)                   CFISH_DECREF(_self)
 #endif

@@ -89,7 +89,7 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::VTable;
+    package Clownfish::Class;
     our $VERSION = '0.003000';
     $VERSION = eval $VERSION;
 

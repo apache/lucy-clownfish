@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 #include "Clownfish/Hash.h"
 #include "Clownfish/String.h"
@@ -56,12 +56,12 @@ SI_rebuild_hash(Hash *self);
 
 void
 Hash_init_class() {
-    TOMBSTONE = (HashTombStone*)VTable_Make_Obj(HASHTOMBSTONE);
+    TOMBSTONE = (HashTombStone*)Class_Make_Obj(HASHTOMBSTONE);
 }
 
 Hash*
 Hash_new(uint32_t capacity) {
-    Hash *self = (Hash*)VTable_Make_Obj(HASH);
+    Hash *self = (Hash*)Class_Make_Obj(HASH);
     return Hash_init(self, capacity);
 }
 

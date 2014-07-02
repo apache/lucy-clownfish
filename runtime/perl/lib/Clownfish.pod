@@ -209,7 +209,7 @@ file.
 
 For every class, a global variable with the uppercase name
 C<{PARCEL_NICK}_{CLASS_LAST_COMP}> is defined. This variable is a pointer to
-a Clownfish::VTable object which is initialized when bootstrapping the parcel.
+a Clownfish::Class object which is initialized when bootstrapping the parcel.
 
 Example of a class declaration:
 
@@ -226,7 +226,7 @@ This will generate:
         /* Instance variables */
     };
     typedef struct pfind_VisibilityGraph pfind_VisibilityGraph;
-    extern cfish_VTable *PFIND_VISIBILITYGRAPH;
+    extern cfish_Class *PFIND_VISIBILITYGRAPH;
 
 =head3 Class exposure
 
@@ -431,7 +431,7 @@ implementation will look like:
 
 Clownfish defines a macro named C<CFISH_METHOD_PTR> that looks up the pointer
 to the implementing function of a method. The first parameter of the macro is
-a pointer to the Clownfish::VTable object of the method's class, the second is
+a pointer to the Clownfish::Class object of the method's class, the second is
 the unshortened name of the method wrapper. If short names for the Clownfish
 parcel are used, the macro is also available under the name C<METHOD_PTR>.
 
@@ -512,7 +512,7 @@ Example:
 =head3 Object creation
 
 Objects are allocated by invoking the C<Make_Obj> method on a class's
-Clownfish::VTable object.
+Clownfish::Class object.
 
 Any inert function can be used to construct objects from C. But to support
 inheritance and object creation from the host language, Clownfish classes
@@ -550,7 +550,7 @@ Example:
 
     Train*
     Train_new(double max_speed, double track_gauge) {
-        Train *self = (Train*)VTable_Make_Obj(TRAIN);
+        Train *self = (Train*)Class_Make_Obj(TRAIN);
         return Train_init(self, max_speed, track_gauge);
     }
 
@@ -586,7 +586,7 @@ This public method takes no arguments besides C<self> and has no return value.
 It should release the resources held by the object and finally call the
 C<Destroy> method of the superclass via the C<CFISH_SUPER_DESTROY> macro with
 short name C<SUPER_DESTROY>. This macro takes the C<self> pointer as first
-argument and a pointer to the object's Clownfish::VTable as second argument.
+argument and a pointer to the object's Clownfish::Class as second argument.
 The C<Destroy> method of the Clownfish::Obj class will eventually free the
 object struct.
 

@@ -24,11 +24,11 @@
 #include "Clownfish/TestHarness/TestBatch.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestFormatter.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestSuiteRunner*
 TestSuiteRunner_new(TestFormatter *formatter) {
-    TestSuiteRunner *self = (TestSuiteRunner*)VTable_Make_Obj(TESTSUITERUNNER);
+    TestSuiteRunner *self = (TestSuiteRunner*)Class_Make_Obj(TESTSUITERUNNER);
     return TestSuiteRunner_init(self, formatter);
 }
 

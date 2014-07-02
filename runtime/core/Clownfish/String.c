@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/String.h"
 
 #include "Clownfish/CharBuf.h"
@@ -56,13 +56,13 @@ Str_new_from_utf8(const char *utf8, size_t size) {
     if (!StrHelp_utf8_valid(utf8, size)) {
         DIE_INVALID_UTF8(utf8, size);
     }
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_from_trusted_utf8(self, utf8, size);
 }
 
 String*
 Str_new_from_trusted_utf8(const char *utf8, size_t size) {
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_from_trusted_utf8(self, utf8, size);
 }
 
@@ -88,13 +88,13 @@ Str_new_steal_utf8(char *utf8, size_t size) {
     if (!StrHelp_utf8_valid(utf8, size)) {
         DIE_INVALID_UTF8(utf8, size);
     }
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_steal_trusted_utf8(self, utf8, size);
 }
 
 String*
 Str_new_steal_trusted_utf8(char *utf8, size_t size) {
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_steal_trusted_utf8(self, utf8, size);
 }
 
@@ -111,13 +111,13 @@ Str_new_wrap_utf8(const char *utf8, size_t size) {
     if (!StrHelp_utf8_valid(utf8, size)) {
         DIE_INVALID_UTF8(utf8, size);
     }
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_wrap_trusted_utf8(self, utf8, size);
 }
 
 String*
 Str_new_wrap_trusted_utf8(const char *utf8, size_t size) {
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_wrap_trusted_utf8(self, utf8, size);
 }
 
@@ -136,7 +136,7 @@ Str_new_from_char(int32_t code_point) {
     size_t  size = StrHelp_encode_utf8_char(code_point, (uint8_t*)ptr);
     ptr[size] = '\0';
 
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
     self->ptr    = ptr;
     self->size   = size;
     self->origin = self;
@@ -157,7 +157,7 @@ Str_newf(const char *pattern, ...) {
 
 static String*
 S_new_substring(String *string, size_t byte_offset, size_t size) {
-    String *self = (String*)VTable_Make_Obj(STRING);
+    String *self = (String*)Class_Make_Obj(STRING);
 
     if (string->origin == NULL) {
         // Copy substring of wrapped strings.
@@ -176,7 +176,7 @@ Obj*
 Str_Inc_RefCount_IMP(String *self) {
     if (self->origin == NULL) {
         // Copy wrapped strings when the refcount is increased.
-        String *copy = (String*)VTable_Make_Obj(STRING);
+        String *copy = (String*)Class_Make_Obj(STRING);
         return (Obj*)Str_init_from_trusted_utf8(copy, self->ptr, self->size);
     }
     else {
@@ -336,7 +336,7 @@ Str_Cat_Trusted_Utf8_IMP(String *self, const char* ptr, size_t size) {
     memcpy(result_ptr, self->ptr, self->size);
     memcpy(result_ptr + self->size, ptr, size);
     result_ptr[result_size] = '\0';
-    String *result = (String*)VTable_Make_Obj(STRING);
+    String *result = (String*)Class_Make_Obj(STRING);
     return Str_init_steal_trusted_utf8(result, result_ptr, result_size);
 }
 
@@ -553,7 +553,7 @@ SStr_new_from_str(void *allocation, size_t alloc_size, String *string) {
     memcpy(ptr, string->ptr, size);
     ptr[size] = '\0';
 
-    StackString *self = (StackString*)VTable_Init_Obj(STACKSTRING, allocation);
+    StackString *self = (StackString*)Class_Init_Obj(STACKSTRING, allocation);
     self->ptr    = ptr;
     self->size   = size;
     self->origin = NULL;
@@ -563,7 +563,7 @@ SStr_new_from_str(void *allocation, size_t alloc_size, String *string) {
 StackString*
 SStr_wrap_str(void *allocation, const char *ptr, size_t size) {
     StackString *self
-        = (StackString*)VTable_Init_Obj(STACKSTRING, allocation);
+        = (StackString*)Class_Init_Obj(STACKSTRING, allocation);
     self->size   = size;
     self->ptr    = ptr;
     self->origin = NULL;
@@ -589,7 +589,7 @@ SStr_Destroy_IMP(StackString *self) {
 
 StringIterator*
 StrIter_new(String *string, size_t byte_offset) {
-    StringIterator *self = (StringIterator*)VTable_Make_Obj(STRINGITERATOR);
+    StringIterator *self = (StringIterator*)Class_Make_Obj(STRINGITERATOR);
     self->string      = (String*)INCREF(string);
     self->byte_offset = byte_offset;
     return self;
@@ -903,7 +903,7 @@ StrIter_Destroy_IMP(StringIterator *self) {
 StackStringIterator*
 SStrIter_new(void *allocation, String *string, size_t byte_offset) {
     StackStringIterator *self
-        = (StackStringIterator*)VTable_Init_Obj(STACKSTRINGITERATOR,
+        = (StackStringIterator*)Class_Init_Obj(STACKSTRINGITERATOR,
                                                 allocation);
     // Assume that the string will be available for the lifetime of the
     // iterator and don't increase its refcount.

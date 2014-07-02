@@ -16,7 +16,7 @@
 
 #define C_CFISH_ERR
 #define C_CFISH_OBJ
-#define C_CFISH_VTABLE
+#define C_CFISH_CLASS
 #define CFISH_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 
@@ -30,12 +30,12 @@
 
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/String.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/Util/Memory.h"
 
 Err*
 Err_new(String *mess) {
-    Err *self = (Err*)VTable_Make_Obj(ERR);
+    Err *self = (Err*)Class_Make_Obj(ERR);
     return Err_init(self, mess);
 }
 
@@ -74,14 +74,14 @@ S_str_vnewf(char *pattern, va_list args) {
     return message;
 }
 void
-THROW(VTable *vtable, char *pattern, ...) {
+THROW(Class *klass, char *pattern, ...) {
     va_list args;
 
     va_start(args, pattern);
     String *message = S_str_vnewf(pattern, args);
     va_end(args);
 
-    Err *err = (Err*)VTable_Make_Obj(vtable);
+    Err *err = (Err*)Class_Make_Obj(klass);
     err = Err_init(err, message);
     Err_do_throw(err);
 }
@@ -180,7 +180,7 @@ Err_rethrow(Err *self, const char *file, int line, const char *func) {
 }
 
 void
-Err_throw_at(VTable *vtable, const char *file, int line,
+Err_throw_at(Class *klass, const char *file, int line,
              const char *func, const char *pattern, ...) {
     va_list args;
 
@@ -188,46 +188,46 @@ Err_throw_at(VTable *vtable, const char *file, int line,
     String *message = S_vmake_mess(file, line, func, pattern, args);
     va_end(args);
 
-    Err *err = (Err*)VTable_Make_Obj(vtable);
+    Err *err = (Err*)Class_Make_Obj(klass);
     err = Err_init(err, message);
     Err_do_throw(err);
 }
 
 // Inlined, slightly optimized version of Obj_is_a.
 static CFISH_INLINE bool
-SI_obj_is_a(Obj *obj, VTable *target_vtable) {
-    VTable *vtable = obj->vtable;
+SI_obj_is_a(Obj *obj, Class *target_class) {
+    Class *klass = obj->klass;
 
-    while (vtable != NULL) {
-        if (vtable == target_vtable) {
+    while (klass != NULL) {
+        if (klass == target_class) {
             return true;
         }
-        vtable = vtable->parent;
+        klass = klass->parent;
     }
 
     return false;
 }
 
 Obj*
-Err_downcast(Obj *obj, VTable *vtable, const char *file, int line,
+Err_downcast(Obj *obj, Class *klass, const char *file, int line,
              const char *func) {
-    if (obj && !SI_obj_is_a(obj, vtable)) {
+    if (obj && !SI_obj_is_a(obj, klass)) {
         Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
-                     Obj_Get_Class_Name(obj), VTable_Get_Name(vtable));
+                     Obj_Get_Class_Name(obj), Class_Get_Name(klass));
     }
     return obj;
 }
 
 Obj*
-Err_certify(Obj *obj, VTable *vtable, const char *file, int line,
+Err_certify(Obj *obj, Class *klass, const char *file, int line,
             const char *func) {
     if (!obj) {
         Err_throw_at(ERR, file, line, func, "Object isn't a %o, it's NULL",
-                     VTable_Get_Name(vtable));
+                     Class_Get_Name(klass));
     }
-    else if (!SI_obj_is_a(obj, vtable)) {
+    else if (!SI_obj_is_a(obj, klass)) {
         Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
-                     Obj_Get_Class_Name(obj), VTable_Get_Name(vtable));
+                     Obj_Get_Class_Name(obj), Class_Get_Name(klass));
     }
     return obj;
 }

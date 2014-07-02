@@ -15,7 +15,7 @@
  */
 
 #define C_CFISH_OBJ
-#define C_CFISH_VTABLE
+#define C_CFISH_CLASS
 #define CFISH_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 
@@ -29,7 +29,7 @@
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/Util/Memory.h"
 
 Obj*
@@ -50,14 +50,14 @@ Obj_Hash_Sum_IMP(Obj *self) {
 }
 
 bool
-Obj_Is_A_IMP(Obj *self, VTable *ancestor) {
-    VTable *vtable = self ? self->vtable : NULL;
+Obj_Is_A_IMP(Obj *self, Class *ancestor) {
+    Class *klass = self ? self->klass : NULL;
 
-    while (vtable != NULL) {
-        if (vtable == ancestor) {
+    while (klass != NULL) {
+        if (klass == ancestor) {
             return true;
         }
-        vtable = vtable->parent;
+        klass = klass->parent;
     }
 
     return false;
@@ -89,14 +89,14 @@ Obj_To_Bool_IMP(Obj *self) {
     return !!Obj_To_I64(self);
 }
 
-VTable*
-Obj_Get_VTable_IMP(Obj *self) {
-    return self->vtable;
+Class*
+Obj_Get_Class_IMP(Obj *self) {
+    return self->klass;
 }
 
 String*
 Obj_Get_Class_Name_IMP(Obj *self) {
-    return VTable_Get_Name(self->vtable);
+    return Class_Get_Name(self->klass);
 }
 
 

@@ -16,7 +16,7 @@
 
 parcel Clownfish;
 
-/** Specialized lock free hash table for storing VTables.
+/** Specialized lock free hash table for storing Classes.
  */
 class Clownfish::LockFreeRegistry nickname LFReg inherits Clownfish::Obj {
 

@@ -32,7 +32,7 @@ extern "C" {
 #include "Clownfish/Hash.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/VArray.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 VALUE Bind_cfish_to_ruby(cfish_Obj *obj);
 VALUE Bind_str_to_ruby(cfish_String *str);

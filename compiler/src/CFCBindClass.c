@@ -183,7 +183,7 @@ S_ivars_func(CFCBindClass *self) {
 static char*
 S_to_c_header_dynamic(CFCBindClass *self) {
     const char *privacy_symbol  = CFCClass_privacy_symbol(self->client);
-    const char *vt_var          = CFCClass_full_vtable_var(self->client);
+    const char *class_var       = CFCClass_full_class_var(self->client);
     const char *PREFIX          = CFCClass_get_PREFIX(self->client);
     char *ivars                 = S_ivars_func(self);
     char *struct_def            = S_struct_definition(self);
@@ -230,10 +230,10 @@ S_to_c_header_dynamic(CFCBindClass *self) {
         "\n"
         "%s\n"
         "\n"
-        "/* Declare the VTable singleton for this class.\n"
+        "/* Declare the Class singleton for this class.\n"
         " */\n"
         "\n"
-        "extern %sVISIBLE cfish_VTable *%s;\n"
+        "extern %sVISIBLE cfish_Class *%s;\n"
         "\n"
         "/* Define \"short names\" for this class's symbols.\n"
         " */\n"
@@ -244,7 +244,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
         = CFCUtil_sprintf(pattern, parent_include, privacy_symbol, ivars,
                           struct_def, privacy_symbol, inert_var_defs,
                           sub_declarations, method_typedefs, method_defs,
-                          PREFIX, vt_var, short_names);
+                          PREFIX, class_var, short_names);
 
     FREEMEM(ivars);
     FREEMEM(struct_def);
@@ -268,7 +268,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
 
     const char *ivars_offset = CFCClass_full_ivars_offset(client);
 
-    const char *vt_var    = CFCClass_full_vtable_var(client);
+    const char *class_var    = CFCClass_full_class_var(client);
 
     CFCMethod **methods  = CFCClass_methods(client);
 
@@ -303,11 +303,11 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
                 // doesn't allow us to initialize a pointer to an anonymous
                 // array inside a global struct, we have to give it a real
                 // symbol and then store a pointer to that symbol inside the
-                // VTableSpec struct.
+                // ClassSpec struct.
                 novel_ms_var
                     = CFCUtil_cat(novel_ms_var,
                                   "static const cfish_NovelMethSpec ",
-                                  vt_var, "_NOVEL_METHS[] = {\n", NULL);
+                                  class_var, "_NOVEL_METHS[] = {\n", NULL);
             }
             else {
                 novel_ms_var = CFCUtil_cat(novel_ms_var, ",\n", NULL);
@@ -322,7 +322,8 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
                 overridden_ms_var
                     = CFCUtil_cat(overridden_ms_var,
                                   "static const cfish_OverriddenMethSpec ",
-                                  vt_var, "_OVERRIDDEN_METHS[] = {\n", NULL);
+                                  class_var, "_OVERRIDDEN_METHS[] = {\n",
+                                  NULL);
             }
             else {
                 overridden_ms_var
@@ -338,7 +339,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
                 inherited_ms_var
                     = CFCUtil_cat(inherited_ms_var,
                                   "static const cfish_InheritedMethSpec ",
-                                  vt_var, "_INHERITED_METHS[] = {\n", NULL);
+                                  class_var, "_INHERITED_METHS[] = {\n", NULL);
             }
             else {
                 inherited_ms_var = CFCUtil_cat(inherited_ms_var, ",\n", NULL);
@@ -368,7 +369,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
         "size_t %s;\n"
         "\n"
         "/* Offsets for method pointers, measured in bytes, from the top\n"
-        " * of this class's vtable.\n"
+        " * of this class's singleton object.\n"
         " */\n"
         "\n"
         "%s\n"
@@ -378,21 +379,21 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
         "\n"
         "%s\n"
         "\n"
-        "/* Define the MethSpec structs used during VTable initialization.\n"
+        "/* Define the MethSpec structs used during Class initialization.\n"
         " */\n"
         "\n"
         "%s"
         "%s"
         "%s"
-        "/* Define this class's VTable.\n"
+        "/* Define the pointer to the Class singleton object.\n"
         " */\n"
         "\n"
-        "cfish_VTable *%s;\n"
+        "cfish_Class *%s;\n"
         "\n";
     char *code
         = CFCUtil_sprintf(pattern, ivars_offset, offsets, method_defs,
                           novel_ms_var, overridden_ms_var, inherited_ms_var,
-                          vt_var);
+                          class_var);
 
     FREEMEM(offsets);
     FREEMEM(method_defs);
@@ -445,22 +446,22 @@ S_struct_definition(CFCBindClass *self) {
     return struct_def;
 }
 
-// Return C definition of the class's VTableSpec.
+// Return C definition of the class's ClassSpec.
 char*
 CFCBindClass_spec_def(CFCBindClass *self) {
     CFCClass *client = self->client;
 
     CFCClass   *parent       = CFCClass_get_parent(client);
     const char *class_name   = CFCClass_get_class_name(client);
-    const char *vt_var       = CFCClass_full_vtable_var(client);
+    const char *class_var    = CFCClass_full_class_var(client);
     const char *struct_sym   = CFCClass_full_struct_sym(client);
     const char *ivars_struct = CFCClass_full_ivars_struct(client);
     const char *prefix       = CFCClass_get_prefix(client);
 
-    // Create a pointer to the parent class's vtable.
+    // Create a pointer to the parent Class object.
     char *parent_ref;
     if (parent) {
-        parent_ref = CFCUtil_sprintf("&%s", CFCClass_full_vtable_var(parent));
+        parent_ref = CFCUtil_sprintf("&%s", CFCClass_full_class_var(parent));
     }
     else {
         // No parent, e.g. Obj or inert classes.
@@ -490,13 +491,15 @@ CFCBindClass_spec_def(CFCBindClass *self) {
     }
 
     char *novel_ms_var      = num_novel
-                              ? CFCUtil_sprintf("%s_NOVEL_METHS", vt_var)
+                              ? CFCUtil_sprintf("%s_NOVEL_METHS", class_var)
                               : CFCUtil_strdup("NULL");
     char *overridden_ms_var = num_overridden
-                              ? CFCUtil_sprintf("%s_OVERRIDDEN_METHS", vt_var)
+                              ? CFCUtil_sprintf("%s_OVERRIDDEN_METHS",
+                                                class_var)
                               : CFCUtil_strdup("NULL");
     char *inherited_ms_var  = num_inherited
-                              ? CFCUtil_sprintf("%s_INHERITED_METHS", vt_var)
+                              ? CFCUtil_sprintf("%s_INHERITED_METHS",
+                                                class_var)
                               : CFCUtil_strdup("NULL");
 
     const char *ivars_or_not = strcmp(prefix, "cfish_") == 0
@@ -505,7 +508,7 @@ CFCBindClass_spec_def(CFCBindClass *self) {
 
     char pattern[] =
         "    {\n"
-        "        &%s, /* vtable */\n"
+        "        &%s, /* class */\n"
         "        %s, /* parent */\n"
         "        \"%s\", /* name */\n"
         "        sizeof(%s), /* ivars_size */\n"
@@ -518,7 +521,7 @@ CFCBindClass_spec_def(CFCBindClass *self) {
         "        %s /* inherited_meth_specs */\n"
         "    }";
     char *code
-        = CFCUtil_sprintf(pattern, vt_var, parent_ref, class_name,
+        = CFCUtil_sprintf(pattern, class_var, parent_ref, class_name,
                           ivars_or_not, ivars_offset_name, num_novel,
                           num_overridden, num_inherited, novel_ms_var,
                           overridden_ms_var, inherited_ms_var);
@@ -646,14 +649,14 @@ S_short_names(CFCBindClass *self) {
                               "\n", NULL);
 
     if (!CFCClass_inert(client)) {
-        const char *short_struct = CFCClass_get_struct_sym(client);
-        const char *full_struct  = CFCClass_full_struct_sym(client);
-        const char *short_vt_var = CFCClass_short_vtable_var(client);
-        const char *full_vt_var  = CFCClass_full_vtable_var(client);
+        const char *short_struct    = CFCClass_get_struct_sym(client);
+        const char *full_struct     = CFCClass_full_struct_sym(client);
+        const char *short_class_var = CFCClass_short_class_var(client);
+        const char *full_class_var  = CFCClass_full_class_var(client);
         short_names = CFCUtil_cat(short_names, "  #define ",
                                   short_struct, " ", full_struct, "\n",
-                                  "  #define ", short_vt_var, " ",
-                                  full_vt_var, "\n", NULL);
+                                  "  #define ", short_class_var, " ",
+                                  full_class_var, "\n", NULL);
     }
 
     CFCFunction **functions = CFCClass_functions(client);

@@ -171,7 +171,7 @@ S_xsub_body(CFCPerlMethod *self) {
     char *full_meth    = CFCMethod_full_method_sym(method, klass);
     char *method_ptr
         = CFCUtil_sprintf("%s method = CFISH_METHOD_PTR(%s, %s);\n    ",
-                          full_typedef, CFCClass_full_vtable_var(klass),
+                          full_typedef, CFCClass_full_class_var(klass),
                           full_meth);
     body = CFCUtil_cat(body, method_ptr, NULL);
     FREEMEM(full_typedef);
@@ -225,9 +225,9 @@ S_self_assign_statement(CFCPerlMethod *self, CFCType *type) {
     if (!CFCType_is_object(type)) {
         CFCUtil_die("Not an object type: %s", type_c);
     }
-    const char *vtable_var = CFCType_get_vtable_var(type);
+    const char *class_var = CFCType_get_class_var(type);
     char pattern[] = "%s self = (%s)XSBind_sv_to_cfish_obj(ST(0), %s, NULL);";
-    char *statement = CFCUtil_sprintf(pattern, type_c, type_c, vtable_var);
+    char *statement = CFCUtil_sprintf(pattern, type_c, type_c, class_var);
 
     return statement;
 }

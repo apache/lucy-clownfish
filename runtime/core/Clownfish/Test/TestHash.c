@@ -29,11 +29,11 @@
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/VArray.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestHash*
 TestHash_new() {
-    return (TestHash*)VTable_Make_Obj(TESTHASH);
+    return (TestHash*)Class_Make_Obj(TESTHASH);
 }
 
 static void

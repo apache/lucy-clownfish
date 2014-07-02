@@ -102,7 +102,7 @@ public class Clownfish::Err inherits Clownfish::Obj {
     /** Raise an exception. Usually invoked via the THROW macro.
      */
     inert void
-    throw_at(VTable *vtable, const char *file, int line, const char *func,
+    throw_at(Class *klass, const char *file, int line, const char *func,
                const char *pattern, ...);
 
     /** Throw an existing exception after tacking on additional context data.
@@ -113,11 +113,11 @@ public class Clownfish::Err inherits Clownfish::Obj {
     /** Raise an exception.  Clean up the supplied message by decrementing its
      * refcount.
      *
-     * @param vtable The vtable for the Err class to throw.
+     * @param klass The Err class to throw.
      * @param message Error message, to be output verbatim.
      */
     inert void
-    throw_mess(VTable *vtable, decremented String *message);
+    throw_mess(Class *klass, decremented String *message);
 
     /** Invoke host exception handling.
      */
@@ -140,27 +140,27 @@ public class Clownfish::Err inherits Clownfish::Obj {
               const char *pattern, ...);
 
     /** Verify that <code>obj</code> is either NULL or inherits from
-     * the class represented by <code>vtable</code>.
+     * <code>klass</code>.
      *
      * @return the object.
      */
     inert nullable Obj*
-    downcast(Obj *obj, VTable *vtable, const char *file, int line,
+    downcast(Obj *obj, Class *klass, const char *file, int line,
                 const char *func);
 
-    /** Verify that <code>obj</code> is not NULL and inherits from the class
-     * represented by <code>vtable</code>.
+    /** Verify that <code>obj</code> is not NULL and inherits from
+     * <code>klass</code>.
      *
      * @return the object.
      */
     inert Obj*
-    certify(Obj *obj, VTable *vtable, const char *file, int line,
+    certify(Obj *obj, Class *klass, const char *file, int line,
             const char *func);
 
     /** Verify that an object belongs to a subclass and not an abstract class.
      */
     inert inline void
-    abstract_class_check(Obj *obj, VTable *vtable);
+    abstract_class_check(Obj *obj, Class *klass);
 
     /** On Windows, return a newly allocated buffer containing the string
      * description for the the last error in the thread.
@@ -189,8 +189,8 @@ __C__
  */
 #ifdef CFISH_HAS_VARIADIC_MACROS
  #ifdef CFISH_HAS_ISO_VARIADIC_MACROS
-  #define CFISH_THROW(_vtable, ...) \
-    cfish_Err_throw_at(_vtable, __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO, \
+  #define CFISH_THROW(_class, ...) \
+    cfish_Err_throw_at(_class, __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO, \
                        __VA_ARGS__)
   #define CFISH_WARN(...) \
     cfish_Err_warn_at(__FILE__, __LINE__, CFISH_ERR_FUNC_MACRO, __VA_ARGS__)
@@ -198,8 +198,8 @@ __C__
     cfish_Err_make_mess(__FILE__, __LINE__, CFISH_ERR_FUNC_MACRO, \
                         __VA_ARGS__)
  #elif defined(CFISH_HAS_GNUC_VARIADIC_MACROS)
-  #define CFISH_THROW(_vtable, args...) \
-    cfish_Err_throw_at(_vtable, __FILE__, __LINE__, \
+  #define CFISH_THROW(_class, args...) \
+    cfish_Err_throw_at(_class, __FILE__, __LINE__, \
                        CFISH_ERR_FUNC_MACRO, ##args)
   #define CFISH_WARN(args...) \
     cfish_Err_warn_at(__FILE__, __LINE__, CFISH_ERR_FUNC_MACRO, ##args)
@@ -208,26 +208,26 @@ __C__
  #endif
 #else
   void
-  CFISH_THROW(cfish_VTable *vtable, char* format, ...);
+  CFISH_THROW(cfish_Class *klass, char* format, ...);
   void
   CFISH_WARN(char* format, ...);
   cfish_String*
   CFISH_MAKE_MESS(char* format, ...);
 #endif
 
-#define CFISH_DOWNCAST(_obj, _vtable) \
-    cfish_Err_downcast((cfish_Obj*)(_obj), (_vtable), \
+#define CFISH_DOWNCAST(_obj, _class) \
+    cfish_Err_downcast((cfish_Obj*)(_obj), (_class), \
                        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
 
 
-#define CFISH_CERTIFY(_obj, _vtable) \
-    cfish_Err_certify((cfish_Obj*)(_obj), (_vtable), \
+#define CFISH_CERTIFY(_obj, _class) \
+    cfish_Err_certify((cfish_Obj*)(_obj), (_class), \
                       __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
 
 static CFISH_INLINE void
-cfish_Err_abstract_class_check(cfish_Obj *obj, cfish_VTable *vtable) {
-    cfish_VTable *const my_vtable = (cfish_VTable*)((cfish_Dummy*)obj)->vtable;
-    if (my_vtable == vtable) {
+cfish_Err_abstract_class_check(cfish_Obj *obj, cfish_Class *klass) {
+    cfish_Class *const my_class = (cfish_Class*)((cfish_Dummy*)obj)->klass;
+    if (my_class == klass) {
         cfish_String *mess = CFISH_MAKE_MESS("%o is an abstract class",
                                               CFISH_Obj_Get_Class_Name(obj));
         CFISH_Obj_Dec_RefCount(obj);
@@ -235,8 +235,8 @@ cfish_Err_abstract_class_check(cfish_Obj *obj, cfish_VTable *vtable) {
     }
 }
 
-#define CFISH_ABSTRACT_CLASS_CHECK(_obj, _vtable) \
-    cfish_Err_abstract_class_check(((cfish_Obj*)_obj), _vtable)
+#define CFISH_ABSTRACT_CLASS_CHECK(_obj, _class) \
+    cfish_Err_abstract_class_check(((cfish_Obj*)_obj), _class)
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define THROW                 CFISH_THROW

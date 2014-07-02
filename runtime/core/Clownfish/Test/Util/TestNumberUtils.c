@@ -30,11 +30,11 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/NumberUtils.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestNumberUtils*
 TestNumUtil_new() {
-    return (TestNumberUtils*)VTable_Make_Obj(TESTNUMBERUTILS);
+    return (TestNumberUtils*)Class_Make_Obj(TESTNUMBERUTILS);
 }
 
 static void

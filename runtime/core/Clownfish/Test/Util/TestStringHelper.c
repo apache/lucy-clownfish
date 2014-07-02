@@ -26,7 +26,7 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/Util/StringHelper.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 /* This alternative implementation of utf8_valid() is (presumably) slower, but
  * it implements the standard in a more linear, easy-to-grok way.
@@ -34,7 +34,7 @@
 #define TRAIL_OK(n) (n >= 0x80 && n <= 0xBF)
 TestStringHelper*
 TestStrHelp_new() {
-    return (TestStringHelper*)VTable_Make_Obj(TESTSTRINGHELPER);
+    return (TestStringHelper*)Class_Make_Obj(TESTSTRINGHELPER);
 }
 
 static bool

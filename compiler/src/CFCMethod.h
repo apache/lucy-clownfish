@@ -21,8 +21,8 @@
  * Obj.
  *
  * When compiling Clownfish code to C, Method objects generate all the code
- * that Function objects do, but also create symbols for indirect invocation via
- * VTable.
+ * that Function objects do, but also create symbols for indirect invocation
+ * via vtables.
  */
 
 #ifndef H_CFCMETHOD
@@ -129,8 +129,8 @@ CFCMethod_short_method_sym(CFCMethod *self, struct CFCClass *invoker);
 char*
 CFCMethod_full_method_sym(CFCMethod *self, struct CFCClass *invoker);
 
-/** Create the fully qualified name of the variable which stores the method's
- * vtable offset, e.g. "Crust_LobClaw_Pinch_OFFSET".
+/** Create the fully qualified name of the variable which stores the method
+ * pointer's offset, e.g. "Crust_LobClaw_Pinch_OFFSET".
  * @param invoker Class for which the symbol is created. If invoker is NULL,
  * use the class where the method is defined.
  *

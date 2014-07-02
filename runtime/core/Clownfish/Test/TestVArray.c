@@ -30,11 +30,11 @@
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/VArray.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestVArray*
 TestVArray_new() {
-    return (TestVArray*)VTable_Make_Obj(TESTVARRAY);
+    return (TestVArray*)Class_Make_Obj(TESTVARRAY);
 }
 
 static void

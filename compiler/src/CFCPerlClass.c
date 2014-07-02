@@ -292,7 +292,7 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
          *
          * Also create an XSub binding for each override.  Each of these
          * directly calls the implementing function, rather than invokes the
-         * method on the object using VTable method dispatch.  Doing things
+         * method on the object using vtable method dispatch.  Doing things
          * this way allows SUPER:: invocations from Perl-space to work
          * properly.
          */
@@ -555,7 +555,7 @@ CFCPerlClass_get_class_aliases(CFCPerlClass *self) {
 // Generate C code which initializes method metadata.
 char*
 CFCPerlClass_method_metadata_code(CFCPerlClass *self) {
-    const char *vtable_var = CFCClass_full_vtable_var(self->client);
+    const char *class_var = CFCClass_full_class_var(self->client);
     CFCMethod **fresh_methods = CFCClass_fresh_methods(self->client);
     char *code = CFCUtil_strdup("");
 
@@ -566,13 +566,13 @@ CFCPerlClass_method_metadata_code(CFCPerlClass *self) {
         const char *macro_sym = CFCMethod_get_macro_sym(method);
         const char *alias     = CFCMethod_get_host_alias(method);
         if (alias) {
-            code = CFCUtil_cat(code, "    CFISH_VTable_Add_Host_Method_Alias(",
-                               vtable_var, ", \"", alias, "\", \"", macro_sym,
+            code = CFCUtil_cat(code, "    CFISH_Class_Add_Host_Method_Alias(",
+                               class_var, ", \"", alias, "\", \"", macro_sym,
                                "\");\n", NULL);
         }
         if (CFCMethod_excluded_from_host(method)) {
-            code = CFCUtil_cat(code, "    CFISH_VTable_Exclude_Host_Method(",
-                               vtable_var, ", \"", macro_sym, "\");\n", NULL);
+            code = CFCUtil_cat(code, "    CFISH_Class_Exclude_Host_Method(",
+                               class_var, ", \"", macro_sym, "\");\n", NULL);
         }
     }
 

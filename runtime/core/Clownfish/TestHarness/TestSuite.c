@@ -32,14 +32,14 @@
 #include "Clownfish/TestHarness/TestFormatter.h"
 #include "Clownfish/TestHarness/TestSuiteRunner.h"
 #include "Clownfish/VArray.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 static void
 S_unbuffer_stdout();
 
 TestSuite*
 TestSuite_new() {
-    TestSuite *self = (TestSuite*)VTable_Make_Obj(TESTSUITE);
+    TestSuite *self = (TestSuite*)Class_Make_Obj(TESTSUITE);
     return TestSuite_init(self);
 }
 

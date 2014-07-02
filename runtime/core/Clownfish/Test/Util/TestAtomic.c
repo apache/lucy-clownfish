@@ -22,11 +22,11 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/Util/Atomic.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestAtomic*
 TestAtomic_new() {
-    return (TestAtomic*)VTable_Make_Obj(TESTATOMIC);
+    return (TestAtomic*)Class_Make_Obj(TESTATOMIC);
 }
 
 static void

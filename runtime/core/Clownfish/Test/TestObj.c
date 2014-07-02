@@ -28,22 +28,22 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestObj*
 TestObj_new() {
-    return (TestObj*)VTable_Make_Obj(TESTOBJ);
+    return (TestObj*)Class_Make_Obj(TESTOBJ);
 }
 
 static Obj*
 S_new_testobj() {
-    StackString *klass = SSTR_WRAP_UTF8("TestObj", 7);
+    StackString *class_name = SSTR_WRAP_UTF8("TestObj", 7);
     Obj *obj;
-    VTable *vtable = VTable_fetch_vtable((String*)klass);
-    if (!vtable) {
-        vtable = VTable_singleton((String*)klass, OBJ);
+    Class *klass = Class_fetch_class((String*)class_name);
+    if (!klass) {
+        klass = Class_singleton((String*)class_name, OBJ);
     }
-    obj = VTable_Make_Obj(vtable);
+    obj = Class_Make_Obj(klass);
     return Obj_init(obj);
 }
 
@@ -99,13 +99,13 @@ test_Hash_Sum(TestBatchRunner *runner) {
 static void
 test_Is_A(TestBatchRunner *runner) {
     String *string     = Str_new_from_trusted_utf8("", 0);
-    VTable *str_vtable = Str_Get_VTable(string);
-    String *klass      = Str_Get_Class_Name(string);
+    Class  *str_class  = Str_Get_Class(string);
+    String *class_name = Str_Get_Class_Name(string);
 
     TEST_TRUE(runner, Str_Is_A(string, STRING), "String Is_A String.");
     TEST_TRUE(runner, Str_Is_A(string, OBJ), "String Is_A Obj.");
-    TEST_TRUE(runner, str_vtable == STRING, "Get_VTable");
-    TEST_TRUE(runner, Str_Equals(VTable_Get_Name(STRING), (Obj*)klass),
+    TEST_TRUE(runner, str_class == STRING, "Get_Class");
+    TEST_TRUE(runner, Str_Equals(Class_Get_Name(STRING), (Obj*)class_name),
               "Get_Class_Name");
 
     DECREF(string);
@@ -156,7 +156,7 @@ S_verify_abstract_error(TestBatchRunner *runner, Err_Attempt_t routine,
 
 static void
 test_abstract_routines(TestBatchRunner *runner) {
-    Obj *blank = VTable_Make_Obj(OBJ);
+    Obj *blank = Class_Make_Obj(OBJ);
     S_verify_abstract_error(runner, S_attempt_init, blank, "init");
 
     Obj *obj = S_new_testobj();

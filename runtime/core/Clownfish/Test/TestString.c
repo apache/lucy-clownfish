@@ -32,7 +32,7 @@
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 #define SMILEY "\xE2\x98\xBA"
 static char smiley[] = { (char)0xE2, (char)0x98, (char)0xBA, 0 };
@@ -41,7 +41,7 @@ static uint32_t smiley_cp  = 0x263A;
 
 TestString*
 TestStr_new() {
-    return (TestString*)VTable_Make_Obj(TESTSTRING);
+    return (TestString*)Class_Make_Obj(TESTSTRING);
 }
 
 static String*

@@ -20,7 +20,7 @@
 
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Err.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 
@@ -35,7 +35,7 @@ typedef struct cfish_LFRegEntry {
 LockFreeRegistry*
 LFReg_new(size_t capacity) {
     LockFreeRegistry *self
-        = (LockFreeRegistry*)VTable_Make_Obj(LOCKFREEREGISTRY);
+        = (LockFreeRegistry*)Class_Make_Obj(LOCKFREEREGISTRY);
     return LFReg_init(self, capacity);
 }
 

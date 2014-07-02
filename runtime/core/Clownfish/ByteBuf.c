@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/ByteBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
@@ -34,7 +34,7 @@ S_grow(ByteBuf *self, size_t size);
 
 ByteBuf*
 BB_new(size_t capacity) {
-    ByteBuf *self = (ByteBuf*)VTable_Make_Obj(BYTEBUF);
+    ByteBuf *self = (ByteBuf*)Class_Make_Obj(BYTEBUF);
     return BB_init(self, capacity);
 }
 
@@ -50,7 +50,7 @@ BB_init(ByteBuf *self, size_t capacity) {
 
 ByteBuf*
 BB_new_bytes(const void *bytes, size_t size) {
-    ByteBuf *self = (ByteBuf*)VTable_Make_Obj(BYTEBUF);
+    ByteBuf *self = (ByteBuf*)Class_Make_Obj(BYTEBUF);
     BB_init(self, size);
     memcpy(self->buf, bytes, size);
     self->size = size;
@@ -59,7 +59,7 @@ BB_new_bytes(const void *bytes, size_t size) {
 
 ByteBuf*
 BB_new_steal_bytes(void *bytes, size_t size, size_t capacity) {
-    ByteBuf *self = (ByteBuf*)VTable_Make_Obj(BYTEBUF);
+    ByteBuf *self = (ByteBuf*)Class_Make_Obj(BYTEBUF);
     return BB_init_steal_bytes(self, bytes, size, capacity);
 }
 
@@ -221,7 +221,7 @@ BB_Compare_To_IMP(ByteBuf *self, Obj *other) {
 
 ViewByteBuf*
 ViewBB_new(char *buf, size_t size) {
-    ViewByteBuf *self = (ViewByteBuf*)VTable_Make_Obj(VIEWBYTEBUF);
+    ViewByteBuf *self = (ViewByteBuf*)Class_Make_Obj(VIEWBYTEBUF);
     return ViewBB_init(self, buf, size);
 }
 

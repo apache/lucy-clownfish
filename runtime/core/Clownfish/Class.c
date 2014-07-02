@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define C_CFISH_VTABLE
+#define C_CFISH_CLASS
 #define C_CFISH_OBJ
 #define C_CFISH_STRING
 #define C_CFISH_METHOD
@@ -28,7 +28,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/String.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/Err.h"
@@ -40,40 +40,40 @@
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 
-size_t VTable_offset_of_parent = offsetof(VTable, parent);
+size_t Class_offset_of_parent = offsetof(Class, parent);
 
 // Remove spaces and underscores, convert to lower case.
 static String*
 S_scrunch_string(String *source);
 
 static Method*
-S_find_method(VTable *self, const char *meth_name);
+S_find_method(Class *self, const char *meth_name);
 
 static int32_t
 S_claim_parcel_id(void);
 
-LockFreeRegistry *VTable_registry = NULL;
+LockFreeRegistry *Class_registry = NULL;
 
 void
-VTable_bootstrap(const VTableSpec *specs, size_t num_specs)
+Class_bootstrap(const ClassSpec *specs, size_t num_specs)
 {
     int32_t parcel_id = S_claim_parcel_id();
 
     /* Pass 1:
      * - Initialize IVARS_OFFSET.
      * - Allocate memory.
-     * - Initialize parent, flags, obj_alloc_size, vt_alloc_size.
+     * - Initialize parent, flags, obj_alloc_size, class_alloc_size.
      * - Assign parcel_id.
      * - Initialize method pointers.
      */
     for (size_t i = 0; i < num_specs; ++i) {
-        const VTableSpec *spec = &specs[i];
-        VTable *parent = spec->parent ? *spec->parent : NULL;
+        const ClassSpec *spec = &specs[i];
+        Class *parent = spec->parent ? *spec->parent : NULL;
 
         size_t ivars_offset = 0;
         if (spec->ivars_offset_ptr != NULL) {
             if (parent) {
-                VTable *ancestor = parent;
+                Class *ancestor = parent;
                 while (ancestor && ancestor->parcel_id == parcel_id) {
                     ancestor = ancestor->parent;
                 }
@@ -86,23 +86,23 @@ VTable_bootstrap(const VTableSpec *specs, size_t num_specs)
         }
 
         size_t novel_offset = parent
-                              ? parent->vt_alloc_size
-                              : offsetof(VTable, method_ptrs);
-        size_t vt_alloc_size = novel_offset
-                               + spec->num_novel_meths
-                                 * sizeof(cfish_method_t);
-        VTable *vtable = (VTable*)Memory_wrapped_calloc(vt_alloc_size, 1);
+                              ? parent->class_alloc_size
+                              : offsetof(Class, method_ptrs);
+        size_t class_alloc_size = novel_offset
+                                  + spec->num_novel_meths
+                                    * sizeof(cfish_method_t);
+        Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
 
-        vtable->parent         = parent;
-        vtable->parcel_id      = parcel_id;
-        vtable->flags          = 0;
-        vtable->obj_alloc_size = ivars_offset + spec->ivars_size;
-        vtable->vt_alloc_size  = vt_alloc_size;
+        klass->parent           = parent;
+        klass->parcel_id        = parcel_id;
+        klass->flags            = 0;
+        klass->obj_alloc_size   = ivars_offset + spec->ivars_size;
+        klass->class_alloc_size = class_alloc_size;
 
         if (parent) {
-            size_t parent_ptrs_size = parent->vt_alloc_size
-                                      - offsetof(VTable, method_ptrs);
-            memcpy(vtable->method_ptrs, parent->method_ptrs, parent_ptrs_size);
+            size_t parent_ptrs_size = parent->class_alloc_size
+                                      - offsetof(Class, method_ptrs);
+            memcpy(klass->method_ptrs, parent->method_ptrs, parent_ptrs_size);
         }
 
         for (size_t i = 0; i < spec->num_inherited_meths; ++i) {
@@ -113,88 +113,88 @@ VTable_bootstrap(const VTableSpec *specs, size_t num_specs)
         for (size_t i = 0; i < spec->num_overridden_meths; ++i) {
             const OverriddenMethSpec *mspec = &spec->overridden_meth_specs[i];
             *mspec->offset = *mspec->parent_offset;
-            VTable_Override_IMP(vtable, mspec->func, *mspec->offset);
+            Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
 
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
             *mspec->offset = novel_offset;
             novel_offset += sizeof(cfish_method_t);
-            VTable_Override_IMP(vtable, mspec->func, *mspec->offset);
+            Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
 
-        *spec->vtable = vtable;
+        *spec->klass = klass;
     }
 
     /* Pass 2:
-     * - Initialize 'vtable' instance variable.
+     * - Initialize 'klass' instance variable.
      * - Initialize refcount.
      */
     for (size_t i = 0; i < num_specs; ++i) {
-        const VTableSpec *spec = &specs[i];
-        VTable *vtable = *spec->vtable;
+        const ClassSpec *spec = &specs[i];
+        Class *klass = *spec->klass;
 
-        VTable_Init_Obj_IMP(VTABLE, vtable);
+        Class_Init_Obj_IMP(CLASS, klass);
     }
 
     /* Now it's safe to call methods.
      *
      * Pass 3:
      * - Inititalize name and method array.
-     * - Register vtable.
+     * - Register class.
      */
     for (size_t i = 0; i < num_specs; ++i) {
-        const VTableSpec *spec = &specs[i];
-        VTable *vtable = *spec->vtable;
+        const ClassSpec *spec = &specs[i];
+        Class *klass = *spec->klass;
 
-        vtable->name    = Str_newf("%s", spec->name);
-        vtable->methods = VA_new(0);
+        klass->name    = Str_newf("%s", spec->name);
+        klass->methods = VA_new(0);
 
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
             String *name = Str_newf("%s", mspec->name);
             Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
-            VA_Push(vtable->methods, (Obj*)method);
+            VA_Push(klass->methods, (Obj*)method);
             DECREF(name);
         }
 
-        VTable_add_to_registry(vtable);
+        Class_add_to_registry(klass);
     }
 }
 
 void
-VTable_Destroy_IMP(VTable *self) {
-    THROW(ERR, "Insane attempt to destroy VTable for class '%o'", self->name);
+Class_Destroy_IMP(Class *self) {
+    THROW(ERR, "Insane attempt to destroy Class for class '%o'", self->name);
 }
 
-VTable*
-VTable_Clone_IMP(VTable *self) {
-    VTable *twin
-        = (VTable*)Memory_wrapped_calloc(self->vt_alloc_size, 1);
+Class*
+Class_Clone_IMP(Class *self) {
+    Class *twin
+        = (Class*)Memory_wrapped_calloc(self->class_alloc_size, 1);
 
-    memcpy(twin, self, self->vt_alloc_size);
-    VTable_Init_Obj(self->vtable, twin); // Set refcount.
+    memcpy(twin, self, self->class_alloc_size);
+    Class_Init_Obj(self->klass, twin); // Set refcount.
     twin->name = Str_Clone(self->name);
 
     return twin;
 }
 
 Obj*
-VTable_Inc_RefCount_IMP(VTable *self) {
+Class_Inc_RefCount_IMP(Class *self) {
     return (Obj*)self;
 }
 
 uint32_t
-VTable_Dec_RefCount_IMP(VTable *self) {
+Class_Dec_RefCount_IMP(Class *self) {
     UNUSED_VAR(self);
     return 1;
 }
 
 uint32_t
-VTable_Get_RefCount_IMP(VTable *self) {
+Class_Get_RefCount_IMP(Class *self) {
     UNUSED_VAR(self);
-    /* VTable_Get_RefCount() lies to other Clownfish code about the refcount
+    /* Class_Get_RefCount() lies to other Clownfish code about the refcount
      * because we don't want to have to synchronize access to the cached host
      * object to which we have delegated responsibility for keeping refcounts.
      * It always returns 1 because 1 is a positive number, and thus other
@@ -210,36 +210,36 @@ VTable_Get_RefCount_IMP(VTable *self) {
 }
 
 void
-VTable_Override_IMP(VTable *self, cfish_method_t method, size_t offset) {
+Class_Override_IMP(Class *self, cfish_method_t method, size_t offset) {
     union { char *char_ptr; cfish_method_t *func_ptr; } pointer;
     pointer.char_ptr = ((char*)self) + offset;
     pointer.func_ptr[0] = method;
 }
 
 String*
-VTable_Get_Name_IMP(VTable *self) {
+Class_Get_Name_IMP(Class *self) {
     return self->name;
 }
 
-VTable*
-VTable_Get_Parent_IMP(VTable *self) {
+Class*
+Class_Get_Parent_IMP(Class *self) {
     return self->parent;
 }
 
 size_t
-VTable_Get_Obj_Alloc_Size_IMP(VTable *self) {
+Class_Get_Obj_Alloc_Size_IMP(Class *self) {
     return self->obj_alloc_size;
 }
 
 VArray*
-VTable_Get_Methods_IMP(VTable *self) {
+Class_Get_Methods_IMP(Class *self) {
     return self->methods;
 }
 
 void
-VTable_init_registry() {
+Class_init_registry() {
     LockFreeRegistry *reg = LFReg_new(256);
-    if (Atomic_cas_ptr((void*volatile*)&VTable_registry, NULL, reg)) {
+    if (Atomic_cas_ptr((void*volatile*)&Class_registry, NULL, reg)) {
         return;
     }
     else {
@@ -247,31 +247,31 @@ VTable_init_registry() {
     }
 }
 
-VTable*
-VTable_singleton(String *class_name, VTable *parent) {
-    if (VTable_registry == NULL) {
-        VTable_init_registry();
+Class*
+Class_singleton(String *class_name, Class *parent) {
+    if (Class_registry == NULL) {
+        Class_init_registry();
     }
 
-    VTable *singleton = (VTable*)LFReg_Fetch(VTable_registry, (Obj*)class_name);
+    Class *singleton = (Class*)LFReg_Fetch(Class_registry, (Obj*)class_name);
     if (singleton == NULL) {
         VArray *fresh_host_methods;
         uint32_t num_fresh;
 
         if (parent == NULL) {
-            String *parent_class = VTable_find_parent_class(class_name);
+            String *parent_class = Class_find_parent_class(class_name);
             if (parent_class == NULL) {
                 THROW(ERR, "Class '%o' doesn't descend from %o", class_name,
                       OBJ->name);
             }
             else {
-                parent = VTable_singleton(parent_class, NULL);
+                parent = Class_singleton(parent_class, NULL);
                 DECREF(parent_class);
             }
         }
 
-        // Copy source vtable.
-        singleton = VTable_Clone(parent);
+        // Copy source class.
+        singleton = Class_Clone(parent);
 
         // Turn clone into child.
         singleton->parent = parent;
@@ -279,7 +279,7 @@ VTable_singleton(String *class_name, VTable *parent) {
         singleton->name = Str_Clone(class_name);
 
         // Allow host methods to override.
-        fresh_host_methods = VTable_fresh_host_methods(class_name);
+        fresh_host_methods = Class_fresh_host_methods(class_name);
         num_fresh = VA_Get_Size(fresh_host_methods);
         if (num_fresh) {
             Hash *meths = Hash_new(num_fresh);
@@ -289,14 +289,14 @@ VTable_singleton(String *class_name, VTable *parent) {
                 Hash_Store(meths, (Obj*)scrunched, (Obj*)CFISH_TRUE);
                 DECREF(scrunched);
             }
-            for (VTable *vtable = parent; vtable; vtable = vtable->parent) {
-                uint32_t max = VA_Get_Size(vtable->methods);
+            for (Class *klass = parent; klass; klass = klass->parent) {
+                uint32_t max = VA_Get_Size(klass->methods);
                 for (uint32_t i = 0; i < max; i++) {
-                    Method *method = (Method*)VA_Fetch(vtable->methods, i);
+                    Method *method = (Method*)VA_Fetch(klass->methods, i);
                     if (method->callback_func) {
                         String *scrunched = S_scrunch_string(method->name);
                         if (Hash_Fetch(meths, (Obj*)scrunched)) {
-                            VTable_Override(singleton, method->callback_func,
+                            Class_Override(singleton, method->callback_func,
                                             method->offset);
                         }
                         DECREF(scrunched);
@@ -308,15 +308,15 @@ VTable_singleton(String *class_name, VTable *parent) {
         DECREF(fresh_host_methods);
 
         // Register the new class, both locally and with host.
-        if (VTable_add_to_registry(singleton)) {
+        if (Class_add_to_registry(singleton)) {
             // Doing this after registering is racy, but hard to fix. :(
-            VTable_register_with_host(singleton, parent);
+            Class_register_with_host(singleton, parent);
         }
         else {
             DECREF(singleton);
-            singleton = (VTable*)LFReg_Fetch(VTable_registry, (Obj*)class_name);
+            singleton = (Class*)LFReg_Fetch(Class_registry, (Obj*)class_name);
             if (!singleton) {
-                THROW(ERR, "Failed to either insert or fetch VTable for '%o'",
+                THROW(ERR, "Failed to either insert or fetch Class for '%o'",
                       class_name);
             }
         }
@@ -345,52 +345,52 @@ S_scrunch_string(String *source) {
 }
 
 bool
-VTable_add_to_registry(VTable *vtable) {
-    if (VTable_registry == NULL) {
-        VTable_init_registry();
+Class_add_to_registry(Class *klass) {
+    if (Class_registry == NULL) {
+        Class_init_registry();
     }
-    if (LFReg_Fetch(VTable_registry, (Obj*)vtable->name)) {
+    if (LFReg_Fetch(Class_registry, (Obj*)klass->name)) {
         return false;
     }
     else {
-        String *klass = Str_Clone(vtable->name);
+        String *class_name = Str_Clone(klass->name);
         bool retval
-            = LFReg_Register(VTable_registry, (Obj*)klass, (Obj*)vtable);
-        DECREF(klass);
+            = LFReg_Register(Class_registry, (Obj*)class_name, (Obj*)klass);
+        DECREF(class_name);
         return retval;
     }
 }
 
 bool
-VTable_add_alias_to_registry(VTable *vtable, const char *alias_ptr,
+Class_add_alias_to_registry(Class *klass, const char *alias_ptr,
                              size_t alias_len) {
-    if (VTable_registry == NULL) {
-        VTable_init_registry();
+    if (Class_registry == NULL) {
+        Class_init_registry();
     }
     StackString *alias = SSTR_WRAP_UTF8(alias_ptr, alias_len);
-    if (LFReg_Fetch(VTable_registry, (Obj*)alias)) {
+    if (LFReg_Fetch(Class_registry, (Obj*)alias)) {
         return false;
     }
     else {
-        String *klass = SStr_Clone(alias);
+        String *class_name = SStr_Clone(alias);
         bool retval
-            = LFReg_Register(VTable_registry, (Obj*)klass, (Obj*)vtable);
-        DECREF(klass);
+            = LFReg_Register(Class_registry, (Obj*)class_name, (Obj*)klass);
+        DECREF(class_name);
         return retval;
     }
 }
 
-VTable*
-VTable_fetch_vtable(String *class_name) {
-    VTable *vtable = NULL;
-    if (VTable_registry != NULL) {
-        vtable = (VTable*)LFReg_Fetch(VTable_registry, (Obj*)class_name);
+Class*
+Class_fetch_class(String *class_name) {
+    Class *klass = NULL;
+    if (Class_registry != NULL) {
+        klass = (Class*)LFReg_Fetch(Class_registry, (Obj*)class_name);
     }
-    return vtable;
+    return klass;
 }
 
 void
-VTable_Add_Host_Method_Alias_IMP(VTable *self, const char *alias,
+Class_Add_Host_Method_Alias_IMP(Class *self, const char *alias,
                              const char *meth_name) {
     Method *method = S_find_method(self, meth_name);
     if (!method) {
@@ -401,7 +401,7 @@ VTable_Add_Host_Method_Alias_IMP(VTable *self, const char *alias,
 }
 
 void
-VTable_Exclude_Host_Method_IMP(VTable *self, const char *meth_name) {
+Class_Exclude_Host_Method_IMP(Class *self, const char *meth_name) {
     Method *method = S_find_method(self, meth_name);
     if (!method) {
         fprintf(stderr, "Method %s not found\n", meth_name);
@@ -411,7 +411,7 @@ VTable_Exclude_Host_Method_IMP(VTable *self, const char *meth_name) {
 }
 
 static Method*
-S_find_method(VTable *self, const char *name) {
+S_find_method(Class *self, const char *name) {
     size_t   name_len = strlen(name);
     uint32_t size     = VA_Get_Size(self->methods);
 

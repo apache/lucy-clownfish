@@ -25,11 +25,11 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestByteBuf*
 TestBB_new() {
-    return (TestByteBuf*)VTable_Make_Obj(TESTBYTEBUF);
+    return (TestByteBuf*)Class_Make_Obj(TESTBYTEBUF);
 }
 
 static void

@@ -23,11 +23,11 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestErr*
 TestErr_new() {
-    return (TestErr*)VTable_Make_Obj(TESTERR);
+    return (TestErr*)Class_Make_Obj(TESTERR);
 }
 
 static void

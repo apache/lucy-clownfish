@@ -257,15 +257,15 @@ CFCClass_full_ivars_func(CFCClass *self);
 const char*
 CFCClass_full_ivars_offset(CFCClass *self);
 
-/** The short name of the global VTable object for this class.
+/** The short name of the global Class object for this class.
  */
 const char*
-CFCClass_short_vtable_var(CFCClass *self);
+CFCClass_short_class_var(CFCClass *self);
 
-/** Fully qualified vtable variable name, including the parcel prefix.
+/** Fully qualified Class variable name, including the parcel prefix.
  */
 const char*
-CFCClass_full_vtable_var(CFCClass *self);
+CFCClass_full_class_var(CFCClass *self);
 
 /** Access the symbol which unlocks the class struct definition and other
  * private information.

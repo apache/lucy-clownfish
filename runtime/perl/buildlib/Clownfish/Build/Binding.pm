@@ -31,7 +31,7 @@ sub bind_all {
     $class->bind_float64;
     $class->bind_obj;
     $class->bind_varray;
-    $class->bind_vtable;
+    $class->bind_class;
     $class->bind_stringhelper;
 }
 
@@ -457,7 +457,7 @@ is_a(self, class_name)
     cfish_String *class_name;
 CODE:
 {
-    cfish_VTable *target = cfish_VTable_fetch_vtable(class_name);
+    cfish_Class *target = cfish_Class_fetch_class(class_name);
     RETVAL = CFISH_Obj_Is_A(self, target);
 }
 OUTPUT: RETVAL
@@ -553,23 +553,23 @@ END_XS_CODE
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
 
-sub bind_vtable {
+sub bind_class {
     my @hand_rolled = qw( Make_Obj );
 
     my $xs_code = <<'END_XS_CODE';
-MODULE = Clownfish   PACKAGE = Clownfish::VTable
+MODULE = Clownfish   PACKAGE = Clownfish::Class
 
 SV*
 _get_registry()
 CODE:
-    if (cfish_VTable_registry == NULL) {
-        cfish_VTable_init_registry();
+    if (cfish_Class_registry == NULL) {
+        cfish_Class_init_registry();
     }
-    RETVAL = (SV*)CFISH_Obj_To_Host((cfish_Obj*)cfish_VTable_registry);
+    RETVAL = (SV*)CFISH_Obj_To_Host((cfish_Obj*)cfish_Class_registry);
 OUTPUT: RETVAL
 
 SV*
-fetch_vtable(unused_sv, class_name_sv)
+fetch_class(unused_sv, class_name_sv)
     SV *unused_sv;
     SV *class_name_sv;
 CODE:
@@ -578,9 +578,9 @@ CODE:
     STRLEN size;
     char *ptr = SvPVutf8(class_name_sv, size);
     cfish_StackString *class_name = CFISH_SSTR_WRAP_UTF8(ptr, size);
-    cfish_VTable *vtable
-        = cfish_VTable_fetch_vtable((cfish_String*)class_name);
-    RETVAL = vtable ? (SV*)CFISH_VTable_To_Host(vtable) : &PL_sv_undef;
+    cfish_Class *klass
+        = cfish_Class_fetch_class((cfish_String*)class_name);
+    RETVAL = klass ? (SV*)CFISH_Class_To_Host(klass) : &PL_sv_undef;
 }
 OUTPUT: RETVAL
 
@@ -591,34 +591,34 @@ CODE:
 {
     CFISH_UNUSED_VAR(unused_sv);
     cfish_String *class_name = NULL;
-    cfish_VTable *parent     = NULL;
+    cfish_Class  *parent     = NULL;
     bool args_ok
         = XSBind_allot_params(&(ST(0)), 1, items,
                               ALLOT_OBJ(&class_name, "class_name", 10, true,
                                         CFISH_STRING, alloca(cfish_SStr_size())),
                               ALLOT_OBJ(&parent, "parent", 6, false,
-                                        CFISH_VTABLE, NULL),
+                                        CFISH_CLASS, NULL),
                               NULL);
     if (!args_ok) {
         CFISH_RETHROW(CFISH_INCREF(cfish_Err_get_error()));
     }
-    cfish_VTable *singleton = cfish_VTable_singleton(class_name, parent);
-    RETVAL = (SV*)CFISH_VTable_To_Host(singleton);
+    cfish_Class *singleton = cfish_Class_singleton(class_name, parent);
+    RETVAL = (SV*)CFISH_Class_To_Host(singleton);
 }
 OUTPUT: RETVAL
 
 SV*
 make_obj(self)
-    cfish_VTable *self;
+    cfish_Class *self;
 CODE:
-    cfish_Obj *blank = CFISH_VTable_Make_Obj(self);
+    cfish_Obj *blank = CFISH_Class_Make_Obj(self);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(blank);
 OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         parcel     => "Clownfish",
-        class_name => "Clownfish::VTable",
+        class_name => "Clownfish::Class",
     );
     $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);

@@ -24,11 +24,11 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 TestNum*
 TestNum_new() {
-    return (TestNum*)VTable_Make_Obj(TESTNUM);
+    return (TestNum*)Class_Make_Obj(TESTNUM);
 }
 
 static void

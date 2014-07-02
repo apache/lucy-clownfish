@@ -142,7 +142,7 @@ S_allot_params_arg(CFCType *type, const char *label, int required) {
 
     if (CFCType_is_object(type)) {
         const char *struct_sym = CFCType_get_specifier(type);
-        const char *vtable_var = CFCType_get_vtable_var(type);
+        const char *class_var  = CFCType_get_class_var(type);
 
         // Share buffers rather than copy between Perl scalars and Clownfish
         // string types.
@@ -157,7 +157,7 @@ S_allot_params_arg(CFCType *type, const char *label, int required) {
                                  : "NULL";
         const char pattern[] = "ALLOT_OBJ(&%s, \"%s\", %u, %s, %s, %s)";
         char *arg = CFCUtil_sprintf(pattern, label, label, label_len,
-                                    req_string, vtable_var, allocation);
+                                    req_string, class_var, allocation);
         return arg;
     }
     else if (CFCType_is_primitive(type)) {

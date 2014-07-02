@@ -30,7 +30,7 @@
 #include "Clownfish/Num.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 Num*
 Num_init(Num *self) {
@@ -99,7 +99,7 @@ IntNum_To_String_IMP(IntNum *self) {
 
 Float32*
 Float32_new(float value) {
-    Float32 *self = (Float32*)VTable_Make_Obj(FLOAT32);
+    Float32 *self = (Float32*)Class_Make_Obj(FLOAT32);
     return Float32_init(self, value);
 }
 
@@ -149,7 +149,7 @@ Float32_Mimic_IMP(Float32 *self, Obj *other) {
 
 Float64*
 Float64_new(double value) {
-    Float64 *self = (Float64*)VTable_Make_Obj(FLOAT64);
+    Float64 *self = (Float64*)Class_Make_Obj(FLOAT64);
     return Float64_init(self, value);
 }
 
@@ -200,7 +200,7 @@ Float64_Hash_Sum_IMP(Float64 *self) {
 
 Integer32*
 Int32_new(int32_t value) {
-    Integer32 *self = (Integer32*)VTable_Make_Obj(INTEGER32);
+    Integer32 *self = (Integer32*)Class_Make_Obj(INTEGER32);
     return Int32_init(self, value);
 }
 
@@ -250,7 +250,7 @@ Int32_Hash_Sum_IMP(Integer32 *self) {
 
 Integer64*
 Int64_new(int64_t value) {
-    Integer64 *self = (Integer64*)VTable_Make_Obj(INTEGER64);
+    Integer64 *self = (Integer64*)Class_Make_Obj(INTEGER64);
     return Int64_init(self, value);
 }
 
@@ -322,10 +322,10 @@ BoolNum *Bool_false_singleton;
 
 void
 Bool_init_class() {
-    Bool_true_singleton          = (BoolNum*)VTable_Make_Obj(BOOLNUM);
+    Bool_true_singleton          = (BoolNum*)Class_Make_Obj(BOOLNUM);
     Bool_true_singleton->value   = true;
     Bool_true_singleton->string  = Str_newf("true");
-    Bool_false_singleton         = (BoolNum*)VTable_Make_Obj(BOOLNUM);
+    Bool_false_singleton         = (BoolNum*)Class_Make_Obj(BOOLNUM);
     Bool_false_singleton->value  = false;
     Bool_false_singleton->string = Str_newf("false");
 }

@@ -17,34 +17,34 @@
 #define CHY_USE_SHORT_NAMES
 #define CFISH_USE_SHORT_NAMES
 #define C_CFISH_OBJ
-#define C_CFISH_VTABLE
+#define C_CFISH_CLASS
 
 #include "charmony.h"
 
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/VArray.h"
 
 Obj*
-VTable_Make_Obj_IMP(VTable *self) {
+Class_Make_Obj_IMP(Class *self) {
     Obj *obj = (Obj*)Memory_wrapped_calloc(self->obj_alloc_size, 1);
-    obj->vtable = self;
+    obj->klass = self;
     obj->refcount = 1;
     return obj;
 }
 
 Obj*
-VTable_Init_Obj_IMP(VTable *self, void *allocation) {
+Class_Init_Obj_IMP(Class *self, void *allocation) {
     Obj *obj = (Obj*)allocation;
-    obj->vtable = self;
+    obj->klass = self;
     obj->refcount = 1;
     return obj;
 }
 
 Obj*
-VTable_Foster_Obj_IMP(VTable *self, void *host_obj) {
+Class_Foster_Obj_IMP(Class *self, void *host_obj) {
     UNUSED_VAR(self);
     UNUSED_VAR(host_obj);
     THROW(ERR, "TODO");
@@ -52,26 +52,26 @@ VTable_Foster_Obj_IMP(VTable *self, void *host_obj) {
 }
 
 void
-VTable_register_with_host(VTable *singleton, VTable *parent) {
+Class_register_with_host(Class *singleton, Class *parent) {
     UNUSED_VAR(singleton);
     UNUSED_VAR(parent);
 }
 
 VArray*
-VTable_fresh_host_methods(String *class_name) {
+Class_fresh_host_methods(String *class_name) {
     UNUSED_VAR(class_name);
     return VA_new(0);
 }
 
 String*
-VTable_find_parent_class(String *class_name) {
+Class_find_parent_class(String *class_name) {
     UNUSED_VAR(class_name);
     THROW(ERR, "TODO");
     UNREACHABLE_RETURN(String*);
 }
 
 void*
-VTable_To_Host_IMP(VTable *self) {
+Class_To_Host_IMP(Class *self) {
     UNUSED_VAR(self);
     THROW(ERR, "TODO");
     UNREACHABLE_RETURN(void*);

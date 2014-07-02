@@ -287,8 +287,8 @@ ALIAS:
     inert                 = 16
     get_struct_sym        = 18
     full_struct_sym       = 20
-    short_vtable_var      = 22
-    full_vtable_var       = 24
+    short_class_var       = 22
+    full_class_var        = 24
     include_h             = 28
     get_docucomment       = 30
     children              = 32
@@ -352,12 +352,12 @@ PPCODE:
             }
             break;
         case 22: {
-                const char *value = CFCClass_short_vtable_var(self);
+                const char *value = CFCClass_short_class_var(self);
                 retval = value ? newSVpvn(value, strlen(value)) : newSV(0);
             }
             break;
         case 24: {
-                const char *value = CFCClass_full_vtable_var(self);
+                const char *value = CFCClass_full_class_var(self);
                 retval = value ? newSVpvn(value, strlen(value)) : newSV(0);
             }
             break;

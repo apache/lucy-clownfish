@@ -253,8 +253,8 @@ CFCBindMeth_abstract_method_def(CFCMethod *method) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     const char *params = CFCParamList_to_c(param_list);
     const char *full_func_sym = CFCMethod_imp_func(method);
-    const char *vtable_var
-        = CFCType_get_vtable_var(CFCMethod_self_type(method));
+    const char *class_var
+        = CFCType_get_class_var(CFCMethod_self_type(method));
     CFCType    *return_type  = CFCMethod_get_return_type(method);
     const char *ret_type_str = CFCType_to_c(return_type);
     const char *macro_sym    = CFCMethod_get_macro_sym(method);
@@ -272,7 +272,7 @@ CFCBindMeth_abstract_method_def(CFCMethod *method) {
         "}\n";
     char *abstract_def
         = CFCUtil_sprintf(pattern, ret_type_str, full_func_sym, params,
-                          vtable_var, unused, macro_sym, return_statement);
+                          class_var, unused, macro_sym, return_statement);
 
     FREEMEM(unused);
     FREEMEM(return_statement);

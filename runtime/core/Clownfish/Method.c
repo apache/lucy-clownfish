@@ -23,11 +23,11 @@
 #include "Clownfish/Method.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 
 Method*
 Method_new(String *name, cfish_method_t callback_func, size_t offset) {
-    Method *self = (Method*)VTable_Make_Obj(METHOD);
+    Method *self = (Method*)Class_Make_Obj(METHOD);
     return Method_init(self, name, callback_func, offset);
 }
 
@@ -61,7 +61,7 @@ Method_Dec_RefCount_IMP(Method *self) {
 uint32_t
 Method_Get_RefCount_IMP(Method *self) {
     UNUSED_VAR(self);
-    // See comments in VTable.c
+    // See comments in Class.c
     return 1;
 }
 

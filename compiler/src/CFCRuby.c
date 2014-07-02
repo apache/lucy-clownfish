@@ -198,7 +198,7 @@ S_write_boot_c(CFCRuby *self) {
         "#include \"%s\"\n"
         "#include \"%sparcel.h\"\n"
         "#include \"Clownfish/String.h\"\n"
-        "#include \"Clownfish/VTable.h\"\n"
+        "#include \"Clownfish/Class.h\"\n"
         "%s\n"
         "\n"
         "void\n"

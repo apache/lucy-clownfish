@@ -15,7 +15,7 @@
  */
 
 #define C_CFISH_OBJ
-#define C_CFISH_VTABLE
+#define C_CFISH_CLASS
 #define C_CFISH_LOCKFREEREGISTRY
 #define NEED_newRV_noinc
 #include "charmony.h"
@@ -49,55 +49,55 @@ S_cfish_hash_to_perl_hash(cfish_Hash *hash);
 
 cfish_Obj*
 XSBind_new_blank_obj(SV *either_sv) {
-    cfish_VTable *vtable;
+    cfish_Class *klass;
 
-    // Get a VTable.
+    // Get a Class.
     if (sv_isobject(either_sv)
         && sv_derived_from(either_sv, "Clownfish::Obj")
        ) {
-        // Use the supplied object's VTable.
+        // Use the supplied object's Class.
         IV iv_ptr = SvIV(SvRV(either_sv));
         cfish_Obj *self = INT2PTR(cfish_Obj*, iv_ptr);
-        vtable = self->vtable;
+        klass = self->klass;
     }
     else {
-        // Use the supplied class name string to find a VTable.
+        // Use the supplied class name string to find a Class.
         STRLEN len;
         char *ptr = SvPVutf8(either_sv, len);
-        cfish_StackString *klass = CFISH_SSTR_WRAP_UTF8(ptr, len);
-        vtable = cfish_VTable_singleton((cfish_String*)klass, NULL);
+        cfish_StackString *class_name = CFISH_SSTR_WRAP_UTF8(ptr, len);
+        klass = cfish_Class_singleton((cfish_String*)class_name, NULL);
     }
 
-    // Use the VTable to allocate a new blank object of the right size.
-    return CFISH_VTable_Make_Obj(vtable);
+    // Use the Class to allocate a new blank object of the right size.
+    return CFISH_Class_Make_Obj(klass);
 }
 
 cfish_Obj*
-XSBind_sv_to_cfish_obj(SV *sv, cfish_VTable *vtable, void *allocation) {
-    cfish_Obj *retval = XSBind_maybe_sv_to_cfish_obj(sv, vtable, allocation);
+XSBind_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation) {
+    cfish_Obj *retval = XSBind_maybe_sv_to_cfish_obj(sv, klass, allocation);
     if (!retval) {
-        THROW(CFISH_ERR, "Not a %o", CFISH_VTable_Get_Name(vtable));
+        THROW(CFISH_ERR, "Not a %o", CFISH_Class_Get_Name(klass));
     }
     return retval;
 }
 
 cfish_Obj*
-XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_VTable *vtable, void *allocation) {
+XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation) {
     cfish_Obj *retval = NULL;
     if (XSBind_sv_defined(sv)) {
         // Assume that the class name is always NULL-terminated. Somewhat
         // dangerous but should be safe.
         if (sv_isobject(sv)
-            && sv_derived_from(sv, CFISH_Str_Get_Ptr8(CFISH_VTable_Get_Name(vtable)))
+            && sv_derived_from(sv, CFISH_Str_Get_Ptr8(CFISH_Class_Get_Name(klass)))
            ) {
             // Unwrap a real Clownfish object.
             IV tmp = SvIV(SvRV(sv));
             retval = INT2PTR(cfish_Obj*, tmp);
         }
         else if (allocation &&
-                 (vtable == CFISH_STACKSTRING
-                  || vtable == CFISH_STRING
-                  || vtable == CFISH_OBJ)
+                 (klass == CFISH_STACKSTRING
+                  || klass == CFISH_STRING
+                  || klass == CFISH_OBJ)
                 ) {
             // Wrap the string from an ordinary Perl scalar inside a
             // StackString.
@@ -109,10 +109,10 @@ XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_VTable *vtable, void *allocation) {
             // Attempt to convert Perl hashes and arrays into their Clownfish
             // analogues.
             SV *inner = SvRV(sv);
-            if (SvTYPE(inner) == SVt_PVAV && vtable == CFISH_VARRAY) {
+            if (SvTYPE(inner) == SVt_PVAV && klass == CFISH_VARRAY) {
                 retval = (cfish_Obj*)S_perl_array_to_cfish_array((AV*)inner);
             }
-            else if (SvTYPE(inner) == SVt_PVHV && vtable == CFISH_HASH) {
+            else if (SvTYPE(inner) == SVt_PVHV && klass == CFISH_HASH) {
                 retval = (cfish_Obj*)S_perl_hash_to_cfish_hash((HV*)inner);
             }
 
@@ -396,7 +396,7 @@ XSBind_enable_overload(void *pobj) {
 
 static bool
 S_extract_from_sv(SV *value, void *target, const char *label,
-                  bool required, int type, cfish_VTable *vtable,
+                  bool required, int type, cfish_Class *klass,
                   void *allocation) {
     bool valid_assignment = false;
 
@@ -460,7 +460,7 @@ S_extract_from_sv(SV *value, void *target, const char *label,
                 break;
             case XSBIND_WANT_OBJ: {
                     cfish_Obj *object
-                        = XSBind_maybe_sv_to_cfish_obj(value, vtable,
+                        = XSBind_maybe_sv_to_cfish_obj(value, klass,
                                                        allocation);
                     if (object) {
                         *((cfish_Obj**)target) = object;
@@ -470,7 +470,7 @@ S_extract_from_sv(SV *value, void *target, const char *label,
                         cfish_String *mess
                             = CFISH_MAKE_MESS(
                                   "Invalid value for '%s' - not a %o",
-                                  label, CFISH_VTable_Get_Name(vtable));
+                                  label, CFISH_Class_Get_Name(klass));
                         cfish_Err_set_error(cfish_Err_new(mess));
                         return false;
                     }
@@ -526,7 +526,7 @@ XSBind_allot_params(SV** stack, int32_t start, int32_t num_stack_elems, ...) {
         int   label_len = va_arg(args, int);
         int   required  = va_arg(args, int);
         int   type      = va_arg(args, int);
-        cfish_VTable *vtable = va_arg(args, cfish_VTable*);
+        cfish_Class *klass = va_arg(args, cfish_Class*);
         void *allocation = va_arg(args, void*);
 
         // Iterate through the stack looking for labels which match this param
@@ -558,7 +558,7 @@ XSBind_allot_params(SV** stack, int32_t start, int32_t num_stack_elems, ...) {
             // Found the arg.  Extract the value.
             SV *value = stack[found_arg + 1];
             bool got_arg = S_extract_from_sv(value, target, label,
-                                                   required, type, vtable,
+                                                   required, type, klass,
                                                    allocation);
             if (!got_arg) {
                 CFISH_ERR_ADD_FRAME(cfish_Err_get_error());
@@ -601,7 +601,7 @@ S_lazy_init_host_obj(cfish_Obj *self) {
     sv_setiv(inner_obj, PTR2IV(self));
 
     // Connect class association.
-    cfish_String *class_name = CFISH_VTable_Get_Name(self->vtable);
+    cfish_String *class_name = CFISH_Class_Get_Name(self->klass);
     HV *stash = gv_stashpvn(CFISH_Str_Get_Ptr8(class_name),
                             CFISH_Str_Get_Size(class_name), TRUE);
     SvSTASH_set(inner_obj, (HV*)SvREFCNT_inc(stash));
@@ -669,53 +669,53 @@ CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
     return newRV_inc((SV*)self->ref.host_obj);
 }
 
-/*************************** Clownfish::VTable ******************************/
+/*************************** Clownfish::Class ******************************/
 
 cfish_Obj*
-CFISH_VTable_Make_Obj_IMP(cfish_VTable *self) {
+CFISH_Class_Make_Obj_IMP(cfish_Class *self) {
     cfish_Obj *obj
         = (cfish_Obj*)cfish_Memory_wrapped_calloc(self->obj_alloc_size, 1);
-    obj->vtable = self;
+    obj->klass = self;
     obj->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;
     return obj;
 }
 
 cfish_Obj*
-CFISH_VTable_Init_Obj_IMP(cfish_VTable *self, void *allocation) {
+CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
     cfish_Obj *obj = (cfish_Obj*)allocation;
-    obj->vtable = self;
+    obj->klass = self;
     obj->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;
     return obj;
 }
 
 cfish_Obj*
-CFISH_VTable_Foster_Obj_IMP(cfish_VTable *self, void *host_obj) {
+CFISH_Class_Foster_Obj_IMP(cfish_Class *self, void *host_obj) {
     cfish_Obj *obj
         = (cfish_Obj*)cfish_Memory_wrapped_calloc(self->obj_alloc_size, 1);
     SV *inner_obj = SvRV((SV*)host_obj);
-    obj->vtable = self;
+    obj->klass = self;
     sv_setiv(inner_obj, PTR2IV(obj));
     obj->ref.host_obj = inner_obj;
     return obj;
 }
 
 void
-cfish_VTable_register_with_host(cfish_VTable *singleton, cfish_VTable *parent) {
+cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
     dSP;
     ENTER;
     SAVETMPS;
     EXTEND(SP, 2);
     PUSHMARK(SP);
-    mPUSHs((SV*)CFISH_VTable_To_Host(singleton));
-    mPUSHs((SV*)CFISH_VTable_To_Host(parent));
+    mPUSHs((SV*)CFISH_Class_To_Host(singleton));
+    mPUSHs((SV*)CFISH_Class_To_Host(parent));
     PUTBACK;
-    call_pv("Clownfish::VTable::_register", G_VOID | G_DISCARD);
+    call_pv("Clownfish::Class::_register", G_VOID | G_DISCARD);
     FREETMPS;
     LEAVE;
 }
 
 cfish_VArray*
-cfish_VTable_fresh_host_methods(cfish_String *class_name) {
+cfish_Class_fresh_host_methods(cfish_String *class_name) {
     dSP;
     ENTER;
     SAVETMPS;
@@ -723,7 +723,7 @@ cfish_VTable_fresh_host_methods(cfish_String *class_name) {
     PUSHMARK(SP);
     mPUSHs(XSBind_str_to_sv(class_name));
     PUTBACK;
-    call_pv("Clownfish::VTable::_fresh_host_methods", G_SCALAR);
+    call_pv("Clownfish::Class::_fresh_host_methods", G_SCALAR);
     SPAGAIN;
     cfish_VArray *methods = (cfish_VArray*)XSBind_perl_to_cfish(POPs);
     PUTBACK;
@@ -733,7 +733,7 @@ cfish_VTable_fresh_host_methods(cfish_String *class_name) {
 }
 
 cfish_String*
-cfish_VTable_find_parent_class(cfish_String *class_name) {
+cfish_Class_find_parent_class(cfish_String *class_name) {
     dSP;
     ENTER;
     SAVETMPS;
@@ -741,7 +741,7 @@ cfish_VTable_find_parent_class(cfish_String *class_name) {
     PUSHMARK(SP);
     mPUSHs(XSBind_str_to_sv(class_name));
     PUTBACK;
-    call_pv("Clownfish::VTable::_find_parent_class", G_SCALAR);
+    call_pv("Clownfish::Class::_find_parent_class", G_SCALAR);
     SPAGAIN;
     SV *parent_class_sv = POPs;
     PUTBACK;
@@ -753,10 +753,10 @@ cfish_VTable_find_parent_class(cfish_String *class_name) {
 }
 
 void*
-CFISH_VTable_To_Host_IMP(cfish_VTable *self) {
+CFISH_Class_To_Host_IMP(cfish_Class *self) {
     bool first_time = self->ref.count & XSBIND_REFCOUNT_FLAG ? true : false;
-    CFISH_VTable_To_Host_t to_host
-        = CFISH_SUPER_METHOD_PTR(CFISH_VTABLE, CFISH_VTable_To_Host);
+    CFISH_Class_To_Host_t to_host
+        = CFISH_SUPER_METHOD_PTR(CFISH_CLASS, CFISH_Class_To_Host);
     SV *host_obj = (SV*)to_host(self);
     if (first_time) {
         SvSHARE((SV*)self->ref.host_obj);
@@ -853,8 +853,8 @@ CFISH_Err_To_Host_IMP(cfish_Err *self) {
 }
 
 void
-cfish_Err_throw_mess(cfish_VTable *vtable, cfish_String *message) {
-    CHY_UNUSED_VAR(vtable);
+cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
+    CHY_UNUSED_VAR(klass);
     cfish_Err *err = cfish_Err_new(message);
     cfish_Err_do_throw(err);
 }

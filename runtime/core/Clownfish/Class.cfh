@@ -16,21 +16,21 @@
 
 parcel Clownfish;
 
-/** Virtual method dispatch table.
+/** Class.
  *
- * VTables, which are the first element in any Clownfish object, are actually
- * objects themselves.  (Their first element is a VTable which describes the
- * behavior of VTables.)
+ * Classes, which are the first element in any Clownfish object, are actually
+ * objects themselves.  (Their first element is a Class which describes the
+ * behavior of Classes.)
  */
 
-class Clownfish::VTable inherits Clownfish::Obj {
+class Clownfish::Class inherits Clownfish::Obj {
 
-    VTable            *parent;
+    Class             *parent;
     String            *name;
     uint32_t           flags;
     int32_t            parcel_id;
     size_t             obj_alloc_size;
-    size_t             vt_alloc_size;
+    size_t             class_alloc_size;
     VArray            *methods;
     cfish_method_t[1]  method_ptrs; /* flexible array */
 
@@ -38,30 +38,30 @@ class Clownfish::VTable inherits Clownfish::Obj {
     inert size_t offset_of_parent;
 
     inert void
-    bootstrap(const cfish_VTableSpec *specs, size_t num_specs);
+    bootstrap(const cfish_ClassSpec *specs, size_t num_specs);
 
-    /** Return a singleton.  If a VTable can be found in the registry based on
-     * the supplied class name, it will be returned.  Otherwise, a new VTable
+    /** Return a singleton.  If a Class can be found in the registry based on
+     * the supplied class name, it will be returned.  Otherwise, a new Class
      * will be created using [parent] as a base.
      *
      * If [parent] is NULL, an attempt will be made to find it using
-     * VTable_find_parent_class().  If the attempt fails, an error will
+     * Class_find_parent_class().  If the attempt fails, an error will
      * result.
      */
-    inert VTable*
-    singleton(String *class_name, VTable *parent);
+    inert Class*
+    singleton(String *class_name, Class *parent);
 
-    /** Register a vtable, so that it can be retrieved by class name.
+    /** Register a class, so that it can be retrieved by class name.
      *
      * TODO: Move this functionality to some kind of class loader.
      *
      * @return true on success, false if the class was already registered.
      */
     inert bool
-    add_to_registry(VTable *vtable);
+    add_to_registry(Class *klass);
 
     inert bool
-    add_alias_to_registry(VTable *vtable, const char *alias_ptr,
+    add_alias_to_registry(Class *klass, const char *alias_ptr,
                           size_t alias_len);
 
     /** Initialize the registry.
@@ -72,13 +72,13 @@ class Clownfish::VTable inherits Clownfish::Obj {
     /** Tell the host about the new class.
      */
     inert void
-    register_with_host(VTable *vtable, VTable *parent);
+    register_with_host(Class *klass, Class *parent);
 
-    /** Find a registered class and return its vtable.  May return NULL if the
-     * class is not registered.
+    /** Find a registered class.  May return NULL if the class is not
+     * registered.
      */
-    inert nullable VTable*
-    fetch_vtable(String *class_name);
+    inert nullable Class*
+    fetch_class(String *class_name);
 
     /** Given a class name, return the name of a parent class which descends
      * from Clownfish::Obj, or NULL if such a class can't be found.
@@ -91,65 +91,65 @@ class Clownfish::VTable inherits Clownfish::Obj {
     inert incremented VArray*
     fresh_host_methods(String *class_name);
 
-    /** Replace a function pointer in the VTable.
+    /** Replace a function pointer in the Class's vtable.
      */
     void
-    Override(VTable *self, cfish_method_t method_ptr, size_t offset);
+    Override(Class *self, cfish_method_t method_ptr, size_t offset);
 
-    /** Create an empty object of the type defined by the VTable: allocate,
-     * assign its vtable and give it an initial refcount of 1.  The caller is
+    /** Create an empty object of the type defined by the Class: allocate,
+     * assign its class and give it an initial refcount of 1.  The caller is
      * responsible for initialization.
      */
     Obj*
-    Make_Obj(VTable *self);
+    Make_Obj(Class *self);
 
     /** Take a raw memory allocation which is presumed to be of adequate size,
-     * assign its vtable and give it an initial refcount of 1.
+     * assign its class and give it an initial refcount of 1.
      */
     Obj*
-    Init_Obj(VTable *self, void *allocation);
+    Init_Obj(Class *self, void *allocation);
 
     /** Create a new object to go with the supplied host object.
      */
     Obj*
-    Foster_Obj(VTable *self, void *host_obj);
+    Foster_Obj(Class *self, void *host_obj);
 
     void
-    Add_Host_Method_Alias(VTable *self, const char *alias,
+    Add_Host_Method_Alias(Class *self, const char *alias,
                           const char *meth_name);
 
     void
-    Exclude_Host_Method(VTable *self, const char *meth_name);
+    Exclude_Host_Method(Class *self, const char *meth_name);
 
     String*
-    Get_Name(VTable *self);
+    Get_Name(Class *self);
 
-    VTable*
-    Get_Parent(VTable *self);
+    Class*
+    Get_Parent(Class *self);
 
     size_t
-    Get_Obj_Alloc_Size(VTable *self);
+    Get_Obj_Alloc_Size(Class *self);
 
     VArray*
-    Get_Methods(VTable *self);
+    Get_Methods(Class *self);
 
-    public incremented VTable*
-    Clone(VTable *self);
+    public incremented Class*
+    Clone(Class *self);
 
     incremented Obj*
-    Inc_RefCount(VTable *self);
+    Inc_RefCount(Class *self);
 
     uint32_t
-    Dec_RefCount(VTable *self);
+    Dec_RefCount(Class *self);
 
     uint32_t
-    Get_RefCount(VTable *self);
+    Get_RefCount(Class *self);
 
     void*
-    To_Host(VTable *self);
+    To_Host(Class *self);
 
     public void
-    Destroy(VTable *self);
+    Destroy(Class *self);
 }
 
 

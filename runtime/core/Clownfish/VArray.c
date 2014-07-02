@@ -23,7 +23,7 @@
 
 #include "charmony.h"
 
-#include "Clownfish/VTable.h"
+#include "Clownfish/Class.h"
 #include "Clownfish/VArray.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
@@ -31,7 +31,7 @@
 
 VArray*
 VA_new(uint32_t capacity) {
-    VArray *self = (VArray*)VTable_Make_Obj(VARRAY);
+    VArray *self = (VArray*)Class_Make_Obj(VARRAY);
     VA_init(self, capacity);
     return self;
 }
