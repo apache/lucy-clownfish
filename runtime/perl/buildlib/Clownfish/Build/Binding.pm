@@ -554,8 +554,6 @@ END_XS_CODE
 }
 
 sub bind_class {
-    my @hand_rolled = qw( Make_Obj );
-
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Class
 
@@ -606,21 +604,12 @@ CODE:
     RETVAL = (SV*)CFISH_Class_To_Host(singleton);
 }
 OUTPUT: RETVAL
-
-SV*
-make_obj(self)
-    cfish_Class *self;
-CODE:
-    cfish_Obj *blank = CFISH_Class_Make_Obj(self);
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(blank);
-OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         parcel     => "Clownfish",
         class_name => "Clownfish::Class",
     );
-    $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
