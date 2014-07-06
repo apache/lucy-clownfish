@@ -100,13 +100,13 @@ class Clownfish::Class inherits Clownfish::Obj {
      * assign its class and give it an initial refcount of 1.  The caller is
      * responsible for initialization.
      */
-    Obj*
+    incremented Obj*
     Make_Obj(Class *self);
 
     /** Take a raw memory allocation which is presumed to be of adequate size,
      * assign its class and give it an initial refcount of 1.
      */
-    Obj*
+    incremented Obj*
     Init_Obj(Class *self, void *allocation);
 
     /** Create a new object to go with the supplied host object.
