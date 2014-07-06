@@ -597,6 +597,41 @@ the Perl bindings for Clownfish modules.
 
     $builder->create_build_script();
 
+=head1 BUILD ACTIONS
+
+Clownfish::CFC::Perl::Build defines the following build actions.
+
+=head2 code
+
+Build the whole project. The C<code> action searches the C<buildlib>
+directory for .pm files whose path contains the string C<Binding>. For each
+module found, the class method C<bind_all> will be called with a
+L<Clownfish::CFC::Model::Hierarchy> object as argument. This method
+should register all the L<Clownfish::CFC::Binding::Perl::Class> objects
+for which bindings should be generated.
+
+For example, the file C<buildlib/My/Module/Binding.pm> could look like:
+
+    package My::Module::Binding;
+
+    sub bind_all {
+        my ($class, $hierarchy) = @_;
+
+        my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+            parcel     => 'MyModule',
+            class_name => 'My::Module::Class',
+        );
+        Clownfish::CFC::Binding::Perl::Class->register($binding);
+    }
+
+=head2 clownfish
+
+Compile the Clownfish headers and generate code in the C<autogen> directory.
+
+=head2 pod
+
+Generate POD from Clownfish headers.
+
 =head1 CONSTRUCTOR
 
 =head2 new( I<[labeled params]> )
@@ -677,22 +712,6 @@ system include directory. Typically used for additional .h files that the
 
 Get or set a Clownfish build param. Supports all the parameters that can be
 passed to L</new>.
-
-=head1 BUILD ACTIONS
-
-Clownfish::CFC::Perl::Build defines the following build actions.
-
-=head2 code
-
-Build the whole project.
-
-=head2 clownfish
-
-Compile the Clownfish headers and generate code in the C<autogen> directory.
-
-=head2 pod
-
-Generate POD from Clownfish headers.
 
 =cut
 
