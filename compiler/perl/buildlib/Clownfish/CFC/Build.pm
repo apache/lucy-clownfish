@@ -25,6 +25,8 @@ use base qw( Clownfish::CFC::Perl::Build::Charmonic );
 no lib 'lib';
 
 use File::Spec::Functions qw( catfile updir catdir curdir );
+use File::Copy qw( move );
+use File::Path qw( rmtree );
 use Config;
 use Cwd qw( getcwd );
 use Carp;
@@ -165,6 +167,38 @@ sub ACTION_code {
     $self->extra_compiler_flags( '-DCFCPERL', @flags );
 
     $self->SUPER::ACTION_code;
+}
+
+sub ACTION_dist {
+    my $self = shift;
+
+    # We build our Perl release tarball from a subdirectory rather than from
+    # the top-level $REPOS_ROOT.  Because some assets we need are outside this
+    # directory, we need to copy them in.
+    my %to_copy = (
+        '../../CONTRIBUTING' => 'CONTRIBUTING',
+        '../../LICENSE'      => 'LICENSE',
+        '../../NOTICE'       => 'NOTICE',
+        '../../README'       => 'README',
+        '../../lemon'        => 'lemon',
+        '../src'             => 'src',
+        '../include'         => 'include',
+        $CHARMONIZER_C       => 'charmonizer.c',
+    );
+    print "Copying files...\n";
+    while (my ($from, $to) = each %to_copy) {
+        confess("'$to' already exists") if -e $to;
+        system("cp -R $from $to") and confess("cp failed");
+    }
+    move( "MANIFEST", "MANIFEST.bak" ) or die "move() failed: $!";
+    $self->depends_on("manifest");
+    $self->SUPER::ACTION_dist;
+
+    # Now that the tarball is packaged up, delete the copied assets.
+    rmtree($_) for values %to_copy;
+    unlink("META.yml");
+    unlink("META.json");
+    move( "MANIFEST.bak", "MANIFEST" ) or die "move() failed: $!";
 }
 
 1;
