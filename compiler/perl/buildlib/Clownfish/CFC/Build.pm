@@ -24,21 +24,44 @@ use lib 'lib';
 use base qw( Clownfish::CFC::Perl::Build::Charmonic );
 no lib 'lib';
 
-use File::Spec::Functions qw( catfile updir catdir );
+use File::Spec::Functions qw( catfile updir catdir curdir );
 use Config;
 use Cwd qw( getcwd );
 use Carp;
 
-my $base_dir = catdir( updir(), updir() );
-my $COMMON_SOURCE_DIR = catdir( updir(), 'common' );
-my $CHARMONIZER_C     = catfile( $COMMON_SOURCE_DIR, 'charmonizer.c' );
-my $PPPORT_H_PATH = catfile( updir(), qw( include ppport.h ) );
-my $LEMON_DIR = catdir( $base_dir, 'lemon' );
+# Establish the filepaths for various assets.  If the file `LICENSE` is found
+# in the current working directory, this is a CPAN distribution rather than a
+# checkout from version control and things live in different dirs.
+my $CHARMONIZER_C;
+my $LEMON_DIR;
+my $INCLUDE;
+my $CFC_SOURCE_DIR;
+my $IS_CPAN = -e 'LICENSE';
+if ($IS_CPAN) {
+    $CHARMONIZER_C  = 'charmonizer.c';
+    $INCLUDE        = 'include';
+    $LEMON_DIR      = 'lemon';
+    $CFC_SOURCE_DIR = 'src';
+}
+else {
+    $CHARMONIZER_C = catfile( updir(), 'common', 'charmonizer.c' );
+    $INCLUDE        = catdir( updir(), 'include' );
+    $LEMON_DIR      = catdir( updir(), updir(), 'lemon' );
+    $CFC_SOURCE_DIR = catdir( updir(), 'src' );
+}
 my $LEMON_EXE_PATH = catfile( $LEMON_DIR, "lemon$Config{_exe}" );
-my $CFC_SOURCE_DIR = catdir( updir(), 'src' );
+my $PPPORT_H_PATH  = catfile( $INCLUDE,   'ppport.h' );
 
 sub new {
     my ( $class, %args ) = @_;
+    $args{c_source} = $CFC_SOURCE_DIR;
+    $args{include_dirs} ||= [];
+    my @aux_include = (
+        $INCLUDE,
+        $CFC_SOURCE_DIR,
+        curdir(),    # for charmony.h
+    );
+    push @{ $args{include_dirs} }, @aux_include;
     return $class->SUPER::new(
         %args,
         recursive_test_files => 1,

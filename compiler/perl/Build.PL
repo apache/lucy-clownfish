@@ -18,7 +18,6 @@ use strict;
 use warnings;
 use lib 'buildlib';
 use Clownfish::CFC::Build;
-use File::Spec::Functions qw( updir catdir curdir );
 
 my $builder = Clownfish::CFC::Build->new(
     module_name => 'Clownfish::CFC',
@@ -31,11 +30,6 @@ my $builder = Clownfish::CFC::Build->new(
         'ExtUtils::ParseXS'  => 2.16,
         'Devel::PPPort'      => 3.13,
     },
-    include_dirs   => [
-        curdir(), # for charmony.h
-        catdir( updir(), 'include' ),
-    ],
-    c_source       => catdir( updir(),   'src' ),
     add_to_cleanup => [
         qw(
             MANIFEST.bak
