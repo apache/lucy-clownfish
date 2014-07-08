@@ -25,10 +25,11 @@ my $builder = Clownfish::Build->new(
     dist_author =>
         'The Apache Lucy Project <dev at lucy dot apache dot org>',
     dist_version       => '0.3.0',
-    dist_abstract      => 'Clownfish Runtime',
+    dist_abstract      => 'Apache Clownfish Runtime',
     requires           => { 'perl' => '5.8.3', },
     configure_requires => { 'Module::Build' => 0.280801 },
     build_requires     => {
+        'Clownfish::CFC'     => '0.1.0',
         'Module::Build'      => 0.280801,
         'ExtUtils::CBuilder' => 0.21,
         'ExtUtils::ParseXS'  => 2.18,
