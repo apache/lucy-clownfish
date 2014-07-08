@@ -365,6 +365,9 @@ S_xs_file_contents(CFCPerl *self, const char *generated_xs,
         "\n"
         "MODULE = %s   PACKAGE = %s\n"
         "\n"
+        "BOOT:\n"
+        "    %s();\n"
+        "\n"
         "void\n"
         "_init_autobindings()\n"
         "PPCODE:\n"
@@ -379,8 +382,8 @@ S_xs_file_contents(CFCPerl *self, const char *generated_xs,
         "%s";
     char *contents
         = CFCUtil_sprintf(pattern, self->header, generated_xs,
-                          self->boot_class, self->boot_class, xs_init,
-                          hand_rolled_xs, self->footer);
+                          self->boot_class, self->boot_class, self->boot_func,
+                          xs_init, hand_rolled_xs, self->footer);
 
     return contents;
 }

@@ -39,9 +39,6 @@ sub bind_clownfish {
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish    PACKAGE = Clownfish
 
-BOOT:
-    cfish_Clownfish_bootstrap();
-
 IV
 _dummy_function()
 CODE:
