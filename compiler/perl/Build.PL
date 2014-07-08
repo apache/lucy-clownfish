@@ -25,13 +25,26 @@ my $builder = Clownfish::CFC::Build->new(
     dist_author =>
         'The Apache Lucy Project <dev at lucy dot apache dot org>',
     dist_version_from => 'lib/Clownfish/CFC.pm',
+    dist_abstract      => 'CFC Apache Clownfish compiler',
+    requires           => { 'perl' => '5.8.3', },
+    configure_requires => { 'Module::Build' => 0.280801 },
     build_requires    => {
+        'Module::Build'      => 0.280801,
         'ExtUtils::CBuilder' => 0.18,
         'ExtUtils::ParseXS'  => 2.16,
         'Devel::PPPort'      => 3.13,
     },
+    meta_merge => { keywords => [qw( clownfish )], },
+    meta_add   => {
+        resources => {
+            homepage   => 'http://lucy.apache.org',
+            repository => 'https://git-wip-us.apache.org/repos/asf/lucy-clownfish.git',
+            bugtracker => 'https://issues.apache.org/jira/browse/LUCY',
+        },
+    },
     add_to_cleanup => [
         qw(
+            Clownfish-CFC-*
             MANIFEST.bak
             perltidy.ERR
             *.pdb
