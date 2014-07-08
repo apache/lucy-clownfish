@@ -42,7 +42,6 @@ BEGIN {
     our @ISA = qw( DynaLoader );
     # This loads a large number of disparate subs.
     bootstrap Clownfish '0.3.0';
-    _init_autobindings();
 }
 
 sub kdump {

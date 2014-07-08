@@ -366,15 +366,10 @@ S_xs_file_contents(CFCPerl *self, const char *generated_xs,
         "MODULE = %s   PACKAGE = %s\n"
         "\n"
         "BOOT:\n"
-        "    %s();\n"
-        "\n"
-        "void\n"
-        "_init_autobindings()\n"
-        "PPCODE:\n"
         "{\n"
         "    const char* file = __FILE__;\n"
-        "    CFISH_UNUSED_VAR(cv);\n"
-        "    CFISH_UNUSED_VAR(items); %s\n"
+        "    %s();\n"
+        "%s"
         "}\n"
         "\n"
         "%s\n"
@@ -392,11 +387,8 @@ static char*
 S_add_xs_init(char *xs_init, CFCPerlSub *xsub) {
     const char *c_name = CFCPerlSub_c_name(xsub);
     const char *perl_name = CFCPerlSub_perl_name(xsub);
-    if (strlen(xs_init)) {
-        xs_init = CFCUtil_cat(xs_init, "\n    ", NULL);
-    }
-    xs_init = CFCUtil_cat(xs_init, "newXS(\"", perl_name, "\", ", c_name,
-                          ", file);", NULL);
+    xs_init = CFCUtil_cat(xs_init, "    newXS(\"", perl_name, "\", ", c_name,
+                          ", file);\n", NULL);
     return xs_init;
 }
 
