@@ -17,12 +17,7 @@ use 5.008003;
 use strict;
 use warnings;
 use lib 'buildlib';
-use File::Spec::Functions qw( catdir );
 use Clownfish::Build;
-
-my @BASE_PATH        = Clownfish::Build->cf_base_path;
-my $CORE_SOURCE_DIR  = catdir( @BASE_PATH, 'core' );
-my $XS_SOURCE_DIR    = 'xs';
 
 my $builder = Clownfish::Build->new(
     module_name => 'Clownfish',
@@ -47,16 +42,6 @@ my $builder = Clownfish::Build->new(
             bugtracker => 'https://issues.apache.org/jira/browse/LUCY',
         },
     },
-    include_dirs => [
-        $XS_SOURCE_DIR,
-    ],
-    clownfish_params => {
-        source => [
-            $CORE_SOURCE_DIR,
-            $XS_SOURCE_DIR,
-        ],
-        include => [], # Don't use default includes.
-    },
     add_to_cleanup => [
         qw(
             Clownfish-*
@@ -70,4 +55,3 @@ my $builder = Clownfish::Build->new(
 
 $builder->create_build_script();
 
-__END__

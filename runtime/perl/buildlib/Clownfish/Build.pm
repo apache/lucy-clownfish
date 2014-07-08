@@ -44,14 +44,29 @@ use Cwd qw( getcwd );
 my @BASE_PATH = __PACKAGE__->cf_base_path;
 
 my $COMMON_SOURCE_DIR = catdir( @BASE_PATH, 'common' );
-my $CHARMONIZER_C     = catfile( $COMMON_SOURCE_DIR, 'charmonizer.c' );
 my $CORE_SOURCE_DIR   = catdir( @BASE_PATH, 'core' );
 my $CFC_DIR           = catdir( @BASE_PATH, updir(), 'compiler', 'perl' );
-my $CFC_BUILD         = catfile( $CFC_DIR, 'Build' );
-my $LIB_DIR           = 'lib';
+my $XS_SOURCE_DIR = 'xs';
+my $CFC_BUILD     = catfile( $CFC_DIR, 'Build' );
+my $LIB_DIR       = 'lib';
+my $CHARMONIZER_C;
+my $IS_CPAN_DIST = !@BASE_PATH;
+if ($IS_CPAN_DIST) {
+    $CHARMONIZER_C = 'charmonizer.c';
+}
+else {
+    $CHARMONIZER_C = catfile( $COMMON_SOURCE_DIR, 'charmonizer.c' );
+}
 
 sub new {
-    my $self = shift->SUPER::new( recursive_test_files => 1, @_ );
+    my ( $class, %args ) = @_;
+    $args{include_dirs}     = $XS_SOURCE_DIR;
+    $args{clownfish_params} = {
+        autogen_header => _autogen_header(),
+        include        => [],                  # Don't use default includes.
+        source => [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ],
+    };
+    my $self = $class->SUPER::new( recursive_test_files => 1, %args );
 
     if ( $ENV{LUCY_VALGRIND} ) {
         my $optimize = $self->config('optimize') || '';
@@ -60,8 +75,6 @@ sub new {
     }
 
     $self->charmonizer_params( charmonizer_c => $CHARMONIZER_C );
-
-    $self->clownfish_params( autogen_header => $self->autogen_header );
 
     return $self;
 }
@@ -85,7 +98,8 @@ sub _run_make {
 }
 
 sub ACTION_cfc {
-    my $self    = shift;
+    my $self = shift;
+    return if $IS_CPAN_DIST;
     my $old_dir = getcwd();
     chdir($CFC_DIR);
     if ( !-f 'Build' ) {
@@ -248,8 +262,7 @@ sub ACTION_test_valgrind {
     }
 }
 
-sub autogen_header {
-    my $self = shift;
+sub _autogen_header {
     return <<"END_AUTOGEN";
 /***********************************************
 
