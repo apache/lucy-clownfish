@@ -264,6 +264,8 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "} cfish_ClassSpec;\n"
         "\n"
         "#ifdef CFISH_USE_SHORT_NAMES\n"
+        "  #define UNUSED_VAR               CFISH_UNUSED_VAR\n"
+        "  #define UNREACHABLE_RETURN       CFISH_UNREACHABLE_RETURN\n"
         "  #define METHOD_PTR               CFISH_METHOD_PTR\n"
         "  #define SUPER_METHOD_PTR         CFISH_SUPER_METHOD_PTR\n"
         "#endif\n"

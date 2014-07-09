@@ -19,9 +19,6 @@
 #define C_CFISH_STRINGITERATOR
 #define C_CFISH_STACKSTRINGITERATOR
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
-
-#include "charmony.h"
 
 #include <string.h>
 #include <stdio.h>

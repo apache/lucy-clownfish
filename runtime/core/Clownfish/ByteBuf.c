@@ -17,7 +17,6 @@
 #define C_CFISH_BYTEBUF
 #define C_CFISH_VIEWBYTEBUF
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
 
 #include <stdlib.h>
 #include <string.h>

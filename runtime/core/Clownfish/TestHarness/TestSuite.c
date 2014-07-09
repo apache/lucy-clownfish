@@ -17,11 +17,8 @@
 #include <stdio.h>
 
 #define C_CFISH_TESTSUITE
-#define CHY_USE_SHORT_NAMES
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
-
-#include "charmony.h"
 
 #include "Clownfish/TestHarness/TestSuite.h"
 

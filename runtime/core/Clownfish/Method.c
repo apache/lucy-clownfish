@@ -16,9 +16,6 @@
 
 #define C_CFISH_METHOD
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
-
-#include "charmony.h"
 
 #include "Clownfish/Method.h"
 #include "Clownfish/String.h"

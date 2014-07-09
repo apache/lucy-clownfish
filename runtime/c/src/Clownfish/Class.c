@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#define CHY_USE_SHORT_NAMES
 #define CFISH_USE_SHORT_NAMES
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS

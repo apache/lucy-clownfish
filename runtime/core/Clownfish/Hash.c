@@ -17,9 +17,6 @@
 #define C_CFISH_HASH
 #define C_CFISH_HASHTOMBSTONE
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
-
-#include "charmony.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -350,7 +347,7 @@ SI_rebuild_hash(Hash *self) {
 
 uint32_t
 HashTombStone_Get_RefCount_IMP(HashTombStone* self) {
-    CHY_UNUSED_VAR(self);
+    UNUSED_VAR(self);
     return 1;
 }
 

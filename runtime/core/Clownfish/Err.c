@@ -18,7 +18,6 @@
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
 
 #include "charmony.h"
 

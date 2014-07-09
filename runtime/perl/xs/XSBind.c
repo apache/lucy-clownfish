@@ -773,7 +773,7 @@ static SV *attempt_xsub = NULL;
 
 XS(cfish_Err_attempt_via_xs) {
     dXSARGS;
-    CHY_UNUSED_VAR(cv);
+    CFISH_UNUSED_VAR(cv);
     SP -= items;
     if (items != 2) {
         CFISH_THROW(CFISH_ERR, "Usage: $sub->(routine, context)");
@@ -854,7 +854,7 @@ CFISH_Err_To_Host_IMP(cfish_Err *self) {
 
 void
 cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
-    CHY_UNUSED_VAR(klass);
+    CFISH_UNUSED_VAR(klass);
     cfish_Err *err = cfish_Err_new(message);
     cfish_Err_do_throw(err);
 }

@@ -16,7 +16,6 @@
 
 #define C_CFISH_SORTUTILS
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
 
 #include <string.h>
 #include "Clownfish/Util/SortUtils.h"
