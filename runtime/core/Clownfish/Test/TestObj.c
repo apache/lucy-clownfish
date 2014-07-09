@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 
-#define CHY_USE_SHORT_NAMES
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
 
@@ -89,7 +88,7 @@ test_Equals(TestBatchRunner *runner) {
 static void
 test_Hash_Sum(TestBatchRunner *runner) {
     Obj *testobj = S_new_testobj();
-    int64_t address64 = PTR_TO_I64(testobj);
+    int64_t address64 = CHY_PTR_TO_I64(testobj);
     int32_t address32 = (int32_t)address64;
     TEST_TRUE(runner, (Obj_Hash_Sum(testobj) == address32),
               "Hash_Sum uses memory address");

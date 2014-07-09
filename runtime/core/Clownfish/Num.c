@@ -23,7 +23,6 @@
 #define C_CFISH_FLOAT64
 #define C_CFISH_BOOLNUM
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
 
 #include "charmony.h"
 
@@ -369,7 +368,7 @@ Bool_Clone_IMP(BoolNum *self) {
 
 int32_t
 Bool_Hash_Sum_IMP(BoolNum *self) {
-    int64_t hash_sum = PTR_TO_I64(self) + self->value;
+    int64_t hash_sum = CHY_PTR_TO_I64(self) + self->value;
     return (int32_t)hash_sum;
 }
 

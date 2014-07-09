@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define CHY_USE_SHORT_NAMES
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
 
@@ -265,9 +264,9 @@ test_vcatf_x32(TestBatchRunner *runner) {
     char buf[64];
     unsigned long num = INT32_MAX;
     CharBuf *got = S_get_cb("foo ");
-#if (SIZEOF_LONG == 4)
+#if (CHY_SIZEOF_LONG == 4)
     sprintf(buf, "foo bar %.8lx baz", num);
-#elif (SIZEOF_INT == 4)
+#elif (CHY_SIZEOF_INT == 4)
     sprintf(buf, "foo bar %.8x baz", (unsigned)num);
 #endif
     wanted = Str_new_from_trusted_utf8(buf, strlen(buf));

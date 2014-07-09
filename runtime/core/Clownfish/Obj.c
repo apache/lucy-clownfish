@@ -17,7 +17,6 @@
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
 #define CFISH_USE_SHORT_NAMES
-#define CHY_USE_SHORT_NAMES
 
 #include "charmony.h"
 
@@ -45,7 +44,7 @@ Obj_Destroy_IMP(Obj *self) {
 
 int32_t
 Obj_Hash_Sum_IMP(Obj *self) {
-    int64_t hash_sum = PTR_TO_I64(self);
+    int64_t hash_sum = CHY_PTR_TO_I64(self);
     return (int32_t)hash_sum;
 }
 
@@ -70,10 +69,10 @@ Obj_Equals_IMP(Obj *self, Obj *other) {
 
 String*
 Obj_To_String_IMP(Obj *self) {
-#if (SIZEOF_PTR == 4)
+#if (CHY_SIZEOF_PTR == 4)
     return Str_newf("%o@0x%x32", Obj_Get_Class_Name(self), self);
-#elif (SIZEOF_PTR == 8)
-    int64_t   iaddress   = PTR_TO_I64(self);
+#elif (CHY_SIZEOF_PTR == 8)
+    int64_t   iaddress   = CHY_PTR_TO_I64(self);
     uint64_t  address    = (uint64_t)iaddress;
     uint32_t  address_hi = address >> 32;
     uint32_t  address_lo = address & 0xFFFFFFFF;
