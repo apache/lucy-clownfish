@@ -40,6 +40,11 @@
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 
+#define NovelMethSpec            cfish_NovelMethSpec
+#define OverriddenMethSpec       cfish_OverriddenMethSpec
+#define InheritedMethSpec        cfish_InheritedMethSpec
+#define ClassSpec                cfish_ClassSpec
+
 size_t Class_offset_of_parent = offsetof(Class, parent);
 
 // Remove spaces and underscores, convert to lower case.

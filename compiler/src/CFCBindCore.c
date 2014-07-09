@@ -266,10 +266,6 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "#ifdef CFISH_USE_SHORT_NAMES\n"
         "  #define METHOD_PTR               CFISH_METHOD_PTR\n"
         "  #define SUPER_METHOD_PTR         CFISH_SUPER_METHOD_PTR\n"
-        "  #define NovelMethSpec            cfish_NovelMethSpec\n"
-        "  #define OverriddenMethSpec       cfish_OverriddenMethSpec\n"
-        "  #define InheritedMethSpec        cfish_InheritedMethSpec\n"
-        "  #define ClassSpec                cfish_ClassSpec\n"
         "#endif\n"
         "\n";
 
