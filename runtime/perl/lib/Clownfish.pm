@@ -85,6 +85,15 @@ sub error {$Clownfish::Err::error}
     our $VERSION = '0.003000';
     $VERSION = eval $VERSION;
     use Clownfish qw( to_clownfish to_perl );
+    use Carp qw( confess );
+    sub STORABLE_freeze {
+        my $class_name = ref(shift);
+        confess("Storable serialization not implemented for $class_name");
+    }
+    sub STORABLE_thaw {
+        my $class_name = ref(shift);
+        confess("Storable serialization not implemented for $class_name");
+    }
 }
 
 {
