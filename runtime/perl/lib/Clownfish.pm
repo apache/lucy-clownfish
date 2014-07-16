@@ -230,4 +230,29 @@ sub error {$Clownfish::Err::error}
 
 __END__
 
+=head1 NAME
+
+Clownfish - Apache Clownfish symbiotic object system.
+
+=head1 VERSION
+
+0.3.0
+
+=head1 DESCRIPTION
+
+The Apache Clownfish "symbiotic" object system for C is designed to pair with
+a "host" dynamic language environment, facilitating the development of high
+performance host language extensions.  Clownfish classes are declared in
+header files with a C<.cfh> extension.  The Clownfish headers are used by the
+Clownfish compiler to generate C header files and host language bindings.
+Methods, functions and variables are defined in normal C source files.
+
+The API for this alpha release of Clownfish has been cloaked.
+
+=head1 COPYRIGHT
+
+Clownfish is distributed under the Apache License, Version 2.0, as
+described in the file C<LICENSE> included with the distribution.
+
+=cut
 

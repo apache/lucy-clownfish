@@ -37,6 +37,7 @@ $VERSION = eval $VERSION;
 use File::Spec::Functions qw( catdir catfile updir rel2abs );
 use File::Path qw( rmtree );
 use File::Copy qw( move );
+use File::Find qw( find );
 use Config;
 use Carp;
 use Cwd qw( getcwd );
@@ -329,14 +330,65 @@ sub ACTION_dist {
         system("cp -R $from $to") and confess("cp failed");
     }
     move( "MANIFEST", "MANIFEST.bak" ) or die "move() failed: $!";
+    my $saved = _hide_pod( $self, { 'lib/Clownfish.pm' => 1 } );
     $self->depends_on("manifest");
     $self->SUPER::ACTION_dist;
+    _restore_pod( $self, $saved );
 
     # Now that the tarball is packaged up, delete the copied assets.
     rmtree($_) for values %to_copy;
     unlink("META.yml");
     unlink("META.json");
     move( "MANIFEST.bak", "MANIFEST" ) or die "move() failed: $!";
+}
+
+
+# Strip POD from files in the `lib` directory.  This is a temporary measure to
+# allow us to release Clownfish as a separate dist but with a cloaked API.
+sub _hide_pod {
+    my ( $self, $excluded ) = @_;
+    my %saved;
+    find(
+        {
+            no_chdir => 1,
+            wanted   => sub {
+                my $path = $File::Find::name;
+                return if $excluded->{$path};
+                return unless $path =~ /\.(pm|pod)$/;
+                open( my $fh, '<:encoding(UTF-8)', $path )
+                  or confess("Can't open '$path' for reading: $!");
+                my $content = do { local $/; <$fh> };
+                close $fh;
+                if ( $path =~ /\.pod$/ ) {
+                    $saved{$path} = $content;
+                    print "Hiding POD for $path\n";
+                    unlink($path) or confess("Can't unlink '$path': $!");
+                }
+                else {
+                    my $copy = $content;
+                    $copy =~ s/^=\w+.*?^=cut\s*$//gsm;
+                    return if $copy eq $content;
+                    print "Hiding POD for $path\n";
+                    $saved{$path} = $content;
+                    open( $fh, '>:encoding(UTF-8)', $path )
+                      or confess("Can't open '$path' for writing: $!");
+                    print $fh $copy;
+                }
+            },
+        },
+        'lib',
+    );
+    return \%saved;
+}
+
+# Undo POD hiding.
+sub _restore_pod {
+    my ( $self, $saved ) = @_;
+    while ( my ( $path, $content ) = each %$saved ) {
+        open( my $fh, '>:encoding(UTF-8)', $path )
+          or confess("Can't open '$path' for writing: $!");
+        print $fh $saved->{$path};
+    }
 }
 
 1;
