@@ -56,7 +56,8 @@ isa_ok( $object, "Clownfish::Obj",
 
 {
     no warnings 'once';
-    eval { freeze($object) };
+    my $thawed = TestObj->new;
+    eval { freeze($thawed) };
     like( $@, qr/implement/i,
         "freezing an Obj throws an exception rather than segfaults" );
     *TestObj::STORABLE_freeze = sub {"meep"};
