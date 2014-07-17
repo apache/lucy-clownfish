@@ -42,6 +42,13 @@ use base qw( Clownfish::Obj );
     }
 }
 
+package ThawTestObj;
+use base qw( Clownfish::Obj );
+{
+    sub STORABLE_freeze {"meep"}
+    sub DESTROY {}
+}
+
 package main;
 use Storable qw( freeze thaw );
 
@@ -54,20 +61,16 @@ my $object = TestObj->new;
 isa_ok( $object, "Clownfish::Obj",
     "Clownfish objects can be subclassed" );
 
-{
-    no warnings 'once';
-    my $thawed = TestObj->new;
-    eval { freeze($thawed) };
-    like( $@, qr/implement/i,
-        "freezing an Obj throws an exception rather than segfaults" );
-    *TestObj::STORABLE_freeze = sub {"meep"};
-    local *TestObj::DESTROY = sub {};
-    my $fake = bless {}, 'TestObj';
-    my $frozen = freeze($fake);
-    eval { thaw($frozen) };
-    like( $@, qr/implement/,
-        "thawing an Obj throws an exception rather than segfaults" );
-}
+my $thawed = TestObj->new;
+eval { freeze($thawed) };
+like( $@, qr/implement/i,
+    "freezing an Obj throws an exception rather than segfaults" );
+
+my $fake = bless {}, 'ThawTestObj';
+my $frozen = freeze($fake);
+eval { thaw($frozen) };
+like( $@, qr/implement/,
+    "thawing an Obj throws an exception rather than segfaults" );
 
 ok( $object->is_a("Clownfish::Obj"),     "custom is_a correct" );
 ok( !$object->is_a("Clownfish::Object"), "custom is_a too long" );
