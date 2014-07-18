@@ -156,9 +156,9 @@ public class Clownfish::Obj {
 
 __C__
 static CFISH_INLINE void
-cfish_Obj_super_destroy(cfish_Obj *self, cfish_Class *class) {
+cfish_Obj_super_destroy(cfish_Obj *self, cfish_Class *klass) {
     CFISH_Obj_Destroy_t super_destroy
-        = CFISH_SUPER_METHOD_PTR(class, CFISH_Obj_Destroy);
+        = CFISH_SUPER_METHOD_PTR(klass, CFISH_Obj_Destroy);
     super_destroy(self);
 }
 
