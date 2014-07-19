@@ -153,11 +153,11 @@ CFCPerlMethod_xsub_def(CFCPerlMethod *self) {
 
 static char*
 S_xsub_body(CFCPerlMethod *self) {
-    CFCMethod    *method        = self->method;
-    CFCParamList *param_list    = CFCMethod_get_param_list(method);
-    CFCVariable **arg_vars      = CFCParamList_get_variables(param_list);
-    const char   *name_list     = CFCParamList_name_list(param_list);
-    char *body = CFCUtil_strdup("");
+    CFCMethod    *method     = self->method;
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+    CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
+    char         *name_list  = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
+    char         *body       = CFCUtil_strdup("");
 
     CFCParcel *parcel = CFCMethod_get_parcel(method);
     const char *class_name = CFCMethod_get_class_name(method);
@@ -183,7 +183,7 @@ S_xsub_body(CFCPerlMethod *self) {
         CFCVariable *var = arg_vars[i];
         CFCType     *type = CFCVariable_get_type(var);
         if (CFCType_is_object(type) && CFCType_decremented(type)) {
-            body = CFCUtil_cat(body, "CFISH_INCREF(",
+            body = CFCUtil_cat(body, "CFISH_INCREF(arg_",
                                CFCVariable_micro_sym(var), ");\n    ", NULL);
         }
     }
@@ -214,6 +214,8 @@ S_xsub_body(CFCPerlMethod *self) {
         FREEMEM(assignment);
     }
 
+    FREEMEM(name_list);
+
     return body;
 }
 
@@ -226,8 +228,8 @@ S_self_assign_statement(CFCPerlMethod *self, CFCType *type) {
         CFCUtil_die("Not an object type: %s", type_c);
     }
     const char *class_var = CFCType_get_class_var(type);
-    char pattern[] = "%s self = (%s)XSBind_sv_to_cfish_obj(ST(0), %s, NULL);";
-    char *statement = CFCUtil_sprintf(pattern, type_c, type_c, class_var);
+    char pattern[] = "arg_self = (%s)XSBind_sv_to_cfish_obj(ST(0), %s, NULL);";
+    char *statement = CFCUtil_sprintf(pattern, type_c, class_var);
 
     return statement;
 }
@@ -239,15 +241,19 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     CFCVariable *self_var    = arg_vars[0];
     CFCType     *self_type   = CFCVariable_get_type(self_var);
+    const char  *self_type_c    = CFCType_to_c(self_type);
     const char  *self_micro_sym = CFCVariable_micro_sym(self_var);
-    char *self_assign = S_self_assign_statement(self, self_type);
+    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *self_assign  = S_self_assign_statement(self, self_type);
     char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
-    char *body = S_xsub_body(self);
+    char *body         = S_xsub_body(self);
 
     char pattern[] =
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
+        "    %s arg_self;\n"
+        "%s"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    if (items < 1) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(%s, ...)\",  GvNAME(CvGV(cv))); }\n"
         "    SP -= items;\n"
@@ -260,9 +266,10 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
         "    %s\n"
         "}\n";
     char *xsub_def
-        = CFCUtil_sprintf(pattern, c_name, c_name, self_micro_sym,
-                          allot_params, self_assign, body);
+        = CFCUtil_sprintf(pattern, c_name, c_name, self_type_c, arg_decls,
+                          self_micro_sym, allot_params, self_assign, body);
 
+    FREEMEM(arg_decls);
     FREEMEM(self_assign);
     FREEMEM(allot_params);
     FREEMEM(body);
@@ -274,9 +281,14 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
     CFCMethod *method = self->method;
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     CFCVariable **arg_vars = CFCParamList_get_variables(param_list);
+    CFCVariable *self_var    = arg_vars[0];
+    CFCType     *self_type   = CFCVariable_get_type(self_var);
+    const char  *self_type_c = CFCType_to_c(self_type);
     const char **arg_inits = CFCParamList_get_initial_values(param_list);
     unsigned num_vars = (unsigned)CFCParamList_num_vars(param_list);
-    char *body = S_xsub_body(self);
+    char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *self_assign = S_self_assign_statement(self, self_type);
+    char *body        = S_xsub_body(self);
 
     // Determine how many args are truly required and build an error check.
     unsigned min_required = 0;
@@ -312,54 +324,50 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
 
     // Var assignments.
     char *var_assignments = CFCUtil_strdup("");
-    for (unsigned i = 0; i < num_vars; i++) {
+    for (unsigned i = 1; i < num_vars; i++) {
         CFCVariable *var = arg_vars[i];
         const char  *val = arg_inits[i];
         const char  *var_name = CFCVariable_micro_sym(var);
         CFCType     *var_type = CFCVariable_get_type(var);
         const char  *type_c   = CFCType_to_c(var_type);
 
-        if (i == 0) {    // self
-            char *statement = S_self_assign_statement(self, var_type);
-            var_assignments = CFCUtil_cat(var_assignments, statement, NULL);
+        char perl_stack_var[30];
+        sprintf(perl_stack_var, "ST(%u)", i);
+        char *conversion
+            = CFCPerlTypeMap_from_perl(var_type, perl_stack_var);
+        if (!conversion) {
+            CFCUtil_die("Can't map type '%s'", type_c);
+        }
+        if (val) {
+            char pattern[] =
+                "\n    arg_%s = ( items >= %u && XSBind_sv_defined(ST(%u)) )"
+                " ? %s : %s;";
+            char *statement = CFCUtil_sprintf(pattern, var_name, i, i,
+                                              conversion, val);
+            var_assignments
+                = CFCUtil_cat(var_assignments, statement, NULL);
             FREEMEM(statement);
         }
         else {
-            char perl_stack_var[30];
-            sprintf(perl_stack_var, "ST(%u)", i);
-            char *conversion
-                = CFCPerlTypeMap_from_perl(var_type, perl_stack_var);
-            if (!conversion) {
-                CFCUtil_die("Can't map type '%s'", type_c);
-            }
-            if (val) {
-                char pattern[] =
-                    "\n    %s %s = ( items >= %u && XSBind_sv_defined(ST(%u)) )"
-                    " ? %s : %s;";
-                char *statement = CFCUtil_sprintf(pattern, type_c, var_name, i,
-                                                  i, conversion, val);
-                var_assignments
-                    = CFCUtil_cat(var_assignments, statement, NULL);
-                FREEMEM(statement);
-            }
-            else {
-                var_assignments
-                    = CFCUtil_cat(var_assignments, "\n    ", type_c, " ",
-                                  var_name, " = ", conversion, ";", NULL);
-            }
-            FREEMEM(conversion);
+            var_assignments
+                = CFCUtil_cat(var_assignments, "\n    arg_", var_name, " = ",
+                              conversion, ";", NULL);
         }
+        FREEMEM(conversion);
     }
 
     char pattern[] =
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
+        "    %s arg_self;\n"
+        "%s"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    SP -= items;\n"
         "    %s;\n"
         "\n"
         "    /* Extract vars from Perl stack. */\n"
+        "    %s\n"
         "    %s\n"
         "\n"
         "    /* Execute */\n"
@@ -367,10 +375,13 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         "}\n";
     char *xsub
         = CFCUtil_sprintf(pattern, self->sub.c_name, self->sub.c_name,
-                          num_args_check, var_assignments, body);
+                          self_type_c, arg_decls, num_args_check, self_assign,
+                          var_assignments, body);
 
     FREEMEM(num_args_check);
     FREEMEM(var_assignments);
+    FREEMEM(arg_decls);
+    FREEMEM(self_assign);
     FREEMEM(body);
     return xsub;
 }
