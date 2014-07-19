@@ -358,9 +358,6 @@ S_xs_file_contents(CFCPerl *self, const char *generated_xs,
     const char pattern[] =
         "%s"
         "\n"
-        "#include \"XSBind.h\"\n"
-        "#include \"boot.h\"\n"
-        "\n"
         "%s\n"
         "\n"
         "MODULE = %s   PACKAGE = %s\n"
@@ -411,6 +408,10 @@ CFCPerl_write_bindings(CFCPerl *self) {
         }
     }
     generated_xs = CFCUtil_cat(generated_xs, "\n", NULL);
+
+    // Include XSBind.h and boot.h.
+    generated_xs = CFCUtil_cat(generated_xs, "#include \"XSBind.h\"\n", NULL);
+    generated_xs = CFCUtil_cat(generated_xs, "#include \"boot.h\"\n", NULL);
 
     // Pound-includes for generated headers.
     for (size_t i = 0; ordered[i] != NULL; i++) {
