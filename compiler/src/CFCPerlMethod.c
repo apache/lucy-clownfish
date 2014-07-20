@@ -167,14 +167,11 @@ S_xsub_body(CFCPerlMethod *self) {
     }
 
     // Extract the method function pointer.
-    char *full_typedef = CFCMethod_full_typedef(method, klass);
-    char *full_meth    = CFCMethod_full_method_sym(method, klass);
+    char *full_meth = CFCMethod_full_method_sym(method, klass);
     char *method_ptr
-        = CFCUtil_sprintf("%s method = CFISH_METHOD_PTR(%s, %s);\n    ",
-                          full_typedef, CFCClass_full_class_var(klass),
-                          full_meth);
+        = CFCUtil_sprintf("method = CFISH_METHOD_PTR(%s, %s);\n    ",
+                          CFCClass_full_class_var(klass), full_meth);
     body = CFCUtil_cat(body, method_ptr, NULL);
-    FREEMEM(full_typedef);
     FREEMEM(full_meth);
     FREEMEM(method_ptr);
 
@@ -244,6 +241,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
     const char  *self_type_c    = CFCType_to_c(self_type);
     const char  *self_micro_sym = CFCVariable_micro_sym(self_var);
     char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *meth_type_c  = CFCMethod_full_typedef(self->method, NULL);
     char *self_assign  = S_self_assign_statement(self, self_type);
     char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
     char *body         = S_xsub_body(self);
@@ -254,6 +252,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
         "    dXSARGS;\n"
         "    %s arg_self;\n"
         "%s"
+        "    %s method;\n"
         "    bool args_ok;\n"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    if (items < 1) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(%s, ...)\",  GvNAME(CvGV(cv))); }\n"
@@ -268,9 +267,11 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
         "}\n";
     char *xsub_def
         = CFCUtil_sprintf(pattern, c_name, c_name, self_type_c, arg_decls,
-                          self_micro_sym, allot_params, self_assign, body);
+                          meth_type_c, self_micro_sym, allot_params,
+                          self_assign, body);
 
     FREEMEM(arg_decls);
+    FREEMEM(meth_type_c);
     FREEMEM(self_assign);
     FREEMEM(allot_params);
     FREEMEM(body);
@@ -288,6 +289,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
     const char **arg_inits = CFCParamList_get_initial_values(param_list);
     unsigned num_vars = (unsigned)CFCParamList_num_vars(param_list);
     char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *meth_type_c = CFCMethod_full_typedef(method, NULL);
     char *self_assign = S_self_assign_statement(self, self_type);
     char *body        = S_xsub_body(self);
 
@@ -363,6 +365,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         "    dXSARGS;\n"
         "    %s arg_self;\n"
         "%s"
+        "    %s method;\n"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    SP -= items;\n"
         "    %s;\n"
@@ -376,12 +379,13 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         "}\n";
     char *xsub
         = CFCUtil_sprintf(pattern, self->sub.c_name, self->sub.c_name,
-                          self_type_c, arg_decls, num_args_check, self_assign,
-                          var_assignments, body);
+                          self_type_c, arg_decls, meth_type_c, num_args_check,
+                          self_assign, var_assignments, body);
 
     FREEMEM(num_args_check);
     FREEMEM(var_assignments);
     FREEMEM(arg_decls);
+    FREEMEM(meth_type_c);
     FREEMEM(self_assign);
     FREEMEM(body);
     return xsub;
