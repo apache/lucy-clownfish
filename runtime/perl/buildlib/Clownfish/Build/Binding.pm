@@ -569,12 +569,12 @@ fetch_class(unused_sv, class_name_sv)
     SV *class_name_sv;
 CODE:
 {
-    CFISH_UNUSED_VAR(unused_sv);
     STRLEN size;
     char *ptr = SvPVutf8(class_name_sv, size);
     cfish_StackString *class_name = CFISH_SSTR_WRAP_UTF8(ptr, size);
     cfish_Class *klass
         = cfish_Class_fetch_class((cfish_String*)class_name);
+    CFISH_UNUSED_VAR(unused_sv);
     RETVAL = klass ? (SV*)CFISH_Class_To_Host(klass) : &PL_sv_undef;
 }
 OUTPUT: RETVAL
@@ -584,9 +584,9 @@ singleton(unused_sv, ...)
     SV *unused_sv;
 CODE:
 {
-    CFISH_UNUSED_VAR(unused_sv);
     cfish_String *class_name = NULL;
     cfish_Class  *parent     = NULL;
+    cfish_Class  *singleton  = NULL;
     bool args_ok
         = XSBind_allot_params(&(ST(0)), 1, items,
                               ALLOT_OBJ(&class_name, "class_name", 10, true,
@@ -594,10 +594,11 @@ CODE:
                               ALLOT_OBJ(&parent, "parent", 6, false,
                                         CFISH_CLASS, NULL),
                               NULL);
+    CFISH_UNUSED_VAR(unused_sv);
     if (!args_ok) {
         CFISH_RETHROW(CFISH_INCREF(cfish_Err_get_error()));
     }
-    cfish_Class *singleton = cfish_Class_singleton(class_name, parent);
+    singleton = cfish_Class_singleton(class_name, parent);
     RETVAL = (SV*)CFISH_Class_To_Host(singleton);
 }
 OUTPUT: RETVAL
