@@ -240,7 +240,7 @@ CFCPerlSub_build_allot_params(CFCPerlSub *self) {
     allot_params
         = CFCUtil_cat(allot_params,
                       "args_ok = XSBind_allot_params(\n"
-                      "        &(ST(0)), 1, items, ", NULL);
+                      "        &(ST(0)), 1, items,\n", NULL);
     for (size_t i = 1; i < num_vars; i++) {
         CFCVariable *var = arg_vars[i];
         const char  *val = arg_inits[i];
