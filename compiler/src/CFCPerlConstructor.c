@@ -120,6 +120,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         "    %s arg_self;\n"
         "%s"
         "    bool args_ok;\n"
+        "    %s retval;\n"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    if (items < 1) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(class_name, ...)\",  GvNAME(CvGV(cv))); }\n"
         "    SP -= items;\n"
@@ -129,7 +130,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         // params don't trigger a bad invocation of DESTROY.
         "    arg_self = (%s)XSBind_new_blank_obj(ST(0));%s\n"
         "\n"
-        "    %s retval = %s(%s);\n"
+        "    retval = %s(%s);\n"
         "    if (retval) {\n"
         "        ST(0) = (SV*)CFISH_Obj_To_Host((cfish_Obj*)retval);\n"
         "        CFISH_Obj_Dec_RefCount((cfish_Obj*)retval);\n"
@@ -142,8 +143,8 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         "}\n\n";
     char *xsub_def
         = CFCUtil_sprintf(pattern, c_name, c_name, self_type_str, arg_decls,
-                          allot_params, self_type_str, refcount_mods,
-                          self_type_str, func_sym, name_list);
+                          self_type_str, allot_params, self_type_str,
+                          refcount_mods, func_sym, name_list);
 
     FREEMEM(refcount_mods);
     FREEMEM(arg_decls);

@@ -193,14 +193,13 @@ S_xsub_body(CFCPerlMethod *self) {
     else {
         // Return a value for method invoked in a scalar context.
         CFCType *return_type = CFCMethod_get_return_type(method);
-        const char *type_str = CFCType_to_c(return_type);
         char *assignment = CFCPerlTypeMap_to_perl(return_type, "retval");
         if (!assignment) {
+            const char *type_str = CFCType_to_c(return_type);
             CFCUtil_die("Can't find typemap for '%s'", type_str);
         }
-        body = CFCUtil_cat(body, type_str, " retval = method(",
-                           name_list, ");\n    ST(0) = ", assignment, ";",
-                           NULL);
+        body = CFCUtil_cat(body, "retval = method(", name_list,
+                           ");\n    ST(0) = ", assignment, ";", NULL);
         if (CFCType_is_object(return_type)
             && CFCType_incremented(return_type)
            ) {
@@ -233,18 +232,29 @@ S_self_assign_statement(CFCPerlMethod *self, CFCType *type) {
 
 static char*
 S_xsub_def_labeled_params(CFCPerlMethod *self) {
+    CFCMethod *method = self->method;
     const char *c_name = self->sub.c_name;
     CFCParamList *param_list = self->sub.param_list;
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     CFCVariable *self_var    = arg_vars[0];
     CFCType     *self_type   = CFCVariable_get_type(self_var);
+    CFCType     *return_type = CFCMethod_get_return_type(method);
     const char  *self_type_c    = CFCType_to_c(self_type);
     const char  *self_micro_sym = CFCVariable_micro_sym(self_var);
     char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
-    char *meth_type_c  = CFCMethod_full_typedef(self->method, NULL);
+    char *meth_type_c  = CFCMethod_full_typedef(method, NULL);
     char *self_assign  = S_self_assign_statement(self, self_type);
     char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
     char *body         = S_xsub_body(self);
+
+    char *retval_decl;
+    if (CFCType_is_void(return_type)) {
+        retval_decl = CFCUtil_strdup("");
+    }
+    else {
+        const char *return_type_c = CFCType_to_c(return_type);
+        retval_decl = CFCUtil_sprintf("    %s retval;\n", return_type_c);
+    }
 
     char pattern[] =
         "XS(%s);\n"
@@ -254,6 +264,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
         "%s"
         "    %s method;\n"
         "    bool args_ok;\n"
+        "%s"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    if (items < 1) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(%s, ...)\",  GvNAME(CvGV(cv))); }\n"
         "    SP -= items;\n"
@@ -267,14 +278,15 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
         "}\n";
     char *xsub_def
         = CFCUtil_sprintf(pattern, c_name, c_name, self_type_c, arg_decls,
-                          meth_type_c, self_micro_sym, allot_params,
-                          self_assign, body);
+                          meth_type_c, retval_decl, self_micro_sym,
+                          allot_params, self_assign, body);
 
     FREEMEM(arg_decls);
     FREEMEM(meth_type_c);
     FREEMEM(self_assign);
     FREEMEM(allot_params);
     FREEMEM(body);
+    FREEMEM(retval_decl);
     return xsub_def;
 }
 
@@ -285,6 +297,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
     CFCVariable **arg_vars = CFCParamList_get_variables(param_list);
     CFCVariable *self_var    = arg_vars[0];
     CFCType     *self_type   = CFCVariable_get_type(self_var);
+    CFCType     *return_type = CFCMethod_get_return_type(method);
     const char  *self_type_c = CFCType_to_c(self_type);
     const char **arg_inits = CFCParamList_get_initial_values(param_list);
     unsigned num_vars = (unsigned)CFCParamList_num_vars(param_list);
@@ -359,6 +372,15 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         FREEMEM(conversion);
     }
 
+    char *retval_decl;
+    if (CFCType_is_void(return_type)) {
+        retval_decl = CFCUtil_strdup("");
+    }
+    else {
+        const char *return_type_c = CFCType_to_c(return_type);
+        retval_decl = CFCUtil_sprintf("    %s retval;\n", return_type_c);
+    }
+
     char pattern[] =
         "XS(%s);\n"
         "XS(%s) {\n"
@@ -366,6 +388,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         "    %s arg_self;\n"
         "%s"
         "    %s method;\n"
+        "%s"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    SP -= items;\n"
         "    %s;\n"
@@ -379,8 +402,8 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         "}\n";
     char *xsub
         = CFCUtil_sprintf(pattern, self->sub.c_name, self->sub.c_name,
-                          self_type_c, arg_decls, meth_type_c, num_args_check,
-                          self_assign, var_assignments, body);
+                          self_type_c, arg_decls, meth_type_c, retval_decl,
+                          num_args_check, self_assign, var_assignments, body);
 
     FREEMEM(num_args_check);
     FREEMEM(var_assignments);
@@ -388,6 +411,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
     FREEMEM(meth_type_c);
     FREEMEM(self_assign);
     FREEMEM(body);
+    FREEMEM(retval_decl);
     return xsub;
 }
 
