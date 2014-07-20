@@ -657,7 +657,12 @@ S_primitive_callback_def(CFCMethod *method, const char *callback_start,
     char callback_func[50];
 
     if (CFCType_is_integer(return_type)) {
-        strcpy(callback_func, "S_finish_callback_i64");
+	if (strcmp(ret_type_str, "bool") == 0) {
+             strcpy(callback_func, "!!S_finish_callback_i64");
+	}
+	else {
+             strcpy(callback_func, "S_finish_callback_i64");
+	}
     }
     else if (CFCType_is_floating(return_type)) {
         strcpy(callback_func, "S_finish_callback_f64");

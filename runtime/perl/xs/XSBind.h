@@ -55,7 +55,7 @@ static CFISH_INLINE bool
 cfish_XSBind_sv_defined(SV *sv) {
     if (!sv || !SvANY(sv)) { return false; }
     if (SvGMAGICAL(sv)) { mg_get(sv); }
-    return SvOK(sv);
+    return !!SvOK(sv);
 }
 
 /** If the SV contains a Clownfish object which passes an "isa" test against the
