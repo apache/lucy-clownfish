@@ -144,10 +144,9 @@ sub cf_linker_flags {
     # Link against import library on MSVC
     my $ext          = $Config{cc} =~ /^cl\b/ ? 'lib' : $dlext;
 
-    for my $location ( qw( site vendor ) ) {
-        my $install_dir = $Config{"install${location}arch"};
+    for my $dir (@INC) {
         my $lib_file = catfile(
-            $install_dir, 'auto', @module_parts, "$class_name.$ext",
+            $dir, 'auto', @module_parts, "$class_name.$ext",
         );
         return ( $lib_file ) if -f $lib_file;
     }
