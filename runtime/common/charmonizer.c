@@ -7326,6 +7326,10 @@ S_write_makefile(struct chaz_CLIArgs *args) {
         chaz_MakeRule_add_recursive_rm_command(clean_rule, "coverage");
     }
 
+    if (chaz_Probe_msvc_version_num()) {
+        chaz_MakeRule_add_rm_command(clean_rule, "test_cfish.obj");
+    }
+
     chaz_MakeRule_add_make_command(clean_rule, cfc_dir, "clean");
 
     distclean_rule = chaz_MakeFile_distclean_rule(makefile);

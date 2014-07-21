@@ -69,6 +69,10 @@ sub ACTION_charmony {
     # Clean up after charmonizer if it doesn't succeed on its own.
     $self->add_to_cleanup("_charm*");
 
+    if ($Config{cc} =~ /^cl\b/) {
+        $self->add_to_cleanup('charmonizer.obj');
+    }
+
     # Prepare arguments to charmonizer.
     my @command = (
         $CHARMONIZER_EXE_PATH,

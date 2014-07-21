@@ -7245,6 +7245,10 @@ S_write_makefile(struct chaz_CLIArgs *args) {
         chaz_MakeRule_add_recursive_rm_command(clean_rule, "coverage");
     }
 
+    if (chaz_Probe_msvc_version_num()) {
+        chaz_MakeRule_add_rm_command(clean_rule, "lemon.obj");
+    }
+
     chaz_MakeFile_write(makefile);
 
     chaz_MakeFile_destroy(makefile);
