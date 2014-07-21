@@ -495,23 +495,18 @@ CFCUtil_closedir(void *dirhandle, const char *dir) {
 
 void
 CFCUtil_die(const char* format, ...) {
-    SV *errsv = get_sv("@", 1);
     va_list args;
     va_start(args, format);
-    sv_vsetpvf_mg(errsv, format, &args);
+    vcroak(format, &args);
     va_end(args);
-    croak(NULL);
 }
 
 void
 CFCUtil_warn(const char* format, ...) {
-    SV *mess = newSVpv("", 0);
     va_list args;
     va_start(args, format);
-    sv_vsetpvf(mess, format, &args);
+    vwarn(format, &args);
     va_end(args);
-    fprintf(stderr, "%s\n", SvPV_nolen(mess));
-    SvREFCNT_dec(mess);
 }
 
 #else
