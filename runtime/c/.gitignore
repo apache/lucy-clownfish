@@ -1,9 +1,14 @@
 /Makefile
 /autogen/
+/cfish-*.dll
+/cfish-*.exp
+/cfish-*.lib
 /charmonizer
+/charmonizer.exe
 /charmony.h
 /libcfish.*.dylib
 /libcfish.dylib
 /libcfish.so
 /libcfish.so.*
 /t/test_cfish
+/t/test_cfish.exe

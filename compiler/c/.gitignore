@@ -1,5 +1,8 @@
 /Makefile
 /cfc
+/cfc.exe
 /charmonizer
+/charmonizer.exe
 /charmony.h
 /t/test_cfc
+/t/test_cfc.exe
