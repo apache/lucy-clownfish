@@ -6,6 +6,7 @@
 /charmonizer
 /charmonizer.exe
 /charmony.h
+/libcfish-*.dll
 /libcfish.*.dylib
 /libcfish.dylib
 /libcfish.so
