@@ -74,7 +74,13 @@ export PERL5LIB=`add_to_path "$PERL5LIB" "$compiler_dir/perl/blib/lib"`
 export PERL5LIB=`add_to_path "$PERL5LIB" "$runtime_dir/perl/blib/arch"`
 export PERL5LIB=`add_to_path "$PERL5LIB" "$runtime_dir/perl/blib/lib"`
 
-if [ `uname` != Darwin ]; then
-    export LD_LIBRARY_PATH=`add_to_path "$LD_LIBRARY_PATH" "$runtime_dir/c"`
-fi
+case `uname` in
+    MINGW*)
+        export PATH=`add_to_path "$PATH" "$runtime_dir/c"`
+	;;
+    Darwin*)
+        ;;
+    *)
+        export LD_LIBRARY_PATH=`add_to_path "$LD_LIBRARY_PATH" "$runtime_dir/c"`
+esac
 
