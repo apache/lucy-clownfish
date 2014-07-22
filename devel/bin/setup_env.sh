@@ -75,7 +75,7 @@ export PERL5LIB=`add_to_path "$PERL5LIB" "$runtime_dir/perl/blib/arch"`
 export PERL5LIB=`add_to_path "$PERL5LIB" "$runtime_dir/perl/blib/lib"`
 
 case `uname` in
-    MINGW*)
+    MINGW*|CYGWIN*)
         export PATH=`add_to_path "$PATH" "$runtime_dir/c"`
 	;;
     Darwin*)
