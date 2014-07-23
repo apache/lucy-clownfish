@@ -110,6 +110,7 @@ test_Mimic_and_Clone(TestBatchRunner *runner) {
     DECREF(got);
 
     DECREF(wanted);
+    DECREF(wanted_cb);
 }
 
 /*
@@ -295,5 +296,4 @@ TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
     test_Cat(runner);
     test_Mimic_and_Clone(runner);
 }
-
 

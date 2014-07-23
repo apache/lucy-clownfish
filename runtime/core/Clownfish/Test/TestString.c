@@ -99,12 +99,9 @@ test_Cat(TestBatchRunner *runner) {
 static void
 test_Clone(TestBatchRunner *runner) {
     String *wanted = S_get_str("foo");
-    String *got    = S_get_str("bar");
-
-    got = Str_Clone(wanted);
+    String *got    = Str_Clone(wanted);
     TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "Clone");
     DECREF(got);
-
     DECREF(wanted);
 }
 

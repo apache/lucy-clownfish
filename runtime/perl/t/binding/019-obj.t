@@ -61,10 +61,14 @@ my $object = TestObj->new;
 isa_ok( $object, "Clownfish::Obj",
     "Clownfish objects can be subclassed" );
 
-my $thawed = TestObj->new;
-eval { freeze($thawed) };
-like( $@, qr/implement/i,
-    "freezing an Obj throws an exception rather than segfaults" );
+SKIP: {
+    skip( "Exception thrown within STORABLE hook leaks", 1 )
+        if $ENV{LUCY_VALGRIND};
+    my $thawed = TestObj->new;
+    eval { freeze($thawed) };
+    like( $@, qr/implement/i,
+        "freezing an Obj throws an exception rather than segfaults" );
+}
 
 my $fake = bless {}, 'ThawTestObj';
 my $frozen = freeze($fake);

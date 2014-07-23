@@ -64,9 +64,9 @@ test_Equals(TestBatchRunner *runner) {
     TEST_FALSE(runner, VA_Equals(array, (Obj*)other),
                "Non-matching value spoils Equals");
 
-    VA_Excise(array, 1, 2); // removes empty elems
-    VA_Delete(other, 1);    // leaves NULL in place of deleted elem
-    VA_Delete(other, 2);
+    VA_Excise(array, 1, 2);       // removes empty elems
+    DECREF(VA_Delete(other, 1));  // leaves NULL in place of deleted elem
+    DECREF(VA_Delete(other, 2));
     TEST_FALSE(runner, VA_Equals(array, (Obj*)other),
                "Empty trailing elements spoil Equals");
 
