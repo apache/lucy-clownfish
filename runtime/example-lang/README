@@ -1,0 +1,28 @@
+The "example-lang" directory contains a template for adding a language binding
+to Clownfish. To get started, copy "example-lang" to a directory named after
+the language you'd like to bind to:
+
+    cp -R example-lang xyz
+
+Most of the C files within the "example-lang/src" directory contain stubs for
+routines whose interfaces are defined within "core".
+
+    core/Clownfish/Obj.cfh            # Declares interface.
+    core/Clownfish/Obj.c              # all except language-dependent
+    example-lang/src/Clownfish/Obj.c  # only language-dependent
+
+Once all the stubs have been implemented correctly, Clownfish will
+theoretically build and pass its tests.
+
+There is one pair of files with an interface *not* defined in core.
+
+    example-lang/src/CFBind.h
+    example-lang/src/CFBind.c
+
+The CFBind files are there to hold conversion routines which are specific to a
+language binding.  Since it is impractical to impose a generic interface, they
+are not defined in core.
+
+You may wish to start by referencing a finished language binding to get a feel
+for what should go in the CFBind files.
+
