@@ -16,7 +16,6 @@
 
 #include "ruby.h"
 
-#include "Clownfish/Host.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/String.h"

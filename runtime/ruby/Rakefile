@@ -43,7 +43,7 @@ Rake::ExtensionTask.new do |ext|
 end
 
 desc "Build Clownfish"
-task :build_clownfish => [:build_charmonizer_tests] do
+task :build_clownfish => [:charmony] do
   puts "Building Clownfish"
   old_dir = Dir.pwd
   chdir(CFC_DIR);
@@ -84,23 +84,6 @@ task :build_clownfish => [:build_charmonizer_tests] do
 
 end
 
-desc "Building Charmonizer Tests"
-task :build_charmonizer_tests => [:charmony] do
-  puts "Building Charmonizer Tests"
-  flags = [
-    '-fno-common',
-    '-DFCRUBY',
-    '-fno-strict-aliasing',
-    '-pipe',
-    '-fstack-protector',
-    '-std=gnu99',
-    '-D_GNU_SOURCE',
-    '-I' + Dir.pwd
-  ].join(" ").gsub(/"/,'\"')
-
-  run_make( CHARMONIZER_ORIG_DIR, [ "DEFS=#{flags}", "tests"])
-end
-
 desc "Build and run charmonizer, creating charmony.h and charmony.rb"
 task :charmony do
   # Compile charmonizer executable.
@@ -122,7 +105,7 @@ task :charmony do
   # Prepare arguments to charmonizer.
   command = [
     CHARMONIZER_EXE_PATH,
-    '--cc=' + quotify(cc_command),
+    '--cc=' + cc_command,
     '--enable-c',
     '--enable-ruby',
     '--',
@@ -135,7 +118,7 @@ task :charmony do
   # Run charmonizer.
   puts command.join(" ")
   if !system(*command)
-    raise "Failed to run #{CHARMONIZER_EXE_PATH}: " + $?
+    raise "Failed to run #{CHARMONIZER_EXE_PATH}: " + $?.to_s
   end
 end
 

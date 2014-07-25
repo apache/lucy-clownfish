@@ -88,7 +88,7 @@ S_CFC_Binding_Ruby_Init(VALUE self_rb, VALUE params) {
     VALUE header     = rb_hash_aref(params, ID2SYM(rb_intern("header"))); 
     VALUE footer     = rb_hash_aref(params, ID2SYM(rb_intern("footer"))); 
 
-    parcel_obj = CFCParcel_new(StringValuePtr(parcel), NULL, NULL);
+    parcel_obj = CFCParcel_new(StringValuePtr(parcel), NULL, NULL, 0);
     Data_Get_Struct(hierarchy, CFCHierarchy, hierarchy_obj);
     Data_Get_Struct(self_rb, CFCRuby, self);
 
