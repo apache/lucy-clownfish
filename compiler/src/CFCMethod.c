@@ -313,30 +313,16 @@ CFCMethod_find_novel_method(CFCMethod *self) {
 
 static char*
 S_short_method_sym(CFCMethod *self, CFCClass *invoker, const char *postfix) {
-    const char *nickname;
-    if (invoker) {
-        nickname = CFCClass_get_nickname(invoker);
-    }
-    else {
-        nickname = CFCMethod_get_class_nickname(self);
-    }
-    const char *name = CFCMethod_get_name(self);
+    const char *nickname = CFCClass_get_nickname(invoker);
+    const char *name     = CFCMethod_get_name(self);
     return CFCUtil_sprintf("%s_%s%s", nickname, name, postfix);
 }
 
 static char*
 S_full_method_sym(CFCMethod *self, CFCClass *invoker, const char *postfix) {
-    const char *PREFIX;
-    const char *nickname;
-    if (invoker) {
-        PREFIX   = CFCClass_get_PREFIX(invoker);
-        nickname = CFCClass_get_nickname(invoker);
-    }
-    else {
-        PREFIX   = CFCMethod_get_PREFIX(self);
-        nickname = CFCMethod_get_class_nickname(self);
-    }
-    const char *name = CFCMethod_get_name(self);
+    const char *PREFIX   = CFCClass_get_PREFIX(invoker);
+    const char *nickname = CFCClass_get_nickname(invoker);
+    const char *name     = CFCMethod_get_name(self);
     return CFCUtil_sprintf("%s%s_%s%s", PREFIX, nickname, name, postfix);
 }
 

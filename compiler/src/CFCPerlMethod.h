@@ -32,6 +32,7 @@ extern "C" {
  * will be set up to accept a single positional argument.
  */
 typedef struct CFCPerlMethod CFCPerlMethod;
+struct CFCClass;
 struct CFCMethod;
 
 CFCPerlMethod*
@@ -55,7 +56,7 @@ CFCPerlMethod_perl_name(struct CFCMethod *method);
 /** Generate C code for the XSUB.
  */
 char*
-CFCPerlMethod_xsub_def(CFCPerlMethod *self);
+CFCPerlMethod_xsub_def(CFCPerlMethod *self, struct CFCClass *klass);
 
 /** Return C code implementing a callback to Perl for this method.  This code
  * is run when a Perl subclass has overridden a method in a Clownfish base

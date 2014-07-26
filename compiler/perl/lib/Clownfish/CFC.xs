@@ -2181,10 +2181,11 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-xsub_def(self)
+xsub_def(self, klass)
     CFCPerlMethod *self;
+    CFCClass      *klass;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlMethod_xsub_def(self));
+    RETVAL = S_sv_eat_c_string(CFCPerlMethod_xsub_def(self, klass));
 OUTPUT: RETVAL
 
 
