@@ -1961,12 +1961,13 @@ OUTPUT: RETVAL
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Binding::Core::Method
 
 SV*
-abstract_method_def(unused, meth)
-    SV *unused;
+abstract_method_def(unused, meth, klass)
+    SV        *unused;
     CFCMethod *meth;
+    CFCClass  *klass;
 CODE:
     CHY_UNUSED_VAR(unused);
-    RETVAL = S_sv_eat_c_string(CFCBindMeth_abstract_method_def(meth));
+    RETVAL = S_sv_eat_c_string(CFCBindMeth_abstract_method_def(meth, klass));
 OUTPUT: RETVAL
 
 SV*
@@ -1978,10 +1979,11 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-_novel_spec_def(meth)
+_novel_spec_def(meth, klass)
     CFCMethod *meth;
+    CFCClass  *klass;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCBindMeth_novel_spec_def(meth));
+    RETVAL = S_sv_eat_c_string(CFCBindMeth_novel_spec_def(meth, klass));
 OUTPUT: RETVAL
 
 SV*

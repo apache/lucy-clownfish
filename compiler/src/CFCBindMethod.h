@@ -48,7 +48,7 @@ CFCBindMeth_typedef_dec(struct CFCMethod *method, struct CFCClass *klass);
  * is used during Class initialization.
  */
 char*
-CFCBindMeth_novel_spec_def(struct CFCMethod *method);
+CFCBindMeth_novel_spec_def(struct CFCMethod *method, struct CFCClass *klass);
 
 /** Return C code defining the MethSpec object for an overridden method,
  * which is used during Class initialization.
@@ -69,12 +69,13 @@ CFCBindMeth_inherited_spec_def(struct CFCMethod *method,
  * "abstract" in a Clownfish header file.
  */
 char*
-CFCBindMeth_abstract_method_def(struct CFCMethod *method);
+CFCBindMeth_abstract_method_def(struct CFCMethod *method,
+                                struct CFCClass *klass);
 
 /** Return C code declaring the function which implements a method.
  */
 char*
-CFCBindMeth_imp_declaration(struct CFCMethod *method);
+CFCBindMeth_imp_declaration(struct CFCMethod *method, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

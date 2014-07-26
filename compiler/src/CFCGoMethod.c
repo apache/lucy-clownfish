@@ -191,7 +191,7 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
                                             param_list, ret_type, true);
     char *cfunc;
     if (CFCMethod_novel(self->method) && CFCMethod_final(self->method)) {
-        cfunc = CFCUtil_strdup(CFCMethod_imp_func(self->method));
+        cfunc = CFCUtil_strdup(CFCMethod_imp_func(self->method, invoker));
     }
     else {
         cfunc = CFCMethod_full_method_sym(novel_method, NULL);

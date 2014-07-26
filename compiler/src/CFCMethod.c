@@ -39,8 +39,6 @@ struct CFCMethod {
     CFCMethod *novel_method;
     char *full_override_sym;
     char *host_alias;
-    char *short_imp_func;
-    char *imp_func;
     int is_final;
     int is_abstract;
     int is_novel;
@@ -129,13 +127,6 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
     self->is_abstract       = is_abstract;
     self->is_excluded       = false;
 
-    // Derive name of implementing function.
-    self->short_imp_func
-        = CFCUtil_sprintf("%s_%s_IMP", CFCMethod_get_class_nickname(self),
-                          name);
-    self->imp_func = CFCUtil_sprintf("%s%s", CFCMethod_get_PREFIX(self),
-                                     self->short_imp_func);
-
     // Assume that this method is novel until we discover when applying
     // inheritance that it overrides another.
     self->is_novel = true;
@@ -153,8 +144,6 @@ CFCMethod_destroy(CFCMethod *self) {
     CFCBase_decref((CFCBase*)self->novel_method);
     FREEMEM(self->full_override_sym);
     FREEMEM(self->host_alias);
-    FREEMEM(self->short_imp_func);
-    FREEMEM(self->imp_func);
     CFCCallable_destroy((CFCCallable*)self);
 }
 
@@ -225,9 +214,11 @@ CFCMethod_override(CFCMethod *self, CFCMethod *orig) {
                     orig_name, orig_class, my_class);
     }
     if (!CFCMethod_compatible(self, orig)) {
-        const char *func      = CFCMethod_imp_func(self);
-        const char *orig_func = CFCMethod_imp_func(orig);
-        CFCUtil_die("Non-matching signatures for %s and %s", func, orig_func);
+        const char *orig_name  = CFCMethod_get_name(orig);
+        const char *orig_class = CFCMethod_get_class_name(orig);
+        const char *my_class   = CFCMethod_get_class_name(self);
+        CFCUtil_die("Non-matching signatures for method '%s' in '%s' and '%s'",
+                    orig_name, orig_class, my_class);
     }
 
     // Mark the Method as no longer novel.
@@ -444,7 +435,7 @@ CFCMethod_get_class_name(CFCMethod *self) {
 
 const char*
 CFCMethod_get_class_nickname(CFCMethod *self) {
-    return CFCSymbol_get_class_nickname((CFCSymbol*)self);
+    return CFCSymbol_get_class_nickname((CFCSymbol*)self);;
 }
 
 int
@@ -462,13 +453,13 @@ CFCMethod_get_param_list(CFCMethod *self) {
     return self->callable.param_list;
 }
 
-const char*
-CFCMethod_imp_func(CFCMethod *self) {
-    return self->imp_func;
+char*
+CFCMethod_imp_func(CFCMethod *self, CFCClass *klass) {
+    return S_full_method_sym(self, klass, "_IMP");
 }
 
-const char*
-CFCMethod_short_imp_func(CFCMethod *self) {
-    return self->short_imp_func;
+char*
+CFCMethod_short_imp_func(CFCMethod *self, CFCClass *klass) {
+    return S_short_method_sym(self, klass, "_IMP");
 }
 

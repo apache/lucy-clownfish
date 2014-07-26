@@ -238,11 +238,11 @@ CFCMethod_get_return_type(CFCMethod *self);
 struct CFCParamList*
 CFCMethod_get_param_list(CFCMethod *self);
 
-const char*
-CFCMethod_imp_func(CFCMethod *self);
+char*
+CFCMethod_imp_func(CFCMethod *self, struct CFCClass *klass);
 
-const char*
-CFCMethod_short_imp_func(CFCMethod *self);
+char*
+CFCMethod_short_imp_func(CFCMethod *self, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

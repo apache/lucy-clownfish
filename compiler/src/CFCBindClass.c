@@ -300,7 +300,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
 
         // Create a default implementation for abstract methods.
         if (is_fresh && CFCMethod_abstract(method)) {
-            char *method_def = CFCBindMeth_abstract_method_def(method);
+            char *method_def = CFCBindMeth_abstract_method_def(method, client);
             method_defs = CFCUtil_cat(method_defs, method_def, "\n", NULL);
             FREEMEM(method_def);
         }
@@ -320,7 +320,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
             else {
                 novel_ms_var = CFCUtil_cat(novel_ms_var, ",\n", NULL);
             }
-            char *ms_def = CFCBindMeth_novel_spec_def(method);
+            char *ms_def = CFCBindMeth_novel_spec_def(method, client);
             novel_ms_var = CFCUtil_cat(novel_ms_var, ms_def, NULL);
             FREEMEM(ms_def);
         }
@@ -616,7 +616,7 @@ S_sub_declarations(CFCBindClass *self) {
     }
     for (int i = 0; fresh_methods[i] != NULL; i++) {
         CFCMethod *method = fresh_methods[i];
-        char *dec = CFCBindMeth_imp_declaration(method);
+        char *dec = CFCBindMeth_imp_declaration(method, self->client);
         if (CFCMethod_final(method)) {
             declarations = CFCUtil_cat(declarations, PREFIX, "VISIBLE ", NULL);
         }
@@ -743,10 +743,12 @@ S_short_names(CFCBindClass *self) {
             CFCMethod *meth = fresh_methods[i];
 
             // Implementing functions.
-            const char *short_imp  = CFCMethod_short_imp_func(meth);
-            const char *full_imp   = CFCMethod_imp_func(meth);
+            char *short_imp = CFCMethod_short_imp_func(meth, client);
+            char *full_imp  = CFCMethod_imp_func(meth, client);
             short_names = CFCUtil_cat(short_names, "  #define ", short_imp,
                                       " ", full_imp, "\n", NULL);
+            FREEMEM(short_imp);
+            FREEMEM(full_imp);
         }
 
         CFCMethod  **methods = CFCClass_methods(client);
