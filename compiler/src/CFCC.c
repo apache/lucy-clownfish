@@ -91,9 +91,10 @@ S_callback_decs(CFCClass *klass) {
 
         // Define callback to NULL.
         if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-            const char *override_sym = CFCMethod_full_override_sym(method);
+            char *override_sym = CFCMethod_full_override_sym(method, klass);
             cb_decs = CFCUtil_cat(cb_decs, "#define ", override_sym, " NULL\n",
                                   NULL);
+            FREEMEM(override_sym);
         }
     }
 

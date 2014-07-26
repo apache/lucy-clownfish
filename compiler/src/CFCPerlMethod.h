@@ -63,7 +63,7 @@ CFCPerlMethod_xsub_def(CFCPerlMethod *self, struct CFCClass *klass);
  * class.
  */
 char*
-CFCPerlMethod_callback_def(struct CFCMethod *method);
+CFCPerlMethod_callback_def(struct CFCMethod *method, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

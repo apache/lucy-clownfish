@@ -895,6 +895,7 @@ ALIAS:
     full_offset_sym   = 3
     short_typedef     = 4
     full_typedef      = 5
+    full_override_sym = 6
 CODE:
     char *buf;
     switch (ix) {
@@ -913,6 +914,9 @@ CODE:
         case 5:
             buf = CFCMethod_full_typedef(self, invoker);
             break;
+        case 6:
+            buf = CFCMethod_full_override_sym(self, invoker);
+            break;
         default: croak("Unexpected ix: %d", (int)ix);
     }
     RETVAL = newSVpvn(buf, strlen(buf));
@@ -923,7 +927,6 @@ void
 _set_or_get(self, ...)
     CFCMethod *self;
 ALIAS:
-    full_override_sym  = 10
     abstract           = 12
     novel              = 14
     final              = 16
@@ -934,11 +937,6 @@ ALIAS:
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
-        case 10: {
-                const char *value = CFCMethod_full_override_sym(self);
-                retval = newSVpvn(value, strlen(value));
-            }
-            break;
         case 12:
             retval = newSViv(CFCMethod_abstract(self));
             break;

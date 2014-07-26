@@ -175,8 +175,8 @@ CFCMethod_full_typedef(CFCMethod *self, struct CFCClass *invoker);
  * callback to the host in the event that a host method has been defined which
  * overrides this method, e.g. "crust_LobClaw_pinch_OVERRIDE".
  */
-const char*
-CFCMethod_full_override_sym(CFCMethod *self);
+char*
+CFCMethod_full_override_sym(CFCMethod *self, struct CFCClass *klass);
 
 int
 CFCMethod_final(CFCMethod *self);

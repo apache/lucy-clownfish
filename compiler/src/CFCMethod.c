@@ -37,7 +37,6 @@
 struct CFCMethod {
     CFCCallable callable;
     CFCMethod *novel_method;
-    char *full_override_sym;
     char *host_alias;
     int is_final;
     int is_abstract;
@@ -121,7 +120,6 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
     }
 
     self->novel_method      = NULL;
-    self->full_override_sym = NULL;
     self->host_alias        = NULL;
     self->is_final          = is_final;
     self->is_abstract       = is_abstract;
@@ -142,7 +140,6 @@ CFCMethod_resolve_types(CFCMethod *self) {
 void
 CFCMethod_destroy(CFCMethod *self) {
     CFCBase_decref((CFCBase*)self->novel_method);
-    FREEMEM(self->full_override_sym);
     FREEMEM(self->host_alias);
     CFCCallable_destroy((CFCCallable*)self);
 }
@@ -356,16 +353,12 @@ CFCMethod_full_typedef(CFCMethod *self, CFCClass *invoker) {
     return S_full_method_sym(self, invoker, "_t");
 }
 
-const char*
-CFCMethod_full_override_sym(CFCMethod *self) {
-    if (!self->full_override_sym) {
-        const char *Prefix   = CFCMethod_get_Prefix(self);
-        const char *nickname = CFCMethod_get_class_nickname(self);
-        const char *name     = CFCMethod_get_name(self);
-        self->full_override_sym
-            = CFCUtil_sprintf("%s%s_%s_OVERRIDE", Prefix, nickname, name);
-    }
-    return self->full_override_sym;
+char*
+CFCMethod_full_override_sym(CFCMethod *self, CFCClass *klass) {
+    const char *Prefix   = CFCClass_get_Prefix(klass);
+    const char *nickname = CFCClass_get_nickname(klass);
+    const char *name     = CFCMethod_get_name(self);
+    return CFCUtil_sprintf("%s%s_%s_OVERRIDE", Prefix, nickname, name);
 }
 
 int

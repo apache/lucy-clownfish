@@ -411,7 +411,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
 }
 
 char*
-CFCPerlMethod_callback_def(CFCMethod *method) {
+CFCPerlMethod_callback_def(CFCMethod *method, CFCClass *klass) {
     CFCType *return_type = CFCMethod_get_return_type(method);
     char *callback_body = NULL;
 
@@ -445,7 +445,7 @@ CFCPerlMethod_callback_def(CFCMethod *method) {
         FREEMEM(refcount_mods);
     }
 
-    const char *override_sym = CFCMethod_full_override_sym(method);
+    char *override_sym = CFCMethod_full_override_sym(method, klass);
 
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     const char *params = CFCParamList_to_c(param_list);
@@ -462,6 +462,7 @@ CFCPerlMethod_callback_def(CFCMethod *method) {
                           callback_body);
 
     FREEMEM(callback_body);
+    FREEMEM(override_sym);
     return callback_def;
 }
 

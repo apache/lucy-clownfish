@@ -139,9 +139,12 @@ char*
 CFCBindMeth_novel_spec_def(CFCMethod *method, CFCClass *klass) {
     const char *meth_name = CFCMethod_get_name(method);
 
-    const char *full_override_sym = "NULL";
+    char *full_override_sym;
     if (!CFCMethod_final(method)) {
-        full_override_sym = CFCMethod_full_override_sym(method);
+        full_override_sym = CFCMethod_full_override_sym(method, klass);
+    }
+    else {
+        full_override_sym = CFCUtil_strdup("NULL");
     }
 
     char *imp_func        = CFCMethod_imp_func(method, klass);
@@ -160,6 +163,7 @@ CFCBindMeth_novel_spec_def(CFCMethod *method, CFCClass *klass) {
 
     FREEMEM(full_offset_sym);
     FREEMEM(imp_func);
+    FREEMEM(full_override_sym);
     return def;
 }
 

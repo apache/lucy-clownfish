@@ -666,7 +666,7 @@ S_override_decs(CFCBindClass *self) {
         if (CFCMethod_final(method) || !CFCMethod_novel(method)) {
             continue;
         }
-        const char *override_sym = CFCMethod_full_override_sym(method);
+        char *override_sym = CFCMethod_full_override_sym(method, self->client);
         CFCType      *return_type  = CFCMethod_get_return_type(method);
         CFCParamList *param_list   = CFCMethod_get_param_list(method);
         const char   *ret_type_str = CFCType_to_c(return_type);
@@ -678,6 +678,7 @@ S_override_decs(CFCBindClass *self) {
             = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
         decs = CFCUtil_cat(decs, callback_dec, NULL);
         FREEMEM(callback_dec);
+        FREEMEM(override_sym);
 
         nulls = CFCUtil_cat(nulls, "#define ", override_sym, " NULL\n", NULL);
     }
