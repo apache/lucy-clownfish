@@ -258,20 +258,8 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
         // Skip private methods.
         if (CFCSymbol_private((CFCSymbol*)method)) { continue; }
 
-        CFCMethod *novel_method;
-        if (CFCMethod_novel(method)) {
-            novel_method = method;
-        }
-        else {
-            const char *meth_name = CFCMethod_get_macro_sym(method);
-            novel_method = CFCClass_find_novel_method(parent, meth_name);
-            if (!novel_method) {
-                CFCUtil_die("Novel method not found");
-            }
-        }
-
         // Skip methods which have been explicitly excluded.
-        if (CFCMethod_excluded_from_host(novel_method)) {
+        if (CFCMethod_excluded_from_host(method)) {
             continue;
         }
 
@@ -283,7 +271,7 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
         }
 
         // See if the user wants the method to have a specific alias.
-        const char *alias = CFCMethod_get_host_alias(novel_method);
+        const char *alias = CFCMethod_get_host_alias(method);
         if (!alias) {
             alias = CFCMethod_micro_sym(method);
         }

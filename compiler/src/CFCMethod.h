@@ -108,6 +108,12 @@ CFCMethod*
 CFCMethod_finalize(CFCMethod *self);
 
 /**
+ * Find the first declaration of the method in the class hierarchy.
+ */
+CFCMethod*
+CFCMethod_find_novel_method(CFCMethod *self);
+
+/**
  * Create the symbol used to invoke the method without the parcel Prefix, e.g.
  * "LobClaw_Pinch".
  * @param invoker Class for which the symbol is created. If invoker is NULL,

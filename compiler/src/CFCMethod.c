@@ -36,6 +36,7 @@
 
 struct CFCMethod {
     CFCFunction function;
+    CFCMethod *novel_method;
     char *macro_sym;
     char *full_override_sym;
     char *host_alias;
@@ -127,6 +128,7 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
         }
     }
 
+    self->novel_method      = NULL;
     self->macro_sym         = CFCUtil_strdup(macro_sym);
     self->full_override_sym = NULL;
     self->host_alias        = NULL;
@@ -155,6 +157,7 @@ CFCMethod_resolve_types(CFCMethod *self) {
 
 void
 CFCMethod_destroy(CFCMethod *self) {
+    CFCBase_decref((CFCBase*)self->novel_method);
     FREEMEM(self->macro_sym);
     FREEMEM(self->full_override_sym);
     FREEMEM(self->host_alias);
@@ -234,6 +237,10 @@ CFCMethod_override(CFCMethod *self, CFCMethod *orig) {
 
     // Mark the Method as no longer novel.
     self->is_novel = false;
+
+    // Cache novel method.
+    CFCMethod *novel_method = orig->is_novel ? orig : orig->novel_method;
+    self->novel_method = (CFCMethod*)CFCBase_incref((CFCBase*)novel_method);
 }
 
 CFCMethod*
@@ -248,7 +255,8 @@ CFCMethod_finalize(CFCMethod *self) {
                         self->function.param_list,
                         self->function.docucomment, true,
                         self->is_abstract);
-    finalized->is_novel = self->is_novel;
+    finalized->novel_method = self->novel_method;
+    finalized->is_novel     = self->is_novel;
     return finalized;
 }
 
@@ -272,7 +280,8 @@ CFCMethod_set_host_alias(CFCMethod *self, const char *alias) {
 
 const char*
 CFCMethod_get_host_alias(CFCMethod *self) {
-    return self->host_alias;
+    CFCMethod *novel_method = CFCMethod_find_novel_method(self);
+    return novel_method->host_alias;
 }
 
 void
@@ -286,7 +295,18 @@ CFCMethod_exclude_from_host(CFCMethod *self) {
 
 int
 CFCMethod_excluded_from_host(CFCMethod *self) {
-    return self->is_excluded;
+    CFCMethod *novel_method = CFCMethod_find_novel_method(self);
+    return novel_method->is_excluded;
+}
+
+CFCMethod*
+CFCMethod_find_novel_method(CFCMethod *self) {
+    if (self->is_novel) {
+        return self;
+    }
+    else {
+        return self->novel_method;
+    }
 }
 
 static char*
