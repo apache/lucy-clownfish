@@ -130,7 +130,7 @@ CFCPerlMethod_perl_name(CFCMethod *method) {
     }
 
     // Derive Perl name by lowercasing.
-    const char *name      = CFCMethod_get_macro_sym(method);
+    const char *name      = CFCMethod_get_name(method);
     char       *perl_name = CFCUtil_strdup(name);
     for (size_t i = 0; perl_name[i] != '\0'; i++) {
         perl_name[i] = tolower(perl_name[i]);
@@ -179,7 +179,7 @@ S_xsub_body(CFCPerlMethod *self) {
         CFCType     *type = CFCVariable_get_type(var);
         if (CFCType_is_object(type) && CFCType_decremented(type)) {
             body = CFCUtil_cat(body, "CFISH_INCREF(arg_",
-                               CFCVariable_micro_sym(var), ");\n    ", NULL);
+                               CFCVariable_get_name(var), ");\n    ", NULL);
         }
     }
 
@@ -238,8 +238,8 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
     CFCVariable *self_var    = arg_vars[0];
     CFCType     *self_type   = CFCVariable_get_type(self_var);
     CFCType     *return_type = CFCMethod_get_return_type(method);
-    const char  *self_type_c    = CFCType_to_c(self_type);
-    const char  *self_micro_sym = CFCVariable_micro_sym(self_var);
+    const char  *self_type_c = CFCType_to_c(self_type);
+    const char  *self_name   = CFCVariable_get_name(self_var);
     char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
     char *meth_type_c  = CFCMethod_full_typedef(method, NULL);
     char *self_assign  = S_self_assign_statement(self, self_type);
@@ -278,7 +278,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
         "}\n";
     char *xsub_def
         = CFCUtil_sprintf(pattern, c_name, c_name, self_type_c, arg_decls,
-                          meth_type_c, retval_decl, self_micro_sym,
+                          meth_type_c, retval_decl, self_name,
                           allot_params, self_assign, body);
 
     FREEMEM(arg_decls);
@@ -314,10 +314,10 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         }
     }
     char *xs_name_list = num_vars > 0
-                         ? CFCUtil_strdup(CFCVariable_micro_sym(arg_vars[0]))
+                         ? CFCUtil_strdup(CFCVariable_get_name(arg_vars[0]))
                          : CFCUtil_strdup("");
     for (unsigned i = 1; i < num_vars; i++) {
-        const char *var_name = CFCVariable_micro_sym(arg_vars[i]);
+        const char *var_name = CFCVariable_get_name(arg_vars[i]);
         if (i < min_required) {
             xs_name_list = CFCUtil_cat(xs_name_list, ", ", var_name, NULL);
         }
@@ -343,7 +343,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
     for (unsigned i = 1; i < num_vars; i++) {
         CFCVariable *var = arg_vars[i];
         const char  *val = arg_inits[i];
-        const char  *var_name = CFCVariable_micro_sym(var);
+        const char  *var_name = CFCVariable_get_name(var);
         CFCType     *var_type = CFCVariable_get_type(var);
         const char  *type_c   = CFCType_to_c(var_type);
 
@@ -493,7 +493,7 @@ S_callback_start(CFCMethod *method) {
     CFCVariable **arg_vars = CFCParamList_get_variables(param_list);
     for (int i = 1; arg_vars[i] != NULL; i++) {
         CFCVariable *var      = arg_vars[i];
-        const char  *name     = CFCVariable_micro_sym(var);
+        const char  *name     = CFCVariable_get_name(var);
         CFCType     *type     = CFCVariable_get_type(var);
         const char  *c_type   = CFCType_to_c(type);
 
@@ -572,7 +572,7 @@ S_callback_refcount_mods(CFCMethod *method) {
     for (int i = 0; arg_vars[i] != NULL; i++) {
         CFCVariable *var  = arg_vars[i];
         CFCType     *type = CFCVariable_get_type(var);
-        const char  *name = CFCVariable_micro_sym(var);
+        const char  *name = CFCVariable_get_name(var);
         if (!CFCType_is_object(type)) {
             continue;
         }
@@ -595,7 +595,7 @@ S_invalid_callback_body(CFCMethod *method) {
     CFCVariable **param_vars = CFCParamList_get_variables(param_list);
     char *unused = CFCUtil_strdup("");
     for (int i = 0; param_vars[i] != NULL; i++) {
-        const char *name = CFCVariable_micro_sym(param_vars[i]);
+        const char *name = CFCVariable_get_name(param_vars[i]);
         unused = CFCUtil_cat(unused, "    CFISH_UNUSED_VAR(", name, ");\n",
                              NULL);
     }

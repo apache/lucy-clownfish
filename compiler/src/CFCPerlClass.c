@@ -282,13 +282,13 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
     // Iterate over the list of possible initialization functions.
     for (size_t i = 0; functions[i] != NULL; i++) {
         CFCFunction  *function  = functions[i];
-        const char   *micro_sym = CFCFunction_micro_sym(function);
+        const char   *func_name = CFCFunction_get_name(function);
         const char   *alias     = NULL;
 
         // Find user-specified alias.
         if (perl_class == NULL) {
             // Bind init() to new() when possible.
-            if (strcmp(micro_sym, "init") == 0
+            if (strcmp(func_name, "init") == 0
                 && CFCFunction_can_be_bound(function)
                ) {
                 alias = NEW;
@@ -296,12 +296,12 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
         }
         else {
             for (size_t j = 0; j < perl_class->num_cons; j++) {
-                if (strcmp(micro_sym, perl_class->cons_inits[j]) == 0) {
+                if (strcmp(func_name, perl_class->cons_inits[j]) == 0) {
                     alias = perl_class->cons_aliases[j];
                     if (!CFCFunction_can_be_bound(function)) {
                         CFCUtil_die("Can't bind %s as %s"
                                     " -- types can't be mapped",
-                                    micro_sym, alias);
+                                    func_name, alias);
                     }
                     break;
                 }
@@ -310,7 +310,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
             // Automatically bind init() to new() when possible.
             if (!alias
                 && !perl_class->exclude_cons
-                && strcmp(micro_sym, "init") == 0
+                && strcmp(func_name, "init") == 0
                 && CFCFunction_can_be_bound(function)
                ) {
                 int saw_new = 0;
@@ -331,7 +331,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
 
         // Create the binding, add it to the array.
         CFCPerlConstructor *cons_binding
-            = CFCPerlConstructor_new(klass, alias, micro_sym);
+            = CFCPerlConstructor_new(klass, alias, func_name);
         size_t size = (num_bound + 2) * sizeof(CFCPerlConstructor*);
         bound = (CFCPerlConstructor**)REALLOCATE(bound, size);
         bound[num_bound] = cons_binding;
@@ -501,16 +501,16 @@ CFCPerlClass_method_metadata_code(CFCPerlClass *self) {
         CFCMethod *method = fresh_methods[i];
         if (!CFCMethod_novel(method)) { continue; }
 
-        const char *macro_sym = CFCMethod_get_macro_sym(method);
+        const char *meth_name = CFCMethod_get_name(method);
         const char *alias     = CFCMethod_get_host_alias(method);
         if (alias) {
             code = CFCUtil_cat(code, "    CFISH_Class_Add_Host_Method_Alias(",
-                               class_var, ", \"", alias, "\", \"", macro_sym,
+                               class_var, ", \"", alias, "\", \"", meth_name,
                                "\");\n", NULL);
         }
         if (CFCMethod_excluded_from_host(method)) {
             code = CFCUtil_cat(code, "    CFISH_Class_Exclude_Host_Method(",
-                               class_var, ", \"", macro_sym, "\");\n", NULL);
+                               class_var, ", \"", meth_name, "\");\n", NULL);
         }
     }
 

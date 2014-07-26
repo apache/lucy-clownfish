@@ -105,28 +105,27 @@ static const CFCMeta CFCCLASS_META = {
 CFCClass*
 CFCClass_create(struct CFCParcel *parcel, const char *exposure,
                 const char *class_name, const char *nickname,
-                const char *micro_sym, CFCDocuComment *docucomment,
+                const char *name, CFCDocuComment *docucomment,
                 CFCFileSpec *file_spec, const char *parent_class_name,
                 int is_final, int is_inert, int is_abstract) {
     CFCClass *self = (CFCClass*)CFCBase_allocate(&CFCCLASS_META);
     return CFCClass_do_create(self, parcel, exposure, class_name, nickname,
-                              micro_sym, docucomment, file_spec,
-                              parent_class_name, is_final, is_inert,
-                              is_abstract);
+                              name, docucomment, file_spec, parent_class_name,
+                              is_final, is_inert, is_abstract);
 }
 
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    const char *exposure, const char *class_name,
-                   const char *nickname, const char *micro_sym,
+                   const char *nickname, const char *name,
                    CFCDocuComment *docucomment, CFCFileSpec *file_spec,
                    const char *parent_class_name, int is_final, int is_inert,
                    int is_abstract) {
     CFCUTIL_NULL_CHECK(class_name);
-    exposure  = exposure  ? exposure  : "parcel";
-    micro_sym = micro_sym ? micro_sym : "class";
+    exposure = exposure  ? exposure  : "parcel";
+    name     = name ? name : "class";
     CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name, nickname,
-                   micro_sym);
+                   name);
     if (!is_inert
         && !parent_class_name
         && strcmp(class_name, "Clownfish::Obj") != 0
@@ -459,15 +458,9 @@ S_find_func(CFCFunction **funcs, const char *sym) {
         return NULL;
     }
 
-    char lcsym[MAX_FUNC_LEN + 1];
-    size_t sym_len = strlen(sym);
-    if (sym_len > MAX_FUNC_LEN) { CFCUtil_die("sym too long: '%s'", sym); }
-    for (size_t i = 0; i <= sym_len; i++) {
-        lcsym[i] = tolower(sym[i]);
-    }
     for (size_t i = 0; funcs[i] != NULL; i++) {
         CFCFunction *func = funcs[i];
-        if (strcmp(lcsym, CFCFunction_micro_sym(func)) == 0) {
+        if (strcmp(sym, CFCFunction_get_name(func)) == 0) {
             return func;
         }
     }
@@ -542,8 +535,8 @@ S_bequeath_methods(CFCClass *self) {
         // Gather methods which child inherits or overrides.
         for (size_t i = 0; i < self->num_methods; i++) {
             CFCMethod *method = self->methods[i];
-            const char *macro_sym = CFCMethod_get_macro_sym(method);
-            CFCMethod *child_method = CFCClass_fresh_method(child, macro_sym);
+            const char *meth_name = CFCMethod_get_name(method);
+            CFCMethod *child_method = CFCClass_fresh_method(child, meth_name);
             if (child_method) {
                 CFCMethod_override(child_method, method);
                 methods[num_methods++] = child_method;

@@ -40,7 +40,7 @@ static void
 S_run_tests(CFCTest *test);
 
 static int
-S_has_symbol(CFCSymbol **symbols, const char *micro_sym);
+S_has_symbol(CFCSymbol **symbols, const char *name);
 
 const CFCTestBatch CFCTEST_BATCH_CLASS = {
     "Clownfish::CFC::Model::Class",
@@ -281,13 +281,13 @@ S_run_tests(CFCTest *test) {
         OK(test, S_has_symbol(member_vars, "mom"), "parsed member var");
         OK(test, S_has_symbol(member_vars, "squishy"), "parsed member var");
         OK(test, S_has_symbol(functions, "init"), "parsed function");
-        OK(test, S_has_symbol(methods, "destroy"), "parsed parcel method");
-        OK(test, S_has_symbol(methods, "bury"), "parsed public method");
-        OK(test, S_has_symbol(methods, "scratch"),
+        OK(test, S_has_symbol(methods, "Destroy"), "parsed parcel method");
+        OK(test, S_has_symbol(methods, "Bury"), "parsed public method");
+        OK(test, S_has_symbol(methods, "Scratch"),
            "parsed public abstract nullable method");
 
-        CFCMethod *scratch = CFCClass_fresh_method(klass, "scratch");
-        OK(test, scratch != NULL, "find method 'scratch'");
+        CFCMethod *scratch = CFCClass_fresh_method(klass, "Scratch");
+        OK(test, scratch != NULL, "find method 'Scratch'");
         OK(test, CFCType_nullable(CFCMethod_get_return_type(scratch)),
            "public abstract incremented nullable flagged as nullable");
 
@@ -342,9 +342,9 @@ S_run_tests(CFCTest *test) {
 }
 
 static int
-S_has_symbol(CFCSymbol **symbols, const char *micro_sym) {
+S_has_symbol(CFCSymbol **symbols, const char *name) {
     for (int i = 0; symbols[i]; ++i) {
-        if (strcmp(CFCSymbol_micro_sym(symbols[i]), micro_sym) == 0) {
+        if (strcmp(CFCSymbol_get_name(symbols[i]), name) == 0) {
             return 1;
         }
     }

@@ -50,16 +50,16 @@ S_generate_c_strings(CFCVariable *self);
 CFCVariable*
 CFCVariable_new(struct CFCParcel *parcel, const char *exposure,
                 const char *class_name, const char *class_nickname,
-                const char *micro_sym, struct CFCType *type, int inert) {
+                const char *name, struct CFCType *type, int inert) {
     CFCVariable *self = (CFCVariable*)CFCBase_allocate(&CFCVARIABLE_META);
     return CFCVariable_init(self, parcel, exposure, class_name, class_nickname,
-                            micro_sym, type, inert);
+                            name, type, inert);
 }
 
 CFCVariable*
 CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
                  const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *micro_sym,
+                 const char *class_nickname, const char *name,
                  struct CFCType *type, int inert) {
     // Validate params.
     CFCUTIL_NULL_CHECK(type);
@@ -68,7 +68,7 @@ CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
     const char *real_exposure = exposure ? exposure : "local";
 
     CFCSymbol_init((CFCSymbol*)self, parcel, real_exposure, class_name,
-                   class_nickname, micro_sym);
+                   class_nickname, name);
 
     // Assign type, inert.
     self->type = (CFCType*)CFCBase_incref((CFCBase*)type);
@@ -111,8 +111,8 @@ S_generate_c_strings(CFCVariable *self) {
        ) {
         postfix = CFCType_get_array(self->type);
     }
-    const char *micro_sym = CFCVariable_micro_sym(self);
-    self->local_c = CFCUtil_sprintf("%s %s%s", type_str, micro_sym, postfix);
+    const char *name = CFCVariable_get_name(self);
+    self->local_c = CFCUtil_sprintf("%s %s%s", type_str, name, postfix);
     self->local_dec = CFCUtil_sprintf("%s;", self->local_c);
     const char *full_sym = CFCVariable_full_sym(self);
     self->global_c = CFCUtil_sprintf("%s %s%s", type_str, full_sym, postfix);
@@ -147,8 +147,8 @@ CFCVariable_local_declaration(CFCVariable *self) {
 }
 
 const char*
-CFCVariable_micro_sym(CFCVariable *self) {
-    return CFCSymbol_micro_sym((CFCSymbol*)self);
+CFCVariable_get_name(CFCVariable *self) {
+    return CFCSymbol_get_name((CFCSymbol*)self);
 }
 
 const char*

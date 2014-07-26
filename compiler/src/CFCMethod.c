@@ -37,7 +37,6 @@
 struct CFCMethod {
     CFCCallable callable;
     CFCMethod *novel_method;
-    char *macro_sym;
     char *full_override_sym;
     char *host_alias;
     char *short_imp_func;
@@ -56,32 +55,32 @@ static const CFCMeta CFCMETHOD_META = {
 
 CFCMethod*
 CFCMethod_new(CFCParcel *parcel, const char *exposure, const char *class_name,
-              const char *class_nickname, const char *macro_sym,
+              const char *class_nickname, const char *name,
               CFCType *return_type, CFCParamList *param_list,
               CFCDocuComment *docucomment, int is_final, int is_abstract) {
     CFCMethod *self = (CFCMethod*)CFCBase_allocate(&CFCMETHOD_META);
     return CFCMethod_init(self, parcel, exposure, class_name, class_nickname,
-                          macro_sym, return_type, param_list, docucomment,
+                          name, return_type, param_list, docucomment,
                           is_final, is_abstract);
 }
 
 static int
-S_validate_macro_sym(const char *macro_sym) {
-    if (!macro_sym || !strlen(macro_sym)) { return false; }
+S_validate_meth_name(const char *meth_name) {
+    if (!meth_name || !strlen(meth_name)) { return false; }
 
     int need_upper  = true;
     int need_letter = true;
-    for (;; macro_sym++) {
-        if (need_upper  && !isupper(*macro_sym)) { return false; }
-        if (need_letter && !isalpha(*macro_sym)) { return false; }
+    for (;; meth_name++) {
+        if (need_upper  && !isupper(*meth_name)) { return false; }
+        if (need_letter && !isalpha(*meth_name)) { return false; }
         need_upper  = false;
         need_letter = false;
 
         // We've reached NULL-termination without problems, so succeed.
-        if (!*macro_sym) { return true; }
+        if (!*meth_name) { return true; }
 
-        if (!isalnum(*macro_sym)) {
-            if (*macro_sym != '_') { return false; }
+        if (!isalnum(*meth_name)) {
+            if (*meth_name != '_') { return false; }
             need_upper  = true;
         }
     }
@@ -90,25 +89,20 @@ S_validate_macro_sym(const char *macro_sym) {
 CFCMethod*
 CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
                const char *class_name, const char *class_nickname,
-               const char *macro_sym, CFCType *return_type,
+               const char *name, CFCType *return_type,
                CFCParamList *param_list, CFCDocuComment *docucomment,
                int is_final, int is_abstract) {
-    // Validate macro_sym, derive micro_sym.
-    if (!S_validate_macro_sym(macro_sym)) {
+    // Validate name.
+    if (!S_validate_meth_name(name)) {
         CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Invalid macro_sym: '%s'",
-                    macro_sym ? macro_sym : "[NULL]");
-    }
-    char *micro_sym = CFCUtil_strdup(macro_sym);
-    for (size_t i = 0; micro_sym[i] != '\0'; i++) {
-        micro_sym[i] = tolower(micro_sym[i]);
+        CFCUtil_die("Invalid name: '%s'",
+                    name ? name : "[NULL]");
     }
 
-    // Super-init and clean up derived micro_sym.
+    // Super-init.
     CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name,
-                     class_nickname, micro_sym, return_type, param_list,
+                     class_nickname, name, return_type, param_list,
                      docucomment);
-    FREEMEM(micro_sym);
 
     // Verify that the first element in the arg list is a self.
     CFCVariable **args = CFCParamList_get_variables(param_list);
@@ -129,7 +123,6 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
     }
 
     self->novel_method      = NULL;
-    self->macro_sym         = CFCUtil_strdup(macro_sym);
     self->full_override_sym = NULL;
     self->host_alias        = NULL;
     self->is_final          = is_final;
@@ -139,7 +132,7 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
     // Derive name of implementing function.
     self->short_imp_func
         = CFCUtil_sprintf("%s_%s_IMP", CFCMethod_get_class_nickname(self),
-                          self->macro_sym);
+                          name);
     self->imp_func = CFCUtil_sprintf("%s%s", CFCMethod_get_PREFIX(self),
                                      self->short_imp_func);
 
@@ -158,7 +151,6 @@ CFCMethod_resolve_types(CFCMethod *self) {
 void
 CFCMethod_destroy(CFCMethod *self) {
     CFCBase_decref((CFCBase*)self->novel_method);
-    FREEMEM(self->macro_sym);
     FREEMEM(self->full_override_sym);
     FREEMEM(self->host_alias);
     FREEMEM(self->short_imp_func);
@@ -169,7 +161,9 @@ CFCMethod_destroy(CFCMethod *self) {
 int
 CFCMethod_compatible(CFCMethod *self, CFCMethod *other) {
     if (!other) { return false; }
-    if (strcmp(self->macro_sym, other->macro_sym)) { return false; }
+    const char *name       = CFCMethod_get_name(self);
+    const char *other_name = CFCMethod_get_name(other);
+    if (strcmp(name, other_name)) { return false; }
     int my_public = CFCMethod_public(self);
     int other_public = CFCMethod_public(other);
     if (!!my_public != !!other_public) { return false; }
@@ -194,8 +188,8 @@ CFCMethod_compatible(CFCMethod *self, CFCMethod *other) {
                 return false;
             }
 
-            const char *my_sym    = CFCVariable_micro_sym(my_args[i]);
-            const char *other_sym = CFCVariable_micro_sym(other_args[i]);
+            const char *my_sym    = CFCVariable_get_name(my_args[i]);
+            const char *other_sym = CFCVariable_get_name(other_args[i]);
             if (strcmp(my_sym, other_sym) != 0) {
                 return false;
             }
@@ -224,10 +218,11 @@ void
 CFCMethod_override(CFCMethod *self, CFCMethod *orig) {
     // Check that the override attempt is legal.
     if (CFCMethod_final(orig)) {
+        const char *orig_name  = CFCMethod_get_name(orig);
         const char *orig_class = CFCMethod_get_class_name(orig);
         const char *my_class   = CFCMethod_get_class_name(self);
         CFCUtil_die("Attempt to override final method '%s' from '%s' by '%s'",
-                    orig->macro_sym, orig_class, my_class);
+                    orig_name, orig_class, my_class);
     }
     if (!CFCMethod_compatible(self, orig)) {
         const char *func      = CFCMethod_imp_func(self);
@@ -249,9 +244,10 @@ CFCMethod_finalize(CFCMethod *self) {
     const char *exposure       = CFCMethod_get_exposure(self);
     const char *class_name     = CFCMethod_get_class_name(self);
     const char *class_nickname = CFCMethod_get_class_nickname(self);
+    const char *name           = CFCMethod_get_name(self);
     CFCMethod  *finalized
         = CFCMethod_new(parcel, exposure, class_name, class_nickname,
-                        self->macro_sym, self->callable.return_type,
+                        name, self->callable.return_type,
                         self->callable.param_list,
                         self->callable.docucomment, true,
                         self->is_abstract);
@@ -278,13 +274,15 @@ CFCMethod_set_host_alias(CFCMethod *self, const char *alias) {
         CFCUtil_die("Missing required param 'alias'");
     }
     if (!self->is_novel) {
+        const char *name = CFCMethod_get_name(self);
         CFCUtil_die("Can't set_host_alias %s -- method %s not novel in %s",
-                    alias, self->macro_sym, CFCMethod_get_class_name(self));
+                    alias, name, CFCMethod_get_class_name(self));
     }
     if (self->host_alias) {
+        const char *name = CFCMethod_get_name(self);
         if (strcmp(self->host_alias, alias) == 0) { return; }
         CFCUtil_die("Can't set_host_alias %s -- already set to %s for method"
-                    " %s in %s", alias, self->host_alias, self->macro_sym,
+                    " %s in %s", alias, self->host_alias, name,
                     CFCMethod_get_class_name(self));
     }
     self->host_alias = CFCUtil_strdup(alias);
@@ -299,8 +297,9 @@ CFCMethod_get_host_alias(CFCMethod *self) {
 void
 CFCMethod_exclude_from_host(CFCMethod *self) {
     if (!self->is_novel) {
+        const char *name = CFCMethod_get_name(self);
         CFCUtil_die("Can't exclude_from_host -- method %s not novel in %s",
-                    self->macro_sym, CFCMethod_get_class_name(self));
+                    name, CFCMethod_get_class_name(self));
     }
     self->is_excluded = true;
 }
@@ -330,7 +329,8 @@ S_short_method_sym(CFCMethod *self, CFCClass *invoker, const char *postfix) {
     else {
         nickname = CFCMethod_get_class_nickname(self);
     }
-    return CFCUtil_sprintf("%s_%s%s", nickname, self->macro_sym, postfix);
+    const char *name = CFCMethod_get_name(self);
+    return CFCUtil_sprintf("%s_%s%s", nickname, name, postfix);
 }
 
 static char*
@@ -345,8 +345,8 @@ S_full_method_sym(CFCMethod *self, CFCClass *invoker, const char *postfix) {
         PREFIX   = CFCMethod_get_PREFIX(self);
         nickname = CFCMethod_get_class_nickname(self);
     }
-    return CFCUtil_sprintf("%s%s_%s%s", PREFIX, nickname, self->macro_sym,
-                           postfix);
+    const char *name = CFCMethod_get_name(self);
+    return CFCUtil_sprintf("%s%s_%s%s", PREFIX, nickname, name, postfix);
 }
 
 char*
@@ -365,8 +365,8 @@ CFCMethod_full_offset_sym(CFCMethod *self, CFCClass *invoker) {
 }
 
 const char*
-CFCMethod_get_macro_sym(CFCMethod *self) {
-    return self->macro_sym;
+CFCMethod_get_name(CFCMethod *self) {
+    return CFCSymbol_get_name((CFCSymbol*)self);
 }
 
 char*
@@ -384,9 +384,9 @@ CFCMethod_full_override_sym(CFCMethod *self) {
     if (!self->full_override_sym) {
         const char *Prefix   = CFCMethod_get_Prefix(self);
         const char *nickname = CFCMethod_get_class_nickname(self);
+        const char *name     = CFCMethod_get_name(self);
         self->full_override_sym
-            = CFCUtil_sprintf("%s%s_%s_OVERRIDE", Prefix, nickname,
-                              self->macro_sym);
+            = CFCUtil_sprintf("%s%s_%s_OVERRIDE", Prefix, nickname, name);
     }
     return self->full_override_sym;
 }

@@ -249,11 +249,11 @@ CFCPerlPod_gen_subroutine_pod(CFCPerlPod *self, CFCFunction *func,
     // Get documentation, which may be inherited.
     CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
     if (!docucomment) {
-        const char *micro_sym = CFCFunction_micro_sym(func);
+        const char *func_name = CFCFunction_get_name(func);
         CFCClass *parent = klass;
         while (NULL != (parent = CFCClass_get_parent(parent))) {
             CFCFunction *parent_func
-                = (CFCFunction*)CFCClass_method(parent, micro_sym);
+                = (CFCFunction*)CFCClass_method(parent, func_name);
             if (!parent_func) { break; }
             docucomment = CFCFunction_get_docucomment(parent_func);
             if (docucomment) { break; }

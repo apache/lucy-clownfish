@@ -30,7 +30,7 @@ my %args = (
     class_name     => 'Neato::Foo',
     class_nickname => 'Foo',
     param_list     => $parser->parse('(Foo *self)'),
-    macro_sym      => 'Return_An_Obj',
+    name           => 'Return_An_Obj',
     parcel         => 'Neato',
 );
 

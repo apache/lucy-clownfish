@@ -499,9 +499,9 @@ S_html_create_functions(CFCClass *klass) {
             result = CFCUtil_cat(result, "<h2>Functions</h2>\n<dl>\n", NULL);
         }
 
-        const char *micro_sym = CFCFunction_micro_sym(func);
-        result = CFCUtil_cat(result, "<dt id=\"func_", micro_sym, "\">",
-                             micro_sym, "</dt>\n", NULL);
+        const char *name = CFCFunction_get_name(func);
+        result = CFCUtil_cat(result, "<dt id=\"func_", name, "\">",
+                             name, "</dt>\n", NULL);
 
         CFCParcel  *parcel    = CFCSymbol_get_parcel((CFCSymbol*)func);
         const char *prefix    = CFCParcel_get_prefix(parcel);
@@ -584,9 +584,9 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
             result = CFCUtil_cat(result, "<dl>\n", NULL);
         }
 
-        const char *macro_sym = CFCMethod_get_macro_sym(method);
-        result = CFCUtil_cat(result, "<dt id=\"func_", macro_sym, "\">",
-                             macro_sym, NULL);
+        const char *name = CFCMethod_get_name(method);
+        result = CFCUtil_cat(result, "<dt id=\"func_", name, "\">",
+                             name, NULL);
         if (CFCMethod_abstract(method)) {
             result = CFCUtil_cat(result,
                     " <span class=\"comment\">(abstract)</span>", NULL);
@@ -635,11 +635,11 @@ S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
     // Get documentation, which may be inherited.
     CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
     if (!docucomment) {
-        const char *micro_sym = CFCFunction_micro_sym(func);
+        const char *name = CFCFunction_get_name(func);
         CFCClass *parent = klass;
         while (NULL != (parent = CFCClass_get_parent(parent))) {
             CFCFunction *parent_func
-                = (CFCFunction*)CFCClass_method(parent, micro_sym);
+                = (CFCFunction*)CFCClass_method(parent, name);
             if (!parent_func) { break; }
             docucomment = CFCFunction_get_docucomment(parent_func);
             if (docucomment) { break; }
@@ -704,7 +704,7 @@ S_html_create_param_list(CFCClass *klass, CFCFunction *func) {
     for (int i = 0; variables[i]; ++i) {
         CFCVariable *variable = variables[i];
         CFCType     *type     = CFCVariable_get_type(variable);
-        const char  *name     = CFCVariable_micro_sym(variable);
+        const char  *name     = CFCVariable_get_name(variable);
 
         char *type_html;
         if (is_method && i == 0) {

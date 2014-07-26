@@ -76,7 +76,7 @@ S_run_tests(CFCTest *test) {
             const char *specifier = specifiers[i];
             char *src = CFCUtil_sprintf("int32_t %s;", specifier);
             CFCVariable *var = CFCTest_parse_variable(test, parser, src);
-            STR_EQ(test, CFCVariable_micro_sym(var), specifier,
+            STR_EQ(test, CFCVariable_get_name(var), specifier,
                    "identifier/declarator: %s", specifier);
             FREEMEM(src);
             CFCBase_decref((CFCBase*)var);

@@ -19,8 +19,8 @@
 
 /** Clownfish::CFC::Model::Variable - A Clownfish variable.
  *
- * A variable, having a L<Type|Clownfish::CFC::Model::Type>, a micro_sym (i.e.
- * name), an exposure, and optionally, a location in the global namespace
+ * A variable, having a L<Type|Clownfish::CFC::Model::Type>, a name,
+ * an exposure, and optionally, a location in the global namespace
  * hierarchy.
  *
  * Variable objects which exist only within a local scope, e.g. those within
@@ -40,7 +40,7 @@ struct CFCType;
 
 /**
  * @param type A Clownfish::CFC::Model::Type.
- * @param micro_sym The variable's name, without any namespacing prefixes.
+ * @param name The variable's name, without any namespacing prefixes.
  * @param exposure See Clownfish::CFC::Model::Symbol.
  * @param class_name See Clownfish::CFC::Model::Symbol.
  * @param class_nickname See Clownfish::CFC::Model::Symbol.
@@ -48,12 +48,12 @@ struct CFCType;
 CFCVariable*
 CFCVariable_new(struct CFCParcel *parcel, const char *exposure,
                 const char *class_name, const char *class_nickname,
-                const char *micro_sym, struct CFCType *type, int inert);
+                const char *name, struct CFCType *type, int inert);
 
 CFCVariable*
 CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
                  const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *micro_sym,
+                 const char *class_nickname, const char *name,
                  struct CFCType *type, int inert);
 
 void
@@ -73,7 +73,7 @@ CFCVariable_inert(CFCVariable *self);
 
 
 /** Returns a string with the Variable's C type and its
- * `micro_sym`. For instance:
+ * `name`. For instance:
  *
  *     int32_t average_lifespan
  */
@@ -98,7 +98,7 @@ const char*
 CFCVariable_local_declaration(CFCVariable *self);
 
 const char*
-CFCVariable_micro_sym(CFCVariable *self);
+CFCVariable_get_name(CFCVariable *self);
 
 const char*
 CFCVariable_short_sym(CFCVariable *self);

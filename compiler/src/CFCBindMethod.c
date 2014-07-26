@@ -136,7 +136,7 @@ CFCBindMeth_typedef_dec(struct CFCMethod *method, CFCClass *klass) {
 
 char*
 CFCBindMeth_novel_spec_def(CFCMethod *method) {
-    const char *macro_sym = CFCMethod_get_macro_sym(method);
+    const char *meth_name = CFCMethod_get_name(method);
     const char *imp_func  = CFCMethod_imp_func(method);
 
     const char *full_override_sym = "NULL";
@@ -154,7 +154,7 @@ CFCBindMeth_novel_spec_def(CFCMethod *method) {
         "        (cfish_method_t)%s /* callback_func */\n"
         "    }";
     char *def
-        = CFCUtil_sprintf(pattern, full_offset_sym, macro_sym, imp_func,
+        = CFCUtil_sprintf(pattern, full_offset_sym, meth_name, imp_func,
                           full_override_sym);
 
     FREEMEM(full_offset_sym);
@@ -211,17 +211,17 @@ CFCBindMeth_abstract_method_def(CFCMethod *method) {
     CFCType    *type          = CFCMethod_self_type(method);
     const char *full_func_sym = CFCMethod_imp_func(method);
     const char *class_var     = CFCType_get_class_var(type);
-    const char *macro_sym     = CFCMethod_get_macro_sym(method);
+    const char *meth_name     = CFCMethod_get_name(method);
     CFCParamList *param_list  = CFCMethod_get_param_list(method);
     const char *params        = CFCParamList_to_c(param_list);
     CFCVariable **vars        = CFCParamList_get_variables(param_list);
-    const char *invocant      = CFCVariable_micro_sym(vars[0]);
+    const char *invocant      = CFCVariable_get_name(vars[0]);
 
     // All variables other than the invocant are unused, and the return is
     // unreachable.
     char *unused = CFCUtil_strdup("");
     for (int i = 1; vars[i] != NULL; i++) {
-        const char *var_name = CFCVariable_micro_sym(vars[i]);
+        const char *var_name = CFCVariable_get_name(vars[i]);
         size_t size = strlen(unused) + strlen(var_name) + 80;
         unused = (char*)REALLOCATE(unused, size);
         strcat(unused, "\n    CFISH_UNUSED_VAR(");
@@ -243,7 +243,7 @@ CFCBindMeth_abstract_method_def(CFCMethod *method) {
         "}\n";
     char *abstract_def
         = CFCUtil_sprintf(pattern, ret_type_str, full_func_sym, params,
-                          unused, invocant, class_var, macro_sym,
+                          unused, invocant, class_var, meth_name,
                           unreachable);
 
     FREEMEM(unused);

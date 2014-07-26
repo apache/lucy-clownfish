@@ -45,7 +45,7 @@ struct CFCFileSpec;
  * @param exposure See Clownfish::CFC::Model::Symbol.
  * @param class_name See Clownfish::CFC::Model::Symbol.
  * @param nickname See Clownfish::CFC::Model::Symbol.
- * @param micro_sym Defaults to "class".
+ * @param name Defaults to "class".
  * @param docucomment An optional Clownfish::CFC::Model::DocuComment attached
  * to this class.
  * @param file_spec - Clownfish::CFC::Model::FileSpec of the file in which
@@ -60,14 +60,14 @@ struct CFCFileSpec;
 CFCClass*
 CFCClass_create(struct CFCParcel *parcel, const char *exposure,
                 const char *class_name, const char *nickname,
-                const char *micro_sym, struct CFCDocuComment *docucomment,
+                const char *name, struct CFCDocuComment *docucomment,
                 struct CFCFileSpec *file_spec, const char *parent_class_name,
                 int is_final, int is_inert, int is_abstract);
 
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    const char *exposure, const char *class_name,
-                   const char *nickname, const char *micro_sym,
+                   const char *nickname, const char *name,
                    struct CFCDocuComment *docucomment,
                    struct CFCFileSpec *file_spec, const char *parent_class_name,
                    int is_final, int is_inert, int is_abstract);

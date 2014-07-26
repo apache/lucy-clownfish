@@ -43,7 +43,7 @@ is( ${ $parser->get_parcel },
 
 for (qw( foo _foo foo_yoo FOO Foo fOO f00 foo_foo_foo )) {
     my $var = $parser->parse("int32_t $_;");
-    is( $var->micro_sym, $_, "identifier/declarator: $_" );
+    is( $var->get_name, $_, "identifier/declarator: $_" );
 }
 
 for (qw( void float uint32_t int64_t uint8_t bool )) {

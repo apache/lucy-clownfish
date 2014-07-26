@@ -31,7 +31,7 @@ my %args = (
     class_name     => 'Neato::Foo',
     class_nickname => 'Foo',
     param_list     => $parser->parse('(Foo *self, int32_t count = 0)'),
-    macro_sym      => 'Return_An_Obj',
+    name           => 'Return_An_Obj',
 );
 
 my $method = Clownfish::CFC::Model::Method->new(%args);
@@ -46,23 +46,23 @@ eval {
 like( $@, qr/extra_arg/, "Extra arg kills constructor" );
 
 eval {
-    Clownfish::CFC::Model::Method->new( %args, macro_sym => 'return_an_obj' );
+    Clownfish::CFC::Model::Method->new( %args, name => 'return_an_obj' );
 };
-like( $@, qr/macro_sym/, "Invalid macro_sym kills constructor" );
+like( $@, qr/name/, "Invalid name kills constructor" );
 
 my $dupe = Clownfish::CFC::Model::Method->new(%args);
 ok( $method->compatible($dupe), "compatible()" );
 
-my $macro_sym_differs
-    = Clownfish::CFC::Model::Method->new( %args, macro_sym => 'Eat' );
-ok( !$method->compatible($macro_sym_differs),
-    "different macro_sym spoils compatible()"
+my $name_differs
+    = Clownfish::CFC::Model::Method->new( %args, name => 'Eat' );
+ok( !$method->compatible($name_differs),
+    "different name spoils compatible()"
 );
-ok( !$macro_sym_differs->compatible($method), "... reversed" );
+ok( !$name_differs->compatible($method), "... reversed" );
 
 my $extra_param = Clownfish::CFC::Model::Method->new( %args,
     param_list => $parser->parse('(Foo *self, int32_t count = 0, int b)'), );
-ok( !$method->compatible($macro_sym_differs),
+ok( !$method->compatible($name_differs),
     "extra param spoils compatible()"
 );
 ok( !$extra_param->compatible($method), "... reversed" );

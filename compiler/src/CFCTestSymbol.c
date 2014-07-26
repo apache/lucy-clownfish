@@ -127,7 +127,7 @@ S_run_tests(CFCTest *test) {
         CFCSymbol *booga
             = CFCSymbol_new(parcel, "parcel", NULL, NULL, "booga");
         int equal = CFCSymbol_equals(ooga, booga);
-        OK(test, !equal, "different micro_sym spoils equals");
+        OK(test, !equal, "different name spoils equals");
         CFCBase_decref((CFCBase*)ooga);
         CFCBase_decref((CFCBase*)booga);
     }

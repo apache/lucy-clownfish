@@ -46,21 +46,21 @@ static const CFCMeta CFCFUNCTION_META = {
 CFCFunction*
 CFCFunction_new(CFCParcel *parcel, const char *exposure,
                 const char *class_name, const char *class_nickname,
-                const char *micro_sym, CFCType *return_type,
+                const char *name, CFCType *return_type,
                 CFCParamList *param_list, CFCDocuComment *docucomment,
                 int is_inline) {
     CFCFunction *self = (CFCFunction*)CFCBase_allocate(&CFCFUNCTION_META);
     return CFCFunction_init(self, parcel, exposure, class_name, class_nickname,
-                            micro_sym, return_type, param_list, docucomment,
+                            name, return_type, param_list, docucomment,
                             is_inline);
 }
 
 static int
-S_validate_micro_sym(const char *micro_sym) {
-    size_t len = strlen(micro_sym);
+S_validate_function_name(const char *name) {
+    size_t len = strlen(name);
     if (!len) { return false; }
     for (size_t i = 0; i < len; i++) {
-        char c = micro_sym[i];
+        char c = name[i];
         if (!islower(c) && !isdigit(c) && c != '_') { return false; }
     }
     return true;
@@ -69,16 +69,16 @@ S_validate_micro_sym(const char *micro_sym) {
 CFCFunction*
 CFCFunction_init(CFCFunction *self, CFCParcel *parcel, const char *exposure,
                  const char *class_name, const char *class_nickname,
-                 const char *micro_sym, CFCType *return_type,
+                 const char *name, CFCType *return_type,
                  CFCParamList *param_list, CFCDocuComment *docucomment,
                  int is_inline) {
 
-    if (!S_validate_micro_sym(micro_sym)) {
+    if (!S_validate_function_name(name)) {
         CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Invalid micro_sym: '%s'", micro_sym);
+        CFCUtil_die("Invalid function name: '%s'", name);
     }
     CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name,
-                     class_nickname, micro_sym, return_type, param_list,
+                     class_nickname, name, return_type, param_list,
                      docucomment);
     self->is_inline = is_inline;
     return self;
@@ -135,8 +135,8 @@ CFCFunction_short_func_sym(CFCFunction *self) {
 }
 
 const char*
-CFCFunction_micro_sym(CFCFunction *self) {
-    return CFCSymbol_micro_sym((CFCSymbol*)self);
+CFCFunction_get_name(CFCFunction *self) {
+    return CFCSymbol_get_name((CFCSymbol*)self);
 }
 
 int

@@ -106,7 +106,7 @@ S_generate_c_strings(CFCParamList *self) {
         c_string_size += sizeof(", ");
         c_string_size += strlen(CFCVariable_local_c(var));
         name_list_size += sizeof(", ");
-        name_list_size += strlen(CFCVariable_micro_sym(var));
+        name_list_size += strlen(CFCVariable_get_name(var));
     }
     if (self->variadic) {
         c_string_size += sizeof(", ...");
@@ -123,7 +123,7 @@ S_generate_c_strings(CFCParamList *self) {
     for (size_t i = 0; i < self->num_vars; i++) {
         CFCVariable *var = self->variables[i];
         strcat(self->c_string, CFCVariable_local_c(var));
-        strcat(self->name_list, CFCVariable_micro_sym(var));
+        strcat(self->name_list, CFCVariable_get_name(var));
         if (i == self->num_vars - 1) {
             if (self->variadic) {
                 strcat(self->c_string, ", ...");

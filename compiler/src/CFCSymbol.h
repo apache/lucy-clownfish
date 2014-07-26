@@ -40,7 +40,7 @@ struct CFCSymbol {
     char *exposure;
     char *class_name;
     char *class_nickname;
-    char *micro_sym;
+    char *name;
     char *short_sym;
     char *full_sym;
 };
@@ -64,17 +64,17 @@ CFCSymbol_validate_class_name_component(const char *name);
  * @param class_nickname The C nickname associated with the supplied class
  * name.  If not supplied, will be derived if possible from C<class_name> by
  * extracting the last class name component.
- * @param micro_sym The local identifier for the symbol.
+ * @param name The local identifier for the symbol.
  */
 CFCSymbol*
 CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
               const char *class_name, const char *class_nickname,
-              const char *micro_sym);
+              const char *name);
 
 CFCSymbol*
 CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
                const char *class_name, const char *class_nickname,
-               const char *micro_sym);
+               const char *name);
 
 void
 CFCSymbol_destroy(CFCSymbol *self);
@@ -118,10 +118,10 @@ CFCSymbol_private(CFCSymbol *self);
 int
 CFCSymbol_local(CFCSymbol *self);
 
-/** Accessor for the Symbol's micro_sym.
+/** Accessor for the Symbol's name.
  */
 const char*
-CFCSymbol_micro_sym(CFCSymbol *self);
+CFCSymbol_get_name(CFCSymbol *self);
 
 /** Returns the C representation for the symbol minus the parcel's prefix,
  * e.g.  "Lobster_average_lifespan".

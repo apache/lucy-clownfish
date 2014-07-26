@@ -61,18 +61,18 @@ my $luser = new_symbol( parcel => 'Luser' );
 ok( !$lucifer->equals($luser), "different parcel spoils equals" );
 
 for ( qw( 1foo * 0 ), "\x{263a}" ) {
-    eval { my $thing = new_symbol( micro_sym => $_ ); };
-    like( $@, qr/micro_sym/, "reject bad micro_sym" );
+    eval { my $thing = new_symbol( name => $_ ); };
+    like( $@, qr/name/, "reject bad name" );
 }
 
-my $ooga  = new_symbol( micro_sym => 'ooga' );
-my $booga = new_symbol( micro_sym => 'booga' );
-ok( !$ooga->equals($booga), "Different micro_sym spoils equals()" );
+my $ooga  = new_symbol( name => 'ooga' );
+my $booga = new_symbol( name => 'booga' );
+ok( !$ooga->equals($booga), "Different name spoils equals()" );
 
 my $eep = new_symbol(
     parcel     => 'Eep',
     class_name => "Op::Ork",
-    micro_sym  => 'ah_ah',
+    name       => 'ah_ah',
 );
 is( $eep->short_sym, "Ork_ah_ah",     "short_sym" );
 is( $eep->full_sym,  "eep_Ork_ah_ah", "full_sym" );
@@ -80,7 +80,7 @@ is( $eep->full_sym,  "eep_Ork_ah_ah", "full_sym" );
 sub new_symbol {
     return Clownfish::CFC::Model::Symbol->new(
         parcel    => $parcel,
-        micro_sym => 'sym',
+        name      => 'sym',
         exposure  => 'parcel',
         @_
     );

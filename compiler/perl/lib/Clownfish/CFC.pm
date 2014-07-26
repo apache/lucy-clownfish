@@ -156,7 +156,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _create(
             @args{
-                qw( parcel exposure class_name nickname micro_sym docucomment
+                qw( parcel exposure class_name nickname name docucomment
                     file_spec parent_class_name final inert abstract )
                 }
         );
@@ -218,7 +218,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         class_name     => undef,
         class_nickname => undef,
         param_list     => undef,
-        micro_sym      => undef,
+        name           => undef,
         docucomment    => undef,
         parcel         => undef,
         inline         => undef,
@@ -234,7 +234,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
             @args{
-                qw( parcel exposure class_name class_nickname micro_sym
+                qw( parcel exposure class_name class_nickname name
                     return_type param_list docucomment inline )
                 }
         );
@@ -303,7 +303,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         class_name     => undef,
         class_nickname => undef,
         param_list     => undef,
-        macro_sym      => undef,
+        name           => undef,
         docucomment    => undef,
         parcel         => undef,
         abstract       => undef,
@@ -321,7 +321,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         $args{final} ||= 0;
         return _new(
             @args{
-                qw( parcel exposure class_name class_nickname macro_sym
+                qw( parcel exposure class_name class_nickname name
                     return_type param_list docucomment final abstract )
                 }
         );
@@ -458,7 +458,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         exposure       => undef,
         class_name     => undef,
         class_nickname => undef,
-        micro_sym      => undef,
+        name           => undef,
     );
 
     sub new {
@@ -468,7 +468,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         $args{parcel}
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
-            @args{qw( parcel exposure class_name class_nickname micro_sym )} );
+            @args{qw( parcel exposure class_name class_nickname name )} );
     }
 }
 
@@ -637,7 +637,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
 
     our %new_PARAMS = (
         type           => undef,
-        micro_sym      => undef,
+        name           => undef,
         parcel         => undef,
         exposure       => 'local',
         class_name     => undef,
@@ -654,7 +654,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
             @args{
-                qw( parcel exposure class_name class_nickname micro_sym type
+                qw( parcel exposure class_name class_nickname name type
                     inert )
                 }
         );

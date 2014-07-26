@@ -93,7 +93,7 @@ CFCPerlSub_params_hash_def(CFCPerlSub *self) {
 
     for (int i = 1; arg_vars[i] != NULL; i++) {
         CFCVariable *var = arg_vars[i];
-        const char *micro_sym = CFCVariable_micro_sym(var);
+        const char *var_name = CFCVariable_get_name(var);
         const char *val = vals[i];
         val = val == NULL
               ? "undef"
@@ -104,7 +104,7 @@ CFCPerlSub_params_hash_def(CFCPerlSub *self) {
               : strcmp(val, "false") == 0
               ? "0"
               : val;
-        def = CFCUtil_cat(def, "\n    ", micro_sym, " => ", val, ",", NULL);
+        def = CFCUtil_cat(def, "\n    ", var_name, " => ", val, ",", NULL);
     }
     def = CFCUtil_cat(def, "\n);\n", NULL);
 
@@ -190,7 +190,7 @@ CFCPerlSub_arg_declarations(CFCPerlSub *self) {
         CFCVariable *arg_var  = arg_vars[i];
         CFCType     *type     = CFCVariable_get_type(arg_var);
         const char  *type_str = CFCType_to_c(type);
-        const char  *var_name = CFCVariable_micro_sym(arg_var);
+        const char  *var_name = CFCVariable_get_name(arg_var);
         decls = CFCUtil_cat(decls, "    ", type_str, " arg_", var_name,
                             ";\n", NULL);
     }
@@ -206,7 +206,7 @@ CFCPerlSub_arg_name_list(CFCPerlSub *self) {
     char          *name_list  = CFCUtil_strdup("arg_self");
 
     for (size_t i = 1; i < num_vars; i++) {
-        const char *var_name = CFCVariable_micro_sym(arg_vars[i]);
+        const char *var_name = CFCVariable_get_name(arg_vars[i]);
         name_list = CFCUtil_cat(name_list, ", arg_", var_name, NULL);
     }
 
@@ -225,7 +225,7 @@ CFCPerlSub_build_allot_params(CFCPerlSub *self) {
     for (size_t i = 1; i < num_vars; i++) {
         CFCVariable *arg_var  = arg_vars[i];
         const char  *val      = arg_inits[i];
-        const char  *var_name = CFCVariable_micro_sym(arg_var);
+        const char  *var_name = CFCVariable_get_name(arg_var);
         if (val == NULL) {
             CFCType *arg_type = CFCVariable_get_type(arg_var);
             val = CFCType_is_object(arg_type)
@@ -245,7 +245,7 @@ CFCPerlSub_build_allot_params(CFCPerlSub *self) {
         CFCVariable *var = arg_vars[i];
         const char  *val = arg_inits[i];
         int required = val ? 0 : 1;
-        const char *name = CFCVariable_micro_sym(var);
+        const char *name = CFCVariable_get_name(var);
         CFCType *type = CFCVariable_get_type(var);
         char *arg = S_allot_params_arg(type, name, required);
         allot_params

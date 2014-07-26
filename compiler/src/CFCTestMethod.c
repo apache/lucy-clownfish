@@ -82,14 +82,14 @@ S_run_basic_tests(CFCTest *test) {
     }
 
     {
-        CFCMethod *macro_sym_differs
+        CFCMethod *name_differs
             = CFCMethod_new(neato_parcel, NULL, "Neato::Foo", "Foo", "Eat",
                             return_type, param_list, NULL, 0, 0);
-        OK(test, !CFCMethod_compatible(method, macro_sym_differs),
-           "different macro_sym spoils compatible");
-        OK(test, !CFCMethod_compatible(macro_sym_differs, method),
+        OK(test, !CFCMethod_compatible(method, name_differs),
+           "different name spoils compatible");
+        OK(test, !CFCMethod_compatible(name_differs, method),
            "... reversed");
-        CFCBase_decref((CFCBase*)macro_sym_differs);
+        CFCBase_decref((CFCBase*)name_differs);
     }
 
     {

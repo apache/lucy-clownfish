@@ -155,12 +155,12 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Class
 
 SV*
-_create(parcel, exposure_sv, class_name_sv, class_nickname_sv, micro_sym_sv, docucomment, file_spec, parent_class_name_sv, is_final, is_inert, is_abstract)
+_create(parcel, exposure_sv, class_name_sv, class_nickname_sv, name_sv, docucomment, file_spec, parent_class_name_sv, is_final, is_inert, is_abstract)
     CFCParcel *parcel;
     SV *exposure_sv;
     SV *class_name_sv;
     SV *class_nickname_sv;
-    SV *micro_sym_sv;
+    SV *name_sv;
     CFCDocuComment *docucomment;
     CFCFileSpec *file_spec;
     SV *parent_class_name_sv;
@@ -174,13 +174,13 @@ CODE:
         SvOK(class_name_sv) ? SvPV_nolen(class_name_sv) : NULL;
     const char *class_nickname =
         SvOK(class_nickname_sv) ? SvPV_nolen(class_nickname_sv) : NULL;
-    const char *micro_sym =
-        SvOK(micro_sym_sv) ? SvPV_nolen(micro_sym_sv) : NULL;
+    const char *name =
+        SvOK(name_sv) ? SvPV_nolen(name_sv) : NULL;
     const char *parent_class_name =
         SvOK(parent_class_name_sv) ? SvPV_nolen(parent_class_name_sv) : NULL;
     CFCClass *self
         = CFCClass_create(parcel, exposure, class_name, class_nickname,
-                          micro_sym, docucomment, file_spec, parent_class_name,
+                          name, docucomment, file_spec, parent_class_name,
                           is_final, is_inert, is_abstract);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
@@ -637,12 +637,12 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Function
 
 SV*
-_new(parcel, exposure_sv, class_name_sv, class_nickname_sv, micro_sym_sv, return_type, param_list, docucomment, is_inline)
+_new(parcel, exposure_sv, class_name_sv, class_nickname_sv, name_sv, return_type, param_list, docucomment, is_inline)
     CFCParcel *parcel;
     SV *exposure_sv;
     SV *class_name_sv;
     SV *class_nickname_sv;
-    SV *micro_sym_sv;
+    SV *name_sv;
     CFCType *return_type;
     CFCParamList *param_list;
     CFCDocuComment *docucomment;
@@ -654,11 +654,11 @@ CODE:
         SvOK(class_name_sv) ? SvPV_nolen(class_name_sv) : NULL;
     const char *class_nickname =
         SvOK(class_nickname_sv) ? SvPV_nolen(class_nickname_sv) : NULL;
-    const char *micro_sym =
-        SvOK(micro_sym_sv) ? SvPV_nolen(micro_sym_sv) : NULL;
+    const char *name =
+        SvOK(name_sv) ? SvPV_nolen(name_sv) : NULL;
     CFCFunction *self
         = CFCFunction_new(parcel, exposure, class_name, class_nickname,
-                          micro_sym, return_type, param_list, docucomment,
+                          name, return_type, param_list, docucomment,
                           is_inline);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
@@ -814,12 +814,12 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Method
 
 SV*
-_new(parcel, exposure_sv, class_name_sv, class_nickname_sv, macro_sym, return_type, param_list, docucomment, is_final, is_abstract)
+_new(parcel, exposure_sv, class_name_sv, class_nickname_sv, name, return_type, param_list, docucomment, is_final, is_abstract)
     CFCParcel *parcel;
     SV *exposure_sv;
     SV *class_name_sv;
     SV *class_nickname_sv;
-    const char *macro_sym;
+    const char *name;
     CFCType *return_type;
     CFCParamList *param_list;
     CFCDocuComment *docucomment;
@@ -834,7 +834,7 @@ CODE:
         SvOK(class_nickname_sv) ? SvPV_nolen(class_nickname_sv) : NULL;
     CFCMethod *self
         = CFCMethod_new(parcel, exposure, class_name, class_nickname,
-                        macro_sym, return_type, param_list, docucomment,
+                        name, return_type, param_list, docucomment,
                         is_final, is_abstract);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
@@ -914,7 +914,6 @@ void
 _set_or_get(self, ...)
     CFCMethod *self;
 ALIAS:
-    get_macro_sym      = 2
     full_override_sym  = 10
     abstract           = 12
     novel              = 14
@@ -926,11 +925,6 @@ ALIAS:
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
-        case 2: {
-                const char *macro_sym = CFCMethod_get_macro_sym(self);
-                retval = newSVpvn(macro_sym, strlen(macro_sym));
-            }
-            break;
         case 10: {
                 const char *value = CFCMethod_full_override_sym(self);
                 retval = newSVpvn(value, strlen(value));
@@ -1284,12 +1278,12 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Symbol
 
 SV*
-_new(parcel, exposure, class_name_sv, class_nickname_sv, micro_sym_sv)
+_new(parcel, exposure, class_name_sv, class_nickname_sv, name_sv)
     CFCParcel *parcel;
     const char *exposure;
     SV *class_name_sv;
     SV *class_nickname_sv;
-    SV *micro_sym_sv;
+    SV *name_sv;
 CODE:
     const char *class_name     = SvOK(class_name_sv)
                                  ? SvPV_nolen(class_name_sv)
@@ -1297,12 +1291,12 @@ CODE:
     const char *class_nickname = SvOK(class_nickname_sv)
                                  ? SvPV_nolen(class_nickname_sv)
                                  : NULL;
-    const char *micro_sym   = SvOK(micro_sym_sv)
-                              ? SvPV_nolen(micro_sym_sv)
-                              : NULL;
+    const char *name           = SvOK(name_sv)
+                                 ? SvPV_nolen(name_sv)
+                                 : NULL;
     CFCSymbol *self
         = CFCSymbol_new(parcel, exposure, class_name, class_nickname,
-                        micro_sym);
+                        name);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
@@ -1323,7 +1317,7 @@ ALIAS:
     get_class_name     = 4
     get_class_nickname = 6
     get_exposure       = 8
-    micro_sym          = 10
+    get_name           = 10
     get_prefix         = 12
     get_Prefix         = 14
     get_PREFIX         = 16
@@ -1362,8 +1356,8 @@ PPCODE:
             }
             break;
         case 10: {
-                const char *micro_sym = CFCSymbol_micro_sym(self);
-                retval = newSVpvn(micro_sym, strlen(micro_sym));
+                const char *name = CFCSymbol_get_name(self);
+                retval = newSVpvn(name, strlen(name));
             }
             break;
         case 12: {
@@ -1782,12 +1776,12 @@ OUTPUT: RETVAL
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Model::Variable
 
 SV*
-_new(parcel, exposure, class_name_sv, class_nickname_sv, micro_sym_sv, type_sv, inert_sv)
+_new(parcel, exposure, class_name_sv, class_nickname_sv, name_sv, type_sv, inert_sv)
     CFCParcel *parcel;
     const char *exposure;
     SV *class_name_sv;
     SV *class_nickname_sv;
-    SV *micro_sym_sv;
+    SV *name_sv;
     SV *type_sv;
     SV *inert_sv;
 CODE:
@@ -1797,9 +1791,9 @@ CODE:
     const char *class_nickname = SvOK(class_nickname_sv)
                                  ? SvPV_nolen(class_nickname_sv)
                                  : NULL;
-    const char *micro_sym   = SvOK(micro_sym_sv)
-                              ? SvPV_nolen(micro_sym_sv)
-                              : NULL;
+    const char *name           = SvOK(name_sv)
+                                 ? SvPV_nolen(name_sv)
+                                 : NULL;
     int inert               = SvOK(inert_sv)
                               ? !!SvTRUE(inert_sv) : 0;
     CFCType *type = NULL;
@@ -1812,7 +1806,7 @@ CODE:
     }
     CFCVariable *self
         = CFCVariable_new(parcel, exposure, class_name, class_nickname,
-                          micro_sym, type, inert);
+                          name, type, inert);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL

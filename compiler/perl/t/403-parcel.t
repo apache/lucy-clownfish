@@ -102,9 +102,9 @@ $parcel->register;
 is( $parcel->get_version->get_vstring, 'v0', "get_version" );
 
 my $thing = Clownfish::CFC::Model::Symbol->new(
-    micro_sym => 'sym',
-    parcel    => 'Crustacean',
-    exposure  => 'parcel'
+    name     => 'sym',
+    parcel   => 'Crustacean',
+    exposure => 'parcel'
 );
 is( $thing->get_prefix, 'crust_', 'get_prefix with parcel' );
 is( $thing->get_Prefix, 'Crust_', 'get_Prefix with parcel' );

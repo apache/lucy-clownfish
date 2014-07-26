@@ -65,7 +65,7 @@ CFCPerlConstructor_init(CFCPerlConstructor *self, CFCClass *klass,
     CFCFunction **funcs = CFCClass_functions(klass);
     for (size_t i = 0; funcs[i] != NULL; i++) {
         CFCFunction *func = funcs[i];
-        const char *func_name = CFCFunction_micro_sym(func);
+        const char *func_name = CFCFunction_get_name(func);
         if (strcmp(initializer, func_name) == 0) {
             self->init_func = (CFCFunction*)CFCBase_incref((CFCBase*)func);
             break;
@@ -106,7 +106,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         CFCVariable *var = arg_vars[i];
         CFCType *type = CFCVariable_get_type(var);
         if (CFCType_is_object(type) && CFCType_decremented(type)) {
-            const char *name = CFCVariable_micro_sym(var);
+            const char *name = CFCVariable_get_name(var);
             refcount_mods
                 = CFCUtil_cat(refcount_mods, "\n    CFISH_INCREF(arg_", name,
                               ");", NULL);

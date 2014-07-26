@@ -29,7 +29,7 @@ sub new_type { $parser->parse(shift) }
 eval {
     my $death = Clownfish::CFC::Model::Variable->new(
         parcel    => $parcel,
-        micro_sym => 'foo',
+        name      => 'foo',
         type      => new_type('int'),
         extra_arg => undef,
     );
@@ -38,8 +38,8 @@ like( $@, qr/extra_arg/, "Extra arg kills constructor" );
 
 eval {
     my $death = Clownfish::CFC::Model::Variable->new(
-        parcel    => $parcel,
-        micro_sym => 'foo',
+        parcel => $parcel,
+        name   => 'foo',
     );
 };
 like( $@, qr/type/, "type is required" );
@@ -49,12 +49,12 @@ eval {
         type   => new_type('int32_t'),
     );
 };
-like( $@, qr/micro_sym/, "micro_sym is required" );
+like( $@, qr/name/, "name is required" );
 
 my $var = Clownfish::CFC::Model::Variable->new(
-    parcel    => $parcel,
-    micro_sym => 'foo',
-    type      => new_type('float*')
+    parcel => $parcel,
+    name   => 'foo',
+    type   => new_type('float*')
 );
 $var->resolve_type;
 is( $var->local_c,           'float* foo',  "local_c" );
@@ -62,9 +62,9 @@ is( $var->local_declaration, 'float* foo;', "declaration" );
 ok( $var->local, "default to local access" );
 
 $var = Clownfish::CFC::Model::Variable->new(
-    parcel    => $parcel,
-    micro_sym => 'foo',
-    type      => new_type('float[1]')
+    parcel => $parcel,
+    name   => 'foo',
+    type   => new_type('float[1]')
 );
 $var->resolve_type;
 is( $var->local_c, 'float foo[1]',
@@ -73,7 +73,7 @@ is( $var->local_c, 'float foo[1]',
 my $foo_class = $parser->parse("class Foo {}");
 $var = Clownfish::CFC::Model::Variable->new(
     parcel         => 'Neato',
-    micro_sym      => 'foo',
+    name           => 'foo',
     type           => new_type("Foo*"),
     class_name     => 'Crustacean::Lobster::LobsterClaw',
     class_nickname => 'LobClaw',

@@ -36,10 +36,10 @@ static const CFCMeta CFCSYMBOL_META = {
 CFCSymbol*
 CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
               const char *class_name, const char *class_nickname,
-              const char *micro_sym) {
+              const char *name) {
     CFCSymbol *self = (CFCSymbol*)CFCBase_allocate(&CFCSYMBOL_META);
     return CFCSymbol_init(self, parcel, exposure, class_name, class_nickname,
-                          micro_sym);
+                          name);
 }
 
 static int
@@ -122,7 +122,7 @@ S_validate_identifier(const char *identifier) {
 CFCSymbol*
 CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
                const char *exposure, const char *class_name,
-               const char *class_nickname, const char *micro_sym) {
+               const char *class_nickname, const char *name) {
     // Validate.
     CFCUTIL_NULL_CHECK(parcel);
     if (!S_validate_exposure(exposure)) {
@@ -133,9 +133,9 @@ CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid class_name: '%s'", class_name);
     }
-    if (!micro_sym || !S_validate_identifier(micro_sym)) {
+    if (!name || !S_validate_identifier(name)) {
         CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Invalid micro_sym: '%s'",  micro_sym ? micro_sym : "[NULL]");
+        CFCUtil_die("Invalid name: '%s'",  name ? name : "[NULL]");
     }
 
     // Derive class_nickname if necessary, then validate.
@@ -167,11 +167,11 @@ CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
     self->exposure       = CFCUtil_strdup(exposure);
     self->class_name     = CFCUtil_strdup(class_name);
     self->class_nickname = CFCUtil_strdup(real_nickname);
-    self->micro_sym      = CFCUtil_strdup(micro_sym);
+    self->name           = CFCUtil_strdup(name);
 
     // Derive short_sym and full_sym.
     char *nickname = self->class_nickname ? self->class_nickname : "";
-    self->short_sym = CFCUtil_sprintf("%s_%s", nickname, micro_sym);
+    self->short_sym = CFCUtil_sprintf("%s_%s", nickname, name);
     self->full_sym
         = CFCUtil_sprintf("%s%s", CFCParcel_get_prefix(self->parcel),
                           self->short_sym);
@@ -185,7 +185,7 @@ CFCSymbol_destroy(CFCSymbol *self) {
     FREEMEM(self->exposure);
     FREEMEM(self->class_name);
     FREEMEM(self->class_nickname);
-    FREEMEM(self->micro_sym);
+    FREEMEM(self->name);
     FREEMEM(self->short_sym);
     FREEMEM(self->full_sym);
     CFCBase_destroy((CFCBase*)self);
@@ -193,7 +193,7 @@ CFCSymbol_destroy(CFCSymbol *self) {
 
 int
 CFCSymbol_equals(CFCSymbol *self, CFCSymbol *other) {
-    if (strcmp(self->micro_sym, other->micro_sym) != 0) { return false; }
+    if (strcmp(self->name, other->name) != 0) { return false; }
     if (!CFCParcel_equals(self->parcel, other->parcel)) { return false; }
     if (strcmp(self->exposure, other->exposure) != 0) { return false; }
     if (self->class_name) {
@@ -259,8 +259,8 @@ CFCSymbol_get_exposure(CFCSymbol *self) {
 }
 
 const char*
-CFCSymbol_micro_sym(CFCSymbol *self) {
-    return self->micro_sym;
+CFCSymbol_get_name(CFCSymbol *self) {
+    return self->name;
 }
 
 const char*

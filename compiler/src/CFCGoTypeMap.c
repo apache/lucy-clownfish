@@ -190,7 +190,7 @@ CFCGoTypeMap_go_meth_receiever(const char *struct_name,
     size_t max_required = 2;
     if (param_list != NULL && CFCParamList_num_vars(param_list) > 0) {
         CFCVariable **vars = CFCParamList_get_variables(param_list);
-        const char *orig = CFCVariable_micro_sym(vars[0]);
+        const char *orig = CFCVariable_get_name(vars[0]);
         max_required = strlen(orig) + 1;
     }
     if (buf_len < max_required) {
@@ -211,7 +211,7 @@ CFCGoTypeMap_go_meth_receiever(const char *struct_name,
         CFCVariable **vars = CFCParamList_get_variables(param_list);
         size_t num_vars = CFCParamList_num_vars(param_list);
         for (int i = 1; i < num_vars; i++) {
-            const char *name = CFCVariable_micro_sym(vars[i]);
+            const char *name = CFCVariable_get_name(vars[i]);
             if (strcmp(name, buf) == 0) {
                 // Bah, a clash.  Use the original name, even though it's
                 // probably "self" which isn't good Go style.
@@ -230,7 +230,7 @@ CFCGoTypeMap_go_arg_name(CFCParamList *param_list, size_t tick, char *buf,
         CFCUtil_die("Index out of range: %d >= %d", (int)tick, (int)num_vars);
     }
     CFCVariable **vars = CFCParamList_get_variables(param_list);
-    const char *orig = CFCVariable_micro_sym(vars[tick]);
+    const char *orig = CFCVariable_get_name(vars[tick]);
     size_t max_required = strlen(orig) + 2;
     if (buf_len < max_required || buf_len < 5) {
         CFCUtil_die("Buffer length too short: %d", buf_len);

@@ -27,19 +27,19 @@ my $thing = Clownfish::CFC::Model::Variable->new(
     parcel     => 'Neato',
     class_name => 'Foo',
     type       => $parser->parse('Thing*'),
-    micro_sym  => 'thing',
+    name       => 'thing',
 );
 my $widget = Clownfish::CFC::Model::Variable->new(
     parcel     => 'Neato',
     class_name => 'Widget',
     type       => $parser->parse('Widget*'),
-    micro_sym  => 'widget',
+    name       => 'widget',
 );
 my $tread_water = Clownfish::CFC::Model::Function->new(
     parcel      => 'Neato',
     class_name  => 'Foo',
     return_type => $parser->parse('void'),
-    micro_sym   => 'tread_water',
+    name        => 'tread_water',
     param_list  => $parser->parse('()'),
 );
 my %foo_create_args = (
@@ -178,7 +178,7 @@ my $class_content
     = 'public class Foo::Foodie nickname Foodie inherits Foo { int num; }';
 my $class = $parser->parse($class_content);
 isa_ok( $class, "Clownfish::CFC::Model::Class", "class_declaration FooJr" );
-ok( ( scalar grep { $_->micro_sym eq 'num' } @{ $class->fresh_member_vars } ),
+ok( ( scalar grep { $_->get_name eq 'num' } @{ $class->fresh_member_vars } ),
     "parsed member var" );
 
 $class_content = q|
@@ -213,25 +213,25 @@ $class_content = q|
 
 $class = $parser->parse($class_content);
 isa_ok( $class, "Clownfish::CFC::Model::Class", "class_declaration Dog" );
-ok( ( scalar grep { $_->micro_sym eq 'num_dogs' } @{ $class->inert_vars } ),
+ok( ( scalar grep { $_->get_name eq 'num_dogs' } @{ $class->inert_vars } ),
     "parsed inert var" );
-ok( ( scalar grep { $_->micro_sym eq 'top_dog' } @{ $class->inert_vars } ),
+ok( ( scalar grep { $_->get_name eq 'top_dog' } @{ $class->inert_vars } ),
     "parsed public inert var" );
-ok( ( scalar grep { $_->micro_sym eq 'mom' } @{ $class->fresh_member_vars } ),
+ok( ( scalar grep { $_->get_name eq 'mom' } @{ $class->fresh_member_vars } ),
     "parsed member var" );
-ok( ( scalar grep { $_->micro_sym eq 'squishy' } @{ $class->fresh_member_vars } ),
+ok( ( scalar grep { $_->get_name eq 'squishy' } @{ $class->fresh_member_vars } ),
     "parsed member var" );
-ok( ( scalar grep { $_->micro_sym eq 'init' } @{ $class->functions } ),
+ok( ( scalar grep { $_->get_name eq 'init' } @{ $class->functions } ),
     "parsed function" );
-ok( ( scalar grep { $_->micro_sym eq 'destroy' } @{ $class->fresh_methods } ),
+ok( ( scalar grep { $_->get_name eq 'Destroy' } @{ $class->fresh_methods } ),
     "parsed parcel method" );
-ok( ( scalar grep { $_->micro_sym eq 'bury' } @{ $class->fresh_methods } ),
+ok( ( scalar grep { $_->get_name eq 'Bury' } @{ $class->fresh_methods } ),
     "parsed public method" );
-ok( ( scalar grep { $_->micro_sym eq 'scratch' } @{ $class->fresh_methods } ),
+ok( ( scalar grep { $_->get_name eq 'Scratch' } @{ $class->fresh_methods } ),
     "parsed public abstract nullable method" );
 
 for my $method ( @{ $class->fresh_methods } ) {
-    if ( $method->micro_sym eq 'scratch' ) {
+    if ( $method->get_name eq 'Scratch' ) {
         ok( $method->get_return_type->nullable,
             "public abstract incremented nullable flagged as nullable" );
     }

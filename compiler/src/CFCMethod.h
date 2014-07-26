@@ -45,7 +45,7 @@ struct CFCDocuComment;
  * if not supplied.
  * @param class_name See Clownfish::CFC::Model::Function.
  * @param class_nickname See Clownfish::CFC::Model::Function.
- * @param macro_sym - The mixed case name which will be used when invoking the
+ * @param name - The mixed case name which will be used when invoking the
  * method.
  * @param return_type See Clownfish::CFC::Model::Function.
  * @param param_list - A Clownfish::CFC::Model::ParamList.  The first element
@@ -57,7 +57,7 @@ struct CFCDocuComment;
 CFCMethod*
 CFCMethod_new(struct CFCParcel *parcel, const char *exposure,
               const char *class_name, const char *class_nickname,
-              const char *macro_sym, struct CFCType *return_type,
+              const char *name, struct CFCType *return_type,
               struct CFCParamList *param_list,
               struct CFCDocuComment *docucomment, int is_final,
               int is_abstract);
@@ -65,7 +65,7 @@ CFCMethod_new(struct CFCParcel *parcel, const char *exposure,
 CFCMethod*
 CFCMethod_init(CFCMethod *self, struct CFCParcel *parcel,
                const char *exposure, const char *class_name,
-               const char *class_nickname, const char *macro_sym,
+               const char *class_nickname, const char *name,
                struct CFCType *return_type, struct CFCParamList *param_list,
                struct CFCDocuComment *docucomment, int is_final,
                int is_abstract);
@@ -151,7 +151,7 @@ char*
 CFCMethod_full_offset_sym(CFCMethod *self, struct CFCClass *invoker);
 
 const char*
-CFCMethod_get_macro_sym(CFCMethod *self);
+CFCMethod_get_name(CFCMethod *self);
 
 /** Create the typedef symbol for this method, e.g "Claw_Pinch_t".
  * @param invoker Class for which the symbol is created. If invoker is NULL,

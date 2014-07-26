@@ -32,7 +32,7 @@ my %args = (
     class_name     => 'Neato::Foo',
     class_nickname => 'Foo',
     param_list     => $parser->parse('(int32_t some_num)'),
-    micro_sym      => 'return_an_obj',
+    name           => 'return_an_obj',
 );
 
 my $func = Clownfish::CFC::Model::Function->new(%args);
@@ -44,8 +44,8 @@ eval {
 };
 like( $@, qr/extra_arg/, "Extra arg kills constructor" );
 
-eval { Clownfish::CFC::Model::Function->new( %args, micro_sym => 'Uh_Oh' ); };
-like( $@, qr/Uh_Oh/, "invalid micro_sym kills constructor" );
+eval { Clownfish::CFC::Model::Function->new( %args, name => 'Uh_Oh' ); };
+like( $@, qr/Uh_Oh/, "invalid name kills constructor" );
 
 $parser->set_class_name("Neato::Obj");
 $parser->set_class_nickname("Obj");

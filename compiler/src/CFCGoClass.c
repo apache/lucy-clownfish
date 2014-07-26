@@ -207,7 +207,7 @@ CFCGoClass_go_typing(CFCGoClass *self) {
                 if (!CFCMethod_novel(method)) {
                     continue;
                 }
-                const char *sym = CFCMethod_get_macro_sym(method);
+                const char *sym = CFCMethod_get_name(method);
                 if (!CFCClass_fresh_method(self->client, sym)) {
                     continue;
                 }
@@ -289,7 +289,7 @@ S_lazy_init_method_bindings(CFCGoClass *self) {
         if (!CFCMethod_novel(method)) {
             continue;
         }
-        const char *sym = CFCMethod_get_macro_sym(method);
+        const char *sym = CFCMethod_get_name(method);
         if (!CFCClass_fresh_method(self->client, sym)) {
             continue;
         }
@@ -342,7 +342,7 @@ CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig) {
         for (int i = 0; self->method_bindings[i] != NULL; i++) {
             CFCGoMethod *candidate = self->method_bindings[i];
             CFCMethod *meth = CFCGoMethod_get_client(candidate);
-            if (meth && strcmp(name, CFCMethod_get_macro_sym(meth)) == 0) {
+            if (meth && strcmp(name, CFCMethod_get_name(meth)) == 0) {
                 binding = candidate;
                 break;
             }

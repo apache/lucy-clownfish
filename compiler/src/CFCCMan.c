@@ -179,8 +179,8 @@ S_man_create_functions(CFCClass *klass) {
             result = CFCUtil_cat(result, ".SH FUNCTIONS\n", NULL);
         }
 
-        const char *micro_sym = CFCFunction_micro_sym(func);
-        result = CFCUtil_cat(result, ".TP\n.B ", micro_sym, "\n", NULL);
+        const char *name = CFCFunction_get_name(func);
+        result = CFCUtil_cat(result, ".TP\n.B ", name, "\n", NULL);
 
         const char *full_func_sym = CFCFunction_full_func_sym(func);
         char *function_man = S_man_create_func(klass, func, full_func_sym);
@@ -250,8 +250,8 @@ S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
             continue;
         }
 
-        const char *macro_sym = CFCMethod_get_macro_sym(method);
-        result = CFCUtil_cat(result, ".TP\n.BR ", macro_sym, NULL);
+        const char *name = CFCMethod_get_name(method);
+        result = CFCUtil_cat(result, ".TP\n.BR ", name, NULL);
         if (CFCMethod_abstract(method)) {
             result = CFCUtil_cat(result, " \" (abstract)\"", NULL);
         }
@@ -295,11 +295,11 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
     // Get documentation, which may be inherited.
     CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
     if (!docucomment) {
-        const char *micro_sym = CFCFunction_micro_sym(func);
+        const char *name = CFCFunction_get_name(func);
         CFCClass *parent = klass;
         while (NULL != (parent = CFCClass_get_parent(parent))) {
             CFCFunction *parent_func
-                = (CFCFunction*)CFCClass_method(parent, micro_sym);
+                = (CFCFunction*)CFCClass_method(parent, name);
             if (!parent_func) { break; }
             docucomment = CFCFunction_get_docucomment(parent_func);
             if (docucomment) { break; }
@@ -357,7 +357,7 @@ S_man_create_param_list(CFCClass *klass, CFCFunction *func) {
     for (int i = 0; variables[i]; ++i) {
         CFCVariable *variable = variables[i];
         CFCType     *type     = CFCVariable_get_type(variable);
-        const char  *name     = CFCVariable_micro_sym(variable);
+        const char  *name     = CFCVariable_get_name(variable);
         char        *type_c;
 
         if (is_method && i == 0) {
