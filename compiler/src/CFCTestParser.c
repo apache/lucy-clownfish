@@ -262,7 +262,6 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCParser_set_class_name(parser, "Stuff::Obj");
-        CFCParser_set_class_nickname(parser, "Obj");
 
         const char *method_string =
             "public Foo* Spew_Foo(Obj *self, uint32_t *how_many);";

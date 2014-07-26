@@ -27,12 +27,11 @@ $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
 
 my %args = (
-    parcel         => 'Neato',
-    return_type    => $parser->parse('Obj*'),
-    class_name     => 'Neato::Foo',
-    class_nickname => 'Foo',
-    param_list     => $parser->parse('(int32_t some_num)'),
-    name           => 'return_an_obj',
+    parcel      => 'Neato',
+    return_type => $parser->parse('Obj*'),
+    class_name  => 'Neato::Foo',
+    param_list  => $parser->parse('(int32_t some_num)'),
+    name        => 'return_an_obj',
 );
 
 my $func = Clownfish::CFC::Model::Function->new(%args);
@@ -48,7 +47,6 @@ eval { Clownfish::CFC::Model::Function->new( %args, name => 'Uh_Oh' ); };
 like( $@, qr/Uh_Oh/, "invalid name kills constructor" );
 
 $parser->set_class_name("Neato::Obj");
-$parser->set_class_nickname("Obj");
 isa_ok(
     $parser->parse($_),
     "Clownfish::CFC::Model::Function",

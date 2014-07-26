@@ -43,9 +43,9 @@ S_run_tests(CFCTest *test) {
         CFCParamList *param_list
             = CFCTest_parse_param_list(test, parser, "(int32_t some_num)");
         CFCFunction *func
-            = CFCFunction_new(neato_parcel, NULL, "Neato::Foo", "Foo",
-                              "return_an_obj", return_type, param_list,
-                              NULL, 0);
+            = CFCFunction_new(neato_parcel, NULL, "Neato::Foo",
+                              "return_an_obj", return_type, param_list, NULL,
+                              0);
         OK(test, func != NULL, "new");
 
         CFCBase_decref((CFCBase*)return_type);
@@ -55,7 +55,6 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCParser_set_class_name(parser, "Neato::Obj");
-        CFCParser_set_class_nickname(parser, "Obj");
         static const char *func_strings[2] = {
             "inert int running_count(int biscuit);",
             "public inert Hash* init_fave_hash(int32_t num_buckets,"

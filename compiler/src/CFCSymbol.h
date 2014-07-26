@@ -40,7 +40,6 @@ struct CFCSymbol {
     struct CFCParcel *parcel;
     char *exposure;
     char *class_name;
-    char *class_nickname;
     char *name;
 };
 #endif
@@ -60,20 +59,15 @@ CFCSymbol_validate_class_name_component(const char *name);
  * components separated by "::".  Each component must start with a capital
  * letter, contain at least one lower-case letter, and consist entirely of the
  * characters [A-Za-z0-9].
- * @param class_nickname The C nickname associated with the supplied class
- * name.  If not supplied, will be derived if possible from C<class_name> by
- * extracting the last class name component.
  * @param name The local identifier for the symbol.
  */
 CFCSymbol*
 CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *class_nickname,
-              const char *name);
+              const char *class_name, const char *name);
 
 CFCSymbol*
 CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
-               const char *class_name, const char *class_nickname,
-               const char *name);
+               const char *class_name, const char *name);
 
 void
 CFCSymbol_destroy(CFCSymbol *self);
@@ -89,10 +83,6 @@ CFCSymbol_get_parcel(CFCSymbol *self);
 // May be NULL.
 const char*
 CFCSymbol_get_class_name(CFCSymbol *self);
-
-// May be NULL.
-const char*
-CFCSymbol_get_class_nickname(CFCSymbol *self);
 
 const char*
 CFCSymbol_get_exposure(CFCSymbol *self);

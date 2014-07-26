@@ -44,7 +44,9 @@ struct CFCFileSpec;
  * @param parcel See Clownfish::CFC::Model::Symbol.
  * @param exposure See Clownfish::CFC::Model::Symbol.
  * @param class_name See Clownfish::CFC::Model::Symbol.
- * @param nickname See Clownfish::CFC::Model::Symbol.
+ * @param class_nickname The C nickname associated with the supplied class
+ * name.  If not supplied, will be derived if possible from C<class_name> by
+ * extracting the last class name component.
  * @param name Defaults to "class".
  * @param docucomment An optional Clownfish::CFC::Model::DocuComment attached
  * to this class.

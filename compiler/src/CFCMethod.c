@@ -52,13 +52,12 @@ static const CFCMeta CFCMETHOD_META = {
 
 CFCMethod*
 CFCMethod_new(CFCParcel *parcel, const char *exposure, const char *class_name,
-              const char *class_nickname, const char *name,
-              CFCType *return_type, CFCParamList *param_list,
+              const char *name, CFCType *return_type, CFCParamList *param_list,
               CFCDocuComment *docucomment, int is_final, int is_abstract) {
     CFCMethod *self = (CFCMethod*)CFCBase_allocate(&CFCMETHOD_META);
-    return CFCMethod_init(self, parcel, exposure, class_name, class_nickname,
-                          name, return_type, param_list, docucomment,
-                          is_final, is_abstract);
+    return CFCMethod_init(self, parcel, exposure, class_name, name,
+                          return_type, param_list, docucomment, is_final,
+                          is_abstract);
 }
 
 static int
@@ -85,8 +84,7 @@ S_validate_meth_name(const char *meth_name) {
 
 CFCMethod*
 CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
-               const char *class_name, const char *class_nickname,
-               const char *name, CFCType *return_type,
+               const char *class_name, const char *name, CFCType *return_type,
                CFCParamList *param_list, CFCDocuComment *docucomment,
                int is_final, int is_abstract) {
     // Validate name.
@@ -97,9 +95,8 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
     }
 
     // Super-init.
-    CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name,
-                     class_nickname, name, return_type, param_list,
-                     docucomment);
+    CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name, name,
+                     return_type, param_list, docucomment);
 
     // Verify that the first element in the arg list is a self.
     CFCVariable **args = CFCParamList_get_variables(param_list);
@@ -231,11 +228,10 @@ CFCMethod_finalize(CFCMethod *self) {
     CFCParcel  *parcel         = CFCMethod_get_parcel(self);
     const char *exposure       = CFCMethod_get_exposure(self);
     const char *class_name     = CFCMethod_get_class_name(self);
-    const char *class_nickname = CFCMethod_get_class_nickname(self);
     const char *name           = CFCMethod_get_name(self);
     CFCMethod  *finalized
-        = CFCMethod_new(parcel, exposure, class_name, class_nickname,
-                        name, self->callable.return_type,
+        = CFCMethod_new(parcel, exposure, class_name, name,
+                        self->callable.return_type,
                         self->callable.param_list,
                         self->callable.docucomment, true,
                         self->is_abstract);
@@ -410,11 +406,6 @@ CFCMethod_get_exposure(CFCMethod *self) {
 const char*
 CFCMethod_get_class_name(CFCMethod *self) {
     return CFCSymbol_get_class_name((CFCSymbol*)self);
-}
-
-const char*
-CFCMethod_get_class_nickname(CFCMethod *self) {
-    return CFCSymbol_get_class_nickname((CFCSymbol*)self);;
 }
 
 int

@@ -50,26 +50,24 @@ S_generate_c_strings(CFCVariable *self);
 
 CFCVariable*
 CFCVariable_new(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_nickname,
-                const char *name, struct CFCType *type, int inert) {
+                const char *class_name, const char *name, struct CFCType *type,
+                int inert) {
     CFCVariable *self = (CFCVariable*)CFCBase_allocate(&CFCVARIABLE_META);
-    return CFCVariable_init(self, parcel, exposure, class_name, class_nickname,
-                            name, type, inert);
+    return CFCVariable_init(self, parcel, exposure, class_name, name, type,
+                            inert);
 }
 
 CFCVariable*
 CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
                  const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *name,
-                 struct CFCType *type, int inert) {
+                 const char *name, struct CFCType *type, int inert) {
     // Validate params.
     CFCUTIL_NULL_CHECK(type);
 
     // Default exposure to "local".
     const char *real_exposure = exposure ? exposure : "local";
 
-    CFCSymbol_init((CFCSymbol*)self, parcel, real_exposure, class_name,
-                   class_nickname, name);
+    CFCSymbol_init((CFCSymbol*)self, parcel, real_exposure, class_name, name);
 
     // Assign type, inert.
     self->type = (CFCType*)CFCBase_incref((CFCBase*)type);

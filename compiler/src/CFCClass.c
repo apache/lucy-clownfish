@@ -49,6 +49,7 @@ S_register(CFCClass *self);
 
 struct CFCClass {
     CFCSymbol symbol;
+    char *nickname;
     int tree_grown;
     CFCDocuComment *docucomment;
     struct CFCClass *parent;
@@ -114,6 +115,22 @@ CFCClass_create(struct CFCParcel *parcel, const char *exposure,
                               is_final, is_inert, is_abstract);
 }
 
+static int
+S_validate_nickname(const char *nickname) {
+    // Allow all caps.
+    const char *ptr;
+    for (ptr = nickname; ; ptr++) {
+        if (*ptr == 0) {
+            if (strlen(nickname)) { return true; }
+            else { break; }
+        }
+        else if (!isupper(*ptr)) { break; }
+    }
+
+    // Same as one component of a class name.
+    return CFCSymbol_validate_class_name_component(nickname);
+}
+
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    const char *exposure, const char *class_name,
@@ -124,16 +141,41 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     CFCUTIL_NULL_CHECK(class_name);
     exposure = exposure  ? exposure  : "parcel";
     name     = name ? name : "class";
-    CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name, nickname,
-                   name);
+
+    // Derive nickname if necessary, then validate.
+    const char *real_nickname = NULL;
+    if (class_name) {
+        if (nickname) {
+            real_nickname = nickname;
+        }
+        else {
+            const char *last_colon = strrchr(class_name, ':');
+            real_nickname = last_colon ? last_colon + 1 : class_name;
+        }
+    }
+    else if (nickname) {
+        // Sanity check nickname without class_name.
+        CFCBase_decref((CFCBase*)self);
+        CFCUtil_die("Can't supply nickname without class_name");
+    }
+    else {
+        real_nickname = NULL;
+    }
+    if (real_nickname && !S_validate_nickname(real_nickname)) {
+        CFCBase_decref((CFCBase*)self);
+        CFCUtil_die("Invalid nickname: '%s'", real_nickname);
+    }
+
+    CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name, name);
     if (!is_inert
         && !parent_class_name
         && strcmp(class_name, "Clownfish::Obj") != 0
        ) {
         parent_class_name = "Clownfish::Obj";
     }
-    self->parent     = NULL;
-    self->tree_grown = false;
+    self->nickname        = CFCUtil_strdup(real_nickname);
+    self->tree_grown      = false;
+    self->parent          = NULL;
     self->children        = (CFCClass**)CALLOCATE(1, sizeof(CFCClass*));
     self->num_kids        = 0;
     self->functions       = (CFCFunction**)CALLOCATE(1, sizeof(CFCFunction*));
@@ -231,6 +273,7 @@ S_free_cfcbase_array(CFCBase **array) {
 
 void
 CFCClass_destroy(CFCClass *self) {
+    FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->docucomment);
     CFCBase_decref((CFCBase*)self->parent);
     CFCBase_decref((CFCBase*)self->file_spec);
@@ -718,7 +761,7 @@ CFCClass_inert_vars(CFCClass *self) {
 
 const char*
 CFCClass_get_nickname(CFCClass *self) {
-    return CFCSymbol_get_class_nickname((CFCSymbol*)self);
+    return self->nickname;
 }
 
 void

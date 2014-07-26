@@ -118,7 +118,7 @@ S_run_parcel_tests(CFCTest *test) {
         STR_EQ(test, CFCVersion_get_vstring(CFCParcel_get_version(parcel)),
                "v0", "get_version");
 
-        CFCSymbol *thing = CFCSymbol_new(parcel, "parcel", NULL, NULL, "sym");
+        CFCSymbol *thing = CFCSymbol_new(parcel, "parcel", NULL, "sym");
         STR_EQ(test, CFCSymbol_get_prefix(thing), "crust_",
                "get_prefix with parcel");
         STR_EQ(test, CFCSymbol_get_Prefix(thing), "Crust_",

@@ -26,20 +26,18 @@ $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
 
 my %args = (
-    return_type    => $parser->parse('Obj*'),
-    class_name     => 'Neato::Foo',
-    class_nickname => 'Foo',
-    param_list     => $parser->parse('(Foo *self)'),
-    name           => 'Return_An_Obj',
-    parcel         => 'Neato',
+    return_type => $parser->parse('Obj*'),
+    class_name  => 'Neato::Foo',
+    param_list  => $parser->parse('(Foo *self)'),
+    name        => 'Return_An_Obj',
+    parcel      => 'Neato',
 );
 
 my $orig      = Clownfish::CFC::Model::Method->new(%args);
 my $overrider = Clownfish::CFC::Model::Method->new(
     %args,
-    param_list     => $parser->parse('(FooJr *self)'),
-    class_name     => 'Neato::Foo::FooJr',
-    class_nickname => 'FooJr'
+    param_list => $parser->parse('(FooJr *self)'),
+    class_name => 'Neato::Foo::FooJr',
 );
 $overrider->override($orig);
 ok( !$overrider->novel, "A Method which overrides another is not 'novel'" );

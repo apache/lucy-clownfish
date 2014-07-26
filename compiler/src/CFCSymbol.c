@@ -36,11 +36,9 @@ static const CFCMeta CFCSYMBOL_META = {
 
 CFCSymbol*
 CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *class_nickname,
-              const char *name) {
+              const char *class_name, const char *name) {
     CFCSymbol *self = (CFCSymbol*)CFCBase_allocate(&CFCSYMBOL_META);
-    return CFCSymbol_init(self, parcel, exposure, class_name, class_nickname,
-                          name);
+    return CFCSymbol_init(self, parcel, exposure, class_name, name);
 }
 
 static int
@@ -95,22 +93,6 @@ CFCSymbol_validate_class_name_component(const char *name) {
 }
 
 static int
-S_validate_class_nickname(const char *class_nickname) {
-    // Allow all caps.
-    const char *ptr;
-    for (ptr = class_nickname; ; ptr++) {
-        if (*ptr == 0) {
-            if (strlen(class_nickname)) { return true; }
-            else { break; }
-        }
-        else if (!isupper(*ptr)) { break; }
-    }
-
-    // Same as one component of a class name.
-    return CFCSymbol_validate_class_name_component(class_nickname);
-}
-
-static int
 S_validate_identifier(const char *identifier) {
     const char *ptr = identifier;
     if (!isalpha(*ptr) && *ptr != '_') { return false; }
@@ -121,9 +103,8 @@ S_validate_identifier(const char *identifier) {
 }
 
 CFCSymbol*
-CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
-               const char *exposure, const char *class_name,
-               const char *class_nickname, const char *name) {
+CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
+               const char *class_name, const char *name) {
     // Validate.
     CFCUTIL_NULL_CHECK(parcel);
     if (!S_validate_exposure(exposure)) {
@@ -139,35 +120,10 @@ CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
         CFCUtil_die("Invalid name: '%s'",  name ? name : "[NULL]");
     }
 
-    // Derive class_nickname if necessary, then validate.
-    const char *real_nickname = NULL;
-    if (class_name) {
-        if (class_nickname) {
-            real_nickname = class_nickname;
-        }
-        else {
-            const char *last_colon = strrchr(class_name, ':');
-            real_nickname = last_colon ? last_colon + 1 : class_name;
-        }
-    }
-    else if (class_nickname) {
-        // Sanity check class_nickname without class_name.
-        CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Can't supply class_nickname without class_name");
-    }
-    else {
-        real_nickname = NULL;
-    }
-    if (real_nickname && !S_validate_class_nickname(real_nickname)) {
-        CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Invalid class_nickname: '%s'", real_nickname);
-    }
-
     // Assign.
     self->parcel         = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
     self->exposure       = CFCUtil_strdup(exposure);
     self->class_name     = CFCUtil_strdup(class_name);
-    self->class_nickname = CFCUtil_strdup(real_nickname);
     self->name           = CFCUtil_strdup(name);
 
     return self;
@@ -178,7 +134,6 @@ CFCSymbol_destroy(CFCSymbol *self) {
     CFCBase_decref((CFCBase*)self->parcel);
     FREEMEM(self->exposure);
     FREEMEM(self->class_name);
-    FREEMEM(self->class_nickname);
     FREEMEM(self->name);
     CFCBase_destroy((CFCBase*)self);
 }
@@ -243,11 +198,6 @@ CFCSymbol_get_parcel(CFCSymbol *self) {
 const char*
 CFCSymbol_get_class_name(CFCSymbol *self) {
     return self->class_name;
-}
-
-const char*
-CFCSymbol_get_class_nickname(CFCSymbol *self) {
-    return self->class_nickname;
 }
 
 const char*

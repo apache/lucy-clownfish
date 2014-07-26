@@ -43,18 +43,16 @@ struct CFCType;
  * @param name The variable's name, without any namespacing prefixes.
  * @param exposure See Clownfish::CFC::Model::Symbol.
  * @param class_name See Clownfish::CFC::Model::Symbol.
- * @param class_nickname See Clownfish::CFC::Model::Symbol.
  */
 CFCVariable*
 CFCVariable_new(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_nickname,
-                const char *name, struct CFCType *type, int inert);
+                const char *class_name, const char *name, struct CFCType *type,
+                int inert);
 
 CFCVariable*
 CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
                  const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *name,
-                 struct CFCType *type, int inert);
+                 const char *name, struct CFCType *type, int inert);
 
 void
 CFCVariable_resolve_type(CFCVariable *self);

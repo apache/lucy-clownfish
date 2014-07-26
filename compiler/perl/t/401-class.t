@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 53;
+use Test::More tests => 54;
 use Clownfish::CFC::Model::Class;
 use Clownfish::CFC::Parser;
 
@@ -92,6 +92,8 @@ my $foo_jr = Clownfish::CFC::Model::Class->create(
 
 is( $foo_jr->get_struct_sym,  'FooJr',       "struct_sym" );
 is( $foo_jr->full_struct_sym, 'neato_FooJr', "full_struct_sym" );
+is( $foo_jr->get_nickname, "FooJr",
+    "derive class_nickname from class_name" );
 
 my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     source_dir  => '.',

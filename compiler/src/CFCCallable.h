@@ -48,7 +48,6 @@ struct CFCCallable {
  * L<Clownfish::CFC::Model::Symbol>).
  * @param class_name The full name of the class in whose namespace the
  * function resides.
- * @param class_nickname The C nickname for the class.
  * @param name The name of the callable, without any namespacing prefixes.
  * @param return_type A Clownfish::CFC::Model::Type representing the
  * callable's return type.
@@ -60,8 +59,8 @@ struct CFCCallable {
 CFCCallable*
 CFCCallable_init(CFCCallable *self, struct CFCParcel *parcel,
                  const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *name,
-                 struct CFCType *return_type, struct CFCParamList *param_list,
+                 const char *name, struct CFCType *return_type,
+                 struct CFCParamList *param_list,
                  struct CFCDocuComment *docucomment);
 
 void

@@ -32,7 +32,7 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_SYMBOL = {
     "Clownfish::CFC::Model::Symbol",
-    28,
+    27,
     S_run_tests
 };
 
@@ -52,7 +52,7 @@ S_run_tests(CFCTest *test) {
         };
         for (int i = 0; i < 4; ++i) {
             CFCSymbol *symbol
-                = CFCSymbol_new(parcel, exposures[i], NULL, NULL, "sym");
+                = CFCSymbol_new(parcel, exposures[i], NULL, "sym");
             for (int j = 0; j < 4; ++j) {
                 int has_exposure = accessors[j](symbol);
                 if (i == j) {
@@ -68,17 +68,14 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCSymbol *foo = CFCSymbol_new(parcel, "parcel", "Foo", NULL, "sym");
+        CFCSymbol *foo = CFCSymbol_new(parcel, "parcel", "Foo", "sym");
         CFCSymbol *foo_jr
-            = CFCSymbol_new(parcel, "parcel", "Foo::FooJr", NULL, "sym");
+            = CFCSymbol_new(parcel, "parcel", "Foo::FooJr", "sym");
 
         int equal = CFCSymbol_equals(foo, foo_jr);
         OK(test, !equal, "different class_name spoils equals");
         const char *foo_jr_name = CFCSymbol_get_class_name(foo_jr);
         STR_EQ(test, foo_jr_name, "Foo::FooJr", "get_class_name");
-        const char *foo_jr_nickname = CFCSymbol_get_class_nickname(foo_jr);
-        STR_EQ(test, foo_jr_nickname, "FooJr",
-               "derive class_nickname from class_name");
 
         CFCBase_decref((CFCBase*)foo);
         CFCBase_decref((CFCBase*)foo_jr);
@@ -86,9 +83,9 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCSymbol *public_exposure
-            = CFCSymbol_new(parcel, "public", NULL, NULL, "sym");
+            = CFCSymbol_new(parcel, "public", NULL, "sym");
         CFCSymbol *parcel_exposure
-            = CFCSymbol_new(parcel, "parcel", NULL, NULL, "sym");
+            = CFCSymbol_new(parcel, "parcel", NULL, "sym");
         int equal = CFCSymbol_equals(public_exposure, parcel_exposure);
         OK(test, !equal, "different exposure spoils equals");
         CFCBase_decref((CFCBase*)public_exposure);
@@ -100,7 +97,7 @@ S_run_tests(CFCTest *test) {
             = CFCParcel_new("Lucifer", NULL, NULL, NULL);
         CFCParcel_register(lucifer_parcel);
         CFCSymbol *lucifer
-            = CFCSymbol_new(lucifer_parcel, "parcel", NULL, NULL, "sym");
+            = CFCSymbol_new(lucifer_parcel, "parcel", NULL, "sym");
 
         CFCParcel *symbol_parcel = CFCSymbol_get_parcel(lucifer);
         OK(test, symbol_parcel == lucifer_parcel, "derive parcel");
@@ -114,7 +111,7 @@ S_run_tests(CFCTest *test) {
         CFCParcel *luser_parcel = CFCParcel_new("Luser", NULL, NULL, NULL);
         CFCParcel_register(luser_parcel);
         CFCSymbol *luser
-            = CFCSymbol_new(luser_parcel, "parcel", NULL, NULL, "sym");
+            = CFCSymbol_new(luser_parcel, "parcel", NULL, "sym");
         int equal = CFCSymbol_equals(lucifer, luser);
         OK(test, !equal, "different exposure spoils equals");
 
@@ -125,9 +122,9 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCSymbol *ooga = CFCSymbol_new(parcel, "parcel", NULL, NULL, "ooga");
+        CFCSymbol *ooga = CFCSymbol_new(parcel, "parcel", NULL, "ooga");
         CFCSymbol *booga
-            = CFCSymbol_new(parcel, "parcel", NULL, NULL, "booga");
+            = CFCSymbol_new(parcel, "parcel", NULL, "booga");
         int equal = CFCSymbol_equals(ooga, booga);
         OK(test, !equal, "different name spoils equals");
         CFCBase_decref((CFCBase*)ooga);
@@ -141,7 +138,7 @@ S_run_tests(CFCTest *test) {
             = CFCClass_create(eep_parcel, NULL, "Op::Ork", NULL, NULL, NULL,
                               NULL, NULL, false, false, false);
         CFCSymbol *eep
-            = CFCSymbol_new(eep_parcel, "parcel", "Op::Ork", NULL, "ah_ah");
+            = CFCSymbol_new(eep_parcel, "parcel", "Op::Ork", "ah_ah");
         char *short_sym = CFCSymbol_short_sym(eep, ork);
         STR_EQ(test, short_sym, "Ork_ah_ah", "short_sym");
         FREEMEM(short_sym);

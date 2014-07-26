@@ -49,7 +49,7 @@ S_run_tests(CFCTest *test) {
     {
         CFCType *type = CFCTest_parse_type(test, parser, "float*");
         CFCVariable *var
-            = CFCVariable_new(neato_parcel, NULL, NULL, NULL, "foo", type, 0);
+            = CFCVariable_new(neato_parcel, NULL, NULL, "foo", type, 0);
         CFCVariable_resolve_type(var);
         STR_EQ(test, CFCVariable_local_c(var), "float* foo", "local_c");
         STR_EQ(test, CFCVariable_local_declaration(var), "float* foo;",
@@ -63,7 +63,7 @@ S_run_tests(CFCTest *test) {
     {
         CFCType *type = CFCTest_parse_type(test, parser, "float[1]");
         CFCVariable *var
-            = CFCVariable_new(neato_parcel, NULL, NULL, NULL, "foo", type, 0);
+            = CFCVariable_new(neato_parcel, NULL, NULL, "foo", type, 0);
         CFCVariable_resolve_type(var);
         STR_EQ(test, CFCVariable_local_c(var), "float foo[1]",
                "to_c appends array to var name rather than type specifier");
@@ -76,8 +76,8 @@ S_run_tests(CFCTest *test) {
         CFCType *type = CFCTest_parse_type(test, parser, "Foo*");
         CFCVariable *var
             = CFCVariable_new(neato_parcel, NULL,
-                              "Crustacean::Lobster::LobsterClaw", "LobClaw",
-                              "foo", type, 0);
+                              "Crustacean::Lobster::LobsterClaw", "foo", type,
+                              0);
         CFCVariable_resolve_type(var);
         CFCClass *ork
             = CFCClass_create(neato_parcel, NULL,
