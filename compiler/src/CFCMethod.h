@@ -33,14 +33,12 @@ extern "C" {
 #endif
 
 typedef struct CFCMethod CFCMethod;
-struct CFCParcel;
 struct CFCType;
 struct CFCClass;
 struct CFCParamList;
 struct CFCDocuComment;
 
 /**
- * @param parcel See Clownfish::CFC::Model::Function.
  * @param exposure See Clownfish::CFC::Model::Symbol.  Defaults to "parcel"
  * if not supplied.
  * @param class_name See Clownfish::CFC::Model::Function.
@@ -54,16 +52,15 @@ struct CFCDocuComment;
  * @param is_abstract - Indicate whether the method is abstract.
  */
 CFCMethod*
-CFCMethod_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *name,
+CFCMethod_new(const char *exposure, const char *class_name, const char *name,
               struct CFCType *return_type, struct CFCParamList *param_list,
               struct CFCDocuComment *docucomment, int is_final,
               int is_abstract);
 
 CFCMethod*
-CFCMethod_init(CFCMethod *self, struct CFCParcel *parcel,
-               const char *exposure, const char *class_name, const char *name,
-               struct CFCType *return_type, struct CFCParamList *param_list,
+CFCMethod_init(CFCMethod *self, const char *exposure, const char *class_name,
+               const char *name, struct CFCType *return_type,
+               struct CFCParamList *param_list,
                struct CFCDocuComment *docucomment, int is_final,
                int is_abstract);
 
@@ -204,18 +201,6 @@ CFCMethod_exclude_from_host(CFCMethod *self);
 
 int
 CFCMethod_excluded_from_host(CFCMethod *self);
-
-struct CFCParcel*
-CFCMethod_get_parcel(CFCMethod *self);
-
-const char*
-CFCMethod_get_prefix(CFCMethod *self);
-
-const char*
-CFCMethod_get_Prefix(CFCMethod *self);
-
-const char*
-CFCMethod_get_PREFIX(CFCMethod *self);
 
 const char*
 CFCMethod_get_exposure(CFCMethod *self);

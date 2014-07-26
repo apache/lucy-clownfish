@@ -41,7 +41,7 @@ struct CFCFileSpec;
 /** Create and register a quasi-singleton.  May only be called once for each
  * unique parcel/class_name combination.
  *
- * @param parcel See Clownfish::CFC::Model::Symbol.
+ * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param exposure See Clownfish::CFC::Model::Symbol.
  * @param class_name See Clownfish::CFC::Model::Symbol.
  * @param class_nickname The C nickname associated with the supplied class

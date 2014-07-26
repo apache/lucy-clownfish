@@ -35,10 +35,9 @@ static const CFCMeta CFCSYMBOL_META = {
 };
 
 CFCSymbol*
-CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *name) {
+CFCSymbol_new(const char *exposure, const char *class_name, const char *name) {
     CFCSymbol *self = (CFCSymbol*)CFCBase_allocate(&CFCSYMBOL_META);
-    return CFCSymbol_init(self, parcel, exposure, class_name, name);
+    return CFCSymbol_init(self, exposure, class_name, name);
 }
 
 static int
@@ -103,10 +102,9 @@ S_validate_identifier(const char *identifier) {
 }
 
 CFCSymbol*
-CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
-               const char *class_name, const char *name) {
+CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *class_name,
+               const char *name) {
     // Validate.
-    CFCUTIL_NULL_CHECK(parcel);
     if (!S_validate_exposure(exposure)) {
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid exposure: '%s'", exposure ? exposure : "[NULL]");
@@ -121,7 +119,6 @@ CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
     }
 
     // Assign.
-    self->parcel         = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
     self->exposure       = CFCUtil_strdup(exposure);
     self->class_name     = CFCUtil_strdup(class_name);
     self->name           = CFCUtil_strdup(name);
@@ -131,7 +128,6 @@ CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
 
 void
 CFCSymbol_destroy(CFCSymbol *self) {
-    CFCBase_decref((CFCBase*)self->parcel);
     FREEMEM(self->exposure);
     FREEMEM(self->class_name);
     FREEMEM(self->name);
@@ -141,7 +137,6 @@ CFCSymbol_destroy(CFCSymbol *self) {
 int
 CFCSymbol_equals(CFCSymbol *self, CFCSymbol *other) {
     if (strcmp(self->name, other->name) != 0) { return false; }
-    if (!CFCParcel_equals(self->parcel, other->parcel)) { return false; }
     if (strcmp(self->exposure, other->exposure) != 0) { return false; }
     if (self->class_name) {
         if (!other->class_name) { return false; }
@@ -190,11 +185,6 @@ CFCSymbol_short_sym(CFCSymbol *self, CFCClass *klass) {
     return short_sym;
 }
 
-struct CFCParcel*
-CFCSymbol_get_parcel(CFCSymbol *self) {
-    return self->parcel;
-}
-
 const char*
 CFCSymbol_get_class_name(CFCSymbol *self) {
     return self->class_name;
@@ -208,20 +198,5 @@ CFCSymbol_get_exposure(CFCSymbol *self) {
 const char*
 CFCSymbol_get_name(CFCSymbol *self) {
     return self->name;
-}
-
-const char*
-CFCSymbol_get_prefix(CFCSymbol *self) {
-    return CFCParcel_get_prefix(self->parcel);
-}
-
-const char*
-CFCSymbol_get_Prefix(CFCSymbol *self) {
-    return CFCParcel_get_Prefix(self->parcel);
-}
-
-const char*
-CFCSymbol_get_PREFIX(CFCSymbol *self) {
-    return CFCParcel_get_PREFIX(self->parcel);
 }
 

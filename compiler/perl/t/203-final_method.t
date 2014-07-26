@@ -29,7 +29,6 @@ my %args = (
     class_name  => 'Neato::Foo',
     param_list  => $parser->parse('(Foo* self)'),
     name        => 'Return_An_Obj',
-    parcel      => 'Neato',
 );
 
 my $not_final_method = Clownfish::CFC::Model::Method->new(%args);

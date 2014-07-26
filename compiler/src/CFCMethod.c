@@ -25,7 +25,6 @@
 #include "CFCClass.h"
 #include "CFCUtil.h"
 #include "CFCParamList.h"
-#include "CFCParcel.h"
 #include "CFCDocuComment.h"
 #include "CFCVariable.h"
 
@@ -51,13 +50,12 @@ static const CFCMeta CFCMETHOD_META = {
 };
 
 CFCMethod*
-CFCMethod_new(CFCParcel *parcel, const char *exposure, const char *class_name,
-              const char *name, CFCType *return_type, CFCParamList *param_list,
+CFCMethod_new(const char *exposure, const char *class_name, const char *name,
+              CFCType *return_type, CFCParamList *param_list,
               CFCDocuComment *docucomment, int is_final, int is_abstract) {
     CFCMethod *self = (CFCMethod*)CFCBase_allocate(&CFCMETHOD_META);
-    return CFCMethod_init(self, parcel, exposure, class_name, name,
-                          return_type, param_list, docucomment, is_final,
-                          is_abstract);
+    return CFCMethod_init(self, exposure, class_name, name, return_type,
+                          param_list, docucomment, is_final, is_abstract);
 }
 
 static int
@@ -83,8 +81,8 @@ S_validate_meth_name(const char *meth_name) {
 }
 
 CFCMethod*
-CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
-               const char *class_name, const char *name, CFCType *return_type,
+CFCMethod_init(CFCMethod *self, const char *exposure, const char *class_name,
+               const char *name, CFCType *return_type,
                CFCParamList *param_list, CFCDocuComment *docucomment,
                int is_final, int is_abstract) {
     // Validate name.
@@ -95,21 +93,20 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
     }
 
     // Super-init.
-    CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name, name,
+    CFCCallable_init((CFCCallable*)self, exposure, class_name, name,
                      return_type, param_list, docucomment);
 
     // Verify that the first element in the arg list is a self.
     CFCVariable **args = CFCParamList_get_variables(param_list);
     if (!args[0]) { CFCUtil_die("Missing 'self' argument"); }
     CFCType *type = CFCVariable_get_type(args[0]);
-    const char *specifier = CFCType_get_specifier(type);
-    const char *prefix    = CFCMethod_get_prefix(self);
+    const char *specifier  = CFCType_get_specifier(type);
     const char *last_colon = strrchr(class_name, ':');
     const char *struct_sym = last_colon ? last_colon + 1 : class_name;
     if (strcmp(specifier, struct_sym) != 0) {
-        char *wanted = CFCUtil_sprintf("%s%s", prefix, struct_sym);
-        int mismatch = strcmp(wanted, specifier);
-        FREEMEM(wanted);
+        const char *first_underscore = strchr(specifier, '_');
+        int mismatch = !first_underscore
+                       || strcmp(first_underscore + 1, struct_sym) != 0;
         if (mismatch) {
             CFCUtil_die("First arg type doesn't match class: '%s' '%s'",
                         class_name, specifier);
@@ -225,12 +222,11 @@ CFCMethod_override(CFCMethod *self, CFCMethod *orig) {
 
 CFCMethod*
 CFCMethod_finalize(CFCMethod *self) {
-    CFCParcel  *parcel         = CFCMethod_get_parcel(self);
-    const char *exposure       = CFCMethod_get_exposure(self);
-    const char *class_name     = CFCMethod_get_class_name(self);
-    const char *name           = CFCMethod_get_name(self);
+    const char *exposure   = CFCMethod_get_exposure(self);
+    const char *class_name = CFCMethod_get_class_name(self);
+    const char *name       = CFCMethod_get_name(self);
     CFCMethod  *finalized
-        = CFCMethod_new(parcel, exposure, class_name, name,
+        = CFCMethod_new(exposure, class_name, name,
                         self->callable.return_type,
                         self->callable.param_list,
                         self->callable.docucomment, true,
@@ -376,26 +372,6 @@ CFCType*
 CFCMethod_self_type(CFCMethod *self) {
     CFCVariable **vars = CFCParamList_get_variables(self->callable.param_list);
     return CFCVariable_get_type(vars[0]);
-}
-
-CFCParcel*
-CFCMethod_get_parcel(CFCMethod *self) {
-    return CFCSymbol_get_parcel((CFCSymbol*)self);
-}
-
-const char*
-CFCMethod_get_prefix(CFCMethod *self) {
-    return CFCSymbol_get_prefix((CFCSymbol*)self);
-}
-
-const char*
-CFCMethod_get_Prefix(CFCMethod *self) {
-    return CFCSymbol_get_Prefix((CFCSymbol*)self);
-}
-
-const char*
-CFCMethod_get_PREFIX(CFCMethod *self) {
-    return CFCSymbol_get_PREFIX((CFCSymbol*)self);
 }
 
 const char*

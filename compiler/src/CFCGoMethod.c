@@ -85,13 +85,13 @@ CFCGoMethod_customize(CFCGoMethod *self, const char *sig) {
 }
 
 static void
-S_lazy_init_sig(CFCGoMethod *self) {
+S_lazy_init_sig(CFCGoMethod *self, CFCClass *invoker) {
     if (self->sig || !self->method) {
         return;
     }
 
     CFCMethod *method = self->method;
-    CFCParcel *parcel = CFCMethod_get_parcel(method);
+    CFCParcel *parcel = CFCClass_get_parcel(invoker);
     CFCType *return_type = CFCMethod_get_return_type(method);
     char *name = CFCGoFunc_go_meth_name(CFCMethod_get_name(method));
     char *go_ret_type = CFCType_is_void(return_type)
@@ -120,7 +120,7 @@ S_lazy_init_sig(CFCGoMethod *self) {
 }
 
 const char*
-CFCGoMethod_get_sig(CFCGoMethod *self) {
+CFCGoMethod_get_sig(CFCGoMethod *self, CFCClass *invoker) {
     if (self->sig) {
         return self->sig;
     }
@@ -128,7 +128,7 @@ CFCGoMethod_get_sig(CFCGoMethod *self) {
         return "";
     }
     else {
-        S_lazy_init_sig(self);
+        S_lazy_init_sig(self, invoker);
         return self->sig;
     }
 }

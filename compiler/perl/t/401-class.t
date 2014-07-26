@@ -24,19 +24,16 @@ my $parser = Clownfish::CFC::Parser->new;
 $parser->parse('parcel Neato;');
 
 my $thing = Clownfish::CFC::Model::Variable->new(
-    parcel     => 'Neato',
     class_name => 'Foo',
     type       => $parser->parse('Thing*'),
     name       => 'thing',
 );
 my $widget = Clownfish::CFC::Model::Variable->new(
-    parcel     => 'Neato',
     class_name => 'Widget',
     type       => $parser->parse('Widget*'),
     name       => 'widget',
 );
 my $tread_water = Clownfish::CFC::Model::Function->new(
-    parcel      => 'Neato',
     class_name  => 'Foo',
     return_type => $parser->parse('void'),
     name        => 'tread_water',

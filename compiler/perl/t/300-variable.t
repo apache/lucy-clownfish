@@ -28,7 +28,6 @@ sub new_type { $parser->parse(shift) }
 
 eval {
     my $death = Clownfish::CFC::Model::Variable->new(
-        parcel    => $parcel,
         name      => 'foo',
         type      => new_type('int'),
         extra_arg => undef,
@@ -37,24 +36,19 @@ eval {
 like( $@, qr/extra_arg/, "Extra arg kills constructor" );
 
 eval {
-    my $death = Clownfish::CFC::Model::Variable->new(
-        parcel => $parcel,
-        name   => 'foo',
-    );
+    my $death = Clownfish::CFC::Model::Variable->new( name => 'foo' );
 };
 like( $@, qr/type/, "type is required" );
 eval {
     my $death = Clownfish::CFC::Model::Variable->new(
-        parcel => $parcel,
-        type   => new_type('int32_t'),
+        type => new_type('int32_t'),
     );
 };
 like( $@, qr/name/, "name is required" );
 
 my $var = Clownfish::CFC::Model::Variable->new(
-    parcel => $parcel,
-    name   => 'foo',
-    type   => new_type('float*')
+    name => 'foo',
+    type => new_type('float*'),
 );
 $var->resolve_type;
 is( $var->local_c,           'float* foo',  "local_c" );
@@ -62,9 +56,8 @@ is( $var->local_declaration, 'float* foo;', "declaration" );
 ok( $var->local, "default to local access" );
 
 $var = Clownfish::CFC::Model::Variable->new(
-    parcel => $parcel,
-    name   => 'foo',
-    type   => new_type('float[1]')
+    name => 'foo',
+    type => new_type('float[1]'),
 );
 $var->resolve_type;
 is( $var->local_c, 'float foo[1]',
@@ -75,7 +68,6 @@ my $lobclaw_class = $parser->parse(
     "class Crustacean::Lobster::LobsterClaw nickname LobClaw {}",
 );
 $var = Clownfish::CFC::Model::Variable->new(
-    parcel     => 'Neato',
     name       => 'foo',
     type       => new_type("Foo*"),
     class_name => 'Crustacean::Lobster::LobsterClaw',

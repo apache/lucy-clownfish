@@ -30,7 +30,6 @@ my %args = (
     class_name  => 'Neato::Foo',
     param_list  => $parser->parse('(Foo *self)'),
     name        => 'Return_An_Obj',
-    parcel      => 'Neato',
 );
 
 my $orig      = Clownfish::CFC::Model::Method->new(%args);

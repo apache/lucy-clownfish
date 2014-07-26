@@ -49,6 +49,7 @@ S_register(CFCClass *self);
 
 struct CFCClass {
     CFCSymbol symbol;
+    struct CFCParcel *parcel;
     char *nickname;
     int tree_grown;
     CFCDocuComment *docucomment;
@@ -138,6 +139,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    CFCDocuComment *docucomment, CFCFileSpec *file_spec,
                    const char *parent_class_name, int is_final, int is_inert,
                    int is_abstract) {
+    CFCUTIL_NULL_CHECK(parcel);
     CFCUTIL_NULL_CHECK(class_name);
     exposure = exposure  ? exposure  : "parcel";
     name     = name ? name : "class";
@@ -166,13 +168,14 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
         CFCUtil_die("Invalid nickname: '%s'", real_nickname);
     }
 
-    CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name, name);
+    CFCSymbol_init((CFCSymbol*)self, exposure, class_name, name);
     if (!is_inert
         && !parent_class_name
         && strcmp(class_name, "Clownfish::Obj") != 0
        ) {
         parent_class_name = "Clownfish::Obj";
     }
+    self->parcel          = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
     self->nickname        = CFCUtil_strdup(real_nickname);
     self->tree_grown      = false;
     self->parent          = NULL;
@@ -273,6 +276,7 @@ S_free_cfcbase_array(CFCBase **array) {
 
 void
 CFCClass_destroy(CFCClass *self) {
+    CFCBase_decref((CFCBase*)self->parcel);
     FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->docucomment);
     CFCBase_decref((CFCBase*)self->parent);
@@ -875,17 +879,17 @@ CFCClass_get_docucomment(CFCClass *self) {
 
 const char*
 CFCClass_get_prefix(CFCClass *self) {
-    return CFCSymbol_get_prefix((CFCSymbol*)self);
+    return CFCParcel_get_prefix(self->parcel);
 }
 
 const char*
 CFCClass_get_Prefix(CFCClass *self) {
-    return CFCSymbol_get_Prefix((CFCSymbol*)self);
+    return CFCParcel_get_Prefix(self->parcel);
 }
 
 const char*
 CFCClass_get_PREFIX(CFCClass *self) {
-    return CFCSymbol_get_PREFIX((CFCSymbol*)self);
+    return CFCParcel_get_PREFIX(self->parcel);
 }
 
 const char*
@@ -895,6 +899,6 @@ CFCClass_get_class_name(CFCClass *self) {
 
 CFCParcel*
 CFCClass_get_parcel(CFCClass *self) {
-    return CFCSymbol_get_parcel((CFCSymbol*)self);
+    return self->parcel;
 }
 

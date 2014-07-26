@@ -27,7 +27,6 @@ $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
 
 my %args = (
-    parcel      => 'Neato',
     return_type => $parser->parse('Obj*'),
     class_name  => 'Neato::Foo',
     param_list  => $parser->parse('(int32_t some_num)'),

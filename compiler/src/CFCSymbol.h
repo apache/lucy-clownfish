@@ -37,7 +37,6 @@ struct CFCParcel;
 #include "CFCBase.h"
 struct CFCSymbol {
     CFCBase base;
-    struct CFCParcel *parcel;
     char *exposure;
     char *class_name;
     char *name;
@@ -52,7 +51,6 @@ int
 CFCSymbol_validate_class_name_component(const char *name);
 
 /**
- * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param exposure The scope in which the symbol is exposed.  Must be
  * 'public', 'parcel', 'private', or 'local'.
  * @param class_name A optional class name, consisting of one or more
@@ -62,12 +60,11 @@ CFCSymbol_validate_class_name_component(const char *name);
  * @param name The local identifier for the symbol.
  */
 CFCSymbol*
-CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *name);
+CFCSymbol_new(const char *exposure, const char *class_name, const char *name);
 
 CFCSymbol*
-CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
-               const char *class_name, const char *name);
+CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *class_name,
+               const char *name);
 
 void
 CFCSymbol_destroy(CFCSymbol *self);
@@ -76,9 +73,6 @@ CFCSymbol_destroy(CFCSymbol *self);
  */
 int
 CFCSymbol_equals(CFCSymbol *self, CFCSymbol *other);
-
-struct CFCParcel*
-CFCSymbol_get_parcel(CFCSymbol *self);
 
 // May be NULL.
 const char*
@@ -123,21 +117,6 @@ CFCSymbol_short_sym(CFCSymbol *self, struct CFCClass *klass);
  */
 char*
 CFCSymbol_full_sym(CFCSymbol *self, struct CFCClass *klass);
-
-/** Get the Symbol's all-lowercase prefix, delegating to `parcel`.
- */
-const char*
-CFCSymbol_get_prefix(CFCSymbol *self);
-
-/** Get the Symbol's Titlecase prefix, delegating to `parcel`.
- */
-const char*
-CFCSymbol_get_Prefix(CFCSymbol *self);
-
-/** Get the Symbol's all-uppercase prefix, delegating to `parcel`.
- */
-const char*
-CFCSymbol_get_PREFIX(CFCSymbol *self);
 
 #ifdef __cplusplus
 }

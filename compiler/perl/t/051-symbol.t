@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 39;
+use Test::More tests => 34;
 use Clownfish::CFC;
 
 my $parcel = Clownfish::CFC::Model::Parcel->new( name => 'Eep' );
@@ -48,16 +48,6 @@ ok( !$public_exposure->equals($parcel_exposure),
     "different exposure spoils equals"
 );
 
-my $lucifer_parcel = Clownfish::CFC::Model::Parcel->new( name => 'Lucifer' );
-$lucifer_parcel->register;
-my $lucifer = new_symbol( parcel => 'Lucifer' );
-ok( $$lucifer_parcel == ${ $lucifer->get_parcel }, "derive parcel" );
-is( $lucifer->get_prefix, "lucifer_", "get_prefix" );
-is( $lucifer->get_Prefix, "Lucifer_", "get_Prefix" );
-is( $lucifer->get_PREFIX, "LUCIFER_", "get_PREFIX" );
-my $luser = new_symbol( parcel => 'Luser' );
-ok( !$lucifer->equals($luser), "different parcel spoils equals" );
-
 for ( qw( 1foo * 0 ), "\x{263a}" ) {
     eval { my $thing = new_symbol( name => $_ ); };
     like( $@, qr/name/, "reject bad name" );
@@ -68,7 +58,6 @@ my $booga = new_symbol( name => 'booga' );
 ok( !$ooga->equals($booga), "Different name spoils equals()" );
 
 my $eep = new_symbol(
-    parcel     => 'Eep',
     class_name => "Op::Ork",
     name       => 'ah_ah',
 );
@@ -81,9 +70,8 @@ is( $eep->full_sym($ork),  "eep_Ork_ah_ah", "full_sym" );
 
 sub new_symbol {
     return Clownfish::CFC::Model::Symbol->new(
-        parcel    => $parcel,
-        name      => 'sym',
-        exposure  => 'parcel',
+        name     => 'sym',
+        exposure => 'parcel',
         @_
     );
 }

@@ -219,7 +219,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         param_list  => undef,
         name        => undef,
         docucomment => undef,
-        parcel      => undef,
         inline      => undef,
         exposure    => undef,
     );
@@ -229,12 +228,10 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
         verify_args( \%new_PARAMS, %args ) or confess $@;
         $args{inline} ||= 0;
-        $args{parcel}
-            = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
             @args{
-                qw( parcel exposure class_name name return_type param_list
-                    docucomment inline )
+                qw( exposure class_name name return_type param_list docucomment
+                    inline )
                 }
         );
     }
@@ -303,7 +300,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         param_list  => undef,
         name        => undef,
         docucomment => undef,
-        parcel      => undef,
         abstract    => undef,
         final       => undef,
         exposure    => 'parcel',
@@ -314,13 +310,11 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         verify_args( \%new_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
         $args{abstract} ||= 0;
-        $args{parcel}
-            = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
-        $args{final} ||= 0;
+        $args{final}    ||= 0;
         return _new(
             @args{
-                qw( parcel exposure class_name name return_type param_list
-                    docucomment final abstract )
+                qw( exposure class_name name return_type param_list docucomment
+                    final abstract )
                 }
         );
     }
@@ -452,7 +446,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
     use Carp;
 
     my %new_PARAMS = (
-        parcel     => undef,
         exposure   => undef,
         class_name => undef,
         name       => undef,
@@ -462,10 +455,8 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         my ( $either, %args ) = @_;
         verify_args( \%new_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
-        $args{parcel}
-            = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
-            @args{qw( parcel exposure class_name name )} );
+            @args{qw( exposure class_name name )} );
     }
 }
 
@@ -635,7 +626,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
     our %new_PARAMS = (
         type       => undef,
         name       => undef,
-        parcel     => undef,
         exposure   => 'local',
         class_name => undef,
         inert      => undef,
@@ -646,11 +636,9 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
         verify_args( \%new_PARAMS, %args ) or confess $@;
         $args{exposure} ||= 'local';
-        $args{parcel}
-            = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _new(
             @args{
-                qw( parcel exposure class_name name type inert )
+                qw( exposure class_name name type inert )
                 }
         );
     }

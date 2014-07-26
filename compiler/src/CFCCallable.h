@@ -25,7 +25,6 @@ extern "C" {
 #endif
 
 typedef struct CFCCallable CFCCallable;
-struct CFCParcel;
 struct CFCType;
 struct CFCDocuComment;
 struct CFCParamList;
@@ -43,7 +42,6 @@ struct CFCCallable {
 #endif
 
 /**
- * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param exposure The callable's exposure (see
  * L<Clownfish::CFC::Model::Symbol>).
  * @param class_name The full name of the class in whose namespace the
@@ -57,10 +55,9 @@ struct CFCCallable {
  * callable.
  */
 CFCCallable*
-CFCCallable_init(CFCCallable *self, struct CFCParcel *parcel,
-                 const char *exposure, const char *class_name,
-                 const char *name, struct CFCType *return_type,
-                 struct CFCParamList *param_list,
+CFCCallable_init(CFCCallable *self, const char *exposure,
+                 const char *class_name, const char *name,
+                 struct CFCType *return_type, struct CFCParamList *param_list,
                  struct CFCDocuComment *docucomment);
 
 void

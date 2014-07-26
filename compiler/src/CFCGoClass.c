@@ -213,7 +213,7 @@ CFCGoClass_go_typing(CFCGoClass *self) {
                 }
             }
 
-            const char *sig = CFCGoMethod_get_sig(meth_binding);
+            const char *sig = CFCGoMethod_get_sig(meth_binding, self->client);
             novel_iface = CFCUtil_cat(novel_iface, "\t", sig, "\n", NULL);
         }
 

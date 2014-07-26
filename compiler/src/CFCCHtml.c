@@ -489,6 +489,7 @@ S_html_create_description(CFCClass *klass) {
 static char*
 S_html_create_functions(CFCClass *klass) {
     CFCFunction **functions = CFCClass_functions(klass);
+    const char   *prefix    = CFCClass_get_prefix(klass);
     char         *result    = CFCUtil_strdup("");
 
     for (int func_num = 0; functions[func_num] != NULL; func_num++) {
@@ -502,9 +503,6 @@ S_html_create_functions(CFCClass *klass) {
         const char *name = CFCFunction_get_name(func);
         result = CFCUtil_cat(result, "<dt id=\"func_", name, "\">",
                              name, "</dt>\n", NULL);
-
-        CFCParcel  *parcel    = CFCSymbol_get_parcel((CFCSymbol*)func);
-        const char *prefix    = CFCParcel_get_prefix(parcel);
 
         char *short_sym = CFCFunction_short_func_sym(func, klass);
         char *func_html = S_html_create_func(klass, func, prefix, short_sym);
@@ -565,6 +563,7 @@ S_html_create_methods(CFCClass *klass) {
 static char*
 S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
     CFCMethod  **fresh_methods = CFCClass_fresh_methods(klass);
+    const char  *prefix        = CFCClass_get_prefix(klass);
     const char  *ancestor_name = CFCClass_get_class_name(ancestor);
     char        *result        = CFCUtil_strdup("");
 
@@ -594,8 +593,6 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
         }
         result = CFCUtil_cat(result, "</dt>\n", NULL);
 
-        CFCParcel  *parcel    = CFCSymbol_get_parcel((CFCSymbol*)method);
-        const char *prefix    = CFCParcel_get_PREFIX(parcel);
         char       *short_sym = CFCMethod_short_method_sym(method, klass);
         char *method_html = S_html_create_func(klass, (CFCFunction*)method,
                                                prefix, short_sym);
