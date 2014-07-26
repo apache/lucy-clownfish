@@ -19,7 +19,7 @@ use warnings;
 use Test::More tests => 40;
 use Clownfish::CFC;
 
-my $parcel = Clownfish::CFC::Model::Parcel->new( name => 'Parcel' );
+my $parcel = Clownfish::CFC::Model::Parcel->new( name => 'Eep' );
 
 for (qw( foo 1Foo Foo_Bar 1FOOBAR )) {
     eval { my $thing = new_symbol( class_name => $_ ) };
@@ -74,8 +74,12 @@ my $eep = new_symbol(
     class_name => "Op::Ork",
     name       => 'ah_ah',
 );
-is( $eep->short_sym, "Ork_ah_ah",     "short_sym" );
-is( $eep->full_sym,  "eep_Ork_ah_ah", "full_sym" );
+my $ork = Clownfish::CFC::Model::Class->create(
+    parcel     => $parcel,
+    class_name => 'Op::Ork',
+);
+is( $eep->short_sym($ork), "Ork_ah_ah",     "short_sym" );
+is( $eep->full_sym($ork),  "eep_Ork_ah_ah", "full_sym" );
 
 sub new_symbol {
     return Clownfish::CFC::Model::Symbol->new(

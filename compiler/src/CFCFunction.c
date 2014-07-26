@@ -25,6 +25,7 @@
 #define CFC_NEED_CALLABLE_STRUCT_DEF
 #include "CFCCallable.h"
 #include "CFCFunction.h"
+#include "CFCClass.h"
 #include "CFCParcel.h"
 #include "CFCType.h"
 #include "CFCParamList.h"
@@ -124,14 +125,14 @@ CFCFunction_void(CFCFunction *self) {
     return CFCType_is_void(self->callable.return_type);
 }
 
-const char*
-CFCFunction_full_func_sym(CFCFunction *self) {
-    return CFCSymbol_full_sym((CFCSymbol*)self);
+char*
+CFCFunction_full_func_sym(CFCFunction *self, CFCClass *klass) {
+    return CFCSymbol_full_sym((CFCSymbol*)self, klass);
 }
 
-const char*
-CFCFunction_short_func_sym(CFCFunction *self) {
-    return CFCSymbol_short_sym((CFCSymbol*)self);
+char*
+CFCFunction_short_func_sym(CFCFunction *self, CFCClass *klass) {
+    return CFCSymbol_short_sym((CFCSymbol*)self, klass);
 }
 
 const char*

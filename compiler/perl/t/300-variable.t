@@ -71,6 +71,9 @@ is( $var->local_c, 'float foo[1]',
     "to_c appends array to var name rather than type specifier" );
 
 my $foo_class = $parser->parse("class Foo {}");
+my $lobclaw_class = $parser->parse(
+    "class Crustacean::Lobster::LobsterClaw nickname LobClaw {}",
+);
 $var = Clownfish::CFC::Model::Variable->new(
     parcel         => 'Neato',
     name           => 'foo',
@@ -79,7 +82,8 @@ $var = Clownfish::CFC::Model::Variable->new(
     class_nickname => 'LobClaw',
 );
 $var->resolve_type;
-is( $var->global_c, 'neato_Foo* neato_LobClaw_foo', "global_c" );
+is( $var->global_c($lobclaw_class), 'neato_Foo* neato_LobClaw_foo',
+    "global_c" );
 
 isa_ok(
     $parser->parse($_),

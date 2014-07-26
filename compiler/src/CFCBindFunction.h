@@ -24,12 +24,13 @@
 extern "C" {
 #endif
 
+struct CFCClass;
 struct CFCFunction;
 
 /** Return C code declaring the function's C implementation.
  */
 char*
-CFCBindFunc_func_declaration(struct CFCFunction *func);
+CFCBindFunc_func_declaration(struct CFCFunction *func, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

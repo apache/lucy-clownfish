@@ -505,11 +505,12 @@ S_html_create_functions(CFCClass *klass) {
 
         CFCParcel  *parcel    = CFCSymbol_get_parcel((CFCSymbol*)func);
         const char *prefix    = CFCParcel_get_prefix(parcel);
-        const char *short_sym = CFCFunction_short_func_sym(func);
 
+        char *short_sym = CFCFunction_short_func_sym(func, klass);
         char *func_html = S_html_create_func(klass, func, prefix, short_sym);
         result = CFCUtil_cat(result, func_html, NULL);
         FREEMEM(func_html);
+        FREEMEM(short_sym);
     }
 
     if (result[0] != '\0') {

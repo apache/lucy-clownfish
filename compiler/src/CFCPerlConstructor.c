@@ -88,12 +88,12 @@ CFCPerlConstructor_destroy(CFCPerlConstructor *self) {
 }
 
 char*
-CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
+CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
     const char *c_name = self->sub.c_name;
     CFCParamList *param_list = self->sub.param_list;
     char         *name_list  = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
-    const char   *func_sym   = CFCFunction_full_func_sym(self->init_func);
+    char *func_sym     = CFCFunction_full_func_sym(self->init_func, klass);
     char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
     char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
     CFCVariable *self_var       = arg_vars[0];
@@ -148,6 +148,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
                           refcount_mods, func_sym, name_list);
 
     FREEMEM(refcount_mods);
+    FREEMEM(func_sym);
     FREEMEM(arg_decls);
     FREEMEM(allot_params);
     FREEMEM(name_list);

@@ -607,7 +607,7 @@ S_sub_declarations(CFCBindClass *self) {
     char *declarations = CFCUtil_strdup("");
     for (int i = 0; functions[i] != NULL; i++) {
         CFCFunction *func = functions[i];
-        char *dec = CFCBindFunc_func_declaration(func);
+        char *dec = CFCBindFunc_func_declaration(func, self->client);
         if (!CFCFunction_inline(func)) {
             declarations = CFCUtil_cat(declarations, PREFIX, "VISIBLE ", NULL);
         }
@@ -633,9 +633,10 @@ S_inert_var_declarations(CFCBindClass *self) {
     CFCVariable **inert_vars = CFCClass_inert_vars(self->client);
     char *declarations = CFCUtil_strdup("");
     for (int i = 0; inert_vars[i] != NULL; i++) {
-        const char *global_c = CFCVariable_global_c(inert_vars[i]);
+        char *global_c = CFCVariable_global_c(inert_vars[i], self->client);
         declarations = CFCUtil_cat(declarations, "extern ", PREFIX, "VISIBLE ",
                                    global_c, ";\n", NULL);
+        FREEMEM(global_c);
     }
     return declarations;
 }
@@ -717,18 +718,23 @@ S_short_names(CFCBindClass *self) {
     CFCFunction **functions = CFCClass_functions(client);
     for (int i = 0; functions[i] != NULL; i++) {
         CFCFunction *func = functions[i];
-        short_names = CFCUtil_cat(short_names, "  #define ",
-                                  CFCFunction_short_func_sym(func), " ",
-                                  CFCFunction_full_func_sym(func), "\n",
-                                  NULL);
+        char *short_sym = CFCFunction_short_func_sym(func, client);
+        char *full_sym  = CFCFunction_full_func_sym(func, client);
+        short_names = CFCUtil_cat(short_names, "  #define ", short_sym, " ",
+                                  full_sym, "\n", NULL);
+        FREEMEM(short_sym);
+        FREEMEM(full_sym);
     }
 
     CFCVariable **inert_vars = CFCClass_inert_vars(client);
     for (int i = 0; inert_vars[i] != NULL; i++) {
         CFCVariable *var = inert_vars[i];
-        short_names = CFCUtil_cat(short_names, "  #define ",
-                                  CFCVariable_short_sym(var), " ",
-                                  CFCVariable_full_sym(var), "\n", NULL);
+        char *short_sym = CFCVariable_short_sym(var, client);
+        char *full_sym  = CFCVariable_full_sym(var, client);
+        short_names = CFCUtil_cat(short_names, "  #define ", short_sym, " ",
+                                  full_sym, "\n", NULL);
+        FREEMEM(short_sym);
+        FREEMEM(full_sym);
     }
 
     if (!CFCClass_inert(client)) {

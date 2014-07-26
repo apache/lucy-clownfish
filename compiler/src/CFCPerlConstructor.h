@@ -53,7 +53,7 @@ CFCPerlConstructor_destroy(CFCPerlConstructor *self);
 /** Generate C code for the XSUB.
  */
 char*
-CFCPerlConstructor_xsub_def(CFCPerlConstructor *self);
+CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

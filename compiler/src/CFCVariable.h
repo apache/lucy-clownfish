@@ -85,8 +85,8 @@ CFCVariable_local_c(CFCVariable *self);
  *
  *     int32_t crust_Lobster_average_lifespan
  */
-const char*
-CFCVariable_global_c(CFCVariable *self);
+char*
+CFCVariable_global_c(CFCVariable *self, struct CFCClass *klass);
 
 /** Returns C code appropriate for declaring the variable in a local scope,
  * such as within a struct definition, or as an automatic variable within a C
@@ -100,11 +100,11 @@ CFCVariable_local_declaration(CFCVariable *self);
 const char*
 CFCVariable_get_name(CFCVariable *self);
 
-const char*
-CFCVariable_short_sym(CFCVariable *self);
+char*
+CFCVariable_short_sym(CFCVariable *self, struct CFCClass *klass);
 
-const char*
-CFCVariable_full_sym(CFCVariable *self);
+char*
+CFCVariable_full_sym(CFCVariable *self, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

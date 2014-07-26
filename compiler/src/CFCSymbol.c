@@ -24,6 +24,7 @@
 
 #define CFC_NEED_SYMBOL_STRUCT_DEF
 #include "CFCSymbol.h"
+#include "CFCClass.h"
 #include "CFCParcel.h"
 #include "CFCUtil.h"
 
@@ -169,13 +170,6 @@ CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel,
     self->class_nickname = CFCUtil_strdup(real_nickname);
     self->name           = CFCUtil_strdup(name);
 
-    // Derive short_sym and full_sym.
-    char *nickname = self->class_nickname ? self->class_nickname : "";
-    self->short_sym = CFCUtil_sprintf("%s_%s", nickname, name);
-    self->full_sym
-        = CFCUtil_sprintf("%s%s", CFCParcel_get_prefix(self->parcel),
-                          self->short_sym);
-
     return self;
 }
 
@@ -186,8 +180,6 @@ CFCSymbol_destroy(CFCSymbol *self) {
     FREEMEM(self->class_name);
     FREEMEM(self->class_nickname);
     FREEMEM(self->name);
-    FREEMEM(self->short_sym);
-    FREEMEM(self->full_sym);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -228,14 +220,19 @@ CFCSymbol_local(CFCSymbol *self) {
     return !strcmp(self->exposure, "local");
 }
 
-const char*
-CFCSymbol_full_sym(CFCSymbol *self) {
-    return self->full_sym;
+char*
+CFCSymbol_full_sym(CFCSymbol *self, CFCClass *klass) {
+    const char *prefix   = CFCClass_get_prefix(klass);
+    const char *nickname = CFCClass_get_nickname(klass);
+    char *full_sym = CFCUtil_sprintf("%s%s_%s", prefix, nickname, self->name);
+    return full_sym;
 }
 
-const char*
-CFCSymbol_short_sym(CFCSymbol *self) {
-    return self->short_sym;
+char*
+CFCSymbol_short_sym(CFCSymbol *self, CFCClass *klass) {
+    const char *nickname = CFCClass_get_nickname(klass);
+    char *short_sym = CFCUtil_sprintf("%s_%s", nickname, self->name);
+    return short_sym;
 }
 
 struct CFCParcel*

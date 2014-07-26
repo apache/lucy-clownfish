@@ -670,6 +670,27 @@ resolve_types(self)
 PPCODE:
     CFCFunction_resolve_types(self);
 
+SV*
+_various_function_syms(self, klass)
+    CFCFunction *self;
+    CFCClass    *klass;
+ALIAS:
+    short_func_sym = 1
+    full_func_sym  = 2
+CODE:
+    char *buf;
+    switch (ix) {
+        case 1:
+            buf = CFCFunction_short_func_sym(self, klass);
+            break;
+        case 2:
+            buf = CFCFunction_full_func_sym(self, klass);
+            break;
+        default: croak("Unexpected ix: %d", (int)ix);
+    }
+    RETVAL = S_sv_eat_c_string(buf);
+OUTPUT: RETVAL
+
 void
 _set_or_get(self, ...)
     CFCFunction *self;
@@ -679,8 +700,6 @@ ALIAS:
     get_docucomment    = 6
     inline             = 8
     void               = 10
-    full_func_sym      = 12
-    short_func_sym     = 14
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -705,16 +724,6 @@ PPCODE:
             break;
         case 10:
             retval = newSViv(CFCFunction_void(self));
-            break;
-        case 12: {
-                const char *full_sym = CFCFunction_full_func_sym(self);
-                retval = newSVpv(full_sym, strlen(full_sym));
-            }
-            break;
-        case 14: {
-                const char *short_sym = CFCFunction_short_func_sym(self);
-                retval = newSVpv(short_sym, strlen(short_sym));
-            }
             break;
     END_SET_OR_GET_SWITCH
 }
@@ -1309,6 +1318,27 @@ CODE:
     RETVAL = CFCSymbol_equals(self, other);
 OUTPUT: RETVAL
 
+SV*
+_various_syms(self, klass)
+    CFCSymbol *self;
+    CFCClass  *klass;
+ALIAS:
+    short_sym = 1
+    full_sym  = 2
+CODE:
+    char *buf;
+    switch (ix) {
+        case 1:
+            buf = CFCSymbol_short_sym(self, klass);
+            break;
+        case 2:
+            buf = CFCSymbol_full_sym(self, klass);
+            break;
+        default: croak("Unexpected ix: %d", (int)ix);
+    }
+    RETVAL = S_sv_eat_c_string(buf);
+OUTPUT: RETVAL
+
 void
 _set_or_get(self, ...)
     CFCSymbol *self;
@@ -1325,8 +1355,6 @@ ALIAS:
     private            = 20
     parcel             = 22
     local              = 24
-    short_sym          = 26
-    full_sym           = 28
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -1386,16 +1414,6 @@ PPCODE:
             break;
         case 24:
             retval = newSViv(CFCSymbol_local(self));
-            break;
-        case 26: {
-                const char *short_sym = CFCSymbol_short_sym(self);
-                retval = newSVpvn(short_sym, strlen(short_sym));
-            }
-            break;
-        case 28: {
-                const char *full_sym = CFCSymbol_full_sym(self);
-                retval = newSVpvn(full_sym, strlen(full_sym));
-            }
             break;
     END_SET_OR_GET_SWITCH
 }
@@ -1825,13 +1843,21 @@ resolve_type(self)
 PPCODE:
     CFCVariable_resolve_type(self);
 
+SV*
+global_c(self, klass)
+    CFCVariable *self;
+    CFCClass    *klass;
+CODE:
+    char *global_c = CFCVariable_global_c(self, klass);
+    RETVAL = S_sv_eat_c_string(global_c);
+OUTPUT: RETVAL
+
 void
 _set_or_get(self, ...)
     CFCVariable *self;
 ALIAS:
     get_type          = 2
     local_c           = 4
-    global_c          = 6
     local_declaration = 8
 PPCODE:
 {
@@ -1844,11 +1870,6 @@ PPCODE:
         case 4: {
                 const char *local_c = CFCVariable_local_c(self);
                 retval = newSVpvn(local_c, strlen(local_c));
-            }
-            break;
-        case 6: {
-                const char *global_c = CFCVariable_global_c(self);
-                retval = newSVpvn(global_c, strlen(global_c));
             }
             break;
         case 8: {
@@ -1928,12 +1949,13 @@ OUTPUT: RETVAL
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Binding::Core::Function
 
 SV*
-func_declaration(unused, func)
-    SV *unused;
+func_declaration(unused, func, klass)
+    SV          *unused;
     CFCFunction *func;
+    CFCClass    *klass;
 CODE:
     CHY_UNUSED_VAR(unused);
-    RETVAL = S_sv_eat_c_string(CFCBindFunc_func_declaration(func));
+    RETVAL = S_sv_eat_c_string(CFCBindFunc_func_declaration(func, klass));
 OUTPUT: RETVAL
 
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Binding::Core::Method
@@ -2179,10 +2201,11 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-xsub_def(self)
+xsub_def(self, klass)
     CFCPerlConstructor *self;
+    CFCClass           *klass;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlConstructor_xsub_def(self));
+    RETVAL = S_sv_eat_c_string(CFCPerlConstructor_xsub_def(self, klass));
 OUTPUT: RETVAL
 
 MODULE = Clownfish   PACKAGE = Clownfish::CFC::Binding::Perl::Class

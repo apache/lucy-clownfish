@@ -23,6 +23,7 @@
 #endif
 
 #define CFC_NEED_SYMBOL_STRUCT_DEF
+#include "CFCClass.h"
 #include "CFCSymbol.h"
 #include "CFCVariable.h"
 #include "CFCParcel.h"
@@ -114,8 +115,6 @@ S_generate_c_strings(CFCVariable *self) {
     const char *name = CFCVariable_get_name(self);
     self->local_c = CFCUtil_sprintf("%s %s%s", type_str, name, postfix);
     self->local_dec = CFCUtil_sprintf("%s;", self->local_c);
-    const char *full_sym = CFCVariable_full_sym(self);
-    self->global_c = CFCUtil_sprintf("%s %s%s", type_str, full_sym, postfix);
 }
 
 CFCType*
@@ -134,10 +133,21 @@ CFCVariable_local_c(CFCVariable *self) {
     return self->local_c;
 }
 
-const char*
-CFCVariable_global_c(CFCVariable *self) {
-    if (!self->global_c) { S_generate_c_strings(self); }
-    return self->global_c;
+char*
+CFCVariable_global_c(CFCVariable *self, CFCClass *klass) {
+    const char *type_str = CFCType_to_c(self->type);
+    const char *postfix  = "";
+    if (CFCType_is_composite(self->type)
+        && CFCType_get_array(self->type) != NULL
+       ) {
+        postfix = CFCType_get_array(self->type);
+    }
+
+    char *full_sym = CFCVariable_full_sym(self, klass);
+    char *global_c = CFCUtil_sprintf("%s %s%s", type_str, full_sym, postfix);
+
+    FREEMEM(full_sym);
+    return global_c;
 }
 
 const char*
@@ -151,13 +161,13 @@ CFCVariable_get_name(CFCVariable *self) {
     return CFCSymbol_get_name((CFCSymbol*)self);
 }
 
-const char*
-CFCVariable_short_sym(CFCVariable *self) {
-    return CFCSymbol_short_sym((CFCSymbol*)self);
+char*
+CFCVariable_short_sym(CFCVariable *self, CFCClass *klass) {
+    return CFCSymbol_short_sym((CFCSymbol*)self, klass);
 }
 
-const char*
-CFCVariable_full_sym(CFCVariable *self) {
-    return CFCSymbol_full_sym((CFCSymbol*)self);
+char*
+CFCVariable_full_sym(CFCVariable *self, CFCClass *klass) {
+    return CFCSymbol_full_sym((CFCSymbol*)self, klass);
 }
 

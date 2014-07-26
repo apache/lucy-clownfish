@@ -89,13 +89,13 @@ CFCFunction_void(CFCFunction *self);
 
 /** A synonym for full_sym().
  */
-const char*
-CFCFunction_full_func_sym(CFCFunction *self);
+char*
+CFCFunction_full_func_sym(CFCFunction *self, struct CFCClass *klass);
 
 /** A synonym for short_sym().
  */
-const char*
-CFCFunction_short_func_sym(CFCFunction *self);
+char*
+CFCFunction_short_func_sym(CFCFunction *self, struct CFCClass *klass);
 
 const char*
 CFCFunction_get_name(CFCFunction *self);

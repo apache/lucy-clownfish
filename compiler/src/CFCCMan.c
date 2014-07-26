@@ -182,10 +182,11 @@ S_man_create_functions(CFCClass *klass) {
         const char *name = CFCFunction_get_name(func);
         result = CFCUtil_cat(result, ".TP\n.B ", name, "\n", NULL);
 
-        const char *full_func_sym = CFCFunction_full_func_sym(func);
+        char *full_func_sym = CFCFunction_full_func_sym(func, klass);
         char *function_man = S_man_create_func(klass, func, full_func_sym);
         result = CFCUtil_cat(result, function_man, NULL);
         FREEMEM(function_man);
+        FREEMEM(full_func_sym);
     }
 
     return result;

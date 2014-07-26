@@ -16,9 +16,11 @@
 
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
+#include "CFCClass.h"
 #include "CFCParcel.h"
 #include "CFCSymbol.h"
 #include "CFCTest.h"
+#include "CFCUtil.h"
 
 #ifndef true
   #define true 1
@@ -135,13 +137,19 @@ S_run_tests(CFCTest *test) {
     {
         CFCParcel *eep_parcel = CFCParcel_new("Eep", NULL, NULL, NULL);
         CFCParcel_register(eep_parcel);
+        CFCClass *ork
+            = CFCClass_create(eep_parcel, NULL, "Op::Ork", NULL, NULL, NULL,
+                              NULL, NULL, false, false, false);
         CFCSymbol *eep
             = CFCSymbol_new(eep_parcel, "parcel", "Op::Ork", NULL, "ah_ah");
-        const char *short_sym = CFCSymbol_short_sym(eep);
+        char *short_sym = CFCSymbol_short_sym(eep, ork);
         STR_EQ(test, short_sym, "Ork_ah_ah", "short_sym");
-        const char *full_sym = CFCSymbol_full_sym(eep);
+        FREEMEM(short_sym);
+        char *full_sym = CFCSymbol_full_sym(eep, ork);
         STR_EQ(test, full_sym, "eep_Ork_ah_ah", "full_sym");
+        FREEMEM(full_sym);
         CFCBase_decref((CFCBase*)eep_parcel);
+        CFCBase_decref((CFCBase*)ork);
         CFCBase_decref((CFCBase*)eep);
     }
 

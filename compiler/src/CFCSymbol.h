@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 typedef struct CFCSymbol CFCSymbol;
+struct CFCClass;
 struct CFCParcel;
 
 #ifdef CFC_NEED_SYMBOL_STRUCT_DEF
@@ -41,8 +42,6 @@ struct CFCSymbol {
     char *class_name;
     char *class_nickname;
     char *name;
-    char *short_sym;
-    char *full_sym;
 };
 #endif
 
@@ -126,14 +125,14 @@ CFCSymbol_get_name(CFCSymbol *self);
 /** Returns the C representation for the symbol minus the parcel's prefix,
  * e.g.  "Lobster_average_lifespan".
  */
-const char*
-CFCSymbol_short_sym(CFCSymbol *self);
+char*
+CFCSymbol_short_sym(CFCSymbol *self, struct CFCClass *klass);
 
 /** Returns the fully qualified C representation for the symbol, e.g.
  * "crust_Lobster_average_lifespan".
  */
-const char*
-CFCSymbol_full_sym(CFCSymbol *self);
+char*
+CFCSymbol_full_sym(CFCSymbol *self, struct CFCClass *klass);
 
 /** Get the Symbol's all-lowercase prefix, delegating to `parcel`.
  */

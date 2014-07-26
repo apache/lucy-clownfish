@@ -458,7 +458,8 @@ CFCPerl_write_bindings(CFCPerl *self) {
             CFCPerlSub *xsub = (CFCPerlSub*)constructors[j];
 
             // Add the XSUB function definition.
-            char *xsub_def = CFCPerlConstructor_xsub_def(constructors[j]);
+            char *xsub_def
+                = CFCPerlConstructor_xsub_def(constructors[j], klass);
             generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
                                        NULL);
             FREEMEM(xsub_def);

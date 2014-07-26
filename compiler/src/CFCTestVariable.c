@@ -22,7 +22,13 @@
 #include "CFCSymbol.h"
 #include "CFCTest.h"
 #include "CFCType.h"
+#include "CFCUtil.h"
 #include "CFCVariable.h"
+
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
 
 static void
 S_run_tests(CFCTest *test);
@@ -73,11 +79,18 @@ S_run_tests(CFCTest *test) {
                               "Crustacean::Lobster::LobsterClaw", "LobClaw",
                               "foo", type, 0);
         CFCVariable_resolve_type(var);
-        STR_EQ(test, CFCVariable_global_c(var), "neato_Foo* neato_LobClaw_foo",
-               "global_c");
+        CFCClass *ork
+            = CFCClass_create(neato_parcel, NULL,
+                              "Crustacean::Lobster::LobsterClaw", "LobClaw",
+                              NULL, NULL, NULL, NULL, false, false, false);
+
+        char *global_c = CFCVariable_global_c(var, ork);
+        STR_EQ(test, global_c, "neato_Foo* neato_LobClaw_foo", "global_c");
+        FREEMEM(global_c);
 
         CFCBase_decref((CFCBase*)type);
         CFCBase_decref((CFCBase*)var);
+        CFCBase_decref((CFCBase*)ork);
     }
 
     {
