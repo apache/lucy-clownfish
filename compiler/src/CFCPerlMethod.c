@@ -16,6 +16,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #define CFC_NEED_PERLSUB_STRUCT_DEF 1
 #include "CFCPerlSub.h"
@@ -106,32 +107,24 @@ static const CFCMeta CFCPERLMETHOD_META = {
 };
 
 CFCPerlMethod*
-CFCPerlMethod_new(CFCMethod *method, const char *alias) {
+CFCPerlMethod_new(CFCMethod *method) {
     CFCPerlMethod *self
         = (CFCPerlMethod*)CFCBase_allocate(&CFCPERLMETHOD_META);
-    return CFCPerlMethod_init(self, method, alias);
+    return CFCPerlMethod_init(self, method);
 }
 
 CFCPerlMethod*
-CFCPerlMethod_init(CFCPerlMethod *self, CFCMethod *method,
-                   const char *alias) {
+CFCPerlMethod_init(CFCPerlMethod *self, CFCMethod *method) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     const char *class_name = CFCMethod_get_class_name(method);
     int use_labeled_params = CFCParamList_num_vars(param_list) > 2
                              ? 1 : 0;
 
-    // The Clownfish destructor needs to be spelled DESTROY for Perl.
-    if (!alias) {
-        alias = CFCMethod_micro_sym(method);
-    }
-    static const char destroy_uppercase[] = "DESTROY";
-    if (strcmp(alias, "destroy") == 0) {
-        alias = destroy_uppercase;
-    }
-
-    CFCPerlSub_init((CFCPerlSub*)self, param_list, class_name, alias,
+    char *perl_name = CFCPerlMethod_perl_name(method);
+    CFCPerlSub_init((CFCPerlSub*)self, param_list, class_name, perl_name,
                     use_labeled_params);
     self->method = (CFCMethod*)CFCBase_incref((CFCBase*)method);
+    FREEMEM(perl_name);
     return self;
 }
 
@@ -139,6 +132,32 @@ void
 CFCPerlMethod_destroy(CFCPerlMethod *self) {
     CFCBase_decref((CFCBase*)self->method);
     CFCPerlSub_destroy((CFCPerlSub*)self);
+}
+
+char*
+CFCPerlMethod_perl_name(CFCMethod *method) {
+    // See if the user wants the method to have a specific alias.
+    const char *alias = CFCMethod_get_host_alias(method);
+    if (alias) {
+        return CFCUtil_strdup(alias);
+    }
+
+    char       *perl_name = NULL;
+    const char *name      = CFCMethod_get_macro_sym(method);
+
+    if (strcmp(name, "Destroy") == 0) {
+        // The Clownfish destructor needs to be spelled DESTROY for Perl.
+        perl_name = CFCUtil_strdup("DESTROY");
+    }
+    else {
+        // Derive Perl name by lowercasing.
+        perl_name = CFCUtil_strdup(name);
+        for (size_t i = 0; perl_name[i] != '\0'; i++) {
+            perl_name[i] = tolower(perl_name[i]);
+        }
+    }
+
+    return perl_name;
 }
 
 char*
@@ -632,7 +651,7 @@ S_void_callback_def(CFCMethod *method, const char *callback_start,
                     const char *refcount_mods) {
     const char *override_sym = CFCMethod_full_override_sym(method);
     const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
-    const char *micro_sym = CFCMethod_micro_sym(method);
+    char *perl_name = CFCPerlMethod_perl_name(method);
     const char pattern[] =
         "void\n"
         "%s(%s) {\n"
@@ -641,8 +660,9 @@ S_void_callback_def(CFCMethod *method, const char *callback_start,
         "}\n";
     char *callback_def
         = CFCUtil_sprintf(pattern, override_sym, params, callback_start,
-                          micro_sym, refcount_mods);
+                          perl_name, refcount_mods);
 
+    FREEMEM(perl_name);
     return callback_def;
 }
 
@@ -653,7 +673,6 @@ S_primitive_callback_def(CFCMethod *method, const char *callback_start,
     const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
     CFCType *return_type = CFCMethod_get_return_type(method);
     const char *ret_type_str = CFCType_to_c(return_type);
-    const char *micro_sym = CFCMethod_micro_sym(method);
     char callback_func[50];
 
     if (CFCType_is_integer(return_type)) {
@@ -671,6 +690,8 @@ S_primitive_callback_def(CFCMethod *method, const char *callback_start,
         CFCUtil_die("Unexpected type: %s", ret_type_str);
     }
 
+    char *perl_name = CFCPerlMethod_perl_name(method);
+
     char pattern[] =
         "%s\n"
         "%s(%s) {\n"
@@ -681,8 +702,9 @@ S_primitive_callback_def(CFCMethod *method, const char *callback_start,
     char *callback_def
         = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params,
                           callback_start, ret_type_str, ret_type_str,
-                          callback_func, micro_sym, refcount_mods);
+                          callback_func, perl_name, refcount_mods);
 
+    FREEMEM(perl_name);
     return callback_def;
 }
 
@@ -693,8 +715,9 @@ S_obj_callback_def(CFCMethod *method, const char *callback_start,
     const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
     CFCType *return_type = CFCMethod_get_return_type(method);
     const char *ret_type_str = CFCType_to_c(return_type);
-    const char *micro_sym = CFCMethod_micro_sym(method);
     const char *nullable  = CFCType_nullable(return_type) ? "true" : "false";
+
+    char *perl_name = CFCPerlMethod_perl_name(method);
 
     char pattern[] =
         "%s\n"
@@ -706,8 +729,9 @@ S_obj_callback_def(CFCMethod *method, const char *callback_start,
     char *callback_def
         = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params,
                           callback_start, ret_type_str, ret_type_str,
-                          micro_sym, nullable, refcount_mods);
+                          perl_name, nullable, refcount_mods);
 
+    FREEMEM(perl_name);
     return callback_def;
 }
 

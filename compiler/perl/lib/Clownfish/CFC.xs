@@ -2155,11 +2155,10 @@ OUTPUT: RETVAL
 MODULE = Clownfish   PACKAGE = Clownfish::CFC::Binding::Perl::Method
 
 SV*
-_new(method, alias)
+_new(method)
     CFCMethod *method;
-    const char *alias;
 CODE:
-    CFCPerlMethod *self = CFCPerlMethod_new(method, alias);
+    CFCPerlMethod *self = CFCPerlMethod_new(method);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL

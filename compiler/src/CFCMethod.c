@@ -357,11 +357,6 @@ CFCMethod_get_macro_sym(CFCMethod *self) {
     return self->macro_sym;
 }
 
-const char*
-CFCMethod_micro_sym(CFCMethod *self) {
-    return CFCSymbol_micro_sym((CFCSymbol*)self);
-}
-
 char*
 CFCMethod_short_typedef(CFCMethod *self, CFCClass *invoker) {
     return S_short_method_sym(self, invoker, "_t");

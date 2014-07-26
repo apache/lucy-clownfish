@@ -148,9 +148,6 @@ CFCMethod_full_offset_sym(CFCMethod *self, struct CFCClass *invoker);
 const char*
 CFCMethod_get_macro_sym(CFCMethod *self);
 
-const char*
-CFCMethod_micro_sym(CFCMethod *self);
-
 /** Create the typedef symbol for this method, e.g "Claw_Pinch_t".
  * @param invoker Class for which the symbol is created. If invoker is NULL,
  * use the class where the method is defined.

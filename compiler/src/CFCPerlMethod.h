@@ -35,19 +35,22 @@ typedef struct CFCPerlMethod CFCPerlMethod;
 struct CFCMethod;
 
 CFCPerlMethod*
-CFCPerlMethod_new(struct CFCMethod *method, const char *alias);
+CFCPerlMethod_new(struct CFCMethod *method);
 
 /**
  * @param method A Clownfish::CFC::Model::Method.
- * @param alias The perl name for the method.  Defaults to the lowercased name
- * of the supplied Clownfish Method.
  */
 CFCPerlMethod*
-CFCPerlMethod_init(CFCPerlMethod *self, struct CFCMethod *method,
-                   const char *alias);
+CFCPerlMethod_init(CFCPerlMethod *self, struct CFCMethod *method);
 
 void
 CFCPerlMethod_destroy(CFCPerlMethod *self);
+
+/**
+ * Create the Perl name of the method.
+ */
+char*
+CFCPerlMethod_perl_name(struct CFCMethod *method);
 
 /** Generate C code for the XSUB.
  */

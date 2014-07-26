@@ -270,12 +270,6 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
             continue;
         }
 
-        // See if the user wants the method to have a specific alias.
-        const char *alias = CFCMethod_get_host_alias(method);
-        if (!alias) {
-            alias = CFCMethod_micro_sym(method);
-        }
-
         /* Create the binding, add it to the array.
          *
          * Also create an XSub binding for each override.  Each of these
@@ -284,7 +278,7 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
          * this way allows SUPER:: invocations from Perl-space to work
          * properly.
          */
-        CFCPerlMethod *meth_binding = CFCPerlMethod_new(method, alias);
+        CFCPerlMethod *meth_binding = CFCPerlMethod_new(method);
         size_t size = (num_bound + 2) * sizeof(CFCPerlMethod*);
         bound = (CFCPerlMethod**)REALLOCATE(bound, size);
         bound[num_bound] = meth_binding;
