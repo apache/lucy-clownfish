@@ -44,10 +44,6 @@
 
 size_t Class_offset_of_parent = offsetof(Class, parent);
 
-// Remove spaces and underscores, convert to lower case.
-static String*
-S_scrunch_string(String *source);
-
 static Method*
 S_find_method(Class *self, const char *meth_name);
 
@@ -288,21 +284,19 @@ Class_singleton(String *class_name, Class *parent) {
             Hash *meths = Hash_new(num_fresh);
             for (uint32_t i = 0; i < num_fresh; i++) {
                 String *meth = (String*)VA_Fetch(fresh_host_methods, i);
-                String *scrunched = S_scrunch_string(meth);
-                Hash_Store(meths, (Obj*)scrunched, (Obj*)CFISH_TRUE);
-                DECREF(scrunched);
+                Hash_Store(meths, (Obj*)meth, (Obj*)CFISH_TRUE);
             }
             for (Class *klass = parent; klass; klass = klass->parent) {
                 uint32_t max = VA_Get_Size(klass->methods);
                 for (uint32_t i = 0; i < max; i++) {
                     Method *method = (Method*)VA_Fetch(klass->methods, i);
                     if (method->callback_func) {
-                        String *scrunched = S_scrunch_string(method->name);
-                        if (Hash_Fetch(meths, (Obj*)scrunched)) {
+                        String *name = Method_Host_Name(method);
+                        if (Hash_Fetch(meths, (Obj*)name)) {
                             Class_Override(singleton, method->callback_func,
                                             method->offset);
                         }
-                        DECREF(scrunched);
+                        DECREF(name);
                     }
                 }
             }
@@ -326,25 +320,6 @@ Class_singleton(String *class_name, Class *parent) {
     }
 
     return singleton;
-}
-
-static String*
-S_scrunch_string(String *source) {
-    CharBuf *buf = CB_new(Str_Get_Size(source));
-    StringIterator *iter = Str_Top(source);
-    int32_t code_point;
-    while (STRITER_DONE != (code_point = StrIter_Next(iter))) {
-        if (code_point > 127) {
-            THROW(ERR, "Can't fold case for %o", source);
-        }
-        else if (code_point != '_') {
-            CB_Cat_Char(buf, tolower(code_point));
-        }
-    }
-    String *retval = CB_Yield_String(buf);
-    DECREF(iter);
-    DECREF(buf);
-    return retval;
 }
 
 bool

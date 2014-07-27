@@ -178,4 +178,17 @@ TestObj_Run_IMP(TestObj *self, TestBatchRunner *runner) {
     test_abstract_routines(runner);
 }
 
+/*********************************************************************/
+
+String*
+AliasTestObj_Aliased_IMP(AliasTestObj *self) {
+    UNUSED_VAR(self);
+    return Str_newf("C");
+}
+
+String*
+AliasTestObj_Call_Aliased_From_C_IMP(AliasTestObj *self) {
+    UNUSED_VAR(self);
+    return AliasTestObj_Aliased(self);
+}
 

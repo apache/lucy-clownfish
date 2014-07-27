@@ -23,6 +23,7 @@ sub bind_all {
     my $class = shift;
     $class->bind_clownfish;
     $class->bind_test;
+    $class->bind_test_alias_obj;
     $class->bind_bytebuf;
     $class->bind_string;
     $class->bind_err;
@@ -109,6 +110,18 @@ END_XS_CODE
     );
     $binding->append_xs($xs_code);
 
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_test_alias_obj {
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "TestClownfish",
+        class_name => "Clownfish::Test::AliasTestObj",
+    );
+    $binding->bind_method(
+        alias  => 'perl_alias',
+        method => 'Aliased',
+    );
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
 

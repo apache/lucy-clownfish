@@ -43,6 +43,9 @@ class Clownfish::Method inherits Clownfish::Obj {
     bool
     Is_Excluded_From_Host(Method *self);
 
+    incremented String*
+    Host_Name(Method *self);
+
     incremented Obj*
     Inc_RefCount(Method *self);
 

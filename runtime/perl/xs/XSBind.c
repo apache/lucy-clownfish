@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
+#include <ctype.h>
+
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
 #define C_CFISH_LOCKFREEREGISTRY
 #define NEED_newRV_noinc
 #include "charmony.h"
 #include "XSBind.h"
+#include "Clownfish/CharBuf.h"
 #include "Clownfish/LockFreeRegistry.h"
+#include "Clownfish/Method.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Util/NumberUtils.h"
 #include "Clownfish/Util/Memory.h"
@@ -764,6 +768,35 @@ CFISH_Class_To_Host_IMP(cfish_Class *self) {
     return host_obj;
 }
 
+
+/*************************** Clownfish::Method ******************************/
+
+cfish_String*
+CFISH_Method_Host_Name_IMP(cfish_Method *self) {
+    cfish_String *host_alias = CFISH_Method_Get_Host_Alias(self);
+    if (host_alias) {
+        return (cfish_String*)CFISH_INCREF(host_alias);
+    }
+
+    // Convert to lowercase.
+    cfish_String *name = CFISH_Method_Get_Name(self);
+    cfish_CharBuf *buf = cfish_CB_new(CFISH_Str_Get_Size(name));
+    cfish_StringIterator *iter = CFISH_Str_Top(name);
+    int32_t code_point;
+    while (CFISH_STRITER_DONE != (code_point = CFISH_StrIter_Next(iter))) {
+        if (code_point > 127) {
+            THROW(CFISH_ERR, "Can't lowercase '%o'", name);
+        }
+        else {
+            CFISH_CB_Cat_Char(buf, tolower(code_point));
+        }
+    }
+    cfish_String *retval = CFISH_CB_Yield_String(buf);
+    CFISH_DECREF(iter);
+    CFISH_DECREF(buf);
+
+    return retval;
+}
 
 /***************************** Clownfish::Err *******************************/
 

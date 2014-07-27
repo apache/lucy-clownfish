@@ -14,23 +14,14 @@
  * limitations under the License.
  */
 
-parcel TestClownfish;
+#define CFISH_USE_SHORT_NAMES
+#define C_CFISH_METHOD
 
-class Clownfish::Test::TestObj
-    inherits Clownfish::TestHarness::TestBatch {
+#include "Clownfish/Method.h"
+#include "Clownfish/String.h"
 
-    inert incremented TestObj*
-    new();
-
-    void
-    Run(TestObj *self, TestBatchRunner *runner);
-}
-
-class Clownfish::Test::AliasTestObj {
-    incremented String*
-    Aliased(AliasTestObj *self);
-
-    incremented String*
-    Call_Aliased_From_C(AliasTestObj* self);
+String*
+Method_Host_Name_IMP(Method *self) {
+    return (String*)INCREF(self->name);
 }
 
