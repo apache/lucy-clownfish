@@ -477,6 +477,10 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::Obj",
     );
+    $binding->bind_method(
+        alias  => 'DESTROY',
+        method => 'Destroy',
+    );
     $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
     $binding->set_pod_spec($pod_spec);

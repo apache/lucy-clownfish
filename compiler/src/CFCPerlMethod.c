@@ -142,19 +142,11 @@ CFCPerlMethod_perl_name(CFCMethod *method) {
         return CFCUtil_strdup(alias);
     }
 
-    char       *perl_name = NULL;
+    // Derive Perl name by lowercasing.
     const char *name      = CFCMethod_get_macro_sym(method);
-
-    if (strcmp(name, "Destroy") == 0) {
-        // The Clownfish destructor needs to be spelled DESTROY for Perl.
-        perl_name = CFCUtil_strdup("DESTROY");
-    }
-    else {
-        // Derive Perl name by lowercasing.
-        perl_name = CFCUtil_strdup(name);
-        for (size_t i = 0; perl_name[i] != '\0'; i++) {
-            perl_name[i] = tolower(perl_name[i]);
-        }
+    char       *perl_name = CFCUtil_strdup(name);
+    for (size_t i = 0; perl_name[i] != '\0'; i++) {
+        perl_name[i] = tolower(perl_name[i]);
     }
 
     return perl_name;
