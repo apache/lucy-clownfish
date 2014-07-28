@@ -170,6 +170,86 @@ sub ACTION_code {
     $self->SUPER::ACTION_code;
 }
 
+sub _valgrind_base_command {
+    return
+          "PERL_DESTRUCT_LEVEL=2 LUCY_VALGRIND=1 valgrind "
+        . "--leak-check=yes "
+        . "--show-reachable=yes "
+        . "--dsymutil=yes "
+        . "--suppressions=../../devel/conf/cfcompiler-perl.supp ";
+}
+
+# Run the entire test suite under Valgrind.
+#
+# For this to work, Lucy must be compiled with the LUCY_VALGRIND environment
+# variable set to a true value, under a debugging Perl.
+#
+# A custom suppressions file will probably be needed -- use your judgment.
+# To pass in one or more local suppressions files, provide a comma separated
+# list like so:
+#
+#   $ ./Build test_valgrind --suppressions=foo.supp,bar.supp
+sub ACTION_test_valgrind {
+    my $self = shift;
+    # Debian's debugperl uses the Config.pm of the standard system perl
+    # so -DDEBUGGING won't be detected.
+    die "Must be run under a perl that was compiled with -DDEBUGGING"
+        unless $self->config('ccflags') =~ /-D?DEBUGGING\b/
+               || $^X =~ /\bdebugperl\b/;
+    if ( !$ENV{LUCY_VALGRIND} ) {
+        warn "\$ENV{LUCY_VALGRIND} not true -- possible false positives";
+    }
+    $self->depends_on('code');
+
+    # Unbuffer STDOUT, grab test file names and suppressions files.
+    $|++;
+    my $t_files = $self->find_test_files;    # not public M::B API, may fail
+    my $valgrind_command = $self->_valgrind_base_command;
+
+    if ( my $local_supp = $self->args('suppressions') ) {
+        for my $supp ( split( ',', $local_supp ) ) {
+            $valgrind_command .= "--suppressions=$supp ";
+        }
+    }
+
+    # Iterate over test files.
+    my @failed;
+    for my $t_file (@$t_files) {
+
+        # Run test file under Valgrind.
+        print "Testing $t_file...";
+        die "Can't find '$t_file'" unless -f $t_file;
+        my $command = "$valgrind_command $^X -Mblib $t_file 2>&1";
+        my $output = "\n" . ( scalar localtime(time) ) . "\n$command\n";
+        $output .= `$command`;
+
+        # Screen-scrape Valgrind output, looking for errors and leaks.
+        if (   $?
+            or $output =~ /ERROR SUMMARY:\s+[^0\s]/
+            or $output =~ /definitely lost:\s+[^0\s]/
+            or $output =~ /possibly lost:\s+[^0\s]/
+            or $output =~ /still reachable:\s+[^0\s]/ )
+        {
+            print " failed.\n";
+            push @failed, $t_file;
+            print "$output\n";
+        }
+        else {
+            print " succeeded.\n";
+        }
+    }
+
+    # If there are failed tests, print a summary list.
+    if (@failed) {
+        print "\nFailed "
+            . scalar @failed . "/"
+            . scalar @$t_files
+            . " test files:\n    "
+            . join( "\n    ", @failed ) . "\n";
+        exit(1);
+    }
+}
+
 sub ACTION_dist {
     my $self = shift;
 

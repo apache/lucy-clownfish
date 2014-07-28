@@ -57,26 +57,32 @@ my $should_be_foo = Clownfish::CFC::Model::Class->fetch_singleton(
 );
 is( $$foo, $$should_be_foo, "fetch_singleton" );
 
-eval { Clownfish::CFC::Model::Class->create(%foo_create_args) };
-like( $@, qr/two classes with name/i,
-      "Can't call create for the same class more than once" );
-eval {
-    Clownfish::CFC::Model::Class->create(
-        parcel     => 'Neato',
-        class_name => 'Other::Foo',
-    );
-};
-like( $@, qr/class name conflict/i,
-      "Can't create classes wth the same final component" );
-eval {
-    Clownfish::CFC::Model::Class->create(
-        parcel     => 'Neato',
-        class_name => 'Bar',
-        nickname   => 'Foo',
-    );
-};
-like( $@, qr/class nickname conflict/i,
-      "Can't create classes wth the same nickname" );
+SKIP: {
+    skip( 'Exceptions leak', 3 )
+        if $ENV{LUCY_VALGRIND};
+
+    eval { Clownfish::CFC::Model::Class->create(%foo_create_args) };
+    like( $@, qr/two classes with name/i,
+          "Can't call create for the same class more than once" );
+
+    eval {
+        Clownfish::CFC::Model::Class->create(
+            parcel     => 'Neato',
+            class_name => 'Other::Foo',
+        );
+    };
+    like( $@, qr/class name conflict/i,
+          "Can't create classes wth the same final component" );
+    eval {
+        Clownfish::CFC::Model::Class->create(
+            parcel     => 'Neato',
+            class_name => 'Bar',
+            nickname   => 'Foo',
+        );
+    };
+    like( $@, qr/class nickname conflict/i,
+          "Can't create classes wth the same nickname" );
+}
 
 my $foo_jr = Clownfish::CFC::Model::Class->create(
     parcel            => 'Neato',

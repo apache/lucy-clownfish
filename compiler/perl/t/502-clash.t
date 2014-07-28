@@ -28,7 +28,10 @@ my $dest_dir        = catdir(qw( t cfdest ));
 my $class_clash_dir = catdir(qw( t cfclash class ));
 my $file_clash_dir  = catdir(qw( t cfclash file ));
 
-{
+SKIP: {
+    skip( 'Exceptions leak', 1 )
+        if $ENV{LUCY_VALGRIND};
+
     my $hierarchy = Clownfish::CFC::Model::Hierarchy->new(dest => $dest_dir);
 
     $hierarchy->add_source_dir($base_dir);
@@ -44,7 +47,10 @@ my $file_clash_dir  = catdir(qw( t cfclash file ));
     Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 
-{
+SKIP: {
+    skip( 'Exceptions leak', 1 )
+        if $ENV{LUCY_VALGRIND};
+
     my $hierarchy = Clownfish::CFC::Model::Hierarchy->new(dest => $dest_dir);
 
     $hierarchy->add_source_dir($class_clash_dir);
@@ -78,7 +84,10 @@ my $file_clash_dir  = catdir(qw( t cfclash file ));
 my $foo_dir = catdir(qw( t cfclash foo ));
 my $bar_dir = catdir(qw( t cfclash bar ));
 
-{
+SKIP: {
+    skip( 'Exceptions leak', 1 )
+        if $ENV{LUCY_VALGRIND};
+
     my $hierarchy = Clownfish::CFC::Model::Hierarchy->new(dest => $dest_dir);
 
     $hierarchy->add_source_dir($foo_dir);
@@ -94,7 +103,10 @@ my $bar_dir = catdir(qw( t cfclash bar ));
     Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 
-{
+SKIP: {
+    skip( 'Exceptions leak', 1 )
+        if $ENV{LUCY_VALGRIND};
+
     my $hierarchy = Clownfish::CFC::Model::Hierarchy->new(dest => $dest_dir);
 
     $hierarchy->add_source_dir($bar_dir);
