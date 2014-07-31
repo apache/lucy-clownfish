@@ -187,13 +187,6 @@ CFCPerlTypeMap_to_perl(CFCType *type, const char *cf_var) {
             result = NULL;
         }
     }
-    else if (CFCType_is_composite(type)) {
-        if (strcmp(type_str, "void*") == 0) {
-            // Assume that void* is a reference SV -- either a hashref or an
-            // arrayref.
-            result = CFCUtil_sprintf("newRV_inc((SV*)%s)", cf_var);
-        }
-    }
 
     return result;
 }
