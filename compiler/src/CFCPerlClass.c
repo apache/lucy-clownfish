@@ -239,16 +239,13 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
     for (size_t i = 0; fresh_methods[i] != NULL; i++) {
         CFCMethod *method = fresh_methods[i];
 
-        // Skip private methods.
-        if (CFCSymbol_private((CFCSymbol*)method)) { continue; }
-
         // Skip methods which have been explicitly excluded.
         if (CFCMethod_excluded_from_host(method)) {
             continue;
         }
 
-        // Skip methods with types which cannot be mapped automatically.
-        if (!CFCPerlSub_can_be_bound((CFCFunction*)method)) {
+        // Skip methods that shouldn't be bound.
+        if (!CFCPerlMethod_can_be_bound(method)) {
             continue;
         }
 

@@ -23,6 +23,7 @@
 #include "CFCPerlMethod.h"
 #include "CFCUtil.h"
 #include "CFCClass.h"
+#include "CFCFunction.h"
 #include "CFCMethod.h"
 #include "CFCSymbol.h"
 #include "CFCType.h"
@@ -132,6 +133,17 @@ void
 CFCPerlMethod_destroy(CFCPerlMethod *self) {
     CFCBase_decref((CFCBase*)self->method);
     CFCPerlSub_destroy((CFCPerlSub*)self);
+}
+
+int
+CFCPerlMethod_can_be_bound(CFCMethod *method) {
+    /*
+     * Check for
+     * - private methods
+     * - methods with types which cannot be mapped automatically
+     */
+    return !CFCSymbol_private((CFCSymbol*)method)
+           && CFCPerlSub_can_be_bound((CFCFunction*)method);
 }
 
 char*
