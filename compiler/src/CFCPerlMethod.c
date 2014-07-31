@@ -520,7 +520,7 @@ S_callback_start(CFCMethod *method) {
         if (num_args > 1) {
             char num_buf[20];
             sprintf(num_buf, "%d", (int)strlen(name));
-            params = CFCUtil_cat(params, "   mPUSHp(\"", name, "\", ",
+            params = CFCUtil_cat(params, "    mPUSHp(\"", name, "\", ",
                                  num_buf, ");\n", NULL);
         }
 
@@ -538,7 +538,7 @@ S_callback_start(CFCMethod *method) {
             // Convert primitive integer types to IV Perl scalars.
             int width = (int)CFCType_get_width(type);
             if (width != 0 && width <= 4) {
-                params = CFCUtil_cat(params, "   mPUSHi(",
+                params = CFCUtil_cat(params, "    mPUSHi(",
                                      name, ");\n", NULL);
             }
             else {
@@ -555,7 +555,7 @@ S_callback_start(CFCMethod *method) {
         }
         else if (CFCType_is_floating(type)) {
             // Convert primitive floating point types to NV Perl scalars.
-            params = CFCUtil_cat(params, "   mPUSHn(",
+            params = CFCUtil_cat(params, "    mPUSHn(",
                                  name, ");\n", NULL);
         }
         else {
