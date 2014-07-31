@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 typedef struct CFCPerlSub CFCPerlSub;
+struct CFCFunction;
 struct CFCParamList;
 struct CFCType;
 
@@ -63,6 +64,11 @@ CFCPerlSub_init(CFCPerlSub *self, struct CFCParamList *param_list,
 
 void
 CFCPerlSub_destroy(CFCPerlSub *self);
+
+/** Test whether bindings can be generated for a function.
+  */
+int
+CFCPerlSub_can_be_bound(struct CFCFunction *function);
 
 /** Return Perl code initializing a package-global hash where all the keys are
  * the names of labeled params.  The hash's name consists of the the binding's

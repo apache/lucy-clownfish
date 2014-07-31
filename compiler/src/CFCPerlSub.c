@@ -20,6 +20,7 @@
 #define CFC_NEED_PERLSUB_STRUCT_DEF
 #include "CFCPerlSub.h"
 #include "CFCBase.h"
+#include "CFCFunction.h"
 #include "CFCUtil.h"
 #include "CFCParamList.h"
 #include "CFCVariable.h"
@@ -70,6 +71,30 @@ CFCPerlSub_destroy(CFCPerlSub *self) {
     FREEMEM(self->perl_name);
     FREEMEM(self->c_name);
     CFCBase_destroy((CFCBase*)self);
+}
+
+int
+CFCPerlSub_can_be_bound(CFCFunction *function) {
+    // Test whether parameters can be mapped automatically.
+    CFCParamList  *param_list = CFCFunction_get_param_list(function);
+    CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
+    for (size_t i = 0; arg_vars[i] != NULL; i++) {
+        CFCType *type = CFCVariable_get_type(arg_vars[i]);
+        if (!CFCType_is_object(type) && !CFCType_is_primitive(type)) {
+            return false;
+        }
+    }
+
+    // Test whether return type can be mapped automatically.
+    CFCType *return_type = CFCFunction_get_return_type(function);
+    if (!CFCType_is_void(return_type)
+        && !CFCType_is_object(return_type)
+        && !CFCType_is_primitive(return_type)
+    ) {
+        return false;
+    }
+
+    return true;
 }
 
 char*

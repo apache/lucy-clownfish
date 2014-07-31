@@ -32,6 +32,7 @@
 #include "CFCVariable.h"
 #include "CFCType.h"
 #include "CFCPerlPod.h"
+#include "CFCPerlSub.h"
 #include "CFCPerlMethod.h"
 #include "CFCPerlConstructor.h"
 #include "CFCPerlTypeMap.h"
@@ -226,26 +227,6 @@ CFCPerlClass_exclude_constructor(CFCPerlClass *self) {
     self->exclude_cons = 1;
 }
 
-static int
-S_can_be_bound(CFCParamList *param_list, CFCType *return_type) {
-    int success = 1;
-    CFCVariable **arg_vars = CFCParamList_get_variables(param_list);
-
-    for (size_t i = 0; arg_vars[i] != NULL; i++) {
-        CFCType *type = CFCVariable_get_type(arg_vars[i]);
-        char *conversion = CFCPerlTypeMap_from_perl(type, "foo");
-        if (conversion) { FREEMEM(conversion); }
-        else            { success = 0; }
-    }
-    if (!CFCType_is_void(return_type)) {
-        char *conversion = CFCPerlTypeMap_to_perl(return_type, "foo");
-        if (conversion) { FREEMEM(conversion); }
-        else            { success = 0; }
-    }
-
-    return success;
-}
-
 CFCPerlMethod**
 CFCPerlClass_method_bindings(CFCClass *klass) {
     CFCClass       *parent        = CFCClass_get_parent(klass);
@@ -267,9 +248,7 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
         }
 
         // Skip methods with types which cannot be mapped automatically.
-        CFCParamList *param_list  = CFCMethod_get_param_list(method);
-        CFCType      *return_type = CFCMethod_get_return_type(method);
-        if (!S_can_be_bound(param_list, return_type)) {
+        if (!CFCPerlSub_can_be_bound((CFCFunction*)method)) {
             continue;
         }
 
@@ -307,17 +286,15 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
 
     // Iterate over the list of possible initialization functions.
     for (size_t i = 0; functions[i] != NULL; i++) {
-        CFCFunction  *function    = functions[i];
-        const char   *micro_sym   = CFCFunction_micro_sym(function);
-        CFCParamList *param_list  = CFCFunction_get_param_list(function);
-        CFCType      *return_type = CFCFunction_get_return_type(function);
-        const char   *alias       = NULL;
+        CFCFunction  *function  = functions[i];
+        const char   *micro_sym = CFCFunction_micro_sym(function);
+        const char   *alias     = NULL;
 
         // Find user-specified alias.
         if (perl_class == NULL) {
             // Bind init() to new() when possible.
             if (strcmp(micro_sym, "init") == 0
-                && S_can_be_bound(param_list, return_type)
+                && CFCPerlSub_can_be_bound(function)
                ) {
                 alias = NEW;
             }
@@ -326,7 +303,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
             for (size_t j = 0; j < perl_class->num_cons; j++) {
                 if (strcmp(micro_sym, perl_class->cons_inits[j]) == 0) {
                     alias = perl_class->cons_aliases[j];
-                    if (!S_can_be_bound(param_list, return_type)) {
+                    if (!CFCPerlSub_can_be_bound(function)) {
                         CFCUtil_die("Can't bind %s as %s"
                                     " -- types can't be mapped",
                                     micro_sym, alias);
@@ -339,7 +316,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
             if (!alias
                 && !perl_class->exclude_cons
                 && strcmp(micro_sym, "init") == 0
-                && S_can_be_bound(param_list, return_type)
+                && CFCPerlSub_can_be_bound(function)
                ) {
                 int saw_new = 0;
                 for (size_t j = 0; j < perl_class->num_cons; j++) {
