@@ -132,26 +132,41 @@ sub cf_system_include_dirs {
 }
 
 sub cf_linker_flags {
-    my ( $self_or_class, $module_name ) = @_;
+    my $self_or_class = shift;
 
     my $dlext = $Config{dlext};
     # Only needed on Windows
     return () if $dlext ne 'dll';
 
-    # Find library to link against
-    my @module_parts = split( '::', $module_name );
-    my $class_name   = $module_parts[-1];
     # Link against import library on MSVC
-    my $ext          = $Config{cc} =~ /^cl\b/ ? 'lib' : $dlext;
+    my $ext = $Config{cc} =~ /^cl\b/ ? 'lib' : $dlext;
 
-    for my $dir (@INC) {
-        my $lib_file = catfile(
-            $dir, 'auto', @module_parts, "$class_name.$ext",
-        );
-        return ( $lib_file ) if -f $lib_file;
+    my @linker_flags;
+
+    for my $module_name (@_) {
+        # Find library to link against
+        my @module_parts = split( '::', $module_name );
+        my $class_name   = $module_parts[-1];
+        my $lib_file;
+        my $found;
+
+        for my $dir (@INC) {
+            $lib_file = catfile(
+                $dir, 'auto', @module_parts, "$class_name.$ext",
+            );
+            if ( -f $lib_file ) {
+                $found = 1;
+                last;
+            }
+        }
+
+        die("No Clownfish library file found for module $module_name")
+            if !$found;
+
+        push( @linker_flags, $lib_file );
     }
 
-    die("No Clownfish library file found for module $module_name");
+    return @linker_flags;
 }
 
 sub _cfh_filepaths {
@@ -684,13 +699,13 @@ Currently either C<()> or C<('..')>.
 Returns a list of Clownfish include directories of system-wide installations
 of Clownfish modules.
 
-=head2 cf_linker_flags(module_name)
+=head2 cf_linker_flags( I<[module_names]> )
 
-    my @flags = Clownfish::CFC::Perl::Build->cf_linker_flags($module_name);
+    my @flags = Clownfish::CFC::Perl::Build->cf_linker_flags(@module_names);
 
-Returns the linker flags needed to link against Clownfish module named
-C<$module_name>. Should be added to C<extra_linker_flags> for all module
-dependencies.
+Returns the linker flags needed to link against all Clownfish modules in
+C<@module_names>. Should be added to C<extra_linker_flags> for all module
+dependencies. Only needed on Windows.
 
 =head1 METHODS
 
