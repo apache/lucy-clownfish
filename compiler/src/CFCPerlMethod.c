@@ -442,18 +442,18 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
 
 char*
 CFCPerlMethod_callback_def(CFCMethod *method) {
+    // Return a callback wrapper that throws an error if there are no
+    // bindings for a method.
+    if (!CFCPerlMethod_can_be_bound(method)) {
+        return S_invalid_callback_def(method);
+    }
+
     CFCType *return_type = CFCMethod_get_return_type(method);
     char *start = S_callback_start(method);
     char *callback_def = NULL;
     char *refcount_mods = S_callback_refcount_mods(method);
 
-    if (!start) {
-        // Can't map vars, because there's at least one type in the argument
-        // list we don't yet support.  Return a callback wrapper that throws
-        // an error error.
-        callback_def = S_invalid_callback_def(method);
-    }
-    else if (CFCType_is_void(return_type)) {
+    if (CFCType_is_void(return_type)) {
         callback_def = S_void_callback_def(method, start, refcount_mods);
     }
     else if (CFCType_is_object(return_type)) {
@@ -571,9 +571,9 @@ S_callback_start(CFCMethod *method) {
                                  name, ");\n", NULL);
         }
         else {
-            // Can't map variable type.  Signal to caller.
-            FREEMEM(params);
-            return NULL;
+            // Can't map variable type.
+            const char *type_str = CFCType_to_c(type);
+            CFCUtil_die("Can't map type '%s' to Perl", type_str);
         }
     }
 
