@@ -19,7 +19,7 @@
 # an uninstalled Clownfish source tree. Useful for development.
 #
 # - PATH
-# - C_INCLUDE_PATH
+# - CPATH
 # - LIBRARY_PATH
 # - LD_LIBRARY_PATH
 # - CLOWNFISH_INCLUDE
@@ -66,7 +66,7 @@ compiler_dir=$base_dir/compiler
 runtime_dir=$base_dir/runtime
 
 export PATH=`add_to_path "$PATH" "$compiler_dir/c"`
-export C_INCLUDE_PATH=`add_to_path "$C_INCLUDE_PATH" "$runtime_dir/perl/xs"`
+export CPATH=`add_to_path "$CPATH" "$runtime_dir/perl/xs"`
 export LIBRARY_PATH=`add_to_path "$LIBRARY_PATH" "$runtime_dir/c"`
 export CLOWNFISH_INCLUDE=`add_to_path "$CLOWNFISH_INCLUDE" "$runtime_dir/core"`
 export PERL5LIB=`add_to_path "$PERL5LIB" "$compiler_dir/perl/blib/arch"`

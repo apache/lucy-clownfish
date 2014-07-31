@@ -29,8 +29,8 @@ call :add_to_path "%PATH%" "%runtime_dir%\c"
 set PATH=%retval%
 call :add_to_path "%INCLUDE%" "%runtime_dir%\perl\xs"
 set INCLUDE=%retval%
-call :add_to_path "%C_INCLUDE_PATH%" "%runtime_dir%\perl\xs"
-set C_INCLUDE_PATH=%retval%
+call :add_to_path "%CPATH%" "%runtime_dir%\perl\xs"
+set CPATH=%retval%
 call :add_to_path "%LIB%" "%runtime_dir%\c"
 set LIB=%retval%
 call :add_to_path "%CLOWNFISH_INCLUDE%" "%runtime_dir%\core"
@@ -47,7 +47,7 @@ set PERL5LIB=%retval%
 endlocal & (
     set "PATH=%PATH%"
     set "INCLUDE=%INCLUDE%"
-    set "C_INCLUDE_PATH=%C_INCLUDE_PATH%"
+    set "CPATH=%CPATH%"
     set "LIB=%LIB%"
     set "CLOWNFISH_INCLUDE=%CLOWNFISH_INCLUDE%"
     set "PERL5LIB=%PERL5LIB%"
