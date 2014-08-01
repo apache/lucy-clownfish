@@ -273,17 +273,15 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
         const char *name = CFCParcel_get_name(parcel);
         CFCParcel *existing = CFCParcel_fetch(name);
         if (existing) {
-            if (!CFCParcel_equals(parcel, existing)) {
-                if (is_included && !CFCParcel_included(existing)) {
-                    // Allow clash between source and include dirs.
-                    CFCUtil_warn("Warning: Parcel %s from source dir takes "
-                                 "precedence over parcel from include dir",
-                                 name);
-                }
-                else {
-                    CFCUtil_die("Incompatible parcel '%s' already registered",
-                                CFCParcel_get_name(parcel));
-                }
+            const char *existing_source_dir
+                = CFCParcel_get_source_dir(existing);
+            CFCUTIL_NULL_CHECK(existing_source_dir);
+            // Skip parcel if it's from an include dir and was already
+            // processed in another source or include dir.
+            if (!is_included || strcmp(source_dir, existing_source_dir) == 0) {
+                CFCUtil_die("Parcel '%s' defined twice in %s and %s",
+                            CFCParcel_get_name(parcel),
+                            CFCParcel_get_cfp_path(existing), path);
             }
         }
         else {
