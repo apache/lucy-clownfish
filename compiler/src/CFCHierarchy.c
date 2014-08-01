@@ -60,6 +60,12 @@ struct CFCHierarchy {
     size_t num_classes;
 };
 
+typedef struct CFCFindFilesContext {
+    const char  *ext;
+    char       **paths;
+    size_t       num_paths;
+} CFCFindFilesContext;
+
 typedef struct CFCParseParcelFilesContext {
     int is_included;
 } CFCParseParcelFilesContext;
@@ -302,38 +308,53 @@ S_check_prereqs(CFCHierarchy *self) {
 }
 
 static void
-S_find_cfh(const char *path, void *context) {
-    char ***cfh_ptr = (char***)context;
-    char **cfh_list = *cfh_ptr;
+S_find_files(const char *path, void *arg) {
     // Ignore updirs and hidden files.
     if (strstr(path, CHY_DIR_SEP ".") != NULL) {
         return;
     }
-    size_t path_len = strlen(path);
-    if (path_len > 4 && (strcmp((path + path_len - 4), ".cfh") == 0)) {
-        size_t num_cfh = 0;
-        while (cfh_list[num_cfh] != NULL) { num_cfh++; }
-        size_t size = (num_cfh + 2) * sizeof(char*);
-        cfh_list = (char**)REALLOCATE(cfh_list, size);
-        cfh_list[num_cfh] = CFCUtil_strdup(path);
-        cfh_list[num_cfh + 1] = NULL;
-    }
 
-    *cfh_ptr = cfh_list;
+    CFCFindFilesContext *context = (CFCFindFilesContext*)arg;
+    const char  *ext       = context->ext;
+    size_t       path_len  = strlen(path);
+    size_t       ext_len   = strlen(ext);
+
+    if (path_len > ext_len && (strcmp(path + path_len - ext_len, ext) == 0)) {
+        size_t   num_paths = context->num_paths;
+        size_t   size      = (num_paths + 2) * sizeof(char*);
+        char   **paths     = (char**)REALLOCATE(context->paths, size);
+
+        paths[num_paths]     = CFCUtil_strdup(path);
+        paths[num_paths + 1] = NULL;
+
+        context->num_paths++;
+        context->paths = paths;
+    }
+}
+
+static void
+S_free_find_files_context(CFCFindFilesContext *context) {
+    for (int i = 0; context->paths[i] != NULL; i++) {
+        FREEMEM(context->paths[i]);
+    }
+    FREEMEM(context->paths);
 }
 
 static void
 S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
-    char **all_source_paths = (char**)CALLOCATE(1, sizeof(char*));
-    CFCUtil_walk(source_dir, S_find_cfh, &all_source_paths);
+    CFCFindFilesContext context;
+    context.ext       = ".cfh";
+    context.paths     = (char**)CALLOCATE(1, sizeof(char*));
+    context.num_paths = 0;
+    CFCUtil_walk(source_dir, S_find_files, &context);
     size_t source_dir_len  = strlen(source_dir);
     char *path_part = NULL;
     size_t path_part_max = 0;
 
     // Process any file that has at least one class declaration.
-    for (int i = 0; all_source_paths[i] != NULL; i++) {
+    for (int i = 0; context.paths[i] != NULL; i++) {
         // Derive the name of the class that owns the module file.
-        char *source_path = all_source_paths[i];
+        char *source_path = context.paths[i];
         size_t source_path_len = strlen(source_path);
         if (strncmp(source_path, source_dir, source_dir_len) != 0) {
             CFCUtil_die("'%s' doesn't start with '%s'", source_path,
@@ -394,10 +415,7 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
     }
     self->classes[self->num_classes] = NULL;
 
-    for (int i = 0; all_source_paths[i] != NULL; i++) {
-        FREEMEM(all_source_paths[i]);
-    }
-    FREEMEM(all_source_paths);
+    S_free_find_files_context(&context);
     FREEMEM(path_part);
 }
 
