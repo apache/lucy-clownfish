@@ -53,6 +53,9 @@ void
 CFCFileSpec_destroy(CFCFileSpec *self);
 
 const char*
+CFCFileSpec_get_path(CFCFileSpec *self);
+
+const char*
 CFCFileSpec_get_source_dir(CFCFileSpec *self);
 
 const char*

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "charmony.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -33,6 +35,7 @@ struct CFCFileSpec {
     CFCBase base;
     char *source_dir;
     char *path_part;
+    char *path;
     int is_included;
 };
 
@@ -57,6 +60,8 @@ CFCFileSpec_init(CFCFileSpec *self, const char *source_dir,
 
     self->source_dir  = CFCUtil_strdup(source_dir);
     self->path_part   = CFCUtil_strdup(path_part);
+    self->path        = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s", source_dir,
+                                        path_part);
     self->is_included = !!is_included;
 
     return self;
@@ -66,7 +71,13 @@ void
 CFCFileSpec_destroy(CFCFileSpec *self) {
     FREEMEM(self->source_dir);
     FREEMEM(self->path_part);
+    FREEMEM(self->path);
     CFCBase_destroy((CFCBase*)self);
+}
+
+const char*
+CFCFileSpec_get_path(CFCFileSpec *self) {
+    return self->path;
 }
 
 const char*
