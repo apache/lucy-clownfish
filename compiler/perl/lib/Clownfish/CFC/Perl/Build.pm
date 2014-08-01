@@ -73,17 +73,15 @@ sub new {
     push( @$cf_source, catdir( $AUTOGEN_DIR, 'source' ) );
     $self->clownfish_params( source => $cf_source );
 
-    my $cf_include = $self->clownfish_params('include');
-    if ( !defined($cf_include) ) {
-        if ($ENV{CLOWNFISH_INCLUDE}) {
-            $cf_include = [ split( /:/, $ENV{CLOWNFISH_INCLUDE} ) ];
-        }
-        else {
-            $cf_include = [ $self->cf_system_include_dirs ];
-        }
+    my $cf_include = $self->clownfish_params('include') || [];
+    # Add include dirs from CLOWNFISH_INCLUDE environment variable.
+    if ($ENV{CLOWNFISH_INCLUDE}) {
+        push( @$cf_include, split( /:/, $ENV{CLOWNFISH_INCLUDE} ) );
     }
-    elsif ( !ref($cf_include) ) {
-        $cf_include = [ $cf_include ];
+    # Add include dirs from @INC.
+    for my $dir (@INC) {
+        my $cf_incdir = catdir( $dir, 'Clownfish', '_include' );
+        push( @$cf_include, $cf_incdir ) if -d $cf_incdir;
     }
     $self->clownfish_params( include => $cf_include );
 
@@ -115,20 +113,6 @@ END_AUTOGEN
 sub cf_base_path {
     my $self_or_class = shift;
     return @BASE_PATH;
-}
-
-sub cf_system_include_dirs {
-    my $self_or_class = shift;
-
-    my @include_dirs;
-    for my $location ( qw( site vendor ) ) {
-        my $install_dir = $Config{"install${location}arch"};
-        my $include_dir = catdir( $install_dir, 'Clownfish', '_include' );
-        next unless -d $include_dir;
-        push(@include_dirs, $include_dir);
-    }
-
-    return @include_dirs;
 }
 
 sub cf_linker_flags {
@@ -582,7 +566,6 @@ the Perl bindings for Clownfish modules.
     use File::Spec::Functions qw( catdir );
 
     my @cf_base_path    = Clownfish::CFC::Perl::Build->cf_base_path;
-    my @cf_sys_includes = Clownfish::CFC::Perl::Build->cf_system_include_dirs;
     my @cf_linker_flags = Clownfish::CFC::Perl::Build->cf_linker_flags(
         'Other::Module',
     );
@@ -592,11 +575,9 @@ the Perl bindings for Clownfish modules.
         dist_abstract      => 'Do something with this and that',
         dist_author        => 'The Author <author@example.com>',
         dist_version       => '0.1.0',
-        include_dirs       => [ @cf_sys_includes ],
         extra_linker_flags => [ @cf_linker_flags ],
         clownfish_params => {
             source  => [ catdir( @cf_base_path, 'core' ) ],
-            include => [ @cf_sys_includes ],
         },
         requires => {
             'Other::Module' => '0.3.0',
@@ -691,13 +672,6 @@ Clownfish .c files.
 
 Returns the base path components of the source tree where C<core> was found.
 Currently either C<()> or C<('..')>.
-
-=head2 cf_system_include_dirs()
-
-    my @dirs = Clownfish::CFC::Perl::Build->cf_system_include_dirs();
-
-Returns a list of Clownfish include directories of system-wide installations
-of Clownfish modules.
 
 =head2 cf_linker_flags( I<[module_names]> )
 
