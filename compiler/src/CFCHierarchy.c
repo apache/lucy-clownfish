@@ -352,22 +352,6 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
         memcpy(path_part, src, path_part_len);
         path_part[path_part_len] = '\0';
 
-        // Make sure path_part is unique
-        CFCFile *existing = S_fetch_file(self, path_part);
-        if (existing) {
-            if (is_included && !CFCFile_included(existing)) {
-                // Allow filename clash between source and include dirs
-                CFCUtil_warn("Warning: File %s.cfh from source dir takes "
-                             "precedence over file from include dir",
-                             path_part);
-                // Ignore file
-                continue;
-            }
-            else {
-                CFCUtil_die("File %s.cfh already registered", path_part);
-            }
-        }
-
         CFCFileSpec *file_spec = CFCFileSpec_new(source_dir, path_part,
                                                  is_included);
 
@@ -381,9 +365,23 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
             CFCUtil_die("%s:%d: parser error", source_path, lineno);
         }
 
-        // Add parsed file to pool if it's from a required parcel.
+        // Add parsed file to pool if it's from a required parcel. Skip
+        // file if it's from an include dir and the parcel was already
+        // processed in another source or include dir.
         CFCParcel *parcel = CFCFile_get_parcel(file);
-        if (CFCParcel_required(parcel)) {
+        const char *parcel_source_dir = CFCParcel_get_source_dir(parcel);
+        CFCUTIL_NULL_CHECK(parcel_source_dir);
+        if (CFCParcel_required(parcel)
+            && (!is_included || strcmp(source_dir, parcel_source_dir) == 0)) {
+            // Make sure path_part is unique because the name of the generated
+            // C header is derived from it.
+            CFCFile *existing = S_fetch_file(self, path_part);
+            if (existing) {
+                CFCUtil_die("File %s.cfh found twice in %s and %s",
+                            path_part, CFCFile_get_source_dir(existing),
+                            source_dir);
+            }
+
             S_add_file(self, file);
         }
 

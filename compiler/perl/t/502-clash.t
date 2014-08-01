@@ -40,7 +40,7 @@ SKIP: {
     eval { $hierarchy->build; };
 
     my $filename = catfile(qw( Animal Dog.cfh ));
-    like( $@, qr/File \Q$filename\E already registered/,
+    like( $@, qr|\Q$filename\E .* \Q$base_dir\E .* \Q$file_clash_dir\E|,
           "source/source filename clash" );
 
     Clownfish::CFC::Model::Class->_clear_registry();
