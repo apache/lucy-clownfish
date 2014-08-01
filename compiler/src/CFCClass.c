@@ -184,25 +184,26 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     self->is_final    = !!is_final;
     self->is_inert    = !!is_inert;
 
-    if (file_spec && CFCFileSpec_included(file_spec)) {
-        if (!CFCParcel_included(parcel)) {
-            CFCUtil_die("Class %s from include dir found in parcel %s from"
-                        " source dir",
-                        class_name, CFCParcel_get_name(parcel));
-        }
-    }
-    else {
-        if (CFCParcel_included(parcel)) {
-            CFCUtil_die("Class %s from source dir found in parcel %s from"
-                        " include dir",
-                        class_name, CFCParcel_get_name(parcel));
-        }
+    if (!CFCClass_included(self) && CFCParcel_included(parcel)) {
+        CFCUtil_die("Class %s from source dir found in parcel %s from"
+                    " include dir",
+                    class_name, CFCParcel_get_name(parcel));
     }
 
-    // Store in registry.
-    S_register(self);
+    // Skip class if it's from an include dir and the parcel was already
+    // processed in another source or include dir.
+    const char *class_source_dir  = CFCClass_get_source_dir(self);
+    const char *parcel_source_dir = CFCParcel_get_source_dir(parcel);
+    if (!CFCClass_included(self)
+        || !class_source_dir
+        || !parcel_source_dir
+        || strcmp(class_source_dir, parcel_source_dir) == 0
+    ) {
+        // Store in registry.
+        S_register(self);
 
-    CFCParcel_add_struct_sym(parcel, self->struct_sym);
+        CFCParcel_add_struct_sym(parcel, self->struct_sym);
+    }
 
     return self;
 }
@@ -714,6 +715,13 @@ CFCClass_set_parent(CFCClass *self, CFCClass *parent) {
 CFCClass*
 CFCClass_get_parent(CFCClass *self) {
     return self->parent;
+}
+
+const char*
+CFCClass_get_source_dir(CFCClass *self) {
+    return self->file_spec
+           ? CFCFileSpec_get_source_dir(self->file_spec)
+           : NULL;
 }
 
 const char*

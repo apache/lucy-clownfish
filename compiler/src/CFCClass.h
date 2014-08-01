@@ -202,6 +202,9 @@ CFCClass*
 CFCClass_get_parent(CFCClass *self);
 
 const char*
+CFCClass_get_source_dir(CFCClass *self);
+
+const char*
 CFCClass_get_path_part(CFCClass *self);
 
 int

@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More tests => 4;
 
 use Clownfish::CFC::Model::Hierarchy;
 use File::Spec::Functions qw( catdir catfile splitpath );
@@ -83,25 +83,6 @@ SKIP: {
 
 my $foo_dir = catdir(qw( t cfclash foo ));
 my $bar_dir = catdir(qw( t cfclash bar ));
-
-SKIP: {
-    skip( 'Exceptions leak', 1 )
-        if $ENV{LUCY_VALGRIND};
-
-    my $hierarchy = Clownfish::CFC::Model::Hierarchy->new(dest => $dest_dir);
-
-    $hierarchy->add_source_dir($foo_dir);
-    $hierarchy->add_include_dir($bar_dir);
-    $hierarchy->add_include_dir($base_dir);
-
-    eval { $hierarchy->build; };
-
-    like( $@, qr/Class .* from include dir .* parcel .* from source dir/,
-          "included class with source parcel" );
-
-    Clownfish::CFC::Model::Class->_clear_registry();
-    Clownfish::CFC::Model::Parcel->reap_singletons();
-}
 
 SKIP: {
     skip( 'Exceptions leak', 1 )
