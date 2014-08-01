@@ -1061,35 +1061,35 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Parcel
 
 SV*
-_new(name_sv, nickname_sv, version, is_included)
+_new(name_sv, nickname_sv, version, file_spec)
     SV *name_sv;
     SV *nickname_sv;
     CFCVersion *version;
-    bool is_included;
+    CFCFileSpec *file_spec;
 CODE:
     const char *name     = SvOK(name_sv)  ? SvPV_nolen(name_sv)  : NULL;
     const char *nickname = SvOK(nickname_sv) ? SvPV_nolen(nickname_sv) : NULL;
-    CFCParcel *self = CFCParcel_new(name, nickname, version, is_included);
+    CFCParcel *self = CFCParcel_new(name, nickname, version, file_spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
 
 SV*
-_new_from_file(path, is_included)
+_new_from_file(path, file_spec)
     const char *path;
-    bool is_included;
+    CFCFileSpec *file_spec;
 CODE:
-    CFCParcel *self = CFCParcel_new_from_file(path, is_included);
+    CFCParcel *self = CFCParcel_new_from_file(path, file_spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
 
 SV*
-_new_from_json(json, is_included)
+_new_from_json(json, file_spec)
     const char *json;
-    bool is_included;
+    CFCFileSpec *file_spec;
 CODE:
-    CFCParcel *self = CFCParcel_new_from_json(json, is_included);
+    CFCParcel *self = CFCParcel_new_from_json(json, file_spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL

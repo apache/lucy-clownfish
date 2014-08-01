@@ -253,10 +253,23 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
     context.num_paths = 0;
     CFCUtil_walk(source_dir, S_find_files, &context);
 
+    size_t source_dir_len = strlen(source_dir);
+
     // Parse .cfp files and register the parcels they define.
     for (int i = 0; context.paths[i] != NULL; i++) {
         const char *path = context.paths[i];
-        CFCParcel *parcel = CFCParcel_new_from_file(path, is_included);
+
+        if (strncmp(path, source_dir, source_dir_len) != 0) {
+            CFCUtil_die("'%s' doesn't start with '%s'", path, source_dir);
+        }
+        const char *path_part = path + source_dir_len;
+        while (*path_part == CHY_DIR_SEP_CHAR) {
+            ++path_part;
+        }
+
+        CFCFileSpec *file_spec
+            = CFCFileSpec_new(source_dir, path_part, is_included);
+        CFCParcel *parcel = CFCParcel_new_from_file(path, file_spec);
         const char *name = CFCParcel_get_name(parcel);
         CFCParcel *existing = CFCParcel_fetch(name);
         if (existing) {
@@ -277,6 +290,7 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
             CFCParcel_register(parcel);
         }
         CFCBase_decref((CFCBase*)parcel);
+        CFCBase_decref((CFCBase*)file_spec);
     }
 
     S_free_find_files_context(&context);

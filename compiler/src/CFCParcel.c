@@ -26,6 +26,7 @@
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCParcel.h"
+#include "CFCFileSpec.h"
 #include "CFCVersion.h"
 #include "CFCUtil.h"
 
@@ -34,11 +35,11 @@ struct CFCParcel {
     char *name;
     char *nickname;
     CFCVersion *version;
+    CFCFileSpec *file_spec;
     char *prefix;
     char *Prefix;
     char *PREFIX;
     char *privacy_sym;
-    int is_included;
     int is_required;
     char **inherited_parcels;
     size_t num_inherited_parcels;
@@ -155,14 +156,14 @@ static const CFCMeta CFCPARCEL_META = {
 
 CFCParcel*
 CFCParcel_new(const char *name, const char *nickname, CFCVersion *version,
-              int is_included) {
+              CFCFileSpec *file_spec) {
     CFCParcel *self = (CFCParcel*)CFCBase_allocate(&CFCPARCEL_META);
-    return CFCParcel_init(self, name, nickname, version, is_included);
+    return CFCParcel_init(self, name, nickname, version, file_spec);
 }
 
 CFCParcel*
 CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
-               CFCVersion *version, int is_included) {
+               CFCVersion *version, CFCFileSpec *file_spec) {
     // Validate name.
     if (!name || !S_validate_name_or_nickname(name)) {
         CFCUtil_die("Invalid name: '%s'", name ? name : "[NULL]");
@@ -188,6 +189,9 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     else {
         self->version = CFCVersion_new("v0");
     }
+
+    // Set file_spec.
+    self->file_spec = (CFCFileSpec*)CFCBase_incref((CFCBase*)file_spec);
 
     // Derive prefix, Prefix, PREFIX.
     size_t nickname_len  = strlen(self->nickname);
@@ -222,7 +226,6 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     self->privacy_sym[privacy_sym_len] = '\0';
 
     // Initialize flags.
-    self->is_included = is_included;
     self->is_required = false;
 
     // Initialize arrays.
@@ -237,7 +240,7 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
 }
 
 static CFCParcel*
-S_new_from_json(const char *json, const char *path, int is_included) {
+S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
     JSONNode *parsed = S_parse_json_for_parcel(json);
     if (!parsed) {
         CFCUtil_die("Invalid JSON parcel definition in '%s'", path);
@@ -293,7 +296,7 @@ S_new_from_json(const char *json, const char *path, int is_included) {
     if (!version) {
         CFCUtil_die("Missing required key 'version' (filepath '%s')", path);
     }
-    CFCParcel *self = CFCParcel_new(name, nickname, version, is_included);
+    CFCParcel *self = CFCParcel_new(name, nickname, version, file_spec);
     if (prereqs) {
         S_set_prereqs(self, prereqs, path);
     }
@@ -338,15 +341,15 @@ S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path) {
 }
 
 CFCParcel*
-CFCParcel_new_from_json(const char *json, int is_included) {
-    return S_new_from_json(json, "[NULL]", is_included);
+CFCParcel_new_from_json(const char *json, CFCFileSpec *file_spec) {
+    return S_new_from_json(json, "[NULL]", file_spec);
 }
 
 CFCParcel*
-CFCParcel_new_from_file(const char *path, int is_included) {
+CFCParcel_new_from_file(const char *path, CFCFileSpec *file_spec) {
     size_t len;
     char *json = CFCUtil_slurp_text(path, &len);
-    CFCParcel *self = S_new_from_json(json, path, is_included);
+    CFCParcel *self = S_new_from_json(json, path, file_spec);
     FREEMEM(json);
     return self;
 }
@@ -356,6 +359,7 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->name);
     FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->version);
+    CFCBase_decref((CFCBase*)self->file_spec);
     FREEMEM(self->prefix);
     FREEMEM(self->Prefix);
     FREEMEM(self->PREFIX);
@@ -382,7 +386,9 @@ CFCParcel_equals(CFCParcel *self, CFCParcel *other) {
     if (CFCVersion_compare_to(self->version, other->version) != 0) {
         return false;
     }
-    if (self->is_included != other->is_included) { return false; }
+    if (CFCParcel_included(self) != CFCParcel_included(other)) {
+        return false;
+    }
     return true;
 }
 
@@ -421,9 +427,23 @@ CFCParcel_get_privacy_sym(CFCParcel *self) {
     return self->privacy_sym;
 }
 
+const char*
+CFCParcel_get_cfp_path(CFCParcel *self) {
+    return self->file_spec
+           ? CFCFileSpec_get_path(self->file_spec)
+           : NULL;
+}
+
+const char*
+CFCParcel_get_source_dir(CFCParcel *self) {
+    return self->file_spec
+           ? CFCFileSpec_get_source_dir(self->file_spec)
+           : NULL;
+}
+
 int
 CFCParcel_included(CFCParcel *self) {
-    return self->is_included;
+    return self->file_spec ? CFCFileSpec_included(self->file_spec) : false;
 }
 
 int

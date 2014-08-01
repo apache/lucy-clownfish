@@ -351,41 +351,41 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.01' ) }
     use Carp;
 
     our %new_PARAMS = (
-        name        => undef,
-        nickname    => undef,
-        version     => undef,
-        is_included => undef,
+        name      => undef,
+        nickname  => undef,
+        version   => undef,
+        file_spec => undef,
     );
 
     sub new {
         my ( $either, %args ) = @_;
         verify_args( \%new_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
-        return _new( @args{qw( name nickname version is_included )} );
+        return _new( @args{qw( name nickname version file_spec )} );
     }
 
     our %new_from_json_PARAMS = (
-        json        => undef,
-        is_included => undef,
+        json      => undef,
+        file_spec => undef,
     );
 
     sub new_from_json {
         my ( $either, %args ) = @_;
         verify_args( \%new_from_json_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
-        return _new_from_json( @args{qw( json is_included )} );
+        return _new_from_json( @args{qw( json file_spec )} );
     }
 
     our %new_from_file_PARAMS = (
-        path        => undef,
-        is_included => undef,
+        path      => undef,
+        file_spec => undef,
     );
 
     sub new_from_file {
         my ( $either, %args ) = @_;
         verify_args( \%new_from_file_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
-        return _new_from_file( @args{qw( path is_included )} );
+        return _new_from_file( @args{qw( path file_spec )} );
     }
 
 #    $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel_name_or_parcel_object);

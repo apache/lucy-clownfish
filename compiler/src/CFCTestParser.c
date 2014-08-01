@@ -55,7 +55,7 @@ S_run_tests(CFCTest *test) {
         CFCParcel *fish = CFCTest_parse_parcel(test, parser, "parcel Fish;");
 
         CFCParcel *registered
-            = CFCParcel_new("Crustacean", "Crust", NULL, false);
+            = CFCParcel_new("Crustacean", "Crust", NULL, NULL);
         CFCParcel_register(registered);
         CFCParcel *parcel
             = CFCTest_parse_parcel(test, parser, "parcel Crustacean;");

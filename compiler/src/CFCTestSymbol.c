@@ -36,7 +36,7 @@ const CFCTestBatch CFCTEST_BATCH_SYMBOL = {
 
 static void
 S_run_tests(CFCTest *test) {
-    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, false);
+    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, NULL);
 
     {
         static const char *exposures[4] = {
@@ -95,7 +95,7 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCParcel *lucifer_parcel
-            = CFCParcel_new("Lucifer", NULL, NULL, false);
+            = CFCParcel_new("Lucifer", NULL, NULL, NULL);
         CFCParcel_register(lucifer_parcel);
         CFCSymbol *lucifer
             = CFCSymbol_new(lucifer_parcel, "parcel", NULL, NULL, "sym");
@@ -109,7 +109,7 @@ S_run_tests(CFCTest *test) {
         const char *PREFIX = CFCSymbol_get_PREFIX(lucifer);
         STR_EQ(test, PREFIX, "LUCIFER_", "get_PREFIX");
 
-        CFCParcel *luser_parcel = CFCParcel_new("Luser", NULL, NULL, false);
+        CFCParcel *luser_parcel = CFCParcel_new("Luser", NULL, NULL, NULL);
         CFCParcel_register(luser_parcel);
         CFCSymbol *luser
             = CFCSymbol_new(luser_parcel, "parcel", NULL, NULL, "sym");
@@ -133,7 +133,7 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCParcel *eep_parcel = CFCParcel_new("Eep", NULL, NULL, false);
+        CFCParcel *eep_parcel = CFCParcel_new("Eep", NULL, NULL, NULL);
         CFCParcel_register(eep_parcel);
         CFCSymbol *eep
             = CFCSymbol_new(eep_parcel, "parcel", "Op::Ork", NULL, "ah_ah");

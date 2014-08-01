@@ -330,16 +330,13 @@ parcel_definition(A) ::= PARCEL qualified_id(B) SEMICOLON.
 {
     A = CFCParcel_fetch(B);
     if (!A) {
-        CFCFileSpec *file_spec = CFCParser_get_file_spec(state);
-        int is_included = false;
-        if (file_spec) {
-            is_included = CFCFileSpec_included(file_spec);
-        }
-        A = CFCParcel_new(B, NULL, NULL, is_included);
+        /* Allow unregistered parcels to simplify tests. */
+        A = CFCParcel_new(B, NULL, NULL, NULL);
         CFCParcel_register(A);
-        CFCBase_decref((CFCBase*)A);
     }
-    CFCBase_incref((CFCBase*)A);
+    else {
+        CFCBase_incref((CFCBase*)A);
+    }
     CFCParser_set_parcel(state, A);
 }
 

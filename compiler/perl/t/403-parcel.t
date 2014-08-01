@@ -52,9 +52,14 @@ eval { $same_nick->register; };
 like( $@, qr/parcel with nickname .* already registered/i,
       "can't register two parcels with the same nickname" );
 
-my $included_foo = Clownfish::CFC::Model::Parcel->new(
-    name        => "IncludedFoo",
+my $foo_file_spec = Clownfish::CFC::Model::FileSpec->new(
+    source_dir  => '.',
+    path_part   => 'Foo.cfp',
     is_included => 1,
+);
+my $included_foo = Clownfish::CFC::Model::Parcel->new(
+    name      => "IncludedFoo",
+    file_spec => $foo_file_spec,
 );
 ok( $included_foo->included, "included" );
 $included_foo->register;
@@ -140,19 +145,29 @@ Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 
 {
-    my $foo = Clownfish::CFC::Model::Parcel->new(
-        name        => 'Foo',
+    my $foo_file_spec = Clownfish::CFC::Model::FileSpec->new(
+        source_dir  => '.',
+        path_part   => 'Foo.cfp',
         is_included => 1,
+    );
+    my $foo = Clownfish::CFC::Model::Parcel->new(
+        name      => 'Foo',
+        file_spec => $foo_file_spec,
     );
     $foo->register;
 
     my $cfish_version = Clownfish::CFC::Model::Version->new(
         vstring => 'v0.8.7',
     );
-    my $cfish = Clownfish::CFC::Model::Parcel->new(
-        name        => 'Clownfish',
-        version     => $cfish_version,
+    my $cfish_file_spec = Clownfish::CFC::Model::FileSpec->new(
+        source_dir  => '.',
+        path_part   => 'Clownfish.cfp',
         is_included => 1,
+    );
+    my $cfish = Clownfish::CFC::Model::Parcel->new(
+        name      => 'Clownfish',
+        version   => $cfish_version,
+        file_spec => $cfish_file_spec,
     );
     $cfish->register;
 

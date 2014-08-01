@@ -38,6 +38,7 @@ extern "C" {
 
 typedef struct CFCParcel CFCParcel;
 typedef struct CFCPrereq CFCPrereq;
+struct CFCFileSpec;
 struct CFCVersion;
 
 /** Return the parcel which has been registered for <code>name</code>.
@@ -63,17 +64,17 @@ CFCParcel_reap_singletons(void);
 
 CFCParcel*
 CFCParcel_new(const char *name, const char *nickname,
-              struct CFCVersion *version, int is_included);
+              struct CFCVersion *version, struct CFCFileSpec *file_spec);
 
 CFCParcel*
-CFCParcel_new_from_file(const char *path, int is_included);
+CFCParcel_new_from_file(const char *path, struct CFCFileSpec *file_spec);
 
 CFCParcel*
-CFCParcel_new_from_json(const char *json, int is_included);
+CFCParcel_new_from_json(const char *json, struct CFCFileSpec *file_spec);
 
 CFCParcel*
 CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
-               struct CFCVersion *version, int is_included);
+               struct CFCVersion *version, struct CFCFileSpec *file_spec);
 
 void
 CFCParcel_destroy(CFCParcel *self);
@@ -109,6 +110,18 @@ CFCParcel_get_PREFIX(CFCParcel *self);
  */
 const char*
 CFCParcel_get_privacy_sym(CFCParcel *self);
+
+/* Return the path to the Parcel's .cfp file. May return NULL if the parcel
+ * wasn't created from a file.
+ */
+const char*
+CFCParcel_get_cfp_path(CFCParcel *self);
+
+/* Return the Parcel's source or include dir. May return NULL if the parcel
+ * wasn't created from a file.
+ */
+const char*
+CFCParcel_get_source_dir(CFCParcel *self);
 
 /** Return true if the parcel is from an include directory.
  */
