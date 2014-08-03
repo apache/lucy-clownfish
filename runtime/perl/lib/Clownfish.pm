@@ -86,6 +86,8 @@ sub error {$Clownfish::Err::error}
     $VERSION = eval $VERSION;
     use Clownfish qw( to_clownfish to_perl );
     use Carp qw( confess );
+    # Clownfish objects are not thread-safe.
+    sub CLONE_SKIP { 1; }
     sub STORABLE_freeze {
         my $class_name = ref(shift);
         confess("Storable serialization not implemented for $class_name");
