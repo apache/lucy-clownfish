@@ -150,6 +150,9 @@ CFCPerlClass_singleton(const char *class_name) {
 
 CFCPerlClass**
 CFCPerlClass_registry() {
+    if (!registry) {
+        registry = (CFCPerlClass**)CALLOCATE(1, sizeof(CFCPerlClass*));
+    }
     return registry;
 }
 
