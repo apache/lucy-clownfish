@@ -408,9 +408,12 @@ static char*
 S_struct_definition(CFCBindClass *self) {
     CFCClass *const client = self->client;
     const char *struct_sym;
+    char       *member_decs = CFCUtil_strdup("");
+
     const char *prefix = CFCClass_get_prefix(client);
     if (strcmp(prefix, "cfish_") == 0) {
         struct_sym = CFCClass_full_struct_sym(client);
+        member_decs = CFCUtil_cat(member_decs, "\n    CFISH_OBJ_HEAD", NULL);
     }
     else {
         struct_sym = CFCClass_full_ivars_struct(client);
@@ -430,16 +433,12 @@ S_struct_definition(CFCBindClass *self) {
 
     // Add all member variables declared by classes in this package.
     CFCVariable **member_vars = CFCClass_member_vars(client);
-    char *member_decs = CFCUtil_strdup("");
     for (int i = num_non_package_members; member_vars[i] != NULL; i++) {
         const char *member_dec = CFCVariable_local_declaration(member_vars[i]);
-        size_t needed = strlen(member_decs) + strlen(member_dec) + 10;
-        member_decs = (char*)REALLOCATE(member_decs, needed);
-        strcat(member_decs, "\n    ");
-        strcat(member_decs, member_dec);
+        member_decs = CFCUtil_cat(member_decs, "\n    ", member_dec, NULL);
     }
 
-    char pattern[] = "struct %s {\n    CFISH_OBJ_HEAD%s\n};\n";
+    char pattern[] = "struct %s {%s\n};\n";
     char *struct_def = CFCUtil_sprintf(pattern, struct_sym, member_decs);
 
     FREEMEM(member_decs);
