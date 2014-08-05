@@ -25,14 +25,14 @@ parcel Clownfish;
 
 class Clownfish::Class inherits Clownfish::Obj {
 
-    Class             *parent;
-    String            *name;
-    uint32_t           flags;
-    int32_t            parcel_id;
-    size_t             obj_alloc_size;
-    size_t             class_alloc_size;
-    VArray            *methods;
-    cfish_method_t[1]  vtable; /* flexible array */
+    Class              *parent;
+    String             *name;
+    uint32_t            flags;
+    int32_t             parcel_id;
+    size_t              obj_alloc_size;
+    size_t              class_alloc_size;
+    Method            **methods;
+    cfish_method_t[1]   vtable; /* flexible array */
 
     inert LockFreeRegistry *registry;
     inert size_t offset_of_parent;
@@ -130,6 +130,8 @@ class Clownfish::Class inherits Clownfish::Obj {
     size_t
     Get_Obj_Alloc_Size(Class *self);
 
+    /** Return novel methods of the class.
+     */
     VArray*
     Get_Methods(Class *self);
 

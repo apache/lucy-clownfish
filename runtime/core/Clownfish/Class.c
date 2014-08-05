@@ -147,16 +147,20 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
         Class *klass = *spec->klass;
 
         klass->name    = Str_newf("%s", spec->name);
-        klass->methods = VA_new(0);
+        klass->methods = (Method**)MALLOCATE((spec->num_novel_meths + 1)
+                                             * sizeof(Method*));
 
+        // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
             String *name = Str_newf("%s", mspec->name);
             Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
-            VA_Push(klass->methods, (Obj*)method);
+            klass->methods[i] = method;
             DECREF(name);
         }
+
+        klass->methods[spec->num_novel_meths] = NULL;
 
         Class_add_to_registry(klass);
     }
@@ -232,7 +236,13 @@ Class_Get_Obj_Alloc_Size_IMP(Class *self) {
 
 VArray*
 Class_Get_Methods_IMP(Class *self) {
-    return self->methods;
+    VArray *retval = VA_new(0);
+
+    for (size_t i = 0; self->methods[i]; ++i) {
+        VA_Push(retval, INCREF(self->methods[i]));
+    }
+
+    return retval;
 }
 
 void
@@ -276,6 +286,7 @@ Class_singleton(String *class_name, Class *parent) {
         singleton->parent = parent;
         DECREF(singleton->name);
         singleton->name = Str_Clone(class_name);
+        singleton->methods = (Method**)CALLOCATE(1, sizeof(Method*));
 
         // Allow host methods to override.
         fresh_host_methods = Class_fresh_host_methods(class_name);
@@ -287,9 +298,8 @@ Class_singleton(String *class_name, Class *parent) {
                 Hash_Store(meths, (Obj*)meth, (Obj*)CFISH_TRUE);
             }
             for (Class *klass = parent; klass; klass = klass->parent) {
-                uint32_t max = VA_Get_Size(klass->methods);
-                for (uint32_t i = 0; i < max; i++) {
-                    Method *method = (Method*)VA_Fetch(klass->methods, i);
+                for (size_t i = 0; klass->methods[i]; i++) {
+                    Method *method = klass->methods[i];
                     if (method->callback_func) {
                         String *name = Method_Host_Name(method);
                         if (Hash_Fetch(meths, (Obj*)name)) {
@@ -390,11 +400,10 @@ Class_Exclude_Host_Method_IMP(Class *self, const char *meth_name) {
 
 static Method*
 S_find_method(Class *self, const char *name) {
-    size_t   name_len = strlen(name);
-    uint32_t size     = VA_Get_Size(self->methods);
+    size_t name_len = strlen(name);
 
-    for (uint32_t i = 0; i < size; i++) {
-        Method *method = (Method*)VA_Fetch(self->methods, i);
+    for (size_t i = 0; self->methods[i]; i++) {
+        Method *method = self->methods[i];
         if (Str_Equals_Utf8(method->name, name, name_len)) {
             return method;
         }
