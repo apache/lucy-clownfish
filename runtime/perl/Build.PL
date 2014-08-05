@@ -29,7 +29,6 @@ my $builder = Clownfish::Build->new(
     requires           => { 'perl' => '5.8.3', },
     configure_requires => { 'Module::Build' => 0.280801 },
     build_requires     => {
-        'Clownfish::CFC'     => '0.1.0',
         'Module::Build'      => 0.280801,
         'ExtUtils::CBuilder' => 0.21,
         'ExtUtils::ParseXS'  => 2.18,

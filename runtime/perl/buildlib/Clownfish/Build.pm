@@ -67,6 +67,8 @@ sub new {
         include        => [],                  # Don't use default includes.
         source => [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ],
     };
+    $args{build_requires}{'Clownfish::CFC'} = '0.1.0'
+        if $IS_CPAN_DIST;
     my $self = $class->SUPER::new( recursive_test_files => 1, %args );
 
     # Fix for MSVC: Although the generated XS should be C89-compliant, it
