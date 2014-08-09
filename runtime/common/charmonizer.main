@@ -516,6 +516,16 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
                                   " --rc lcov_branch_coverage=1"
                                   " --output-file clownfish.info");
         chaz_MakeRule_add_command(rule,
+                                  "lcov"
+                                  " --remove clownfish.info"
+                                  " '/usr/include/*'"
+                                  " 'c/autogen/*'"
+                                  " 'core/Clownfish/Test.*'"
+                                  " 'core/Clownfish/Test/*'"
+                                  " 'core/TestClownfish.*'"
+                                  " --rc lcov_branch_coverage=1"
+                                  " --output-file clownfish.info");
+        chaz_MakeRule_add_command(rule,
                                   "genhtml"
                                   " --branch-coverage"
                                   " --output-directory coverage"
