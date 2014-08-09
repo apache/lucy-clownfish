@@ -550,7 +550,7 @@ SStr_new_from_str(void *allocation, size_t alloc_size, String *string) {
 }
 
 StackString*
-SStr_wrap_str(void *allocation, const char *ptr, size_t size) {
+SStr_wrap_utf8(void *allocation, const char *ptr, size_t size) {
     StackString *self
         = (StackString*)Class_Init_Obj(STACKSTRING, allocation);
     self->size   = size;
@@ -561,7 +561,7 @@ SStr_wrap_str(void *allocation, const char *ptr, size_t size) {
 
 StackString*
 SStr_wrap(void *allocation, String *source) {
-    return SStr_wrap_str(allocation, source->ptr, source->size);
+    return SStr_wrap_utf8(allocation, source->ptr, source->size);
 }
 
 size_t

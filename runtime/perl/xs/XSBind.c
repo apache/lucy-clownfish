@@ -113,7 +113,7 @@ XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
             // StackString.
             STRLEN size;
             char *ptr = SvPVutf8(sv, size);
-            retval = (cfish_Obj*)cfish_SStr_wrap_str(allocation, ptr, size);
+            retval = (cfish_Obj*)cfish_SStr_wrap_utf8(allocation, ptr, size);
         }
         else if (SvROK(sv)) {
             // Attempt to convert Perl hashes and arrays into their Clownfish
