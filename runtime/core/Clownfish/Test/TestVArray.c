@@ -43,6 +43,12 @@ test_Equals(TestBatchRunner *runner) {
     VArray *other = VA_new(0);
     StackString *stuff = SSTR_WRAP_UTF8("stuff", 5);
 
+    TEST_TRUE(runner, VA_Equals(array, (Obj*)array),
+              "Array equal to self");
+
+    TEST_FALSE(runner, VA_Equals(array, (Obj*)CFISH_TRUE),
+               "Array not equal to non-array");
+
     TEST_TRUE(runner, VA_Equals(array, (Obj*)other),
               "Empty arrays are equal");
 
@@ -65,6 +71,12 @@ test_Equals(TestBatchRunner *runner) {
     VA_Store(other, 2, INCREF(stuff));
     TEST_FALSE(runner, VA_Equals(array, (Obj*)other),
                "Non-matching value spoils Equals");
+
+    VA_Store(other, 2, NULL);
+    TEST_FALSE(runner, VA_Equals(array, (Obj*)other),
+               "NULL value spoils Equals");
+    TEST_FALSE(runner, VA_Equals(other, (Obj*)array),
+               "NULL value spoils Equals (reversed)");
 
     VA_Excise(array, 1, 2);       // removes empty elems
     DECREF(VA_Delete(other, 1));  // leaves NULL in place of deleted elem
@@ -107,6 +119,11 @@ test_Push_Pop_Shift_Unshift(TestBatchRunner *runner) {
     String *elem;
 
     TEST_INT_EQ(runner, VA_Get_Size(array), 0, "size starts at 0");
+    TEST_TRUE(runner, VA_Pop(array) == NULL,
+              "Pop from empty array returns NULL");
+    TEST_TRUE(runner, VA_Shift(array) == NULL,
+              "Shift from empty array returns NULL");
+
     VA_Push(array, (Obj*)Str_newf("a"));
     VA_Push(array, (Obj*)Str_newf("b"));
     VA_Push(array, (Obj*)Str_newf("c"));
@@ -129,6 +146,15 @@ test_Push_Pop_Shift_Unshift(TestBatchRunner *runner) {
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Unshift");
     TEST_INT_EQ(runner, VA_Get_Size(array), 2, "size after Shift");
 
+    for (int i = 0; i < 256; ++i) {
+        VA_Push(array, (Obj*)Str_newf("flotsam"));
+    }
+    for (int i = 0; i < 512; ++i) {
+        VA_Unshift(array, (Obj*)Str_newf("jetsam"));
+    }
+    TEST_INT_EQ(runner, VA_Get_Size(array), 2 + 256 + 512,
+                "size after exercising Pop and Unshift");
+
     DECREF(array);
 }
 
@@ -145,6 +171,9 @@ test_Delete(TestBatchRunner *runner) {
     DECREF(VA_Delete(got, 2));
     DECREF(VA_Delete(got, 3));
     TEST_TRUE(runner, VA_Equals(wanted, (Obj*)got), "Delete");
+
+    TEST_TRUE(runner, VA_Delete(got, 25000) == NULL,
+              "Delete beyond array size returns NULL");
 
     DECREF(wanted);
     DECREF(got);
@@ -166,6 +195,9 @@ test_Resize(TestBatchRunner *runner) {
     VA_Resize(array, 2);
     TEST_INT_EQ(runner, VA_Get_Size(array), 2, "Resize down");
     TEST_TRUE(runner, VA_Fetch(array, 2) == NULL, "Resize down zaps elem");
+
+    VA_Resize(array, 2);
+    TEST_INT_EQ(runner, VA_Get_Size(array), 2, "Resize to same size");
 
     DECREF(array);
 }
@@ -212,18 +244,26 @@ test_Push_VArray(TestBatchRunner *runner) {
     VArray *wanted  = VA_new(0);
     VArray *got     = VA_new(0);
     VArray *scratch = VA_new(0);
+    VArray *empty   = VA_new(0);
     uint32_t i;
 
-    for (i = 0; i < 4; i++) { VA_Push(wanted, (Obj*)Str_newf("%u32", i)); }
-    for (i = 0; i < 2; i++) { VA_Push(got, (Obj*)Str_newf("%u32", i)); }
-    for (i = 2; i < 4; i++) { VA_Push(scratch, (Obj*)Str_newf("%u32", i)); }
+    for (i =  0; i < 40; i++) { VA_Push(wanted, (Obj*)Str_newf("%u32", i)); }
+    VA_Push(wanted, NULL);
+    for (i =  0; i < 20; i++) { VA_Push(got, (Obj*)Str_newf("%u32", i)); }
+    for (i = 20; i < 40; i++) { VA_Push(scratch, (Obj*)Str_newf("%u32", i)); }
+    VA_Push(scratch, NULL);
 
     VA_Push_VArray(got, scratch);
     TEST_TRUE(runner, VA_Equals(wanted, (Obj*)got), "Push_VArray");
 
+    VA_Push_VArray(got, empty);
+    TEST_TRUE(runner, VA_Equals(wanted, (Obj*)got),
+              "Push_VArray with empty array");
+
     DECREF(wanted);
     DECREF(got);
     DECREF(scratch);
+    DECREF(empty);
 }
 
 static void
@@ -280,6 +320,7 @@ test_Clone_and_Shallow_Copy(TestBatchRunner *runner) {
     for (i = 0; i < 10; i++) {
         VA_Push(array, (Obj*)Int32_new(i));
     }
+    VA_Push(array, NULL);
     twin = VA_Shallow_Copy(array);
     TEST_TRUE(runner, VA_Equals(array, (Obj*)twin), "Shallow_Copy");
     TEST_TRUE(runner, VA_Fetch(array, 1) == VA_Fetch(twin, 1),
@@ -356,9 +397,126 @@ test_exceptions(TestBatchRunner *runner) {
                      "Store throws on overflow");
 }
 
+static int
+S_reverse_compare(void *context, const void *va, const void *vb) {
+    Obj *a = *(Obj**)va;
+    Obj *b = *(Obj**)vb;
+    UNUSED_VAR(context);
+    if (a != NULL && b != NULL)      { return -Obj_Compare_To(a, b); }
+    else if (a == NULL && b == NULL) { return 0;  }
+    else if (a == NULL)              { return -1; } // NULL to the front
+    else  /* b == NULL */            { return 1;  } // NULL to the front
+}
+
+static void
+S_reverse_array(VArray *array) {
+    uint32_t size = VA_Get_Size(array);
+
+    for (uint32_t l = 0, r = size - 1; l < r; ++l, --r) {
+        Obj *left  = VA_Delete(array, l);
+        Obj *right = VA_Delete(array, r);
+        VA_Store(array, l, right);
+        VA_Store(array, r, left);
+    }
+}
+
+static void
+test_Sort(TestBatchRunner *runner) {
+    VArray *array  = VA_new(8);
+    VArray *wanted = VA_new(8);
+
+    VA_Push(array, NULL);
+    VA_Push(array, (Obj*)Str_newf("aaab"));
+    VA_Push(array, (Obj*)Str_newf("ab"));
+    VA_Push(array, NULL);
+    VA_Push(array, NULL);
+    VA_Push(array, (Obj*)Str_newf("aab"));
+    VA_Push(array, (Obj*)Str_newf("b"));
+
+    VA_Push(wanted, (Obj*)Str_newf("aaab"));
+    VA_Push(wanted, (Obj*)Str_newf("aab"));
+    VA_Push(wanted, (Obj*)Str_newf("ab"));
+    VA_Push(wanted, (Obj*)Str_newf("b"));
+    VA_Push(wanted, NULL);
+    VA_Push(wanted, NULL);
+    VA_Push(wanted, NULL);
+
+    VA_Sort(array, NULL, NULL);
+    TEST_TRUE(runner, VA_Equals(array, (Obj*)wanted), "Sort with NULLs");
+
+    VA_Sort(array, S_reverse_compare, NULL);
+    S_reverse_array(wanted);
+    TEST_TRUE(runner, VA_Equals(array, (Obj*)wanted), "Custom Sort");
+
+    DECREF(array);
+    DECREF(wanted);
+}
+
+static bool
+S_elem_not_three(VArray *array, uint32_t tick, void *data) {
+    UNUSED_VAR(data);
+    Obj *elem = VA_Fetch(array, tick);
+    if (elem == NULL) { return true; }
+    StackString *three_str = SSTR_WRAP_UTF8("three", 5);
+    return !Obj_Equals(elem, (Obj*)three_str);
+}
+
+static void
+test_Gather(TestBatchRunner *runner) {
+    VArray *array  = VA_new(8);
+    VArray *wanted = VA_new(8);
+    VArray *got    = NULL;
+
+    VA_Push(array, NULL);
+    VA_Push(array, (Obj*)Str_newf("one"));
+    VA_Push(array, (Obj*)Str_newf("two"));
+    VA_Push(array, NULL);
+    VA_Push(array, NULL);
+    VA_Push(array, (Obj*)Str_newf("three"));
+    VA_Push(array, (Obj*)Str_newf("four"));
+
+    VA_Push(wanted, NULL);
+    VA_Push(wanted, (Obj*)Str_newf("one"));
+    VA_Push(wanted, (Obj*)Str_newf("two"));
+    VA_Push(wanted, NULL);
+    VA_Push(wanted, NULL);
+    VA_Push(wanted, (Obj*)Str_newf("four"));
+
+    got = VA_Gather(array, S_elem_not_three, NULL);
+    TEST_TRUE(runner, VA_Equals(got, (Obj*)wanted), "Gather");
+
+    DECREF(array);
+    DECREF(wanted);
+    DECREF(got);
+}
+
+static void
+test_Grow(TestBatchRunner *runner) {
+    VArray   *array = VA_new(500);
+    uint32_t  cap;
+
+    cap = VA_Get_Capacity(array);
+    TEST_TRUE(runner, cap >= 500, "Array is created with minimum capacity");
+
+    VA_Grow(array, 2000);
+    cap = VA_Get_Capacity(array);
+    TEST_TRUE(runner, cap >= 2000, "Grow to larger capacity");
+
+    uint32_t old_cap = cap;
+    VA_Grow(array, old_cap);
+    cap = VA_Get_Capacity(array);
+    TEST_TRUE(runner, cap >= old_cap, "Grow to same capacity");
+
+    VA_Grow(array, 1000);
+    cap = VA_Get_Capacity(array);
+    TEST_TRUE(runner, cap >= 1000, "Grow to smaller capacity");
+
+    DECREF(array);
+}
+
 void
 TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 47);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 64);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Shift_Unshift(runner);
@@ -369,6 +527,9 @@ TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
     test_Slice(runner);
     test_Clone_and_Shallow_Copy(runner);
     test_exceptions(runner);
+    test_Sort(runner);
+    test_Gather(runner);
+    test_Grow(runner);
 }
 
 
