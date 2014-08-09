@@ -530,26 +530,6 @@ Str_StackTail_IMP(String *self, void *allocation) {
 /*****************************************************************/
 
 StackString*
-SStr_new_from_str(void *allocation, size_t alloc_size, String *string) {
-    size_t  size = string->size;
-    char   *ptr  = ((char*)allocation) + sizeof(StackString);
-
-    if (alloc_size < sizeof(StackString) + size + 1) {
-        THROW(ERR, "alloc_size of StackString too small");
-        UNREACHABLE_RETURN(StackString*);
-    }
-
-    memcpy(ptr, string->ptr, size);
-    ptr[size] = '\0';
-
-    StackString *self = (StackString*)Class_Init_Obj(STACKSTRING, allocation);
-    self->ptr    = ptr;
-    self->size   = size;
-    self->origin = NULL;
-    return self;
-}
-
-StackString*
 SStr_wrap_utf8(void *allocation, const char *ptr, size_t size) {
     StackString *self
         = (StackString*)Class_Init_Obj(STACKSTRING, allocation);

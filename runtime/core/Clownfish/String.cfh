@@ -285,15 +285,6 @@ class Clownfish::String nickname Str
 class Clownfish::StackString nickname SStr
     inherits Clownfish::String {
 
-    /**
-     * @param allocation A single block of memory which will be used for both
-     * the StackString object and its buffer.
-     * @param alloc_size The size of the allocation.
-     * @param string String to be copied.
-     */
-    inert incremented StackString*
-    new_from_str(void *allocation, size_t alloc_size, String *string);
-
     inert incremented StackString*
     wrap(void *allocation, String *source);
 
