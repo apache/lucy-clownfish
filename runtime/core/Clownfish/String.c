@@ -255,7 +255,7 @@ Str_BaseX_To_I64_IMP(String *self, uint32_t base) {
             int32_t addend = isdigit(code_point)
                              ? code_point - '0'
                              : tolower(code_point) - 'a' + 10;
-            if (addend > (int32_t)base) { break; }
+            if (addend >= (int32_t)base) { break; }
             retval *= base;
             retval += addend;
         }
