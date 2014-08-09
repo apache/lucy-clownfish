@@ -2569,6 +2569,7 @@ chaz_CLI_parse(chaz_CLI *self, int argc, const char *argv[]) {
 /***************************************************************************/
 
 #line 17 "src/Charmonizer/Core/Compiler.c"
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 /* #include "Charmonizer/Core/Util.h" */
@@ -2613,6 +2614,7 @@ void
 chaz_CC_init(const char *compiler_command, const char *compiler_flags) {
     const char *code = "int main() { return 0; }\n";
     int compile_succeeded = 0;
+    int retval            = -1;
 
     if (chaz_Util_verbosity) { printf("Creating compiler object...\n"); }
 
@@ -2626,22 +2628,36 @@ chaz_CC_init(const char *compiler_command, const char *compiler_flags) {
     chaz_CC.try_exe_name
         = chaz_Util_join("", CHAZ_CC_TRY_BASENAME, chaz_OS_exe_ext(), NULL);
 
-    /* If we can't compile anything, game over. */
+    /* If we can't compile or execute anything, game over. */
     if (chaz_Util_verbosity) {
-        printf("Trying to compile a small test file...\n");
+        printf("Trying to compile and execute a small test file...\n");
+    }
+    if (!chaz_Util_remove_and_verify(chaz_CC.try_exe_name)) {
+        chaz_Util_die("Failed to delete file '%s'", chaz_CC.try_exe_name);
     }
     /* Try MSVC argument style. */
     strcpy(chaz_CC.obj_ext, ".obj");
     chaz_CC.cflags_style = CHAZ_CFLAGS_STYLE_MSVC;
-    compile_succeeded = chaz_CC_test_compile(code);
+    compile_succeeded = chaz_CC_compile_exe(CHAZ_CC_TRY_SOURCE_PATH,
+                                            CHAZ_CC_TRY_BASENAME, code);
     if (!compile_succeeded) {
         /* Try POSIX argument style. */
         strcpy(chaz_CC.obj_ext, ".o");
         chaz_CC.cflags_style = CHAZ_CFLAGS_STYLE_POSIX;
-        compile_succeeded = chaz_CC_test_compile(code);
+        compile_succeeded = chaz_CC_compile_exe(CHAZ_CC_TRY_SOURCE_PATH,
+                                                CHAZ_CC_TRY_BASENAME, code);
     }
     if (!compile_succeeded) {
         chaz_Util_die("Failed to compile a small test file");
+    }
+    retval = chaz_OS_run_local_redirected(chaz_CC.try_exe_name,
+                                          chaz_OS_dev_null());
+    chaz_Util_remove_and_verify(chaz_CC.try_exe_name);
+    if (retval < 0) {
+        chaz_Util_die("Failed to execute test file: %s", strerror(errno));
+    }
+    if (retval > 0) {
+        chaz_Util_die("Unexpected exit code %d from test file", retval);
     }
 
     chaz_CC_detect_known_compilers();
@@ -8256,6 +8272,16 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
                                   " --capture"
                                   " --directory $(BASE_DIR)"
                                   " --base-directory ."
+                                  " --rc lcov_branch_coverage=1"
+                                  " --output-file clownfish.info");
+        chaz_MakeRule_add_command(rule,
+                                  "lcov"
+                                  " --remove clownfish.info"
+                                  " '/usr/include/*'"
+                                  " 'c/autogen/*'"
+                                  " 'core/Clownfish/Test.*'"
+                                  " 'core/Clownfish/Test/*'"
+                                  " 'core/TestClownfish.*'"
                                   " --rc lcov_branch_coverage=1"
                                   " --output-file clownfish.info");
         chaz_MakeRule_add_command(rule,
