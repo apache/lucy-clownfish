@@ -70,6 +70,51 @@ S_smiley_with_whitespace(int *num_spaces_ptr) {
 }
 
 static void
+test_new(TestBatchRunner *runner) {
+    static char chars[] = "A string " SMILEY " with a smile.";
+
+    {
+        char *buffer = (char*)MALLOCATE(sizeof(chars));
+        strcpy(buffer, chars);
+        String *thief = Str_new_steal_utf8(buffer, sizeof(chars) - 1);
+        TEST_TRUE(runner, Str_Equals_Utf8(thief, chars, sizeof(chars) - 1),
+                  "Str_new_steal_utf8");
+        DECREF(thief);
+    }
+
+    {
+        char *buffer = (char*)MALLOCATE(sizeof(chars));
+        strcpy(buffer, chars);
+        String *thief
+            = Str_new_steal_trusted_utf8(buffer, sizeof(chars) - 1);
+        TEST_TRUE(runner, Str_Equals_Utf8(thief, chars, sizeof(chars) - 1),
+                  "Str_new_steal_trusted_utf8");
+        DECREF(thief);
+    }
+
+    {
+        String *wrapper = Str_new_wrap_utf8(chars, sizeof(chars) - 1);
+        TEST_TRUE(runner, Str_Equals_Utf8(wrapper, chars, sizeof(chars) - 1),
+                  "Str_new_wrap_utf8");
+        DECREF(wrapper);
+    }
+
+    {
+        String *wrapper = Str_new_wrap_trusted_utf8(chars, sizeof(chars) - 1);
+        TEST_TRUE(runner, Str_Equals_Utf8(wrapper, chars, sizeof(chars) - 1),
+                  "Str_new_wrap_trusted_utf8");
+        DECREF(wrapper);
+    }
+
+    {
+        String *smiley_str = Str_new_from_char(smiley_cp);
+        TEST_TRUE(runner, Str_Equals_Utf8(smiley_str, smiley, smiley_len),
+                  "Str_new_from_char");
+        DECREF(smiley_str);
+    }
+}
+
+static void
 test_Cat(TestBatchRunner *runner) {
     String *wanted = Str_newf("a%s", smiley);
     String *source;
@@ -149,18 +194,39 @@ test_Code_Point_At_and_From(TestBatchRunner *runner) {
                     code_points[i], "Code_Point_From %ld", (long)from);
     }
 
+    TEST_INT_EQ(runner, Str_Code_Point_At(string, num_code_points), 0,
+                "Code_Point_At %ld", (long)num_code_points);
+    TEST_INT_EQ(runner, Str_Code_Point_From(string, 0), 0,
+                "Code_Point_From 0");
+    TEST_INT_EQ(runner, Str_Code_Point_From(string, num_code_points + 1), 0,
+                "Code_Point_From %ld", (long)(num_code_points + 1));
+
     DECREF(string);
 }
 
 static void
 test_SubString(TestBatchRunner *runner) {
-    String *string = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
-    String *wanted = Str_newf("%sb%s", smiley, smiley);
-    String *got = Str_SubString(string, 2, 3);
-    TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "SubString");
-    DECREF(wanted);
-    DECREF(got);
-    DECREF(string);
+    {
+        String *string = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
+        String *wanted = Str_newf("%sb%s", smiley, smiley);
+        String *got = Str_SubString(string, 2, 3);
+        TEST_TRUE(runner, Str_Equals(wanted, (Obj*)got), "SubString");
+        DECREF(string);
+        DECREF(wanted);
+        DECREF(got);
+    }
+
+    {
+        static const char chars[] = "A string.";
+        String *wrapper = Str_new_wrap_utf8(chars, sizeof(chars) - 1);
+        String *wanted  = Str_newf("string");
+        String *got     = Str_SubString(wrapper, 2, 6);
+        TEST_TRUE(runner, Str_Equals(got, (Obj*)wanted),
+                  "SubString with wrapped buffer");
+        DECREF(wrapper);
+        DECREF(wanted);
+        DECREF(got);
+    }
 }
 
 static void
@@ -255,6 +321,30 @@ test_To_I64(TestBatchRunner *runner) {
     string = S_get_str("-10");
     TEST_TRUE(runner, Str_To_I64(string) == -10, "To_I64 negative");
     DECREF(string);
+
+    string = S_get_str("10.");
+    TEST_INT_EQ(runner, Str_To_I64(string), 10,
+                "To_I64 stops at non-digits");
+    DECREF(string);
+
+    string = S_get_str("10A");
+    TEST_INT_EQ(runner, Str_To_I64(string), 10,
+                "To_I64 stops at out-of-range digits");
+    DECREF(string);
+
+    string = S_get_str("-JJ");
+    TEST_INT_EQ(runner, Str_BaseX_To_I64(string, 20), -399,
+                "BaseX_To_I64 base 20");
+    DECREF(string);
+}
+
+static void
+test_To_String(TestBatchRunner *runner) {
+    String *string = Str_newf("Test");
+    String *copy   = Str_To_String(string);
+    TEST_TRUE(runner, Str_Equals(copy, (Obj*)string), "To_String");
+    DECREF(string);
+    DECREF(copy);
 }
 
 static void
@@ -308,6 +398,63 @@ test_Swap_Chars(TestBatchRunner *runner) {
 }
 
 static void
+test_Starts_Ends_With(TestBatchRunner *runner) {
+    String *prefix  = S_get_str("pre" SMILEY "fix_");
+    String *postfix = S_get_str("_post" SMILEY "fix");
+    String *empty   = S_get_str("");
+
+    TEST_TRUE(runner, Str_Starts_With(postfix, postfix),
+              "Starts_With self returns true");
+    TEST_TRUE(runner, Str_Starts_With(prefix, prefix),
+              "Ends_With self returns true");
+
+    TEST_TRUE(runner, Str_Starts_With(postfix, empty),
+              "Starts_With empty string returns true");
+    TEST_TRUE(runner, Str_Ends_With(prefix, empty),
+              "Ends_With empty string returns true");
+    TEST_FALSE(runner, Str_Starts_With(empty, postfix),
+              "Empty string Starts_With returns false");
+    TEST_FALSE(runner, Str_Ends_With(empty, prefix),
+              "Empty string Ends_With returns false");
+
+    {
+        String *string
+            = S_get_str("pre" SMILEY "fix_string_post" SMILEY "fix");
+        TEST_TRUE(runner, Str_Starts_With(string, prefix),
+                  "Starts_With returns true");
+        TEST_TRUE(runner, Str_Ends_With(string, postfix),
+                  "Ends_With returns true");
+        DECREF(string);
+    }
+
+    {
+        String *string
+            = S_get_str("pre" SMILEY "fix:string:post" SMILEY "fix");
+        TEST_FALSE(runner, Str_Starts_With(string, prefix),
+                   "Starts_With returns false");
+        TEST_FALSE(runner, Str_Ends_With(string, postfix),
+                   "Ends_With returns false");
+        DECREF(string);
+    }
+
+    DECREF(prefix);
+    DECREF(postfix);
+}
+
+static void
+test_Get_Ptr8(TestBatchRunner *runner) {
+    String *string = S_get_str("Banana");
+
+    const char *ptr8 = Str_Get_Ptr8(string);
+    TEST_TRUE(runner, strcmp(ptr8, "Banana") == 0, "Get_Ptr8");
+
+    size_t size = Str_Get_Size(string);
+    TEST_INT_EQ(runner, size, 6, "Get_Size");
+
+    DECREF(string);
+}
+
+static void
 test_iterator(TestBatchRunner *runner) {
     static const int32_t code_points[] = {
         0x41,
@@ -329,6 +476,17 @@ test_iterator(TestBatchRunner *runner) {
     String *string = CB_To_String(buf);
 
     {
+        StringIterator *iter = Str_Top(string);
+
+        TEST_TRUE(runner, StrIter_Equals(iter, (Obj*)iter),
+                  "StringIterator equal to self");
+        TEST_FALSE(runner, StrIter_Equals(iter, (Obj*)CFISH_TRUE),
+                   "StringIterator not equal non-iterators");
+
+        DECREF(iter);
+    }
+
+    {
         StringIterator *top  = Str_Top(string);
         StringIterator *tail = Str_Tail(string);
 
@@ -345,6 +503,16 @@ test_iterator(TestBatchRunner *runner) {
         StrIter_Assign(clone, tail);
         TEST_TRUE(runner, StrIter_Equals(clone, (Obj*)tail), "Assign");
 
+        String *other = Str_newf("Other string");
+        StringIterator *other_iter = Str_Top(other);
+        TEST_FALSE(runner, StrIter_Equals(other_iter, (Obj*)tail),
+                   "Equals returns false for different strings");
+        StrIter_Assign(clone, other_iter);
+        TEST_TRUE(runner, StrIter_Equals(clone, (Obj*)other_iter),
+                  "Assign iterator with different string");
+
+        DECREF(other);
+        DECREF(other_iter);
         DECREF(clone);
         DECREF(top);
         DECREF(tail);
@@ -468,11 +636,30 @@ test_iterator_substring(TestBatchRunner *runner) {
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
                   "StrIter_substring");
 
-        TEST_TRUE(runner, StrIter_Starts_With(start, wanted), "Starts_With");
-        TEST_TRUE(runner, StrIter_Ends_With(end, wanted), "Ends_With");
+        TEST_TRUE(runner, StrIter_Starts_With(start, wanted),
+                  "Starts_With returns true");
+        TEST_TRUE(runner, StrIter_Ends_With(end, wanted),
+                  "Ends_With returns true");
 
         DECREF(wanted);
         DECREF(substring);
+    }
+
+    {
+        String *short_str = Str_newf("b%sx", smiley);
+        TEST_FALSE(runner, StrIter_Starts_With(start, short_str),
+                   "Starts_With returns false");
+        TEST_FALSE(runner, StrIter_Ends_With(start, short_str),
+                   "Ends_With returns false");
+
+        String *long_str = Str_newf("b%sxxxxxxxxxxxx%sc", smiley, smiley);
+        TEST_FALSE(runner, StrIter_Starts_With(start, long_str),
+                   "Starts_With long string returns false");
+        TEST_FALSE(runner, StrIter_Ends_With(end, long_str),
+                   "Ends_With long string returns false");
+
+        DECREF(short_str);
+        DECREF(long_str);
     }
 
     {
@@ -500,7 +687,8 @@ test_iterator_substring(TestBatchRunner *runner) {
 
 void
 TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 101);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 134);
+    test_new(runner);
     test_Cat(runner);
     test_Clone(runner);
     test_Code_Point_At_and_From(runner);
@@ -509,10 +697,13 @@ TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
     test_Trim(runner);
     test_To_F64(runner);
     test_To_I64(runner);
+    test_To_String(runner);
     test_To_Utf8(runner);
     test_Length(runner);
     test_Compare_To(runner);
     test_Swap_Chars(runner);
+    test_Starts_Ends_With(runner);
+    test_Get_Ptr8(runner);
     test_iterator(runner);
     test_iterator_whitespace(runner);
     test_iterator_substring(runner);
