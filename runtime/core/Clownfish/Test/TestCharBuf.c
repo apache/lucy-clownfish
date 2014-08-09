@@ -59,6 +59,25 @@ S_cb_equals(CharBuf *cb, String *other) {
 }
 
 static void
+test_new(TestBatchRunner *runner) {
+    {
+        String  *str = Str_newf("CharBuf from String");
+        CharBuf *cb  = CB_new_from_str(str);
+        TEST_TRUE(runner, S_cb_equals(cb, str), "CB_new_from_str");
+        DECREF(str);
+        DECREF(cb);
+    }
+
+    {
+        CharBuf *cb     = CB_newf("%i32 %s", 99, "Luftballons");
+        String  *wanted = Str_newf("99 Luftballons");
+        TEST_TRUE(runner, S_cb_equals(cb, wanted), "CB_newf");
+        DECREF(cb);
+        DECREF(wanted);
+    }
+}
+
+static void
 test_Cat(TestBatchRunner *runner) {
     String  *wanted = Str_newf("a%s", smiley);
     CharBuf *got    = S_get_cb("");
@@ -113,6 +132,23 @@ test_Mimic_and_Clone(TestBatchRunner *runner) {
     DECREF(wanted_cb);
 }
 
+static void
+test_Get_Ptr8(TestBatchRunner *runner) {
+    CharBuf *cb = CB_new(64);
+
+    char *ptr8 = CB_Get_Ptr8(cb);
+    strcpy(ptr8, "0123456789");
+    CB_Set_Size(cb, 10);
+
+    TEST_INT_EQ(runner, CB_Get_Size(cb), 10, "Set_Size/Get_Size");
+
+    String *wanted = S_get_str("0123456789");
+    TEST_TRUE(runner, S_cb_equals(cb, wanted), "Get_Ptr8");
+
+    DECREF(cb);
+    DECREF(wanted);
+}
+
 /*
 static void
 test_Truncate(TestBatchRunner *runner) {
@@ -124,6 +160,16 @@ test_Truncate(TestBatchRunner *runner) {
     DECREF(got);
 }
 */
+
+static void
+test_vcatf_percent(TestBatchRunner *runner) {
+    String  *wanted = S_get_str("foo % bar");
+    CharBuf *got = S_get_cb("foo");
+    CB_catf(got, " %% bar");
+    TEST_TRUE(runner, S_cb_equals(got, wanted), "%%%%");
+    DECREF(wanted);
+    DECREF(got);
+}
 
 static void
 test_vcatf_s(TestBatchRunner *runner) {
@@ -279,7 +325,9 @@ test_vcatf_x32(TestBatchRunner *runner) {
 
 void
 TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 21);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 26);
+    test_new(runner);
+    test_vcatf_percent(runner);
     test_vcatf_s(runner);
     test_vcatf_null_string(runner);
     test_vcatf_str(runner);
@@ -295,5 +343,6 @@ TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
     test_vcatf_x32(runner);
     test_Cat(runner);
     test_Mimic_and_Clone(runner);
+    test_Get_Ptr8(runner);
 }
 
