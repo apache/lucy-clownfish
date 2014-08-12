@@ -67,7 +67,7 @@ sub new {
         include        => [],                  # Don't use default includes.
         source => [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ],
     };
-    $args{build_requires}{'Clownfish::CFC'} = '0.1.0'
+    $args{build_requires}{'Clownfish::CFC'} = '0.3.0'
         if $IS_CPAN_DIST;
     my $self = $class->SUPER::new( recursive_test_files => 1, %args );
 
