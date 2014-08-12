@@ -109,25 +109,26 @@ test_c32(TestBatchRunner *runner) {
     char     *encoded   = (char*)CALLOCATE(amount, sizeof(char));
     char     *target    = encoded;
     char     *limit     = target + amount;
+    const char *decode;
 
     for (set_num = 0; set_num < num_sets; set_num++) {
-        char *skip;
+        const char *skip;
         ints = TestUtils_random_u64s(ints, count,
                                      mins[set_num], limits[set_num]);
         target = encoded;
         for (size_t i = 0; i < count; i++) {
             NumUtil_encode_c32((uint32_t)ints[i], &target);
         }
-        target = encoded;
+        decode = encoded;
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
-            TEST_INT_EQ(runner, NumUtil_decode_c32(&target), (long)ints[i],
+            TEST_INT_EQ(runner, NumUtil_decode_c32(&decode), (long)ints[i],
                         "c32 %lu", (long)ints[i]);
             NumUtil_skip_cint(&skip);
-            if (target > limit) { THROW(ERR, "overrun"); }
+            if (decode > limit) { THROW(ERR, "overrun"); }
         }
-        TEST_TRUE(runner, skip == target, "skip %lu == %lu",
-                  (unsigned long)skip, (unsigned long)target);
+        TEST_TRUE(runner, skip == decode, "skip %lu == %lu",
+                  (unsigned long)skip, (unsigned long)decode);
 
         target = encoded;
         for (size_t i = 0; i < count; i++) {
@@ -136,22 +137,22 @@ test_c32(TestBatchRunner *runner) {
         TEST_TRUE(runner, target == limit,
                   "padded c32 uses 5 bytes (%lu == %lu)", (unsigned long)target,
                   (unsigned long)limit);
-        target = encoded;
+        decode = encoded;
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
-            TEST_INT_EQ(runner, NumUtil_decode_c32(&target), (long)ints[i],
+            TEST_INT_EQ(runner, NumUtil_decode_c32(&decode), (long)ints[i],
                         "padded c32 %lu", (long)ints[i]);
             NumUtil_skip_cint(&skip);
-            if (target > limit) { THROW(ERR, "overrun"); }
+            if (decode > limit) { THROW(ERR, "overrun"); }
         }
-        TEST_TRUE(runner, skip == target, "skip padded %lu == %lu",
-                  (unsigned long)skip, (unsigned long)target);
+        TEST_TRUE(runner, skip == decode, "skip padded %lu == %lu",
+                  (unsigned long)skip, (unsigned long)decode);
     }
 
     target = encoded;
     NumUtil_encode_c32(UINT32_MAX, &target);
-    target = encoded;
-    TEST_INT_EQ(runner, NumUtil_decode_c32(&target), UINT32_MAX, "c32 UINT32_MAX");
+    decode = encoded;
+    TEST_INT_EQ(runner, NumUtil_decode_c32(&decode), UINT32_MAX, "c32 UINT32_MAX");
 
     FREEMEM(encoded);
     FREEMEM(ints);
@@ -169,33 +170,34 @@ test_c64(TestBatchRunner *runner) {
     char     *encoded   = (char*)CALLOCATE(amount, sizeof(char));
     char     *target    = encoded;
     char     *limit     = target + amount;
+    const char *decode;
 
     for (set_num = 0; set_num < num_sets; set_num++) {
-        char *skip;
+        const char *skip;
         ints = TestUtils_random_u64s(ints, count,
                                      mins[set_num], limits[set_num]);
         target = encoded;
         for (size_t i = 0; i < count; i++) {
             NumUtil_encode_c64(ints[i], &target);
         }
-        target = encoded;
+        decode = encoded;
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
-            uint64_t got = NumUtil_decode_c64(&target);
+            uint64_t got = NumUtil_decode_c64(&decode);
             TEST_TRUE(runner, got == ints[i],
                       "c64 %" PRIu64 " == %" PRIu64, got, ints[i]);
-            if (target > limit) { THROW(ERR, "overrun"); }
+            if (decode > limit) { THROW(ERR, "overrun"); }
             NumUtil_skip_cint(&skip);
         }
-        TEST_TRUE(runner, skip == target, "skip %lu == %lu",
-                  (unsigned long)skip, (unsigned long)target);
+        TEST_TRUE(runner, skip == decode, "skip %lu == %lu",
+                  (unsigned long)skip, (unsigned long)decode);
     }
 
     target = encoded;
     NumUtil_encode_c64(UINT64_MAX, &target);
-    target = encoded;
 
-    uint64_t got = NumUtil_decode_c64(&target);
+    decode = encoded;
+    uint64_t got = NumUtil_decode_c64(&decode);
     TEST_TRUE(runner, got == UINT64_MAX, "c64 UINT64_MAX");
 
     FREEMEM(encoded);

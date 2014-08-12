@@ -50,17 +50,17 @@ inert class Clownfish::Util::NumberUtils nickname NumUtil {
     /** Interpret a sequence of bytes as a big-endian unsigned 16-bit int.
      */
     inert inline uint16_t
-    decode_bigend_u16(void *source);
+    decode_bigend_u16(const void *source);
 
     /** Interpret a sequence of bytes as a big-endian unsigned 32-bit int.
      */
     inert inline uint32_t
-    decode_bigend_u32(void *source);
+    decode_bigend_u32(const void *source);
 
     /** Interpret a sequence of bytes as a big-endian unsigned 64-bit int.
      */
     inert inline uint64_t
-    decode_bigend_u64(void *source);
+    decode_bigend_u64(const void *source);
 
     /** Encode a 32-bit floating point number as 4 bytes in the buffer
      * provided, using big-endian byte order.
@@ -78,13 +78,13 @@ inert class Clownfish::Util::NumberUtils nickname NumUtil {
      * byte order.
      */
     inert inline float
-    decode_bigend_f32(void *source);
+    decode_bigend_f32(const void *source);
 
     /** Interpret a sequence of bytes as a 64-bit float stored in big-endian
      * byte order.
      */
     inert inline double
-    decode_bigend_f64(void *source);
+    decode_bigend_f64(const void *source);
 
     /** Encode a C32 at the space pointed to by <code>dest</code>. As a side
      * effect, <code>dest</code> will be advanced to immediately after the end
@@ -113,19 +113,19 @@ inert class Clownfish::Util::NumberUtils nickname NumUtil {
      * C32.
      */
     inert inline uint32_t
-    decode_c32(char **source);
+    decode_c32(const char **source);
 
     /** Read a C64 from the buffer pointed to by <code>source</code>.  As a
      * side effect, advance the pointer, consuming the bytes occupied by the
      * C64.
      */
     inert inline uint64_t
-    decode_c64(char **source);
+    decode_c64(const char **source);
 
     /** Advance <code>source</code> past one encoded C32 or C64.
      */
     inert inline void
-    skip_cint(char **source);
+    skip_cint(const char **source);
 
     /** Interpret <code>array</code> as an array of bits; return true if the
      * bit at <code>tick</code> is set, false otherwise.
@@ -225,15 +225,15 @@ cfish_NumUtil_encode_bigend_u64(uint64_t value, void *dest_ptr) {
 }
 
 static CFISH_INLINE uint16_t
-cfish_NumUtil_decode_bigend_u16(void *source) {
-    uint8_t *const buf = (uint8_t*)source;
+cfish_NumUtil_decode_bigend_u16(const void *source) {
+    const uint8_t *const buf = (const uint8_t*)source;
     return  ((uint16_t)buf[0] << 8) |
             ((uint16_t)buf[1]);
 }
 
 static CFISH_INLINE uint32_t
-cfish_NumUtil_decode_bigend_u32(void *source) {
-    uint8_t *const buf = (uint8_t*)source;
+cfish_NumUtil_decode_bigend_u32(const void *source) {
+    const uint8_t *const buf = (const uint8_t*)source;
     return  ((uint32_t)buf[0]  << 24) |
             ((uint32_t)buf[1]  << 16) |
             ((uint32_t)buf[2]  << 8)  |
@@ -241,8 +241,8 @@ cfish_NumUtil_decode_bigend_u32(void *source) {
 }
 
 static CFISH_INLINE uint64_t
-cfish_NumUtil_decode_bigend_u64(void *source) {
-    uint8_t *const buf = (uint8_t*)source;
+cfish_NumUtil_decode_bigend_u64(const void *source) {
+    const uint8_t *const buf = (const uint8_t*)source;
     uint64_t high_bits = ((uint32_t)buf[0]  << 24) |
                          ((uint32_t)buf[1]  << 16) |
                          ((uint32_t)buf[2]  << 8)  |
@@ -281,7 +281,7 @@ cfish_NumUtil_encode_bigend_f64(double value, void *dest_ptr) {
 }
 
 static CFISH_INLINE float
-cfish_NumUtil_decode_bigend_f32(void *source) {
+cfish_NumUtil_decode_bigend_f32(const void *source) {
     union { float f; uint32_t u32; } duo;
     memcpy(&duo, source, sizeof(float));
 #ifdef CFISH_LITTLE_END
@@ -291,7 +291,7 @@ cfish_NumUtil_decode_bigend_f32(void *source) {
 }
 
 static CFISH_INLINE double
-cfish_NumUtil_decode_bigend_f64(void *source) {
+cfish_NumUtil_decode_bigend_f64(const void *source) {
     union { double d; uint64_t u64; } duo;
     memcpy(&duo, source, sizeof(double));
 #ifdef CFISH_LITTLE_END
@@ -369,8 +369,8 @@ cfish_NumUtil_encode_padded_c32(uint32_t value, char **out_buf) {
     } while (0)
 
 static CFISH_INLINE uint32_t
-cfish_NumUtil_decode_c32(char **source_ptr) {
-    char *source = *source_ptr;
+cfish_NumUtil_decode_c32(const char **source_ptr) {
+    const char *source = *source_ptr;
     uint32_t decoded;
     CFISH_NUMUTIL_DECODE_CINT(decoded, source);
     *source_ptr = source;
@@ -378,8 +378,8 @@ cfish_NumUtil_decode_c32(char **source_ptr) {
 }
 
 static CFISH_INLINE uint64_t
-cfish_NumUtil_decode_c64(char **source_ptr) {
-    char *source = *source_ptr;
+cfish_NumUtil_decode_c64(const char **source_ptr) {
+    const char *source = *source_ptr;
     uint64_t decoded;
     CFISH_NUMUTIL_DECODE_CINT(decoded, source);
     *source_ptr = source;
@@ -387,10 +387,10 @@ cfish_NumUtil_decode_c64(char **source_ptr) {
 }
 
 static CFISH_INLINE void
-cfish_NumUtil_skip_cint(char **source_ptr) {
-    uint8_t *ptr = *(uint8_t**)source_ptr;
+cfish_NumUtil_skip_cint(const char **source_ptr) {
+    const uint8_t *ptr = *(const uint8_t**)source_ptr;
     while ((*ptr++ & 0x80) != 0) { }
-    *source_ptr = (char*)ptr;
+    *source_ptr = (const char*)ptr;
 }
 
 static CFISH_INLINE bool
