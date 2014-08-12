@@ -15,6 +15,8 @@
 
 package Clownfish::CFC::Binding::Core::Class;
 use Clownfish::CFC;
+our $VERSION = '0.003000';
+$VERSION = eval $VERSION;
 
 1;
 
