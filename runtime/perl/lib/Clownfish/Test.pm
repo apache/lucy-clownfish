@@ -15,7 +15,7 @@
 
 package Clownfish::Test;
 use Clownfish;
-our $VERSION = '0.003000';
+our $VERSION = '0.004000';
 $VERSION = eval $VERSION;
 
 1;

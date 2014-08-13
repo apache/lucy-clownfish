@@ -15,7 +15,7 @@
 
 package Clownfish::CFC::Binding::Perl::Subroutine;
 use Clownfish::CFC;
-our $VERSION = '0.003000';
+our $VERSION = '0.004000';
 $VERSION = eval $VERSION;
 
 1;

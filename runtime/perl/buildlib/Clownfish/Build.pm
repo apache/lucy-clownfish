@@ -31,7 +31,7 @@ use base qw(
 );
 no lib '../../compiler/perl/lib';
 
-our $VERSION = '0.003000';
+our $VERSION = '0.004000';
 $VERSION = eval $VERSION;
 
 use File::Spec::Functions qw( catdir catfile updir rel2abs );

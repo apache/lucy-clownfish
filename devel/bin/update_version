@@ -48,7 +48,7 @@ for my $path ('runtime/common/charmonizer.c', 'runtime/common/charmonizer.main')
     $buf = read_file($path);
     $buf =~ s/(cfish_version\[\]\s+=\s+)"[\d.]+"/$1"$x_y_z_version"/
         or die "no match";
-    $buf =~ s/(cfish_major_version\[\]\s+=\s+)"[\d.]+"/$1"$x_y_z_version"/
+    $buf =~ s/(cfish_major_version\[\]\s+=\s+)"[\d.]+"/$1"$x.$y"/
         or die "no match";
     write_file($path, $buf);
 }
@@ -97,7 +97,7 @@ write_file( 'runtime/c/install.sh', $buf );
 
 # Update compiler/python/setup.py
 $buf = read_file('compiler/python/setup.py');
-$buf =~ s/(\bversion\s+=\s+)'[\d.]+'/$1'$x_y_z_version/
+$buf =~ s/(\bversion\s+=\s+)'[\d.]+'/$1'$x_y_z_version'/
     or die "no match";
 write_file( 'compiler/python/setup.py', $buf );
 
