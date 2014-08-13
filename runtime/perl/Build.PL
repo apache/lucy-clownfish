@@ -27,12 +27,16 @@ my $builder = Clownfish::Build->new(
     dist_version       => '0.3.0',
     dist_abstract      => 'Apache Clownfish Runtime',
     requires           => { 'perl' => '5.8.3', },
-    configure_requires => { 'Module::Build' => 0.280801 },
-    build_requires     => {
+    configure_requires => {
+        'Module::Build'               => 0.280801,
+        'Clownfish::CFC::Perl::Build' => 0.003000,
+    },
+    build_requires => {
         'Module::Build'      => 0.280801,
         'ExtUtils::CBuilder' => 0.21,
         'ExtUtils::ParseXS'  => 2.18,
         'Devel::PPPort'      => 3.13,
+        'Clownfish::CFC'     => 0.003000,
     },
     meta_merge => { keywords => [qw( clownfish )], },
     meta_add   => {
