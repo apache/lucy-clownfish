@@ -77,6 +77,12 @@ $buf =~ s/(^=head1\s+VERSION\s+)([\d.]+)/$1$x_y_z_version/m
     or die "no match";
 write_file( 'runtime/perl/lib/Clownfish.pod', $buf );
 
+# Update compiler Build.PL
+$buf = read_file('compiler/perl/Build.PL');
+$buf =~ s/(dist_version\ +=>\ +)'.+?'/$1'$x_y_z_version'/
+    or die "no match";
+write_file( 'compiler/perl/Build.PL', $buf );
+
 # Update runtime Build.PL
 $buf = read_file('runtime/perl/Build.PL');
 $buf =~ s/(dist_version\ +=>\ +)'.+?'/$1'$x_y_z_version'/
