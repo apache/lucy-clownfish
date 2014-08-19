@@ -45,6 +45,11 @@ S_to_c_header_inert(CFCBindClass *self);
 static char*
 S_to_c_header_dynamic(CFCBindClass *self);
 
+// Count the number of member variables declared in ancestor classes
+// outside this package.
+static int
+S_count_non_package_members(CFCBindClass *self);
+
 // Create the definition for the instantiable object struct.
 static char*
 S_struct_definition(CFCBindClass *self);
@@ -403,6 +408,25 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
     return code;
 }
 
+// Count the number of member variables declared in ancestor classes
+// outside this package.
+static int
+S_count_non_package_members(CFCBindClass *self) {
+    CFCClass  *const client = self->client;
+    CFCParcel *parcel       = CFCClass_get_parcel(client);
+    CFCClass  *ancestor     = CFCClass_get_parent(client);
+    int num_non_package_members = 0;
+
+    while (ancestor && CFCClass_get_parcel(ancestor) == parcel) {
+        ancestor = CFCClass_get_parent(ancestor);
+    }
+    if (ancestor) {
+        num_non_package_members = CFCClass_num_member_vars(ancestor);
+    }
+
+    return num_non_package_members;
+}
+
 // Create the definition for the instantiable object struct.
 static char*
 S_struct_definition(CFCBindClass *self) {
@@ -419,27 +443,24 @@ S_struct_definition(CFCBindClass *self) {
         struct_sym = CFCClass_full_ivars_struct(client);
     }
 
-    // Count the number of member variables declared in ancestor classes
-    // outside this package so that we can skip over them.
-    int num_non_package_members = 0;
-    CFCParcel *parcel = CFCClass_get_parcel(client);
-    CFCClass *ancestor = CFCClass_get_parent(client);
-    while (ancestor && CFCClass_get_parcel(ancestor) == parcel) {
-        ancestor = CFCClass_get_parent(ancestor);
-    }
-    if (ancestor) {
-        num_non_package_members = CFCClass_num_member_vars(ancestor);
-    }
-
     // Add all member variables declared by classes in this package.
     CFCVariable **member_vars = CFCClass_member_vars(client);
+    int num_non_package_members = S_count_non_package_members(self);
     for (int i = num_non_package_members; member_vars[i] != NULL; i++) {
         const char *member_dec = CFCVariable_local_declaration(member_vars[i]);
         member_decs = CFCUtil_cat(member_decs, "\n    ", member_dec, NULL);
     }
 
-    char pattern[] = "struct %s {%s\n};\n";
-    char *struct_def = CFCUtil_sprintf(pattern, struct_sym, member_decs);
+    char *struct_def;
+
+    if (member_decs[0] == '\0') {
+        // Don't define empty struct.
+        struct_def = CFCUtil_strdup("");
+    }
+    else {
+        char pattern[] = "struct %s {%s\n};\n";
+        struct_def = CFCUtil_sprintf(pattern, struct_sym, member_decs);
+    }
 
     FREEMEM(member_decs);
     return struct_def;
@@ -501,8 +522,23 @@ CFCBindClass_spec_def(CFCBindClass *self) {
                                                 class_var)
                               : CFCUtil_strdup("NULL");
 
-    const char *ivars_or_not = strcmp(prefix, "cfish_") == 0
-                               ? struct_sym : ivars_struct;
+    char *ivars_size = NULL;
+
+    if (strcmp(prefix, "cfish_") == 0) {
+        ivars_size = CFCUtil_sprintf("sizeof(%s)", struct_sym);
+    }
+    else {
+        int num_non_package_members = S_count_non_package_members(self);
+        int num_members             = CFCClass_num_member_vars(client);
+
+        if (num_non_package_members == num_members) {
+            // No members in this package.
+            ivars_size = CFCUtil_strdup("0");
+        }
+        else {
+            ivars_size = CFCUtil_sprintf("sizeof(%s)", ivars_struct);
+        }
+    }
     const char *ivars_offset_name = CFCClass_full_ivars_offset(client);
 
     char pattern[] =
@@ -510,7 +546,7 @@ CFCBindClass_spec_def(CFCBindClass *self) {
         "        &%s, /* class */\n"
         "        %s, /* parent */\n"
         "        \"%s\", /* name */\n"
-        "        sizeof(%s), /* ivars_size */\n"
+        "        %s, /* ivars_size */\n"
         "        &%s, /* ivars_offset_ptr */\n"
         "        %d, /* num_novel */\n"
         "        %d, /* num_overridden */\n"
@@ -521,7 +557,7 @@ CFCBindClass_spec_def(CFCBindClass *self) {
         "    }";
     char *code
         = CFCUtil_sprintf(pattern, class_var, parent_ref, class_name,
-                          ivars_or_not, ivars_offset_name, num_novel,
+                          ivars_size, ivars_offset_name, num_novel,
                           num_overridden, num_inherited, novel_ms_var,
                           overridden_ms_var, inherited_ms_var);
 
@@ -529,6 +565,7 @@ CFCBindClass_spec_def(CFCBindClass *self) {
     FREEMEM(novel_ms_var);
     FREEMEM(overridden_ms_var);
     FREEMEM(inherited_ms_var);
+    FREEMEM(ivars_size);
     return code;
 }
 
