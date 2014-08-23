@@ -144,6 +144,57 @@ CFCUtil_trim_whitespace(char *text) {
     *text = '\0';
 }
 
+char*
+CFCUtil_enclose_lines(const char *text, const char *line_prefix,
+                      const char *line_postfix, const char *prefix,
+                      const char *postfix) {
+    if (!text) { return NULL; }
+
+    if (!line_prefix)  { line_prefix  = ""; }
+    if (!line_postfix) { line_postfix = ""; }
+    if (!prefix)       { prefix       = ""; }
+    if (!postfix)      { postfix      = ""; }
+
+    char *result = CFCUtil_strdup(prefix);
+
+    const char *line_start = text;
+    const char *text_end   = text + strlen(text);
+
+    while (line_start < text_end) {
+        const char *line_end = strchr(line_start, '\n');
+        const char *next_start;
+        size_t      line_len;
+
+        if (line_end == NULL) {
+            line_len   = text_end - line_start;
+            next_start = text_end;
+        }
+        else {
+            line_len   = line_end - line_start;
+            next_start = line_end + 1;
+        }
+
+        char *line = (char*)MALLOCATE(line_len + 1);
+        memcpy(line, line_start, line_len);
+        line[line_len] = '\0';
+        result = CFCUtil_cat(result, line_prefix, line, line_postfix, "\n",
+                             NULL);
+        FREEMEM(line);
+
+        line_start = next_start;
+    }
+
+    result = CFCUtil_cat(result, postfix, NULL);
+
+    return result;
+}
+
+char*
+CFCUtil_make_c_comment(const char *text) {
+    if (text && text[0] == '\0') { return CFCUtil_strdup(text); }
+    return CFCUtil_enclose_lines(text, " * ", "", "/*\n", " */\n");
+}
+
 void*
 CFCUtil_wrapped_malloc(size_t count, const char *file, int line) {
     void *pointer = malloc(count);

@@ -69,6 +69,19 @@ CFCUtil_cat(char *string, ...);
 void
 CFCUtil_trim_whitespace(char *text);
 
+/** Enclose every line in text with line_prefix and line_postfix and the
+ * whole text with prefix and postfix.
+ */
+char*
+CFCUtil_enclose_lines(const char *text, const char *line_prefix,
+                      const char *line_postfix, const char *prefix,
+                      const char *postfix);
+
+/** Create a C comment.
+ */
+char*
+CFCUtil_make_c_comment(const char *text);
+
 /** Attempt to allocate memory with malloc, but print an error and exit if the
  * call fails.
  */

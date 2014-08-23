@@ -33,8 +33,8 @@ struct CFCRuby {
     CFCHierarchy *hierarchy;
     char *lib_dir;
     char *boot_class;
-    char *header;
-    char *footer;
+    char *c_header;
+    char *c_footer;
     char *boot_h_file;
     char *boot_c_file;
     char *boot_h_path;
@@ -74,8 +74,8 @@ CFCRuby_init(CFCRuby *self, CFCParcel *parcel, CFCHierarchy *hierarchy,
     self->hierarchy  = (CFCHierarchy*)CFCBase_incref((CFCBase*)hierarchy);
     self->lib_dir    = CFCUtil_strdup(lib_dir);
     self->boot_class = CFCUtil_strdup(boot_class);
-    self->header     = CFCUtil_strdup(header);
-    self->footer     = CFCUtil_strdup(footer);
+    self->c_header   = CFCUtil_make_c_comment(header);
+    self->c_footer   = CFCUtil_make_c_comment(footer);
 
     const char *prefix   = CFCParcel_get_prefix(parcel);
     const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
@@ -103,8 +103,8 @@ CFCRuby_destroy(CFCRuby *self) {
     CFCBase_decref((CFCBase*)self->hierarchy);
     FREEMEM(self->lib_dir);
     FREEMEM(self->boot_class);
-    FREEMEM(self->header);
-    FREEMEM(self->footer);
+    FREEMEM(self->c_header);
+    FREEMEM(self->c_footer);
     FREEMEM(self->boot_h_file);
     FREEMEM(self->boot_c_file);
     FREEMEM(self->boot_h_path);
@@ -153,16 +153,16 @@ S_write_boot_h(CFCRuby *self) {
         "%s\n";
 
     size_t size = sizeof(pattern)
-                  + strlen(self->header)
+                  + strlen(self->c_header)
                   + strlen(guard)
                   + strlen(guard)
                   + strlen(self->boot_func)
                   + strlen(guard)
-                  + strlen(self->footer)
+                  + strlen(self->c_footer)
                   + 20;
     char *content = (char*)MALLOCATE(size);
-    sprintf(content, pattern, self->header, guard, guard, self->boot_func,
-            guard, self->footer);
+    sprintf(content, pattern, self->c_header, guard, guard, self->boot_func,
+            guard, self->c_footer);
     CFCUtil_write_file(self->boot_h_path, content, strlen(content));
 
     FREEMEM(content);
@@ -212,9 +212,9 @@ S_write_boot_c(CFCRuby *self) {
         "\n";
 
     char *content
-        = CFCUtil_sprintf(pattern, self->header, self->boot_h_file, prefix,
+        = CFCUtil_sprintf(pattern, self->c_header, self->boot_h_file, prefix,
                           pound_includes, self->boot_func, prefix,
-                          self->footer);
+                          self->c_footer);
     CFCUtil_write_file(self->boot_c_path, content, strlen(content));
 
     FREEMEM(content);
@@ -249,7 +249,7 @@ CFCRuby_write_hostdefs(CFCRuby *self) {
         "\n"
         "%s\n";
     char *content
-        = CFCUtil_sprintf(pattern, self->header, self->footer);
+        = CFCUtil_sprintf(pattern, self->c_header, self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);

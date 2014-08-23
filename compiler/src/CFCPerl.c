@@ -41,6 +41,8 @@ struct CFCPerl {
     char *boot_class;
     char *header;
     char *footer;
+    char *c_header;
+    char *c_footer;
     char *xs_path;
     char *boot_func;
 };
@@ -78,6 +80,8 @@ CFCPerl_init(CFCPerl *self, CFCHierarchy *hierarchy, const char *lib_dir,
     self->boot_class = CFCUtil_strdup(boot_class);
     self->header     = CFCUtil_strdup(header);
     self->footer     = CFCUtil_strdup(footer);
+    self->c_header   = CFCUtil_make_c_comment(header);
+    self->c_footer   = CFCUtil_make_c_comment(footer);
 
     // Derive path to generated .xs file.
     self->xs_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.xs", lib_dir,
@@ -102,6 +106,8 @@ CFCPerl_destroy(CFCPerl *self) {
     FREEMEM(self->boot_class);
     FREEMEM(self->header);
     FREEMEM(self->footer);
+    FREEMEM(self->c_header);
+    FREEMEM(self->c_footer);
     FREEMEM(self->xs_path);
     FREEMEM(self->boot_func);
     CFCBase_destroy((CFCBase*)self);
@@ -196,8 +202,8 @@ S_write_boot_h(CFCPerl *self) {
         "\n"
         "%s\n";
     char *content
-        = CFCUtil_sprintf(pattern, self->header, guard, guard, self->boot_func,
-                          guard, self->footer);
+        = CFCUtil_sprintf(pattern, self->c_header, guard, guard,
+                          self->boot_func, guard, self->c_footer);
 
     const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
     char *boot_h_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "boot.h", inc_dest);
@@ -303,9 +309,9 @@ S_write_boot_c(CFCPerl *self) {
         "%s\n"
         "\n";
     char *content
-        = CFCUtil_sprintf(pattern, self->header, pound_includes,
+        = CFCUtil_sprintf(pattern, self->c_header, pound_includes,
                           self->boot_func, bootstrap_code, alias_adds,
-                          isa_pushes, self->footer);
+                          isa_pushes, self->c_footer);
 
     const char *src_dest = CFCHierarchy_get_source_dest(self->hierarchy);
     char *boot_c_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "boot.c", src_dest);
@@ -341,7 +347,7 @@ CFCPerl_write_hostdefs(CFCPerl *self) {
         "\n"
         "%s\n";
     char *content
-        = CFCUtil_sprintf(pattern, self->header, self->footer);
+        = CFCUtil_sprintf(pattern, self->c_header, self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
@@ -381,9 +387,9 @@ S_xs_file_contents(CFCPerl *self, const char *generated_xs,
         "\n"
         "%s";
     char *contents
-        = CFCUtil_sprintf(pattern, self->header, generated_xs,
+        = CFCUtil_sprintf(pattern, self->c_header, generated_xs,
                           self->boot_class, self->boot_class, self->boot_func,
-                          xs_init, hand_rolled_xs, self->footer);
+                          xs_init, hand_rolled_xs, self->c_footer);
 
     return contents;
 }
@@ -577,7 +583,7 @@ S_write_callbacks_c(CFCPerl *self) {
         "    return retval;\n"
         "}\n"
         "\n";
-    char *content = CFCUtil_sprintf(pattern, self->header);
+    char *content = CFCUtil_sprintf(pattern, self->c_header);
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
@@ -597,7 +603,7 @@ S_write_callbacks_c(CFCPerl *self) {
         FREEMEM(fresh_methods);
     }
 
-    content = CFCUtil_cat(content, self->footer, NULL);
+    content = CFCUtil_cat(content, self->c_footer, NULL);
 
     // Write if changed.
     const char *src_dest = CFCHierarchy_get_source_dest(self->hierarchy);

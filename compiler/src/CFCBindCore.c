@@ -36,8 +36,8 @@
 struct CFCBindCore {
     CFCBase base;
     CFCHierarchy *hierarchy;
-    char         *header;
-    char         *footer;
+    char         *c_header;
+    char         *c_footer;
 };
 
 /* Write the "parcel.h" header file, which contains common symbols needed by
@@ -92,24 +92,24 @@ CFCBindCore_init(CFCBindCore *self, CFCHierarchy *hierarchy,
     CFCUTIL_NULL_CHECK(header);
     CFCUTIL_NULL_CHECK(footer);
     self->hierarchy = (CFCHierarchy*)CFCBase_incref((CFCBase*)hierarchy);
-    self->header    = CFCUtil_strdup(header);
-    self->footer    = CFCUtil_strdup(footer);
+    self->c_header  = CFCUtil_make_c_comment(header);
+    self->c_footer  = CFCUtil_make_c_comment(footer);
     return self;
 }
 
 void
 CFCBindCore_destroy(CFCBindCore *self) {
     CFCBase_decref((CFCBase*)self->hierarchy);
-    FREEMEM(self->header);
-    FREEMEM(self->footer);
+    FREEMEM(self->c_header);
+    FREEMEM(self->c_footer);
     CFCBase_destroy((CFCBase*)self);
 }
 
 int
 CFCBindCore_write_all_modified(CFCBindCore *self, int modified) {
     CFCHierarchy *hierarchy = self->hierarchy;
-    const char   *header    = self->header;
-    const char   *footer    = self->footer;
+    const char   *header    = self->c_header;
+    const char   *footer    = self->c_footer;
 
     // Discover whether files need to be regenerated.
     modified = CFCHierarchy_propagate_modified(hierarchy, modified);
@@ -330,10 +330,10 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "%s\n"
         "\n";
     char *file_content
-        = CFCUtil_sprintf(pattern, self->header, PREFIX, PREFIX,
+        = CFCUtil_sprintf(pattern, self->c_header, PREFIX, PREFIX,
                           extra_includes, privacy_sym, PREFIX, PREFIX,
                           typedefs, extra_defs, PREFIX, prefix, PREFIX, prefix,
-                          prefix, PREFIX, self->footer);
+                          prefix, PREFIX, self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
@@ -467,10 +467,10 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s\n";
     char *file_content
-        = CFCUtil_sprintf(pattern, self->header, privacy_syms, prefix,
+        = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, prefix,
                           includes, c_data, class_specs, prefix, inh_bootstrap,
                           num_specs, prefix, prefix, prereq_bootstrap, prefix,
-                          self->footer);
+                          self->c_footer);
 
     // Unlink then open file.
     const char *src_dest = CFCHierarchy_get_source_dest(hierarchy);
@@ -539,8 +539,8 @@ CFCBindCore_write_callbacks_h(CFCBindCore *self) {
         "%s\n"
         "\n";
     char *file_content
-        = CFCUtil_sprintf(pattern, self->header, includes, all_cb_decs,
-                          self->footer);
+        = CFCUtil_sprintf(pattern, self->c_header, includes, all_cb_decs,
+                          self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
@@ -592,9 +592,9 @@ S_write_platform_h(CFCBindCore *self) {
         "%s"
         "\n";
     char *file_content
-        = CFCUtil_sprintf(pattern, self->header, feature_defs, string_defs,
+        = CFCUtil_sprintf(pattern, self->c_header, feature_defs, string_defs,
                           stdbool_defs, stdint_defs, alloca_defs,
-                          self->footer);
+                          self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);

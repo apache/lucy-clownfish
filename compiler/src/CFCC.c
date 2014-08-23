@@ -30,8 +30,8 @@
 struct CFCC {
     CFCBase base;
     CFCHierarchy *hierarchy;
-    char         *header;
-    char         *footer;
+    char         *c_header;
+    char         *c_footer;
 };
 
 static const CFCMeta CFCC_META = {
@@ -53,16 +53,16 @@ CFCC_init(CFCC *self, CFCHierarchy *hierarchy, const char *header,
     CFCUTIL_NULL_CHECK(header);
     CFCUTIL_NULL_CHECK(footer);
     self->hierarchy = (CFCHierarchy*)CFCBase_incref((CFCBase*)hierarchy);
-    self->header    = CFCUtil_strdup(header);
-    self->footer    = CFCUtil_strdup(footer);
+    self->c_header  = CFCUtil_make_c_comment(header);
+    self->c_footer  = CFCUtil_make_c_comment(footer);
     return self;
 }
 
 void
 CFCC_destroy(CFCC *self) {
     CFCBase_decref((CFCBase*)self->hierarchy);
-    FREEMEM(self->header);
-    FREEMEM(self->footer);
+    FREEMEM(self->c_header);
+    FREEMEM(self->c_footer);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -99,8 +99,8 @@ CFCC_write_callbacks(CFCC *self) {
         "\n"
         "%s\n"
         "\n";
-    char *file_content = CFCUtil_sprintf(pattern, self->header, all_cb_decs,
-                                         self->footer);
+    char *file_content = CFCUtil_sprintf(pattern, self->c_header, all_cb_decs,
+                                         self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
@@ -182,7 +182,7 @@ CFCC_write_hostdefs(CFCC *self) {
         "\n"
         "%s\n";
     char *content
-        = CFCUtil_sprintf(pattern, self->header, self->footer);
+        = CFCUtil_sprintf(pattern, self->c_header, self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
