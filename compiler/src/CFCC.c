@@ -32,6 +32,8 @@ struct CFCC {
     CFCHierarchy *hierarchy;
     char         *c_header;
     char         *c_footer;
+    char         *man_header;
+    char         *man_footer;
 };
 
 static const CFCMeta CFCC_META = {
@@ -52,9 +54,11 @@ CFCC_init(CFCC *self, CFCHierarchy *hierarchy, const char *header,
     CFCUTIL_NULL_CHECK(hierarchy);
     CFCUTIL_NULL_CHECK(header);
     CFCUTIL_NULL_CHECK(footer);
-    self->hierarchy = (CFCHierarchy*)CFCBase_incref((CFCBase*)hierarchy);
-    self->c_header  = CFCUtil_make_c_comment(header);
-    self->c_footer  = CFCUtil_make_c_comment(footer);
+    self->hierarchy  = (CFCHierarchy*)CFCBase_incref((CFCBase*)hierarchy);
+    self->c_header   = CFCUtil_make_c_comment(header);
+    self->c_footer   = CFCUtil_make_c_comment(footer);
+    self->man_header = CFCUtil_make_troff_comment(header);
+    self->man_footer = CFCUtil_make_troff_comment(footer);
     return self;
 }
 
@@ -63,6 +67,8 @@ CFCC_destroy(CFCC *self) {
     CFCBase_decref((CFCBase*)self->hierarchy);
     FREEMEM(self->c_header);
     FREEMEM(self->c_footer);
+    FREEMEM(self->man_header);
+    FREEMEM(self->man_footer);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -151,8 +157,10 @@ CFCC_write_man_pages(CFCC *self) {
         CFCClass *klass = ordered[i];
         if (CFCClass_included(klass)) { continue; }
 
-        char *man_page = man_pages[j++];
-        if (!man_page) { continue; }
+        char *raw_man_page = man_pages[j++];
+        if (!raw_man_page) { continue; }
+        char *man_page = CFCUtil_sprintf("%s%s%s", self->man_header,
+                                         raw_man_page, self->man_footer);
 
         const char *full_struct_sym = CFCClass_full_struct_sym(klass);
         char *filename = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.3", man3_path,
@@ -160,6 +168,7 @@ CFCC_write_man_pages(CFCC *self) {
         CFCUtil_write_if_changed(filename, man_page, strlen(man_page));
         FREEMEM(filename);
         FREEMEM(man_page);
+        FREEMEM(raw_man_page);
     }
 
     FREEMEM(man3_path);

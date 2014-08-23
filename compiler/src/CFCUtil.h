@@ -82,6 +82,16 @@ CFCUtil_enclose_lines(const char *text, const char *line_prefix,
 char*
 CFCUtil_make_c_comment(const char *text);
 
+/** Create a Perl comment.
+ */
+char*
+CFCUtil_make_perl_comment(const char *text);
+
+/** Create a troff comment.
+ */
+char*
+CFCUtil_make_troff_comment(const char *text);
+
 /** Attempt to allocate memory with malloc, but print an error and exit if the
  * call fails.
  */

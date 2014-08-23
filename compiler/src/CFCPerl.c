@@ -43,6 +43,8 @@ struct CFCPerl {
     char *footer;
     char *c_header;
     char *c_footer;
+    char *pod_header;
+    char *pod_footer;
     char *xs_path;
     char *boot_func;
 };
@@ -82,6 +84,8 @@ CFCPerl_init(CFCPerl *self, CFCHierarchy *hierarchy, const char *lib_dir,
     self->footer     = CFCUtil_strdup(footer);
     self->c_header   = CFCUtil_make_c_comment(header);
     self->c_footer   = CFCUtil_make_c_comment(footer);
+    self->pod_header = CFCUtil_make_perl_comment(header);
+    self->pod_footer = CFCUtil_make_perl_comment(footer);
 
     // Derive path to generated .xs file.
     self->xs_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.xs", lib_dir,
@@ -108,6 +112,8 @@ CFCPerl_destroy(CFCPerl *self) {
     FREEMEM(self->footer);
     FREEMEM(self->c_header);
     FREEMEM(self->c_footer);
+    FREEMEM(self->pod_header);
+    FREEMEM(self->pod_footer);
     FREEMEM(self->xs_path);
     FREEMEM(self->boot_func);
     CFCBase_destroy((CFCBase*)self);
@@ -141,8 +147,10 @@ CFCPerl_write_pod(CFCPerl *self) {
     // generating pod, we leak memory but don't clutter up the file system.
     for (size_t i = 0; i < num_registered; i++) {
         const char *class_name = CFCPerlClass_get_class_name(registry[i]);
-        char *pod = CFCPerlClass_create_pod(registry[i]);
-        if (!pod) { continue; }
+        char *raw_pod = CFCPerlClass_create_pod(registry[i]);
+        if (!raw_pod) { continue; }
+        char *pod = CFCUtil_sprintf("%s\n%s%s", self->pod_header, raw_pod,
+                                    self->pod_footer);
         char *pod_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.pod",
                                          self->lib_dir, class_name);
         S_replace_double_colons(pod_path, CHY_DIR_SEP_CHAR);
@@ -150,6 +158,8 @@ CFCPerl_write_pod(CFCPerl *self) {
         pods[count] = pod;
         pod_paths[count] = pod_path;
         count++;
+
+        FREEMEM(raw_pod);
     }
 
     // Write out any POD files that have changed.

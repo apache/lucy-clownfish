@@ -195,6 +195,16 @@ CFCUtil_make_c_comment(const char *text) {
     return CFCUtil_enclose_lines(text, " * ", "", "/*\n", " */\n");
 }
 
+char*
+CFCUtil_make_perl_comment(const char *text) {
+    return CFCUtil_enclose_lines(text, "# ", "", "", "");
+}
+
+char*
+CFCUtil_make_troff_comment(const char *text) {
+    return CFCUtil_enclose_lines(text, ".\\\" ", "", "", "");
+}
+
 void*
 CFCUtil_wrapped_malloc(size_t count, const char *file, int line) {
     void *pointer = malloc(count);
