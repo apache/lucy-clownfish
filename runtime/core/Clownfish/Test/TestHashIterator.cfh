@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "Clownfish/Num.h"
-#include "Clownfish/Hash.h"
-#include "Clownfish/HashIterator.h"
-#include "Clownfish/Err.h"
+parcel TestClownfish;
 
-void
-cfish_init_parcel() {
-    cfish_Bool_init_class();
-    cfish_Hash_init_class();
-    cfish_HashIter_init_class();
-    cfish_Err_init_class();
+class Clownfish::Test::TestHashIterator
+    inherits Clownfish::TestHarness::TestBatch {
+
+    inert incremented TestHashIterator*
+    new();
+
+    void
+    Run(TestHashIterator *self, TestBatchRunner *runner);
 }
+
 

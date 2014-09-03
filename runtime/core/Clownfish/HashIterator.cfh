@@ -14,16 +14,35 @@
  * limitations under the License.
  */
 
-#include "Clownfish/Num.h"
-#include "Clownfish/Hash.h"
-#include "Clownfish/HashIterator.h"
-#include "Clownfish/Err.h"
+parcel Clownfish;
 
-void
-cfish_init_parcel() {
-    cfish_Bool_init_class();
-    cfish_Hash_init_class();
-    cfish_HashIter_init_class();
-    cfish_Err_init_class();
+/**
+ * Hashtable Iterator.
+ */
+
+class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
+    Hash    *hash;
+    size_t   tick;
+    uint32_t capacity;
+
+    inert void
+    init_class();
+
+    inert incremented HashIterator*
+    new(Hash *hash);
+
+    inert HashIterator*
+    init(HashIterator *self, Hash *hash);
+
+    public bool
+    Next(HashIterator *self);
+
+    public Obj*
+    Get_Key(HashIterator *self);
+
+    public Obj*
+    Get_Value(HashIterator *self);
+
+    public void
+    Destroy(HashIterator *self);
 }
-
