@@ -76,7 +76,7 @@ sub ACTION_charmony {
     # Prepare arguments to charmonizer.
     my @command = (
         $CHARMONIZER_EXE_PATH,
-        '--cc=' . _quotify( $self->config('cc') ),
+        '--cc=' . $self->config('cc'),
         '--enable-c',
         '--enable-perl',
     );
@@ -106,13 +106,6 @@ sub charmony {
         return $config->{$key};
     }
     return;
-}
-
-sub _quotify {
-    my $string = shift;
-    $string =~ s/\\/\\\\/g;
-    $string =~ s/"/\\"/g;
-    return $string =~ /\s/ ? qq|"$string"| : $string;
 }
 
 1;
