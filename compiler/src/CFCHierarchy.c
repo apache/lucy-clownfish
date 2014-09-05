@@ -267,6 +267,12 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
             ++path_part;
         }
 
+        // Ignore hidden files.
+        if (path_part[0] == '.'
+            || strstr(path_part, CHY_DIR_SEP ".") != NULL) {
+            continue;
+        }
+
         CFCFileSpec *file_spec
             = CFCFileSpec_new(source_dir, path_part, is_included);
         CFCParcel *parcel = CFCParcel_new_from_file(path, file_spec);
@@ -352,6 +358,12 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
         memcpy(path_part, src, path_part_len);
         path_part[path_part_len] = '\0';
 
+        // Ignore hidden files.
+        if (path_part[0] == '.'
+            || strstr(path_part, CHY_DIR_SEP ".") != NULL) {
+            continue;
+        }
+
         CFCFileSpec *file_spec = CFCFileSpec_new(source_dir, path_part,
                                                  is_included);
 
@@ -396,11 +408,6 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
 
 static void
 S_find_files(const char *path, void *arg) {
-    // Ignore updirs and hidden files.
-    if (strstr(path, CHY_DIR_SEP ".") != NULL) {
-        return;
-    }
-
     CFCFindFilesContext *context = (CFCFindFilesContext*)arg;
     const char  *ext       = context->ext;
     size_t       path_len  = strlen(path);
