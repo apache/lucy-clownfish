@@ -196,7 +196,7 @@ say qq|# JIRA permissions to perform the required actions.  Please let the|;
 say qq|# dev list know if you encounter problems.)  Click the "release"|;
 say qq|# link for $x_y_z_version and input the date from the CHANGES file.|;
 say qq|https://issues.apache.org/jira/plugins/servlet/|
-    . qq|project-config/LUCY/versions\n|;
+    . qq|project-config/CLOWNFISH/versions\n|;
 
 say qq|# Once the release files are in place, update the download page|;
 say qq|# of the Lucy website. The easiest way to perform this action is to|;

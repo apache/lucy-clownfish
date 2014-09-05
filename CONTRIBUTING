@@ -51,7 +51,7 @@ OPEN AN ISSUE:
   Atlassian JIRA.  We generally use the term "issue" rather than "bug" because
   not every contribution fixes a "bug".
   
-     https://issues.apache.org/jira/browse/LUCY
+     https://issues.apache.org/jira/browse/CLOWNFISH
   
   1. Create a JIRA account for yourself and sign in.
   2. Once you have signed in, the "create new issue" link will appear.  Either

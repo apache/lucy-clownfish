@@ -39,7 +39,7 @@ my $builder = Clownfish::CFC::Build->new(
         resources => {
             homepage   => 'http://lucy.apache.org',
             repository => 'https://git-wip-us.apache.org/repos/asf/lucy-clownfish.git',
-            bugtracker => 'https://issues.apache.org/jira/browse/LUCY',
+            bugtracker => 'https://issues.apache.org/jira/browse/CLOWNFISH',
         },
     },
     add_to_cleanup => [
