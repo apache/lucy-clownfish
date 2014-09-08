@@ -343,6 +343,11 @@ SI_rebuild_hash(Hash *self) {
     return (HashEntry*)self->entries;
 }
 
+HashTombStone*
+Hash_get_tombstone() {
+    return TOMBSTONE;
+}
+
 /***************************************************************************/
 
 uint32_t

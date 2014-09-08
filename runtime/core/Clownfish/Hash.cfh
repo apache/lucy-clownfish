@@ -45,6 +45,9 @@ class Clownfish::Hash inherits Clownfish::Obj {
     inert Hash*
     init(Hash *self, uint32_t capacity = 0);
 
+    inert HashTombStone*
+    get_tombstone();
+
     /** Empty the hash of all key-value pairs.
      */
     void
