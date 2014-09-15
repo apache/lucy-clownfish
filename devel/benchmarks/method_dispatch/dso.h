@@ -22,7 +22,9 @@
 extern class_t *OBJ;
 extern size_t Obj_Hello_OFFSET;
 extern method_t Obj_Hello_THUNK_PTR;
-#define Obj_Hello_FIXED_OFFSET (5 * sizeof(void*))
+#define METHOD_IDX 3
+#define Obj_Hello_FIXED_OFFSET \
+    (offsetof(class_t, vtable) + METHOD_IDX * sizeof(method_t))
 
 void bootstrap();
 

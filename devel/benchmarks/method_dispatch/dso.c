@@ -29,9 +29,8 @@ method_t Obj_Hello_THUNK_PTR;
 
 void
 bootstrap() {
-    size_t method_idx = 3;
     size_t class_size = offsetof(class_t, vtable)
-                        + (method_idx + 1) * sizeof(method_t);
+                        + (METHOD_IDX + 1) * sizeof(method_t);
 
     OBJ = (class_t*)calloc(1, class_size);
 
@@ -39,8 +38,8 @@ bootstrap() {
     OBJ->class_size = class_size;
 
     Obj_Hello_OFFSET = offsetof(class_t, vtable)
-                       + method_idx * sizeof(method_t);
-    OBJ->vtable[method_idx] = Obj_hello;
+                       + METHOD_IDX * sizeof(method_t);
+    OBJ->vtable[METHOD_IDX] = Obj_hello;
     Obj_Hello_THUNK_PTR = thunk3;
 }
 
