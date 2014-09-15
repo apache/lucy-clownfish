@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 typedef struct class_t class_t;
+typedef struct class_t interface_t;
 
 typedef struct obj_t {
     size_t    refcount;
@@ -31,10 +32,17 @@ typedef struct obj_t {
 typedef void (*method_t)(obj_t *obj);
 
 struct class_t {
-    char     *name;
-    size_t    class_size;
-    method_t  vtable[1];
+    char         *name;
+    size_t        class_size;
+    interface_t **itables[8];
+    method_t      vtable[1];
 };
+
+#define ITABLE_ARRAY_SHIFT  16
+#define ITABLE_ARRAY_MASK   0xFFFF0000
+#define INTERFACE_ID_SHIFT  8
+#define INTERFACE_ID_MASK   0x0000FF00
+#define IMETHOD_OFFSET_MASK 0x000000FF
 
 #endif /* OO_H */
 

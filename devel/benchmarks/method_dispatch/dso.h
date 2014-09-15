@@ -25,6 +25,7 @@ extern method_t Obj_Hello_THUNK_PTR;
 #define METHOD_IDX 3
 #define Obj_Hello_FIXED_OFFSET \
     (offsetof(class_t, vtable) + METHOD_IDX * sizeof(method_t))
+extern unsigned Obj_Hello_INTERFACE_OFFSET;
 
 void bootstrap();
 

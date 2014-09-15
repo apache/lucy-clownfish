@@ -26,6 +26,7 @@ void thunk3(obj_t *obj);
 class_t *OBJ;
 size_t Obj_Hello_OFFSET;
 method_t Obj_Hello_THUNK_PTR;
+unsigned int Obj_Hello_INTERFACE_OFFSET;
 
 void
 bootstrap() {
@@ -41,6 +42,11 @@ bootstrap() {
                        + METHOD_IDX * sizeof(method_t);
     OBJ->vtable[METHOD_IDX] = Obj_hello;
     Obj_Hello_THUNK_PTR = thunk3;
+
+    // Interface ID 0, slot 0.
+    Obj_Hello_INTERFACE_OFFSET = Obj_Hello_OFFSET;
+    OBJ->itables[0]    = (interface_t**)malloc(sizeof(void*));
+    OBJ->itables[0][0] = (interface_t*)OBJ;
 }
 
 obj_t*

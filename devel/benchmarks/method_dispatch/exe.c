@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <assert.h>
 
 #include "dso.h"
 
@@ -46,6 +47,20 @@ Obj_Hello_FIXED(obj_t *obj) {
     method(obj);
 }
 
+static inline void
+Obj_Hello_INTERFACE(obj_t *obj) {
+    unsigned offset = Obj_Hello_INTERFACE_OFFSET;
+    unsigned itable_array_slot
+        = (offset & ITABLE_ARRAY_MASK) >> ITABLE_ARRAY_SHIFT;
+    interface_t **itables = obj->klass->itables[itable_array_slot];
+    unsigned interface_id
+        = (offset & INTERFACE_ID_MASK) >> INTERFACE_ID_SHIFT;
+    interface_t *interface = itables[interface_id];
+    char *ptr = (char*)interface + (offset & IMETHOD_OFFSET_MASK);
+    method_t method = *(method_t*)ptr;
+    method(obj);
+}
+
 void
 loop_with_method_ptr(obj_t *obj) {
     method_t method = Obj_Hello_PTR(obj);
@@ -66,6 +81,13 @@ void
 loop_with_fixed_offset_wrapper(obj_t *obj) {
     for (uint64_t i = 0; i < ITERATIONS; ++i) {
         Obj_Hello_FIXED(obj);
+    }
+}
+
+void
+loop_with_interface(obj_t *obj) {
+    for (uint64_t i = 0; i < ITERATIONS; ++i) {
+        Obj_Hello_INTERFACE(obj);
     }
 }
 
@@ -166,6 +188,7 @@ main(int argc, char **argv) {
     bench(loop_with_method_ptr, "method ptr loop");
     bench(loop_with_wrapper, "wrapper loop");
     bench(loop_with_fixed_offset_wrapper, "fixed offset wrapper loop");
+    bench(loop_with_interface, "interface loop");
 #ifdef HAS_ALIAS
     bench(loop_with_thunk, "thunk loop");
     bench(loop_with_thunk_ptr, "thunk ptr loop");
