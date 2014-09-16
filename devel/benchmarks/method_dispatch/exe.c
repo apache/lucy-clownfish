@@ -189,6 +189,7 @@ main(int argc, char **argv) {
     bench(loop_with_wrapper, "wrapper loop");
     bench(loop_with_fixed_offset_wrapper, "fixed offset wrapper loop");
     bench(loop_with_interface, "interface loop");
+    bench(loop_with_simulated_inline, "simulated inline");
 #ifdef HAS_ALIAS
     bench(loop_with_thunk, "thunk loop");
     bench(loop_with_thunk_ptr, "thunk ptr loop");
@@ -198,7 +199,6 @@ main(int argc, char **argv) {
     bench(call_with_thunk, "thunk");
     bench(call_with_thunk_ptr, "thunk ptr");
 #endif
-    bench(loop_with_simulated_inline, "simulated inline");
 
     return 0;
 }
