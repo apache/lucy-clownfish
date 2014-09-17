@@ -74,16 +74,18 @@ sub ACTION_charmony {
     }
 
     # Prepare arguments to charmonizer.
+    my @cc_args = $self->split_like_shell($self->config('cc'));
+    my $cc = shift(@cc_args);
     my @command = (
         $CHARMONIZER_EXE_PATH,
-        '--cc=' . $self->config('cc'),
+        "--cc=$cc",
         '--enable-c',
         '--enable-perl',
     );
     if ( !$self->config('usethreads') ) {
         push @command, '--disable-threads';
     }
-    push @command, ( '--', $self->config('ccflags') );
+    push @command, ( '--', @cc_args, $self->config('ccflags') );
     if ( $ENV{CHARM_VALGRIND} ) {
         unshift @command, "valgrind", "--leak-check=yes";
     }
