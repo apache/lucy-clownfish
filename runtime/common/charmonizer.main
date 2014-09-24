@@ -162,9 +162,11 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     chaz_CFlags *link_flags;
     chaz_CFlags *test_cflags;
 
-    chaz_SharedLib *lib;
+    chaz_Lib       *shared_lib;
+    chaz_Lib       *static_lib;
     const char     *math_library = chaz_Floats_math_library();
-    char           *lib_filename;
+    char           *shared_lib_filename;
+    char           *static_lib_filename;
     char           *test_command;
     char           *scratch;
 
@@ -226,9 +228,16 @@ S_write_makefile(struct chaz_CLIArgs *args) {
 
     /* Rules */
 
-    lib = chaz_SharedLib_new("cfish", cfish_version, cfish_major_version);
-    lib_filename = chaz_SharedLib_filename(lib);
-    chaz_MakeFile_add_rule(makefile, "all", lib_filename);
+    shared_lib = chaz_Lib_new("cfish", chaz_Lib_SHARED, cfish_version,
+                              cfish_major_version);
+    shared_lib_filename = chaz_Lib_filename(shared_lib);
+    static_lib = chaz_Lib_new("cfish", chaz_Lib_STATIC, cfish_version,
+                              cfish_major_version);
+    static_lib_filename = chaz_Lib_filename(static_lib);
+    scratch = chaz_Util_join(" ", shared_lib_filename, static_lib_filename,
+                             NULL);
+    chaz_MakeFile_add_rule(makefile, "all", scratch);
+    free(scratch);
 
     rule = chaz_MakeFile_add_rule(makefile, cfc_exe, NULL);
     chaz_MakeRule_add_make_command(rule, cfc_dir, NULL);
@@ -259,19 +268,20 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     if (args->code_coverage) {
         chaz_CFlags_enable_code_coverage(link_flags);
     }
-    chaz_MakeFile_add_shared_lib(makefile, lib, "$(CLOWNFISH_OBJS)",
+    chaz_MakeFile_add_shared_lib(makefile, shared_lib, "$(CLOWNFISH_OBJS)",
                                  link_flags);
     chaz_CFlags_destroy(link_flags);
+    chaz_MakeFile_add_static_lib(makefile, static_lib, "$(CLOWNFISH_OBJS)");
 
     test_cflags = chaz_CC_new_cflags();
     chaz_CFlags_enable_optimization(test_cflags);
     chaz_CFlags_add_include_dir(test_cflags, autogen_inc_dir);
-    chaz_CFlags_add_library(test_cflags, lib);
+    chaz_CFlags_add_library(test_cflags, shared_lib);
     scratch = chaz_Util_join(dir_sep, "t", "test_cfish.c", NULL);
     rule = chaz_MakeFile_add_compiled_exe(makefile, test_cfish_exe, scratch,
                                           test_cflags);
     free(scratch);
-    chaz_MakeRule_add_prereq(rule, lib_filename);
+    chaz_MakeRule_add_prereq(rule, shared_lib_filename);
     chaz_CFlags_destroy(test_cflags);
 
     rule = chaz_MakeFile_add_rule(makefile, "test", test_cfish_exe);
@@ -326,14 +336,16 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     chaz_MakeFile_write(makefile);
 
     chaz_MakeFile_destroy(makefile);
-    chaz_SharedLib_destroy(lib);
+    chaz_Lib_destroy(shared_lib);
+    chaz_Lib_destroy(static_lib);
     free(core_dir);
     free(cfc_dir);
     free(cfc_exe);
     free(test_cfish_exe);
     free(autogen_inc_dir);
     free(autogen_target);
-    free(lib_filename);
+    free(shared_lib_filename);
+    free(static_lib_filename);
     free(test_command);
 }
 
