@@ -18,7 +18,7 @@ use warnings;
 
 package Clownfish::CFC::Build;
 
-our $VERSION = '0.004000';
+our $VERSION = '0.004001';
 $VERSION = eval $VERSION;
 
 # In order to find Clownfish::CFC::Perl::Build::Charmonic, look in 'lib'
