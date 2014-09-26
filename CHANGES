@@ -1,5 +1,17 @@
 Revision history for Apache Clownfish
 
+0.4.1 2014-09-25
+
+  Bugfixes:
+
+    * [CLOWNFISH-4] - Account for compiler names with invalid leading
+                      whitespace
+    * [CLOWNFISH-5] - Add stub Clownfish/CFC/Model/Version.pm
+    * [CLOWNFISH-6] - Update issue tracker in dist metadata
+    * [CLOWNFISH-8] - CPAN smokers fail to build Lucy
+    * [CLOWNFISH-16] - Support arguments in $Config{cc}
+    * [CLOWNFISH-17] - Bump Devel::PPPort dependency to version 3.14
+
 0.4.0  2014-08-19
 
   Initial independent release after separation from Apache Lucy.
