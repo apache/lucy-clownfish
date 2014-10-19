@@ -74,26 +74,6 @@ sub new {
     push( @$cf_source, catdir( $AUTOGEN_DIR, 'source' ) );
     $self->clownfish_params( source => $cf_source );
 
-    my $cf_include = $self->clownfish_params('include') || [];
-    # Add include dirs from CLOWNFISH_INCLUDE environment variable.
-    if ($ENV{CLOWNFISH_INCLUDE}) {
-        push( @$cf_include, split( /:/, $ENV{CLOWNFISH_INCLUDE} ) );
-    }
-    # Add include dirs from @INC.
-    for my $dir (@INC) {
-        my $cf_incdir = catdir( $dir, 'Clownfish', '_include' );
-        push( @$cf_include, $cf_incdir ) if -d $cf_incdir;
-    }
-    $self->clownfish_params( include => $cf_include );
-
-    my $include_dirs = $self->include_dirs;
-    push( @$include_dirs,
-        curdir(), # for ppport.h
-        catdir( $AUTOGEN_DIR, 'include' ),
-        @$cf_include,
-    );
-    $self->include_dirs($include_dirs);
-
     my $autogen_header = $self->clownfish_params('autogen_header');
     if ( !defined($autogen_header) ) {
         $self->clownfish_params( autogen_header => <<'END_AUTOGEN' );
@@ -109,6 +89,52 @@ END_AUTOGEN
     }
 
     return $self;
+}
+
+# Return the list of Clownfish include dirs. Uses directories from
+# - Module::Build parameter
+# - Environment variable CLOWNFISH_INCLUDE
+# - Clownfish include directories found in @INC
+# Note that this function must be called at build time because dependencies
+# might not be installed yet at configure time.
+sub cf_include_dirs {
+    my $self = shift;
+
+    my $cf_include = $self->clownfish_params('include');
+    my @dirs = ref($cf_include) ? @$cf_include : ( $cf_include )
+        if defined($cf_include);
+
+    # Add include dirs from CLOWNFISH_INCLUDE environment variable.
+    if ($ENV{CLOWNFISH_INCLUDE}) {
+        push( @dirs, split( /:/, $ENV{CLOWNFISH_INCLUDE} ) );
+    }
+
+    # Add include dirs from @INC.
+    for my $dir (@INC) {
+        my $cf_incdir = catdir( $dir, 'Clownfish', '_include' );
+        push( @dirs, $cf_incdir ) if -d $cf_incdir;
+    }
+
+    return @dirs;
+}
+
+# Return the list of Clownfish C include dirs.
+# Note that this function must be called at build time because dependencies
+# might not be installed yet at configure time.
+sub cf_c_include_dirs {
+    my $self = shift;
+
+    my $include_dirs = $self->include_dirs;
+    my @dirs = ref($include_dirs) ? @$include_dirs : ( $include_dirs )
+        if defined($include_dirs);
+
+    push( @dirs,
+        curdir(), # for ppport.h
+        catdir( $AUTOGEN_DIR, 'include' ),
+        $self->cf_include_dirs,
+    );
+
+    return @dirs;
 }
 
 sub cf_base_path {
@@ -169,8 +195,7 @@ sub cf_copy_include_file {
     my ($self, @path) = @_;
 
     my $dest_dir     = catdir( $self->blib, 'arch', 'Clownfish', '_include' );
-    my $include_dirs = $self->include_dirs;
-    for my $include_dir (@$include_dirs) {
+    for my $include_dir ($self->cf_c_include_dirs) {
         my $file = catfile ( $include_dir, @path );
         if ( -e $file ) {
             $self->copy_if_modified(
@@ -213,11 +238,10 @@ sub _compile_clownfish {
         dest => $AUTOGEN_DIR,
     );
     my $source_dirs  = $self->clownfish_params('source');
-    my $include_dirs = $self->clownfish_params('include');
     for my $source_dir (@$source_dirs) {
         $hierarchy->add_source_dir($source_dir);
     }
-    for my $include_dir (@$include_dirs) {
+    for my $include_dir ($self->cf_include_dirs) {
         $hierarchy->add_include_dir($include_dir);
     }
     $hierarchy->build;
@@ -386,7 +410,7 @@ sub ACTION_compile_custom_xs {
         $cbuilder->compile(
             source               => $c_file,
             extra_compiler_flags => $extra_cflags,
-            include_dirs         => $self->include_dirs,
+            include_dirs         => [ $self->cf_c_include_dirs ],
             object_file          => $o_file,
         );
     }
@@ -413,7 +437,7 @@ sub ACTION_compile_custom_xs {
         $cbuilder->compile(
             source               => $perl_binding_c_file,
             extra_compiler_flags => $self->extra_compiler_flags,
-            include_dirs         => $self->include_dirs,
+            include_dirs         => [ $self->cf_c_include_dirs ],
             object_file          => $perl_binding_o_file,
             # 'defines' is an undocumented parameter to compile(), so we
             # should officially roll our own variant and generate compiler
