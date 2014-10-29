@@ -82,6 +82,9 @@ static void
 cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self);
 
 static void
+cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self);
+
+static void
 S_c_file_callback(const char *dir, char *file, void *context);
 
 static void
@@ -267,10 +270,7 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     SourceFileContext sfc;
 
     const char *dir_sep  = chaz_OS_dir_sep();
-    const char *exe_ext  = chaz_OS_exe_ext();
     const char *obj_ext  = chaz_CC_obj_ext();
-
-    char *test_cfish_exe;
 
     chaz_MakeVar  *var;
     chaz_MakeRule *rule;
@@ -280,10 +280,8 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
     chaz_CFlags *makefile_cflags;
     chaz_CFlags *link_flags;
-    chaz_CFlags *test_cflags;
 
     const char *math_library = chaz_Floats_math_library();
-    char       *test_command;
     char       *scratch;
     int         i;
 
@@ -365,67 +363,13 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_MakeFile_add_static_lib(self->makefile, self->static_lib,
                                  "$(CLOWNFISH_OBJS)");
 
-    test_cfish_exe = chaz_Util_join("", "t", dir_sep, "test_cfish", exe_ext,
-                                    NULL);
-    test_cflags = chaz_CC_new_cflags();
-    chaz_CFlags_enable_optimization(test_cflags);
-    chaz_CFlags_add_include_dir(test_cflags, self->autogen_inc_dir);
-    chaz_CFlags_add_library(test_cflags, self->shared_lib);
-    scratch = chaz_Util_join(dir_sep, "t", "test_cfish.c", NULL);
-    rule = chaz_MakeFile_add_compiled_exe(self->makefile, test_cfish_exe, scratch,
-                                          test_cflags);
-    free(scratch);
-    chaz_MakeRule_add_prereq(rule, self->shared_lib_filename);
-    chaz_CFlags_destroy(test_cflags);
-
-    rule = chaz_MakeFile_add_rule(self->makefile, "test", test_cfish_exe);
-    if (strcmp(chaz_OS_shared_lib_ext(), ".so") == 0) {
-        test_command = chaz_Util_join(" ", "LD_LIBRARY_PATH=.", test_cfish_exe,
-                                      NULL);
-    }
-    else {
-        test_command = chaz_Util_strdup(test_cfish_exe);
-    }
-    chaz_MakeRule_add_command(rule, test_command);
-
-    if (chaz_CLI_defined(self->cli, "enable-coverage")) {
-        rule = chaz_MakeFile_add_rule(self->makefile, "coverage", test_cfish_exe);
-        chaz_MakeRule_add_command(rule,
-                                  "lcov"
-                                  " --zerocounters"
-                                  " --directory $(BASE_DIR)");
-        chaz_MakeRule_add_command(rule, test_command);
-        chaz_MakeRule_add_command(rule,
-                                  "lcov"
-                                  " --capture"
-                                  " --directory $(BASE_DIR)"
-                                  " --base-directory ."
-                                  " --rc lcov_branch_coverage=1"
-                                  " --output-file clownfish.info");
-        chaz_MakeRule_add_command(rule,
-                                  "genhtml"
-                                  " --branch-coverage"
-                                  " --output-directory coverage"
-                                  " clownfish.info");
-    }
+    cfish_MakeFile_write_c_test_rules(self);
 
     clean_rule = chaz_MakeFile_clean_rule(self->makefile);
     chaz_MakeRule_add_rm_command(clean_rule, "$(CLOWNFISH_OBJS)");
     chaz_MakeRule_add_recursive_rm_command(clean_rule, "autogen");
 
-    if (chaz_CLI_defined(self->cli, "enable-coverage")) {
-        chaz_MakeRule_add_rm_command(clean_rule, "clownfish.info");
-        chaz_MakeRule_add_recursive_rm_command(clean_rule, "coverage");
-    }
-
-    if (chaz_Probe_msvc_version_num()) {
-        chaz_MakeRule_add_rm_command(clean_rule, "test_cfish.obj");
-    }
-
     chaz_MakeFile_write(self->makefile);
-
-    free(test_cfish_exe);
-    free(test_command);
 }
 
 static void
@@ -467,6 +411,76 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
     free(cfc_dir);
     free(cfc_exe);
     free(cfc_command);
+}
+
+static void
+cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
+    const char *dir_sep  = chaz_OS_dir_sep();
+    const char *exe_ext  = chaz_OS_exe_ext();
+
+    chaz_CFlags   *test_cflags;
+    chaz_MakeRule *rule;
+    char          *test_cfish_exe;
+    char          *test_cfish_c;
+    char          *test_command;
+
+    test_cfish_exe = chaz_Util_join("", "t", dir_sep, "test_cfish", exe_ext,
+                                    NULL);
+    test_cfish_c = chaz_Util_join(dir_sep, "t", "test_cfish.c", NULL);
+    test_cflags = chaz_CC_new_cflags();
+    chaz_CFlags_enable_optimization(test_cflags);
+    chaz_CFlags_add_include_dir(test_cflags, self->autogen_inc_dir);
+    chaz_CFlags_add_library(test_cflags, self->shared_lib);
+    rule = chaz_MakeFile_add_compiled_exe(self->makefile, test_cfish_exe,
+                                          test_cfish_c, test_cflags);
+    chaz_MakeRule_add_prereq(rule, self->shared_lib_filename);
+    chaz_CFlags_destroy(test_cflags);
+
+    /* TODO: This should be added by Charmonizer. */
+    if (chaz_Probe_msvc_version_num()) {
+        rule = chaz_MakeFile_clean_rule(self->makefile);
+        chaz_MakeRule_add_rm_command(rule, "test_cfish.obj");
+    }
+
+    rule = chaz_MakeFile_add_rule(self->makefile, "test", test_cfish_exe);
+    if (strcmp(chaz_OS_shared_lib_ext(), ".so") == 0) {
+        test_command = chaz_Util_join(" ", "LD_LIBRARY_PATH=.", test_cfish_exe,
+                                      NULL);
+    }
+    else {
+        test_command = chaz_Util_strdup(test_cfish_exe);
+    }
+    chaz_MakeRule_add_command(rule, test_command);
+
+    if (chaz_CLI_defined(self->cli, "enable-coverage")) {
+        rule = chaz_MakeFile_add_rule(self->makefile, "coverage",
+                                      test_cfish_exe);
+        chaz_MakeRule_add_command(rule,
+                                  "lcov"
+                                  " --zerocounters"
+                                  " --directory $(BASE_DIR)");
+        chaz_MakeRule_add_command(rule, test_command);
+        chaz_MakeRule_add_command(rule,
+                                  "lcov"
+                                  " --capture"
+                                  " --directory $(BASE_DIR)"
+                                  " --base-directory ."
+                                  " --rc lcov_branch_coverage=1"
+                                  " --output-file clownfish.info");
+        chaz_MakeRule_add_command(rule,
+                                  "genhtml"
+                                  " --branch-coverage"
+                                  " --output-directory coverage"
+                                  " clownfish.info");
+
+        rule = chaz_MakeFile_clean_rule(self->makefile);
+        chaz_MakeRule_add_rm_command(rule, "clownfish.info");
+        chaz_MakeRule_add_recursive_rm_command(rule, "coverage");
+    }
+
+    free(test_cfish_exe);
+    free(test_cfish_c);
+    free(test_command);
 }
 
 static void
