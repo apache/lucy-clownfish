@@ -186,7 +186,7 @@ sub _cfh_filepaths {
     my $source_dirs = $self->clownfish_params('source');
     for my $source_dir (@$source_dirs) {
         next unless -e $source_dir;
-        push @paths, @{ $self->rscan_dir( $source_dir, qr/\.cfh$/ ) };
+        push @paths, @{ $self->rscan_dir( $source_dir, qr/\.cf[hp]$/ ) };
     }
     return \@paths;
 }
