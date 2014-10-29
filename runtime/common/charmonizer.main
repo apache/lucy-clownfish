@@ -79,6 +79,9 @@ static void
 cfish_MakeFile_write(cfish_MakeFile *self);
 
 static void
+cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self);
+
+static void
 S_c_file_callback(const char *dir, char *file, void *context);
 
 static void
@@ -267,8 +270,6 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     const char *exe_ext  = chaz_OS_exe_ext();
     const char *obj_ext  = chaz_CC_obj_ext();
 
-    char *cfc_dir;
-    char *cfc_exe;
     char *test_cfish_exe;
 
     chaz_MakeVar  *var;
@@ -330,13 +331,6 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
         free(path);
     }
 
-    /* Clownfish header files */
-
-    var = chaz_MakeFile_add_var(self->makefile, "CLOWNFISH_HEADERS", NULL);
-    sfc.var = var;
-
-    chaz_Make_list_files(self->core_dir, "cfh", S_cfh_file_callback, &sfc);
-
     /* Rules */
 
     scratch = chaz_Util_join(" ", self->shared_lib_filename,
@@ -344,19 +338,7 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_MakeFile_add_rule(self->makefile, "all", scratch);
     free(scratch);
 
-    cfc_dir = chaz_Util_join(dir_sep, self->base_dir, "..", "compiler", "c",
-                             NULL);
-    cfc_exe = chaz_Util_join("", cfc_dir, dir_sep, "cfc", exe_ext, NULL);
-
-    rule = chaz_MakeFile_add_rule(self->makefile, cfc_exe, NULL);
-    chaz_MakeRule_add_make_command(rule, cfc_dir, NULL);
-
-    rule = chaz_MakeFile_add_rule(self->makefile, self->autogen_target, cfc_exe);
-    chaz_MakeRule_add_prereq(rule, "$(CLOWNFISH_HEADERS)");
-    scratch = chaz_Util_join("", cfc_exe, " --source=", self->core_dir,
-                             " --dest=autogen --header=cfc_header", NULL);
-    chaz_MakeRule_add_command(rule, scratch);
-    free(scratch);
+    cfish_MakeFile_write_c_cfc_rules(self);
 
     /* Needed for parallel builds. */
     for (i = 0; self->autogen_src_files[i] != NULL; ++i) {
@@ -440,17 +422,51 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
         chaz_MakeRule_add_rm_command(clean_rule, "test_cfish.obj");
     }
 
-    chaz_MakeRule_add_make_command(clean_rule, cfc_dir, "clean");
-
-    distclean_rule = chaz_MakeFile_distclean_rule(self->makefile);
-    chaz_MakeRule_add_make_command(distclean_rule, cfc_dir, "distclean");
-
     chaz_MakeFile_write(self->makefile);
+
+    free(test_cfish_exe);
+    free(test_command);
+}
+
+static void
+cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
+    SourceFileContext sfc;
+    chaz_MakeVar  *var;
+    chaz_MakeRule *rule;
+
+    const char *dir_sep  = chaz_OS_dir_sep();
+    const char *exe_ext  = chaz_OS_exe_ext();
+
+    char *cfc_dir;
+    char *cfc_exe;
+    char *cfc_command;
+
+    cfc_dir = chaz_Util_join(dir_sep, self->base_dir, "..", "compiler", "c",
+                             NULL);
+    cfc_exe = chaz_Util_join("", cfc_dir, dir_sep, "cfc", exe_ext, NULL);
+
+    rule = chaz_MakeFile_add_rule(self->makefile, cfc_exe, NULL);
+    chaz_MakeRule_add_make_command(rule, cfc_dir, NULL);
+
+    var = chaz_MakeFile_add_var(self->makefile, "CLOWNFISH_HEADERS", NULL);
+    sfc.var = var;
+    chaz_Make_list_files(self->core_dir, "cfh", S_cfh_file_callback, &sfc);
+
+    rule = chaz_MakeFile_add_rule(self->makefile, self->autogen_target, cfc_exe);
+    chaz_MakeRule_add_prereq(rule, "$(CLOWNFISH_HEADERS)");
+    cfc_command = chaz_Util_join("", cfc_exe, " --source=", self->core_dir,
+                                 " --dest=autogen --header=cfc_header", NULL);
+    chaz_MakeRule_add_command(rule, cfc_command);
+
+    rule = chaz_MakeFile_clean_rule(self->makefile);
+    chaz_MakeRule_add_make_command(rule, cfc_dir, "clean");
+
+    rule = chaz_MakeFile_distclean_rule(self->makefile);
+    chaz_MakeRule_add_make_command(rule, cfc_dir, "distclean");
 
     free(cfc_dir);
     free(cfc_exe);
-    free(test_cfish_exe);
-    free(test_command);
+    free(cfc_command);
 }
 
 static void
