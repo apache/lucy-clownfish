@@ -158,6 +158,11 @@ int main(int argc, const char **argv) {
     if (chaz_CLI_defined(cli, "enable-makefile")) {
         cfish_MakeFile *mf = cfish_MakeFile_new(cli);
         cfish_MakeFile_write(mf);
+        /* Export filenames. */
+        chaz_ConfWriter_add_def("SHARED_LIB_FILENAME",
+                                mf->shared_lib_filename);
+        chaz_ConfWriter_add_def("STATIC_LIB_FILENAME",
+                                mf->static_lib_filename);
         cfish_MakeFile_destroy(mf);
     }
 
@@ -215,12 +220,6 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
 
 static cfish_MakeFile*
 cfish_MakeFile_new(chaz_CLI *cli) {
-    static const char *c_autogen_src_files[] = {
-        "cfish_parcel",
-        "testcfish_parcel",
-        NULL
-    };
-
     const char *dir_sep = chaz_OS_dir_sep();
 
     cfish_MakeFile *self = malloc(sizeof(cfish_MakeFile));
@@ -229,14 +228,33 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     self->cli      = cli;
 
     self->base_dir = "..";
-    self->host_src_dir = "src";
     self->core_dir = chaz_Util_join(dir_sep, self->base_dir, "core", NULL);
     self->autogen_src_dir = chaz_Util_join(dir_sep, "autogen", "source", NULL);
     self->autogen_inc_dir
         = chaz_Util_join(dir_sep, "autogen", "include", NULL);
     self->autogen_target
         = chaz_Util_join(dir_sep, "autogen", "hierarchy.json", NULL);
-    self->autogen_src_files = c_autogen_src_files;
+
+    if (chaz_CLI_defined(cli, "enable-perl")) {
+        static const char *perl_autogen_src_files[] = {
+            "boot",
+            "callbacks",
+            "cfish_parcel",
+            "testcfish_parcel",
+            NULL
+        };
+        self->host_src_dir = "xs";
+        self->autogen_src_files = perl_autogen_src_files;
+    }
+    else {
+        static const char *c_autogen_src_files[] = {
+            "cfish_parcel",
+            "testcfish_parcel",
+            NULL
+        };
+        self->host_src_dir = "src";
+        self->autogen_src_files = c_autogen_src_files;
+    }
 
     self->shared_lib = chaz_Lib_new("cfish", chaz_Lib_SHARED, cfish_version,
                                     cfish_major_version);
@@ -306,6 +324,7 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     }
 
     chaz_CFlags_add_include_dir(makefile_cflags, ".");
+    chaz_CFlags_add_include_dir(makefile_cflags, self->host_src_dir);
     chaz_CFlags_add_include_dir(makefile_cflags, self->autogen_inc_dir);
 
     var = chaz_MakeFile_add_var(self->makefile, "CFLAGS", NULL);
@@ -336,7 +355,9 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_MakeFile_add_rule(self->makefile, "all", scratch);
     free(scratch);
 
-    cfish_MakeFile_write_c_cfc_rules(self);
+    if (!chaz_CLI_defined(self->cli, "enable-perl")) {
+        cfish_MakeFile_write_c_cfc_rules(self);
+    }
 
     /* Needed for parallel builds. */
     for (i = 0; self->autogen_src_files[i] != NULL; ++i) {
@@ -363,7 +384,9 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_MakeFile_add_static_lib(self->makefile, self->static_lib,
                                  "$(CLOWNFISH_OBJS)");
 
-    cfish_MakeFile_write_c_test_rules(self);
+    if (!chaz_CLI_defined(self->cli, "enable-perl")) {
+        cfish_MakeFile_write_c_test_rules(self);
+    }
 
     clean_rule = chaz_MakeFile_clean_rule(self->makefile);
     chaz_MakeRule_add_rm_command(clean_rule, "$(CLOWNFISH_OBJS)");
