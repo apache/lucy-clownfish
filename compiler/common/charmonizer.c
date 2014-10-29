@@ -622,9 +622,11 @@ typedef void (*chaz_Make_list_files_callback_t)(const char *dir, char *file,
                                                 void *context);
 
 /** Initialize the environment.
+ *
+ * @param make_command Name of the make command. Auto-detect if NULL.
  */
 void
-chaz_Make_init(void);
+chaz_Make_init(const char *make_command);
 
 /** Clean up the environment.
  */
@@ -4332,15 +4334,17 @@ static void
 S_write_rule(chaz_MakeRule *rule, FILE *out);
 
 void
-chaz_Make_init(void) {
-    const char *make;
+chaz_Make_init(const char *make_command) {
+    if (make_command) {
+        chaz_Make.make_command = chaz_Util_strdup(make_command);
+    }
+    else {
+        chaz_Make_detect("make", "gmake", "nmake", "dmake", "mingw32-make",
+                         "mingw64-make", NULL);
+    }
 
-    chaz_Make_detect("make", "gmake", "nmake", "dmake", "mingw32-make",
-                     "mingw64-make", NULL);
-    make = chaz_Make.make_command;
-
-    if (make) {
-        if (strcmp(make, "nmake") == 0) {
+    if (chaz_Make.make_command) {
+        if (strcmp(chaz_Make.make_command, "nmake") == 0) {
             chaz_Make.shell_type = CHAZ_OS_CMD_EXE;
         }
         else {
@@ -5554,6 +5558,7 @@ chaz_Probe_parse_cli_args(int argc, const char *argv[], chaz_CLI *cli) {
     chaz_CLI_register(cli, "enable-coverage", NULL, CHAZ_CLI_NO_ARG);
     chaz_CLI_register(cli, "cc", "compiler command", CHAZ_CLI_ARG_REQUIRED);
     chaz_CLI_register(cli, "cflags", NULL, CHAZ_CLI_ARG_REQUIRED);
+    chaz_CLI_register(cli, "make", "make command", 0);
 
     /* Parse options, exiting on failure. */
     if (!chaz_CLI_parse(cli, argc, argv)) {
@@ -5642,7 +5647,7 @@ chaz_Probe_init(struct chaz_CLI *cli) {
     chaz_CC_init(chaz_CLI_strval(cli, "cc"), chaz_CLI_strval(cli, "cflags"));
     chaz_ConfWriter_init();
     chaz_HeadCheck_init();
-    chaz_Make_init();
+    chaz_Make_init(chaz_CLI_strval(cli, "make"));
 
     /* Enable output. */
     if (chaz_CLI_defined(cli, "enable-c")) {
@@ -7704,6 +7709,58 @@ typedef struct SourceFileContext {
 } SourceFileContext;
 
 static void
+S_add_compiler_flags(struct chaz_CLI *cli);
+
+static void
+S_write_makefile(struct chaz_CLI *cli);
+
+static void
+S_source_file_callback(const char *dir, char *file, void *context);
+
+int main(int argc, const char **argv) {
+    /* Initialize. */
+    chaz_CLI *cli
+        = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
+    chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
+    {
+        int result = chaz_Probe_parse_cli_args(argc, argv, cli);
+        if (!result) {
+            chaz_Probe_die_usage();
+        }
+        chaz_Probe_init(cli);
+        S_add_compiler_flags(cli);
+    }
+
+    /* Define stdint types in charmony.h. */
+    chaz_ConfWriter_append_conf("#define CHY_EMPLOY_INTEGERTYPES\n\n");
+    chaz_ConfWriter_append_conf("#define CHY_EMPLOY_INTEGERLITERALS\n\n");
+
+    /* Run probe modules. */
+    chaz_BuildEnv_run();
+    chaz_DirManip_run();
+    chaz_Headers_run();
+    chaz_AtomicOps_run();
+    chaz_FuncMacro_run();
+    chaz_Booleans_run();
+    chaz_Integers_run();
+    chaz_Strings_run();
+    chaz_Memory_run();
+    chaz_SymbolVisibility_run();
+    chaz_UnusedVars_run();
+    chaz_VariadicMacros_run();
+
+    if (chaz_CLI_defined(cli, "enable-makefile")) {
+        S_write_makefile(cli);
+    }
+
+    /* Clean up. */
+    chaz_CLI_destroy(cli);
+    chaz_Probe_clean_up();
+
+    return 0;
+}
+
+static void
 S_add_compiler_flags(struct chaz_CLI *cli) {
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
 
@@ -7736,34 +7793,6 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
             chaz_CFlags_append(extra_cflags, "/Dfor=\"if(0);else for\"");
         }
     }
-}
-
-static void
-S_source_file_callback(const char *dir, char *file, void *context) {
-    SourceFileContext *sfc = (SourceFileContext*)context;
-    const char *dir_sep = chaz_OS_dir_sep();
-    const char *obj_ext = chaz_CC_obj_ext();
-    size_t file_len = strlen(file);
-    char *obj_file;
-
-    if (strcmp(file, "CFCParseHeader.c") == 0) { return; }
-
-    /* Strip extension */
-    if (file_len <= 2 || memcmp(file + file_len - 2, ".c", 2) != 0) {
-        chaz_Util_warn("Unexpected source file name: %s", file);
-        return;
-    }
-    file[file_len-2] = '\0';
-
-    obj_file = chaz_Util_join("", dir, dir_sep, file, obj_ext, NULL);
-    if (strlen(file) >= 7 && memcmp(file, "CFCTest", 7) == 0) {
-        chaz_MakeVar_append(sfc->test_cfc_objs, obj_file);
-    }
-    else {
-        chaz_MakeVar_append(sfc->common_objs, obj_file);
-    }
-
-    free(obj_file);
 }
 
 static void
@@ -7923,47 +7952,32 @@ S_write_makefile(struct chaz_CLI *cli) {
     free(test_cfc_exe);
 }
 
-int main(int argc, const char **argv) {
-    /* Initialize. */
-    chaz_CLI *cli
-        = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
-    chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
-    {
-        int result = chaz_Probe_parse_cli_args(argc, argv, cli);
-        if (!result) {
-            chaz_Probe_die_usage();
-        }
-        chaz_Probe_init(cli);
-        S_add_compiler_flags(cli);
+static void
+S_source_file_callback(const char *dir, char *file, void *context) {
+    SourceFileContext *sfc = (SourceFileContext*)context;
+    const char *dir_sep = chaz_OS_dir_sep();
+    const char *obj_ext = chaz_CC_obj_ext();
+    size_t file_len = strlen(file);
+    char *obj_file;
+
+    if (strcmp(file, "CFCParseHeader.c") == 0) { return; }
+
+    /* Strip extension */
+    if (file_len <= 2 || memcmp(file + file_len - 2, ".c", 2) != 0) {
+        chaz_Util_warn("Unexpected source file name: %s", file);
+        return;
+    }
+    file[file_len-2] = '\0';
+
+    obj_file = chaz_Util_join("", dir, dir_sep, file, obj_ext, NULL);
+    if (strlen(file) >= 7 && memcmp(file, "CFCTest", 7) == 0) {
+        chaz_MakeVar_append(sfc->test_cfc_objs, obj_file);
+    }
+    else {
+        chaz_MakeVar_append(sfc->common_objs, obj_file);
     }
 
-    /* Define stdint types in charmony.h. */
-    chaz_ConfWriter_append_conf("#define CHY_EMPLOY_INTEGERTYPES\n\n");
-    chaz_ConfWriter_append_conf("#define CHY_EMPLOY_INTEGERLITERALS\n\n");
-
-    /* Run probe modules. */
-    chaz_BuildEnv_run();
-    chaz_DirManip_run();
-    chaz_Headers_run();
-    chaz_AtomicOps_run();
-    chaz_FuncMacro_run();
-    chaz_Booleans_run();
-    chaz_Integers_run();
-    chaz_Strings_run();
-    chaz_Memory_run();
-    chaz_SymbolVisibility_run();
-    chaz_UnusedVars_run();
-    chaz_VariadicMacros_run();
-
-    if (chaz_CLI_defined(cli, "enable-makefile")) {
-        S_write_makefile(cli);
-    }
-
-    /* Clean up. */
-    chaz_CLI_destroy(cli);
-    chaz_Probe_clean_up();
-
-    return 0;
+    free(obj_file);
 }
 
 
