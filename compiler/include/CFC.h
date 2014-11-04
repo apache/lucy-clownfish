@@ -34,6 +34,8 @@
 #include "CFCVariable.h"
 #include "CFCVersion.h"
 
+#include "CFCC.h"
+
 #include "CFCBindCore.h"
 #include "CFCBindAliases.h"
 #include "CFCBindClass.h"
