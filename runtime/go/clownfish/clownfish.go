@@ -33,13 +33,78 @@ package clownfish
 
 */
 import "C"
+import "runtime"
+import "unsafe"
 
 func init() {
 	C.cfish_bootstrap_parcel()
 }
 
-// Temporary test-only routine.
-func DoStuff() {
-	hash := C.cfish_Hash_new(C.uint32_t(0))
-	C.cfish_dec_refcount(unsafe.Pointer(hash))
+type Obj interface {
+	ToPtr() unsafe.Pointer
+}
+
+type Err struct {
+	ref *C.cfish_Err
+}
+
+type String struct {
+	ref *C.cfish_String
+}
+
+type ByteBuf struct {
+	ref *C.cfish_ByteBuf
+}
+
+type Hash struct {
+	ref *C.cfish_Hash
+}
+
+type VArray struct {
+	ref *C.cfish_VArray
+}
+
+type Class struct {
+	ref *C.cfish_Class
+}
+
+type Method struct {
+	ref *C.cfish_Method
+}
+
+type LockFreeRegistry struct {
+	ref *C.cfish_LockFreeRegistry
+}
+
+func NewString(goString string) String {
+	str := C.CString(goString)
+	len := C.size_t(len(goString))
+	obj := String{
+		C.cfish_Str_new_steal_utf8(str, len),
+	}
+	runtime.SetFinalizer(&obj, (*String).callDecRef)
+	return obj
+}
+
+func (obj *String) callDecRef() {
+	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
+	obj.ref = nil
+}
+
+func (obj *String) ToPtr() unsafe.Pointer {
+	return unsafe.Pointer(obj.ref)
+}
+
+func CFStringToGo(ptr unsafe.Pointer) string {
+	cfString := (*C.cfish_String)(ptr)
+	if cfString == nil {
+		return ""
+	}
+	if !C.CFISH_Str_Is_A(cfString, C.CFISH_STRING) {
+		cfString := C.CFISH_Str_To_String(cfString)
+		defer C.cfish_dec_refcount(unsafe.Pointer(cfString))
+	}
+	data := C.CFISH_Str_Get_Ptr8(cfString)
+	size := C.int(C.CFISH_Str_Get_Size(cfString))
+	return C.GoStringN(data, size)
 }

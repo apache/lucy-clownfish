@@ -20,5 +20,9 @@ import "git-wip-us.apache.org/repos/asf/lucy-clownfish.git/runtime/go/clownfish"
 import "testing"
 
 func TestStuff(t *testing.T) {
-	clownfish.DoStuff()
+	cfString := clownfish.NewString("foo")
+	goString := clownfish.CFStringToGo(cfString.ToPtr())
+	if goString != "foo" {
+		t.Error("Round-tripping strings failed")
+	}
 }
