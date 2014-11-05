@@ -85,6 +85,10 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
     chaz_CFlags_add_define(extra_cflags, "CFP_TESTCFISH", NULL);
 
     chaz_CFlags_hide_symbols(extra_cflags);
+
+    if (chaz_CLI_defined(cli, "disable-threads")) {
+        chaz_CFlags_append(extra_cflags, "-DCFISH_NOTHREADS");
+    }
 }
 
 static int
@@ -354,25 +358,14 @@ int main(int argc, const char **argv) {
     /* Initialize. */
     chaz_CLI *cli
         = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
+    chaz_CLI_register(cli, "disable-threads", "whether to disable threads",
+                      CHAZ_CLI_NO_ARG);
     chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
-    {
-        int result = chaz_Probe_parse_cli_args(argc, argv, cli);
-        if (!result) {
-            chaz_Probe_die_usage();
-        }
-        chaz_Probe_init(cli);
-        S_add_compiler_flags(cli);
+    if (!chaz_Probe_parse_cli_args(argc, argv, cli)) {
+        chaz_Probe_die_usage();
     }
-    {
-        int i;
-        for (i = 0; i < argc; i++) {
-            if (strncmp(argv[i], "--disable-threads", 17) == 0) {
-                chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
-                chaz_CFlags_append(extra_cflags, "-DCFISH_NOTHREADS");
-                break;
-            }
-        }
-    }
+    chaz_Probe_init(cli);
+    S_add_compiler_flags(cli);
 
     /* Employ integer features but don't define stdint types in charmony.h. */
     chaz_ConfWriter_append_conf(
