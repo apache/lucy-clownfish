@@ -7687,7 +7687,7 @@ chaz_VariadicMacros_run(void) {
  * limitations under the License.
  */
 
-/* Source fragment for Lucy's charmonizer.c.
+/* Source fragment for the Clownfish compiler's charmonizer.c.
  */
 
 #include <stdio.h>
