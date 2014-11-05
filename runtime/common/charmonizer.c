@@ -2217,9 +2217,9 @@ S_chaz_CLI_error(chaz_CLI *self, const char *pattern, ...) {
 static void
 S_chaz_CLI_rebuild_help(chaz_CLI *self) {
     int i;
-    size_t amount = 200; // Length of section headers.
+    size_t amount = 200; /* Length of section headers. */
 
-    // Allocate space.
+    /* Allocate space. */
     if (self->usage) {
         amount += strlen(self->usage);
     }
@@ -2243,7 +2243,7 @@ S_chaz_CLI_rebuild_help(chaz_CLI *self) {
     self->help = (char*)malloc(amount);
     self->help[0] = '\0';
 
-    // Accumulate "help" string.
+    /* Accumulate "help" string. */
     if (self->usage) {
         strcat(self->help, self->usage);
     }
@@ -2323,6 +2323,7 @@ chaz_CLI_destroy(chaz_CLI *self) {
     free(self->opts);
     free(self->usage);
     free(self->help);
+    free(self);
 }
 
 void
@@ -2344,14 +2345,14 @@ chaz_CLI_register(chaz_CLI *self, const char *name, const char *help,
     int arg_required = !!(flags & CHAZ_CLI_ARG_REQUIRED);
     int arg_optional = !!(flags & CHAZ_CLI_ARG_OPTIONAL);
 
-    // Validate flags
+    /* Validate flags */
     if (arg_required && arg_optional) {
         S_chaz_CLI_error(self, "Conflicting flags: value both optional "
                          "and required");
         return 0;
     }
 
-    // Insert new option.  Keep options sorted by name.
+    /* Insert new option.  Keep options sorted by name. */
     for (rank = self->num_opts; rank > 0; rank--) {
         int comparison = strcmp(name, self->opts[rank - 1].name);
         if (comparison == 0) {
@@ -2373,7 +2374,7 @@ chaz_CLI_register(chaz_CLI *self, const char *name, const char *help,
     self->opts[rank].defined = 0;
     self->opts[rank].value   = NULL;
 
-    // Update `help` with new option.
+    /* Update `help` with new option. */
     S_chaz_CLI_rebuild_help(self);
 
     return 1;
@@ -2516,6 +2517,7 @@ chaz_CLI_parse(chaz_CLI *self, int argc, const char *argv[]) {
         }
     }
 
+    free(name);
     return 1;
 }
 
@@ -7758,6 +7760,10 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
     chaz_CFlags_add_define(extra_cflags, "CFP_TESTCFISH", NULL);
 
     chaz_CFlags_hide_symbols(extra_cflags);
+
+    if (chaz_CLI_defined(cli, "disable-threads")) {
+        chaz_CFlags_append(extra_cflags, "-DCFISH_NOTHREADS");
+    }
 }
 
 static int
@@ -8027,25 +8033,14 @@ int main(int argc, const char **argv) {
     /* Initialize. */
     chaz_CLI *cli
         = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
+    chaz_CLI_register(cli, "disable-threads", "whether to disable threads",
+                      CHAZ_CLI_NO_ARG);
     chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
-    {
-        int result = chaz_Probe_parse_cli_args(argc, argv, cli);
-        if (!result) {
-            chaz_Probe_die_usage();
-        }
-        chaz_Probe_init(cli);
-        S_add_compiler_flags(cli);
+    if (!chaz_Probe_parse_cli_args(argc, argv, cli)) {
+        chaz_Probe_die_usage();
     }
-    {
-        int i;
-        for (i = 0; i < argc; i++) {
-            if (strncmp(argv[i], "--disable-threads", 17) == 0) {
-                chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
-                chaz_CFlags_append(extra_cflags, "-DCFISH_NOTHREADS");
-                break;
-            }
-        }
-    }
+    chaz_Probe_init(cli);
+    S_add_compiler_flags(cli);
 
     /* Employ integer features but don't define stdint types in charmony.h. */
     chaz_ConfWriter_append_conf(

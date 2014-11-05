@@ -2217,9 +2217,9 @@ S_chaz_CLI_error(chaz_CLI *self, const char *pattern, ...) {
 static void
 S_chaz_CLI_rebuild_help(chaz_CLI *self) {
     int i;
-    size_t amount = 200; // Length of section headers.
+    size_t amount = 200; /* Length of section headers. */
 
-    // Allocate space.
+    /* Allocate space. */
     if (self->usage) {
         amount += strlen(self->usage);
     }
@@ -2243,7 +2243,7 @@ S_chaz_CLI_rebuild_help(chaz_CLI *self) {
     self->help = (char*)malloc(amount);
     self->help[0] = '\0';
 
-    // Accumulate "help" string.
+    /* Accumulate "help" string. */
     if (self->usage) {
         strcat(self->help, self->usage);
     }
@@ -2323,6 +2323,7 @@ chaz_CLI_destroy(chaz_CLI *self) {
     free(self->opts);
     free(self->usage);
     free(self->help);
+    free(self);
 }
 
 void
@@ -2344,14 +2345,14 @@ chaz_CLI_register(chaz_CLI *self, const char *name, const char *help,
     int arg_required = !!(flags & CHAZ_CLI_ARG_REQUIRED);
     int arg_optional = !!(flags & CHAZ_CLI_ARG_OPTIONAL);
 
-    // Validate flags
+    /* Validate flags */
     if (arg_required && arg_optional) {
         S_chaz_CLI_error(self, "Conflicting flags: value both optional "
                          "and required");
         return 0;
     }
 
-    // Insert new option.  Keep options sorted by name.
+    /* Insert new option.  Keep options sorted by name. */
     for (rank = self->num_opts; rank > 0; rank--) {
         int comparison = strcmp(name, self->opts[rank - 1].name);
         if (comparison == 0) {
@@ -2373,7 +2374,7 @@ chaz_CLI_register(chaz_CLI *self, const char *name, const char *help,
     self->opts[rank].defined = 0;
     self->opts[rank].value   = NULL;
 
-    // Update `help` with new option.
+    /* Update `help` with new option. */
     S_chaz_CLI_rebuild_help(self);
 
     return 1;
@@ -2516,6 +2517,7 @@ chaz_CLI_parse(chaz_CLI *self, int argc, const char *argv[]) {
         }
     }
 
+    free(name);
     return 1;
 }
 
