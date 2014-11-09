@@ -25,6 +25,7 @@
 #include "CFCCClass.h"
 #include "CFCClass.h"
 #include "CFCHierarchy.h"
+#include "CFCMethod.h"
 #include "CFCUtil.h"
 
 struct CFCC {
@@ -41,6 +42,9 @@ static const CFCMeta CFCC_META = {
     sizeof(CFCC),
     (CFCBase_destroy_t)CFCC_destroy
 };
+
+static char*
+S_callback_decs(CFCClass *klass);
 
 CFCC*
 CFCC_new(CFCHierarchy *hierarchy, const char *header, const char *footer) {
@@ -84,7 +88,7 @@ CFCC_write_callbacks(CFCC *self) {
         CFCClass *klass = ordered[i];
 
         if (!CFCClass_included(klass)) {
-            char *cb_decs = CFCCClass_callback_decs(klass);
+            char *cb_decs = S_callback_decs(klass);
             all_cb_decs = CFCUtil_cat(all_cb_decs, cb_decs, NULL);
             FREEMEM(cb_decs);
         }
@@ -117,6 +121,27 @@ CFCC_write_callbacks(CFCC *self) {
 
     FREEMEM(all_cb_decs);
     FREEMEM(file_content);
+}
+
+static char*
+S_callback_decs(CFCClass *klass) {
+    CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
+    char       *cb_decs       = CFCUtil_strdup("");
+
+    for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
+        CFCMethod *method = fresh_methods[meth_num];
+
+        // Define callback to NULL.
+        if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
+            const char *override_sym = CFCMethod_full_override_sym(method);
+            cb_decs = CFCUtil_cat(cb_decs, "#define ", override_sym, " NULL\n",
+                                  NULL);
+        }
+    }
+
+    FREEMEM(fresh_methods);
+
+    return cb_decs;
 }
 
 void

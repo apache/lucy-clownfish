@@ -23,11 +23,6 @@ extern "C" {
 
 struct CFCClass;
 
-/* Return dummy host callbacks defined to NULL.
- */
-char*
-CFCCClass_callback_decs(struct CFCClass *klass);
-
 /** Return the man page for the class.
  */
 char*

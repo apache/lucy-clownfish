@@ -73,28 +73,6 @@ S_man_escape_content(const char *content);
 static void
 S_parse_pod_link(const char *content, CFCPodLink *pod_link);
 
-// Declare dummy host callbacks.
-char*
-CFCCClass_callback_decs(CFCClass *klass) {
-    CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
-    char       *cb_decs       = CFCUtil_strdup("");
-
-    for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
-        CFCMethod *method = fresh_methods[meth_num];
-
-        // Define callback to NULL.
-        if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-            const char *override_sym = CFCMethod_full_override_sym(method);
-            cb_decs = CFCUtil_cat(cb_decs, "#define ", override_sym, " NULL\n",
-                                  NULL);
-        }
-    }
-
-    FREEMEM(fresh_methods);
-
-    return cb_decs;
-}
-
 char*
 CFCCClass_create_man_page(CFCClass *klass) {
     if (!CFCSymbol_public((CFCSymbol*)klass)) { return NULL; }
