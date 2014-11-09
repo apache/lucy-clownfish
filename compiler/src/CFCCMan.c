@@ -16,8 +16,12 @@
 
 #include <string.h>
 
+#include <cmark.h>
+
 #include "charmony.h"
 #include "CFCCMan.h"
+#include "CFCBase.h"
+#include "CFCC.h"
 #include "CFCClass.h"
 #include "CFCDocuComment.h"
 #include "CFCFunction.h"
@@ -25,6 +29,7 @@
 #include "CFCParamList.h"
 #include "CFCSymbol.h"
 #include "CFCType.h"
+#include "CFCUri.h"
 #include "CFCUtil.h"
 #include "CFCVariable.h"
 
@@ -32,12 +37,6 @@
     #define true 1
     #define false 0
 #endif
-
-typedef struct CFCPodLink {
-    size_t      total_size;
-    const char *text;
-    size_t      text_size;
-} CFCPodLink;
 
 static char*
 S_man_create_name(CFCClass *klass);
@@ -55,23 +54,25 @@ static char*
 S_man_create_methods(CFCClass *klass);
 
 static char*
-S_man_create_inherited_methods(CFCClass *klass);
+S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor);
 
 static char*
-S_man_create_func(CFCClass *klass, CFCFunction *func, const char *short_sym,
-                  const char *full_sym);
+S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym);
 
 static char*
-S_man_create_param_list(CFCFunction *func, const char *full_sym);
+S_man_create_param_list(CFCClass *klass, CFCFunction *func);
 
 static char*
 S_man_create_inheritance(CFCClass *klass);
 
 static char*
-S_man_escape_content(const char *content);
+S_md_to_man(CFCClass *klass, const char *md, int needs_indent);
 
-static void
-S_parse_pod_link(const char *content, CFCPodLink *pod_link);
+static char*
+S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent);
+
+static char*
+S_man_escape(const char *content);
 
 char*
 CFCCMan_create_man_page(CFCClass *klass) {
@@ -125,17 +126,19 @@ S_man_create_name(CFCClass *klass) {
     char *result = CFCUtil_strdup(".SH NAME\n");
     result = CFCUtil_cat(result, CFCClass_get_class_name(klass), NULL);
 
+    const char *raw_brief = NULL;
     CFCDocuComment *docucom = CFCClass_get_docucomment(klass);
     if (docucom) {
-        const char *raw_brief = CFCDocuComment_get_brief(docucom);
-        if (raw_brief && raw_brief[0] != '\0') {
-            char *brief = S_man_escape_content(raw_brief);
-            result = CFCUtil_cat(result, " \\- ", brief, NULL);
-            FREEMEM(brief);
-        }
+        raw_brief = CFCDocuComment_get_brief(docucom);
     }
-
-    result = CFCUtil_cat(result, "\n", NULL);
+    if (raw_brief && raw_brief[0] != '\0') {
+        char *brief = S_md_to_man(klass, raw_brief, false);
+        result = CFCUtil_cat(result, " \\- ", brief, NULL);
+        FREEMEM(brief);
+    }
+    else {
+        result = CFCUtil_cat(result, "\n", NULL);
+    }
 
     return result;
 }
@@ -156,8 +159,8 @@ S_man_create_description(CFCClass *klass) {
     const char *raw_description = CFCDocuComment_get_long(docucom);
     if (!raw_description || raw_description[0] == '\0') { return result; }
 
-    char *description = S_man_escape_content(raw_description);
-    result = CFCUtil_cat(result, ".SH DESCRIPTION\n", description, "\n", NULL);
+    char *description = S_md_to_man(klass, raw_description, false);
+    result = CFCUtil_cat(result, ".SH DESCRIPTION\n", description, NULL);
     FREEMEM(description);
 
     return result;
@@ -176,13 +179,13 @@ S_man_create_functions(CFCClass *klass) {
             result = CFCUtil_cat(result, ".SH FUNCTIONS\n", NULL);
         }
 
-        const char *micro_sym     = CFCFunction_micro_sym(func);
-        const char *full_func_sym = CFCFunction_full_func_sym(func);
+        const char *micro_sym = CFCFunction_micro_sym(func);
+        result = CFCUtil_cat(result, ".TP\n.B ", micro_sym, "\n", NULL);
 
-        char *redman = S_man_create_func(klass, func, micro_sym,
-                                         full_func_sym);
-        result = CFCUtil_cat(result, redman, NULL);
-        FREEMEM(redman);
+        const char *full_func_sym = CFCFunction_full_func_sym(func);
+        char *function_man = S_man_create_func(klass, func, full_func_sym);
+        result = CFCUtil_cat(result, function_man, NULL);
+        FREEMEM(function_man);
     }
 
     return result;
@@ -190,53 +193,31 @@ S_man_create_functions(CFCClass *klass) {
 
 static char*
 S_man_create_methods(CFCClass *klass) {
-    CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
-    char       *methods_man   = CFCUtil_strdup("");
-    char       *novel_man     = CFCUtil_strdup("");
-    char       *result;
+    char *methods_man = CFCUtil_strdup("");
+    char *result;
 
-    for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
-        CFCMethod *method = fresh_methods[meth_num];
-        if (!CFCMethod_public(method) || !CFCMethod_novel(method)) {
-            continue;
-        }
-
-        const char *macro_sym = CFCMethod_get_macro_sym(method);
-        char *full_method_sym = CFCMethod_full_method_sym(method, NULL);
-        char *method_man = S_man_create_func(klass, (CFCFunction*)method,
-                                             macro_sym, full_method_sym);
-
-        if (CFCMethod_abstract(method)) {
-            if (methods_man[0] == '\0') {
-                methods_man = CFCUtil_cat(methods_man,
-                                          ".SS Abstract methods\n", NULL);
-            }
-            methods_man = CFCUtil_cat(methods_man, method_man, NULL);
-        }
-        else {
-            if (novel_man[0] == '\0') {
-                novel_man = CFCUtil_cat(novel_man,
-                                        ".SS Novel methods\n", NULL);
-            }
-            novel_man = CFCUtil_cat(novel_man, method_man, NULL);
-        }
-
-        FREEMEM(method_man);
-        FREEMEM(full_method_sym);
-    }
-
-    methods_man = CFCUtil_cat(methods_man, novel_man, NULL);
-
-    // Add methods from parent classes excluding Clownfish::Obj
-    CFCClass *parent = CFCClass_get_parent(klass);
-    while (parent) {
-        if (strcmp(CFCClass_get_class_name(parent), "Clownfish::Obj") == 0) {
+    for (CFCClass *ancestor = klass;
+         ancestor;
+         ancestor = CFCClass_get_parent(ancestor)
+    ) {
+        const char *class_name = CFCClass_get_class_name(ancestor);
+        // Exclude methods inherited from Clownfish::Obj
+        if (ancestor != klass && strcmp(class_name, "Clownfish::Obj") == 0) {
             break;
         }
-        char *inherited_man = S_man_create_inherited_methods(parent);
-        methods_man = CFCUtil_cat(methods_man, inherited_man, NULL);
-        FREEMEM(inherited_man);
-        parent = CFCClass_get_parent(parent);
+
+        char *fresh_man = S_man_create_fresh_methods(klass, ancestor);
+        if (fresh_man[0] != '\0') {
+            if (ancestor == klass) {
+                methods_man = CFCUtil_cat(methods_man, fresh_man, NULL);
+            }
+            else {
+                methods_man
+                    = CFCUtil_cat(methods_man, ".SS Methods inherited from ",
+                                  class_name, "\n", fresh_man, NULL);
+            }
+        }
+        FREEMEM(fresh_man);
     }
 
     if (methods_man[0] == '\0') {
@@ -247,42 +228,48 @@ S_man_create_methods(CFCClass *klass) {
     }
 
     FREEMEM(methods_man);
-    FREEMEM(novel_man);
     return result;
 }
 
 static char*
-S_man_create_inherited_methods(CFCClass *klass) {
-    CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
-    char       *result        = CFCUtil_strdup("");
+S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
+    CFCMethod  **fresh_methods = CFCClass_fresh_methods(klass);
+    const char  *ancestor_name = CFCClass_get_class_name(ancestor);
+    char        *result        = CFCUtil_strdup("");
 
     for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
         CFCMethod *method = fresh_methods[meth_num];
-        if (!CFCMethod_public(method) || !CFCMethod_novel(method)) {
+        if (!CFCMethod_public(method)) {
             continue;
         }
 
-        if (result[0] == '\0') {
-            result = CFCUtil_cat(result, ".SS Methods inherited from ",
-                                 CFCClass_get_class_name(klass), "\n", NULL);
+        const char *class_name = CFCMethod_get_class_name(method);
+        if (strcmp(class_name, ancestor_name) != 0) {
+            // The method is implementated in a subclass and already
+            // documented.
+            continue;
         }
 
         const char *macro_sym = CFCMethod_get_macro_sym(method);
-        char *full_method_sym = CFCMethod_full_method_sym(method, NULL);
-        char *method_man = S_man_create_func(klass, (CFCFunction*)method,
-                                             macro_sym, full_method_sym);
-        result = CFCUtil_cat(result, method_man, NULL);
+        result = CFCUtil_cat(result, ".TP\n.BR ", macro_sym, NULL);
+        if (CFCMethod_abstract(method)) {
+            result = CFCUtil_cat(result, " \" (abstract)\"", NULL);
+        }
+        result = CFCUtil_cat(result, "\n", NULL);
 
+        char *full_sym = CFCMethod_full_method_sym(method, klass);
+        char *method_man = S_man_create_func(klass, (CFCFunction*)method,
+                                             full_sym);
+        result = CFCUtil_cat(result, method_man, NULL);
         FREEMEM(method_man);
-        FREEMEM(full_method_sym);
+        FREEMEM(full_sym);
     }
 
     return result;
 }
 
 static char*
-S_man_create_func(CFCClass *klass, CFCFunction *func, const char *short_sym,
-                  const char *full_sym) {
+S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
     CFCType    *return_type   = CFCFunction_get_return_type(func);
     const char *return_type_c = CFCType_to_c(return_type);
     const char *incremented   = "";
@@ -291,18 +278,17 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *short_sym,
         incremented = " // incremented";
     }
 
-    char *param_list = S_man_create_param_list(func, full_sym);
+    char *param_list = S_man_create_param_list(klass, func);
 
     const char *pattern =
-        ".TP\n"
-        ".B %s\n"
-        ".na\n"
+        ".nf\n"
+        ".fam C\n"
         "%s%s\n"
-        ".br\n"
-        "%s"
-        ".ad\n";
-    char *result = CFCUtil_sprintf(pattern, short_sym, return_type_c,
-                                   incremented, param_list);
+        ".BR %s %s\n"
+        ".fam\n"
+        ".fi\n";
+    char *result = CFCUtil_sprintf(pattern, return_type_c, incremented,
+                                   full_sym, param_list);
 
     FREEMEM(param_list);
 
@@ -323,8 +309,8 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *short_sym,
     if (docucomment) {
         // Description
         const char *raw_desc = CFCDocuComment_get_description(docucomment);
-        char *desc = S_man_escape_content(raw_desc);
-        result = CFCUtil_cat(result, ".IP\n", desc, "\n", NULL);
+        char *desc = S_md_to_man(klass, raw_desc, true);
+        result = CFCUtil_cat(result, ".IP\n", desc, NULL);
         FREEMEM(desc);
 
         // Params
@@ -335,9 +321,9 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *short_sym,
         if (param_names[0]) {
             result = CFCUtil_cat(result, ".RS\n", NULL);
             for (size_t i = 0; param_names[i] != NULL; i++) {
-                char *doc = S_man_escape_content(param_docs[i]);
+                char *doc = S_md_to_man(klass, param_docs[i], true);
                 result = CFCUtil_cat(result, ".TP\n.I ", param_names[i],
-                                     "\n", doc, "\n", NULL);
+                                     "\n", doc, NULL);
                 FREEMEM(doc);
             }
             result = CFCUtil_cat(result, ".RE\n", NULL);
@@ -346,9 +332,8 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *short_sym,
         // Return value
         const char *retval_doc = CFCDocuComment_get_retval(docucomment);
         if (retval_doc && strlen(retval_doc)) {
-            char *doc = S_man_escape_content(retval_doc);
-            result = CFCUtil_cat(result, ".IP\n.B Returns:\n", doc, "\n",
-                                 NULL);
+            char *doc = S_md_to_man(klass, retval_doc, true);
+            result = CFCUtil_cat(result, ".IP\n.B Returns:\n", doc, NULL);
             FREEMEM(doc);
         }
     }
@@ -357,23 +342,33 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *short_sym,
 }
 
 static char*
-S_man_create_param_list(CFCFunction *func, const char *full_sym) {
+S_man_create_param_list(CFCClass *klass, CFCFunction *func) {
     CFCParamList  *param_list = CFCFunction_get_param_list(func);
     CFCVariable  **variables  = CFCParamList_get_variables(param_list);
 
     if (!variables[0]) {
-        return CFCUtil_sprintf(".BR %s (void);\n", full_sym);
+        return CFCUtil_strdup("(void);");
     }
 
-    char *result = CFCUtil_sprintf(".BR %s (", full_sym);
+    const char *cfc_class = CFCBase_get_cfc_class((CFCBase*)func);
+    int is_method = strcmp(cfc_class, "Clownfish::CFC::Model::Method") == 0;
+    char *result = CFCUtil_strdup("(");
 
     for (int i = 0; variables[i]; ++i) {
         CFCVariable *variable = variables[i];
         CFCType     *type     = CFCVariable_get_type(variable);
-        const char  *type_c   = CFCType_to_c(type);
         const char  *name     = CFCVariable_micro_sym(variable);
+        char        *type_c;
 
-        result = CFCUtil_cat(result, "\n.br\n.RB \"    ", type_c, " \" ", name,
+        if (is_method && i == 0) {
+            const char *struct_sym = CFCClass_full_struct_sym(klass);
+            type_c = CFCUtil_sprintf("%s*", struct_sym);
+        }
+        else {
+            type_c = CFCUtil_strdup(CFCType_to_c(type));
+        }
+
+        result = CFCUtil_cat(result, "\n.RB \"    ", type_c, " \" ", name,
                              NULL);
 
         if (variables[i+1] || CFCType_decremented(type)) {
@@ -381,14 +376,16 @@ S_man_create_param_list(CFCFunction *func, const char *full_sym) {
             if (variables[i+1]) {
                 result = CFCUtil_cat(result, ",", NULL);
             }
-            else {
+            if (CFCType_decremented(type)) {
                 result = CFCUtil_cat(result, " // decremented", NULL);
             }
             result = CFCUtil_cat(result, "\"", NULL);
         }
+
+        FREEMEM(type_c);
     }
 
-    result = CFCUtil_cat(result, "\n.br\n);\n.br\n", NULL);
+    result = CFCUtil_cat(result, "\n);", NULL);
 
     return result;
 }
@@ -413,12 +410,253 @@ S_man_create_inheritance(CFCClass *klass) {
 }
 
 static char*
-S_man_escape_content(const char *content) {
+S_md_to_man(CFCClass *klass, const char *md, int needs_indent) {
+    cmark_node *doc = cmark_parse_document(md, strlen(md));
+    char *result = S_nodes_to_man(klass, doc, needs_indent);
+    cmark_node_free(doc);
+
+    return result;
+}
+
+static char*
+S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
+    char *result = CFCUtil_strdup("");
+    int has_indent = needs_indent;
+    int has_vspace = true;
+
+    while (node) {
+        cmark_node_type type = cmark_node_get_type(node);
+
+        switch (type) {
+            case NODE_DOCUMENT: {
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child,
+                                                    needs_indent);
+                result = CFCUtil_cat(result, children_man, NULL);
+                FREEMEM(children_man);
+                break;
+            }
+
+            case NODE_PARAGRAPH: {
+                if (needs_indent && !has_indent) {
+                    result = CFCUtil_cat(result, ".IP\n", NULL);
+                    has_indent = true;
+                }
+                else if (!needs_indent && has_indent) {
+                    result = CFCUtil_cat(result, ".P\n", NULL);
+                    has_indent = false;
+                }
+                else if (!has_vspace) {
+                    result = CFCUtil_cat(result, "\n", NULL);
+                }
+
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child,
+                                                    needs_indent);
+                result = CFCUtil_cat(result, children_man, "\n", NULL);
+                FREEMEM(children_man);
+
+                has_vspace = false;
+
+                break;
+            }
+
+            case NODE_BLOCK_QUOTE: {
+                if (needs_indent) {
+                    result = CFCUtil_cat(result, ".RS\n", NULL);
+                }
+
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child, true);
+                result = CFCUtil_cat(result, ".IP\n", children_man, NULL);
+                FREEMEM(children_man);
+
+                if (needs_indent) {
+                    result = CFCUtil_cat(result, ".RE\n", NULL);
+                    has_indent = false;
+                }
+                else {
+                    has_indent = true;
+                }
+
+                break;
+            }
+
+            case NODE_LIST_ITEM: {
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child, true);
+                result = CFCUtil_cat(result, ".IP \\(bu\n", children_man,
+                                     NULL);
+                FREEMEM(children_man);
+                break;
+            }
+
+            case NODE_LIST: {
+                if (needs_indent) {
+                    result = CFCUtil_cat(result, ".RS\n", NULL);
+                }
+
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child,
+                                                    needs_indent);
+                result = CFCUtil_cat(result, children_man, NULL);
+                FREEMEM(children_man);
+
+                if (needs_indent) {
+                    result = CFCUtil_cat(result, ".RE\n", NULL);
+                    has_indent = false;
+                }
+                else {
+                    has_indent = true;
+                }
+
+                break;
+            }
+
+            case NODE_HEADER: {
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child,
+                                                    needs_indent);
+                result = CFCUtil_cat(result, ".SS\n", children_man, "\n", NULL);
+                FREEMEM(children_man);
+                has_indent = false;
+                has_vspace = true;
+                break;
+            }
+
+            case NODE_CODE_BLOCK: {
+                if (needs_indent) {
+                    result = CFCUtil_cat(result, ".RS\n", NULL);
+                }
+
+                const char *content = cmark_node_get_string_content(node);
+                char *escaped = S_man_escape(content);
+                result = CFCUtil_cat(result, ".IP\n.nf\n.fam C\n", escaped,
+                                     ".fam\n.fi\n", NULL);
+                FREEMEM(escaped);
+
+                if (needs_indent) {
+                    result = CFCUtil_cat(result, ".RE\n", NULL);
+                    has_indent = false;
+                }
+                else {
+                    has_indent = true;
+                }
+
+                break;
+            }
+
+            case NODE_HTML:
+                CFCUtil_warn("HTML not supported in man pages");
+                break;
+
+            case NODE_HRULE:
+                break;
+
+            case NODE_REFERENCE_DEF:
+                break;
+
+            case NODE_TEXT: {
+                const char *content = cmark_node_get_string_content(node);
+                char *escaped = S_man_escape(content);
+                result = CFCUtil_cat(result, escaped, NULL);
+                FREEMEM(escaped);
+                break;
+            }
+
+            case NODE_LINEBREAK:
+                result = CFCUtil_cat(result, "\n.br\n", NULL);
+                break;
+
+            case NODE_SOFTBREAK:
+                result = CFCUtil_cat(result, "\n", NULL);
+                break;
+
+            case NODE_INLINE_CODE: {
+                const char *content = cmark_node_get_string_content(node);
+                char *escaped = S_man_escape(content);
+                result = CFCUtil_cat(result, "\\FC", escaped, "\\F[]", NULL);
+                FREEMEM(escaped);
+                break;
+            }
+
+            case NODE_INLINE_HTML: {
+                const char *html = cmark_node_get_string_content(node);
+                CFCUtil_warn("HTML not supported in man pages: %s", html);
+                break;
+            }
+
+            case NODE_LINK: {
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child,
+                                                    needs_indent);
+                const char *url = cmark_node_get_url(node);
+                if (CFCUri_is_clownfish_uri(url)) {
+                    if (children_man[0] != '\0') {
+                        result = CFCUtil_cat(result, children_man, NULL);
+                    }
+                    else {
+                        CFCUri *uri_obj = CFCUri_new(url, klass);
+                        char *link_text = CFCC_link_text(uri_obj, klass);
+                        if (link_text) {
+                            result = CFCUtil_cat(result, link_text, NULL);
+                            FREEMEM(link_text);
+                        }
+                        CFCBase_decref((CFCBase*)uri_obj);
+                    }
+                }
+                else {
+                    result = CFCUtil_cat(result, "\n.UR ", url, "\n",
+                                         children_man, "\n.UE\n",
+                                         NULL);
+                }
+                FREEMEM(children_man);
+                break;
+            }
+
+            case NODE_IMAGE:
+                CFCUtil_warn("Images not supported in man pages");
+                break;
+
+            case NODE_STRONG: {
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child,
+                                                    needs_indent);
+                result = CFCUtil_cat(result, "\\fB", children_man, "\\f[]",
+                                     NULL);
+                FREEMEM(children_man);
+                break;
+            }
+
+            case NODE_EMPH: {
+                cmark_node *child = cmark_node_first_child(node);
+                char *children_man = S_nodes_to_man(klass, child,
+                                                    needs_indent);
+                result = CFCUtil_cat(result, "\\fI", children_man, "\\f[]",
+                                     NULL);
+                FREEMEM(children_man);
+                break;
+            }
+
+            default:
+                CFCUtil_die("Invalid cmark node type: %d", type);
+                break;
+        }
+
+        node = cmark_node_next(node);
+    }
+
+    return result;
+}
+
+static char*
+S_man_escape(const char *content) {
+    size_t  len        = strlen(content);
     size_t  result_len = 0;
-    size_t  result_cap = strlen(content) + 256;
+    size_t  result_cap = len + 256;
     char   *result     = (char*)MALLOCATE(result_cap + 1);
 
-    for (size_t i = 0; content[i]; i++) {
+    for (size_t i = 0; i < len; i++) {
         const char *subst      = content + i;
         size_t      subst_size = 1;
 
@@ -433,36 +671,18 @@ S_man_escape_content(const char *content) {
                 subst      = "\\-";
                 subst_size = 2;
                 break;
-            case '\n':
-                // Escape dot after newline.
-                if (content[i+1] == '.') {
-                    subst      = "\n\\";
-                    subst_size = 2;
+            case '.':
+                // Escape dot at start of line.
+                if (i == 0 || content[i-1] == '\n') {
+                    subst      = "\\&.";
+                    subst_size = 3;
                 }
                 break;
-            case '<':
-                // <code> markup.
-                if (strncmp(content + i + 1, "code>", 5) == 0) {
-                    subst      = "\\fI";
+            case '\'':
+                // Escape single quote at start of line.
+                if (i == 0 || content[i-1] == '\n') {
+                    subst      = "\\&'";
                     subst_size = 3;
-                    i += 5;
-                }
-                else if (strncmp(content + i + 1, "/code>", 6) == 0) {
-                    subst      = "\\fP";
-                    subst_size = 3;
-                    i += 6;
-                }
-                break;
-            case 'L':
-                if (content[i+1] == '<') {
-                    // POD-style link.
-                    struct CFCPodLink pod_link;
-                    S_parse_pod_link(content + i + 2, &pod_link);
-                    if (pod_link.total_size) {
-                        subst      = pod_link.text;
-                        subst_size = pod_link.text_size;
-                        i += pod_link.total_size + 1;
-                    }
                 }
                 break;
             default:
@@ -481,34 +701,5 @@ S_man_escape_content(const char *content) {
     result[result_len] = '\0';
 
     return result;
-}
-
-// Quick and dirty parsing of POD links. The syntax isn't fully supported
-// and the result isn't man-escaped. But it should be good enough for now
-// since at some point we'll switch to another format anyway.
-static void
-S_parse_pod_link(const char *content, CFCPodLink *pod_link) {
-    int in_text = true;
-
-    for (size_t i = 0; i < 256 && content[i]; ++i) {
-        if (content[i] == '|') {
-            if (in_text) {
-                pod_link->text_size = i;
-                in_text = false;
-            }
-        }
-        else if (content[i] == '>') {
-            pod_link->total_size = i + 1;
-            pod_link->text       = content;
-            if (in_text) {
-                pod_link->text_size = i;
-            }
-            return;
-        }
-    }
-
-    pod_link->total_size = 0;
-    pod_link->text       = NULL;
-    pod_link->text_size  = 0;
 }
 
