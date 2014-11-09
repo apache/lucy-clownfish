@@ -53,7 +53,7 @@ class Clownfish::CharBuf nickname CB
     /** Return a pointer to a new CharBuf which contains formatted data
      * expanded according to CB_VCatF.
      *
-     * Note: a user-supplied <code>pattern</code> string is a security hole
+     * Note: a user-supplied `pattern` string is a security hole
      * and must not be allowed.
      */
     inert incremented CharBuf*
@@ -76,7 +76,7 @@ class Clownfish::CharBuf nickname CB
     void
     Cat_Trusted_Utf8(CharBuf *self, const char *ptr, size_t size);
 
-    /** Concatenate the contents of <code>string</code> onto the end of the
+    /** Concatenate the contents of `string` onto the end of the
      * caller.
      */
     void
@@ -109,7 +109,7 @@ class Clownfish::CharBuf nickname CB
     Cat_Char(CharBuf *self, int32_t code_point);
 
     /** Assign more memory to the CharBuf, if it doesn't already have enough
-     * room to hold a string of <code>size</code> bytes.  Cannot shrink the
+     * room to hold a string of `size` bytes.  Cannot shrink the
      * allocation.
      *
      * @return a pointer to the raw buffer.
@@ -117,12 +117,12 @@ class Clownfish::CharBuf nickname CB
     char*
     Grow(CharBuf *self, size_t size);
 
-    /** Set the CharBuf's <code>size</code> attribute.
+    /** Set the CharBuf's `size` attribute.
      */
     void
     Set_Size(CharBuf *self, size_t size);
 
-    /** Get the CharBuf's <code>size</code> attribute.
+    /** Get the CharBuf's `size` attribute.
      */
     size_t
     Get_Size(CharBuf *self);

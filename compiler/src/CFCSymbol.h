@@ -135,17 +135,17 @@ CFCSymbol_short_sym(CFCSymbol *self);
 const char*
 CFCSymbol_full_sym(CFCSymbol *self);
 
-/** Get the Symbol's all-lowercase prefix, delegating to <code>parcel</code>.
+/** Get the Symbol's all-lowercase prefix, delegating to `parcel`.
  */
 const char*
 CFCSymbol_get_prefix(CFCSymbol *self);
 
-/** Get the Symbol's Titlecase prefix, delegating to <code>parcel</code>.
+/** Get the Symbol's Titlecase prefix, delegating to `parcel`.
  */
 const char*
 CFCSymbol_get_Prefix(CFCSymbol *self);
 
-/** Get the Symbol's all-uppercase prefix, delegating to <code>parcel</code>.
+/** Get the Symbol's all-uppercase prefix, delegating to `parcel`.
  */
 const char*
 CFCSymbol_get_PREFIX(CFCSymbol *self);

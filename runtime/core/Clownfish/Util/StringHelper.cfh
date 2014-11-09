@@ -29,7 +29,7 @@ inert class Clownfish::Util::StringHelper nickname StrHelp {
     overlap(const char *a, const char *b, size_t a_len,  size_t b_len);
 
     /** Encode a NULL-terminated string representation of a value in base 36
-     * into <code>buffer</code>.
+     * into `buffer`.
      *
      * @param value The number to be encoded.
      * @param buffer A buffer at least MAX_BASE36_BYTES bytes long.

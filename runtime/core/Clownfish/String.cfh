@@ -91,7 +91,7 @@ class Clownfish::String nickname Str
     /** Return a pointer to a new String which contains formatted data
      * expanded according to CB_VCatF.
      *
-     * Note: a user-supplied <code>pattern</code> string is a security hole
+     * Note: a user-supplied `pattern` string is a security hole
      * and must not be allowed.
      */
     inert incremented String*
@@ -104,13 +104,13 @@ class Clownfish::String nickname Str
     compare(const void *va, const void *vb);
 
     /** Perform lexical comparison of two Strings, with level of indirection
-     * set to please qsort and friends, and return true if <code>a</code> is
-     * less than <code>b</code>.
+     * set to please qsort and friends, and return true if `a` is
+     * less than `b`.
      */
     inert bool
     less_than(const void *va, const void *vb);
 
-    /** Return the concatenation of the String and <code>other</code>.
+    /** Return the concatenation of the String and `other`.
      */
     incremented String*
     Cat(String *self, String *other);
@@ -183,7 +183,7 @@ class Clownfish::String nickname Str
     size_t
     Length(String *self);
 
-    /** Get the String's <code>size</code> attribute.
+    /** Get the String's `size` attribute.
      */
     size_t
     Get_Size(String *self);
@@ -388,7 +388,7 @@ class Clownfish::StringIterator nickname StrIter
     Skip_Prev_Whitespace(StringIterator *self);
 
     /** Test whether the content after the iterator starts with
-     * <code>prefix</code>.
+     * `prefix`.
      */
     bool
     Starts_With(StringIterator *self, String *prefix);
@@ -400,7 +400,7 @@ class Clownfish::StringIterator nickname StrIter
     Starts_With_Utf8(StringIterator *self, const char *prefix, size_t size);
 
     /** Test whether the content before the iterator ends with
-     * <code>postfix</code>.
+     * `postfix`.
      */
     bool
     Ends_With(StringIterator *self, String *postfix);

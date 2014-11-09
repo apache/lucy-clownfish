@@ -98,7 +98,7 @@ CFCType_new_float(int flags, const char *specifier);
 
 /** Create a Type representing an object.
  *
- * The supplied <code>specifier</code> must match the last component of the
+ * The supplied `specifier` must match the last component of the
  * class name -- i.e. for the class "Crustacean::Lobster" it must be
  * "Lobster".
  *
@@ -131,10 +131,10 @@ CFCType_new_composite(int flags, CFCType *child, int indirection,
 
 /** Return a Clownfish::CFC::Model::Type representing a the 'void' keyword in
  * C.  It can be used either for a void return type, or in conjuction with
- * with new_composite() to support the <code>void*</code> opaque pointer type.
+ * with new_composite() to support the `void*` opaque pointer type.
  *
  * @param is_const Should be true if the type is const.  (Useful in the
- * context of <code>const void*</code>).
+ * context of `const void*`).
  */
 CFCType*
 CFCType_new_void(int is_const);
@@ -148,7 +148,7 @@ CFCType_new_va_list(void);
  * with complex declaration syntaxes -- such as unions, structs, enums, or
  * function pointers -- from within Clownfish itself.
  *
- * The only constraint is that the <code>specifier</code> must end in "_t".
+ * The only constraint is that the `specifier` must end in "_t".
  * This allows us to create complex types in a C header file...
  *
  *    typedef union { float f; int i; } floatint_t;
@@ -158,7 +158,7 @@ CFCType_new_va_list(void);
  *
  *    floatint_t floatint;
  *
- * If <code>parcel</code> is supplied and <code>specifier</code> begins with a
+ * If `parcel` is supplied and `specifier` begins with a
  * capital letter, the Parcel's prefix will be prepended to the specifier:
  *
  *    foo_t         -> foo_t                # no prefix prepending

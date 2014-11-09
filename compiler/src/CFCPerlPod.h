@@ -43,7 +43,7 @@ CFCPerlPod_destroy(CFCPerlPod *self);
  * Perl-space.
  * @param method The name of the method from the Clownfish class.  If not
  * supplied, an attempt will be made to locate the correct method using
- * <code>alias</code>.
+ * `alias`.
  * @param sample An optional Perl usage sample.
  * @param pod Optional verbatim POD, which will override all POD which would
  * otherwise have been generated.

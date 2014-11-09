@@ -60,9 +60,9 @@ cfish_XSBind_sv_defined(SV *sv) {
 
 /** If the SV contains a Clownfish object which passes an "isa" test against the
  * passed-in Class, return a pointer to it.  If not, but
- * <code>allocation</code> is non-NULL and a StackString would satisfy the
+ * `allocation` is non-NULL and a StackString would satisfy the
  * "isa" test, stringify the SV, create a StackString using
- * <code>allocation</code>, assign the SV's string to it, and return that
+ * `allocation`, assign the SV's string to it, and return that
  * instead.  If all else fails, throw an exception.
  */
 CFISH_VISIBLE cfish_Obj*

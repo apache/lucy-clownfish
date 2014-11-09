@@ -53,7 +53,7 @@ class Clownfish::Hash inherits Clownfish::Obj {
     void
     Clear(Hash *self);
 
-    /** Store a key-value pair.  If <code>key</code> is not already present,
+    /** Store a key-value pair.  If `key` is not already present,
      * Make_Key() will be called to manufacture the internally used key.
      */
     void
@@ -63,9 +63,9 @@ class Clownfish::Hash inherits Clownfish::Obj {
     Store_Utf8(Hash *self, const char *str, size_t len,
                decremented Obj *value);
 
-    /** Fetch the value associated with <code>key</code>.
+    /** Fetch the value associated with `key`.
      *
-     * @return the value, or NULL if <code>key</code> is not present.
+     * @return the value, or NULL if `key` is not present.
      */
     nullable Obj*
     Fetch(Hash *self, Obj *key);
@@ -75,7 +75,7 @@ class Clownfish::Hash inherits Clownfish::Obj {
 
     /** Attempt to delete a key-value pair from the hash.
      *
-     * @return the value if <code>key</code> exists and thus deletion
+     * @return the value if `key` exists and thus deletion
      * succeeds; otherwise NULL.
      */
     incremented nullable Obj*

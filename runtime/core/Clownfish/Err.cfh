@@ -66,7 +66,7 @@ public class Clownfish::Err inherits Clownfish::Obj {
     public String*
     Get_Mess(Err *self);
 
-    /** Add information about the current stack frame onto <code>mess</code>.
+    /** Add information about the current stack frame onto `mess`.
      */
     void
     Add_Frame(Err *self, const char *file, int line, const char *func);
@@ -81,7 +81,7 @@ public class Clownfish::Err inherits Clownfish::Obj {
     public inert nullable Err*
     get_error();
 
-    /** Run <code>routine</code> within the host's exception handling
+    /** Run `routine` within the host's exception handling
      * environment, catching and returning any errors that occur.
      * 
      * If an unrecognized host exception is trapped, it will be wrapped in an
@@ -139,8 +139,8 @@ public class Clownfish::Err inherits Clownfish::Obj {
     make_mess(const char *file, int line, const char *func,
               const char *pattern, ...);
 
-    /** Verify that <code>obj</code> is either NULL or inherits from
-     * <code>klass</code>.
+    /** Verify that `obj` is either NULL or inherits from
+     * `klass`.
      *
      * @return the object.
      */
@@ -148,8 +148,8 @@ public class Clownfish::Err inherits Clownfish::Obj {
     downcast(Obj *obj, Class *klass, const char *file, int line,
                 const char *func);
 
-    /** Verify that <code>obj</code> is not NULL and inherits from
-     * <code>klass</code>.
+    /** Verify that `obj` is not NULL and inherits from
+     * `klass`.
      *
      * @return the object.
      */

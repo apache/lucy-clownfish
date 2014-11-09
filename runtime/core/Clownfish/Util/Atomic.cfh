@@ -22,9 +22,9 @@ inert class Clownfish::Util::Atomic { }
 
 __C__
 
-/** Compare and swap a pointer.  Test whether the value at <code>target</code>
- * matches <code>old_value</code>.  If it does, set <code>target</code> to
- * <code>new_value</code> and return true.  Otherwise, return false.
+/** Compare and swap a pointer.  Test whether the value at `target`
+ * matches `old_value`.  If it does, set `target` to
+ * `new_value` and return true.  Otherwise, return false.
  */
 static CFISH_INLINE bool
 cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value);

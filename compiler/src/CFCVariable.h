@@ -73,7 +73,7 @@ CFCVariable_inert(CFCVariable *self);
 
 
 /** Returns a string with the Variable's C type and its
- * <code>micro_sym</code>. For instance:
+ * `micro_sym`. For instance:
  *
  *     int32_t average_lifespan
  */

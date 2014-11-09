@@ -41,7 +41,7 @@ typedef struct CFCPrereq CFCPrereq;
 struct CFCFileSpec;
 struct CFCVersion;
 
-/** Return the parcel which has been registered for <code>name</code>.
+/** Return the parcel which has been registered for `name`.
  */
 CFCParcel*
 CFCParcel_fetch(const char *name);

@@ -41,7 +41,7 @@ inert class Clownfish::Util::SortUtils nickname Sort {
               CFISH_Sort_Compare_t compare, void *context);
 
     /** Merge two source arrays together using the classic mergesort merge
-     * algorithm, storing the result in <code>dest</code>.
+     * algorithm, storing the result in `dest`.
      *
      * Most merge functions operate on a single contiguous array and copy the
      * merged results results back into the source array before returning.

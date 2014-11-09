@@ -42,7 +42,7 @@ public class Clownfish::Obj {
 
     /** NULL-safe invocation of Inc_RefCount().
      *
-     * @return NULL if <code>self</code> is NULL, otherwise the return value
+     * @return NULL if `self` is NULL, otherwise the return value
      * of Inc_RefCount().
      */
     inert inline incremented Obj*
@@ -57,7 +57,7 @@ public class Clownfish::Obj {
 
     /** NULL-safe invocation of Dec_RefCount().
      *
-     * @return NULL if <code>self</code> is NULL, otherwise the return value
+     * @return NULL if `self` is NULL, otherwise the return value
      * of Dec_RefCount().
      */
     inert inline uint32_t
@@ -79,8 +79,8 @@ public class Clownfish::Obj {
     public void
     Destroy(Obj *self);
 
-    /** Invoke the Destroy() method found in <code>klass</code> on
-     * <code>self</code>.
+    /** Invoke the Destroy() method found in `klass` on
+     * `self`.
      *
      * TODO: Eliminate this function if we can arrive at a proper SUPER syntax.
      */
@@ -100,8 +100,8 @@ public class Clownfish::Obj {
      *
      * @param other Another Obj.
      * @return 0 if the objects are equal, a negative number if
-     * <code>self</code> is less than <code>other</code>, and a positive
-     * number if <code>self</code> is greater than <code>other</code>.
+     * `self` is less than `other`, and a positive
+     * number if `self` is greater than `other`.
      */
     public abstract int32_t
     Compare_To(Obj *self, Obj *other);
@@ -121,7 +121,7 @@ public class Clownfish::Obj {
     public String*
     Get_Class_Name(Obj *self);
 
-    /** Indicate whether the object is a descendent of <code>ancestor</code>.
+    /** Indicate whether the object is a descendent of `ancestor`.
      */
     public bool
     Is_A(Obj *self, Class *ancestor);
@@ -148,7 +148,7 @@ public class Clownfish::Obj {
     To_Bool(Obj *self);
 
     /** Update the internal state of the object to mimic that of
-     * <code>other</code>.
+     * `other`.
      */
     public abstract void
     Mimic(Obj *self, Obj *other);

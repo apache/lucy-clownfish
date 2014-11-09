@@ -28,28 +28,28 @@ inert class Clownfish::TestHarness::TestUtils  {
     inert uint64_t
     random_u64();
 
-    /** Return an array of <code>count</code> random 64-bit integers where
+    /** Return an array of `count` random 64-bit integers where
      * <code>min <= n < limit</code>.
      *
-     * If <code>buf</code> is NULL, it will be allocated, otherwise it will
+     * If `buf` is NULL, it will be allocated, otherwise it will
      * be used.
      */
     inert int64_t*
     random_i64s(int64_t *buf, size_t count, int64_t min, int64_t limit);
 
-    /** Return an array of <code>count</code> random unsigned, 64-bit integers
+    /** Return an array of `count` random unsigned, 64-bit integers
      * where <code>min <= n < limit</code>.
      *
-     * If <code>buf</code> is NULL, it will be allocated, otherwise it will
+     * If `buf` is NULL, it will be allocated, otherwise it will
      * be used.
      */
     inert uint64_t*
     random_u64s(uint64_t *buf, size_t count, uint64_t min, uint64_t limit);
 
-    /** Return an array of <code>count</code> random double-precision floating
+    /** Return an array of `count` random double-precision floating
      * point numbers between 0 and 1.
      *
-     * If <code>buf</code> is NULL, it will be allocated, otherwise it will
+     * If `buf` is NULL, it will be allocated, otherwise it will
      * be used.
      */
     inert double*

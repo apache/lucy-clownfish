@@ -86,91 +86,91 @@ inert class Clownfish::Util::NumberUtils nickname NumUtil {
     inert inline double
     decode_bigend_f64(const void *source);
 
-    /** Encode a C32 at the space pointed to by <code>dest</code>. As a side
-     * effect, <code>dest</code> will be advanced to immediately after the end
+    /** Encode a C32 at the space pointed to by `dest`. As a side
+     * effect, `dest` will be advanced to immediately after the end
      * of the C32.
      */
     inert inline void
     encode_c32(uint32_t value, char **dest);
 
-    /** Encode a C32 at the space pointed to by <code>dest</code>, but add
+    /** Encode a C32 at the space pointed to by `dest`, but add
      * "leading zeroes" so that the space consumed will always be 5 bytes.  As
-     * a side effect, <code>dest</code> will be advanced to immediately after
+     * a side effect, `dest` will be advanced to immediately after
      * the end of the C32.
      */
     inert inline void
     encode_padded_c32(uint32_t value, char **dest);
 
-    /** Encode a C64 at the space pointed to by <code>dest</code>. As a side
-     * effect, <code>dest</code> will be advanced to immediately after the end
+    /** Encode a C64 at the space pointed to by `dest`. As a side
+     * effect, `dest` will be advanced to immediately after the end
      * of the C64.
      */
     inert inline void
     encode_c64(uint64_t value, char **dest);
 
-    /** Read a C32 from the buffer pointed to by <code>source</code>.  As a
+    /** Read a C32 from the buffer pointed to by `source`.  As a
      * side effect, advance the pointer, consuming the bytes occupied by the
      * C32.
      */
     inert inline uint32_t
     decode_c32(const char **source);
 
-    /** Read a C64 from the buffer pointed to by <code>source</code>.  As a
+    /** Read a C64 from the buffer pointed to by `source`.  As a
      * side effect, advance the pointer, consuming the bytes occupied by the
      * C64.
      */
     inert inline uint64_t
     decode_c64(const char **source);
 
-    /** Advance <code>source</code> past one encoded C32 or C64.
+    /** Advance `source` past one encoded C32 or C64.
      */
     inert inline void
     skip_cint(const char **source);
 
-    /** Interpret <code>array</code> as an array of bits; return true if the
-     * bit at <code>tick</code> is set, false otherwise.
+    /** Interpret `array` as an array of bits; return true if the
+     * bit at `tick` is set, false otherwise.
      */
     inert inline bool
     u1get(const void *array, uint32_t tick);
 
-    /** Interpret <code>array</code> as an array of bits; set the bit at
-     * <code>tick</code>.
+    /** Interpret `array` as an array of bits; set the bit at
+     * `tick`.
      */
     inert inline void
     u1set(void *array, uint32_t tick);
 
-    /** Interpret <code>array</code> as an array of bits; clear the bit at
-     * <code>tick</code>.
+    /** Interpret `array` as an array of bits; clear the bit at
+     * `tick`.
      */
     inert inline void
     u1clear(void *array, uint32_t tick);
 
-    /** Interpret <code>array</code> as an array of bits; flip the bit at
-     * <code>tick</code>.
+    /** Interpret `array` as an array of bits; flip the bit at
+     * `tick`.
      */
     inert inline void
     u1flip(void *array, uint32_t tick);
 
-    /** Interpret <code>array</code> as an array of two-bit integers; return
-     * the value at <code>tick</code>.
+    /** Interpret `array` as an array of two-bit integers; return
+     * the value at `tick`.
      */
     inert inline uint8_t
     u2get(const void *array, uint32_t tick);
 
-    /** Interpret <code>array</code> as an array of two-bit integers; set the
-     * element at <code>tick</code> to <code>value</code>.
+    /** Interpret `array` as an array of two-bit integers; set the
+     * element at `tick` to `value`.
      */
     inert inline void
     u2set(void *array, uint32_t tick, uint8_t value);
 
-    /** Interpret <code>array</code> as an array of four-bit integers; return
-     * the value at <code>tick</code>.
+    /** Interpret `array` as an array of four-bit integers; return
+     * the value at `tick`.
      */
     inert inline uint8_t
     u4get(const void *array, uint32_t tick);
 
-    /** Interpret <code>array</code> as an array of four-bit integers; set the
-     * element at <code>tick</code> to <code>value</code>.
+    /** Interpret `array` as an array of four-bit integers; set the
+     * element at `tick` to `value`.
      */
     inert inline void
     u4set(void *array, uint32_t tick, uint8_t value);

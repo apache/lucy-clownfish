@@ -70,7 +70,7 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     incremented nullable Obj*
     Shift(VArray *self);
 
-    /** Ensure that the VArray has room for at least <code>capacity</code>
+    /** Ensure that the VArray has room for at least `capacity`
      * elements.
      */
     void
@@ -81,7 +81,7 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     nullable Obj*
     Fetch(VArray *self, uint32_t tick);
 
-    /** Store an element at index <code>tick</code>, possibly displacing an
+    /** Store an element at index `tick`, possibly displacing an
      * existing element.
      */
     void
@@ -89,13 +89,13 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
 
     /** Replace an element in the VArray with NULL and return it.
      *
-     * @return whatever was stored at <code>tick</code>.
+     * @return whatever was stored at `tick`.
      */
     incremented nullable Obj*
     Delete(VArray *self, uint32_t tick);
 
-    /** Remove <code>length</code> elements from the array, starting at
-     * <code>offset</code>. Move elements over to fill in the gap.
+    /** Remove `length` elements from the array, starting at
+     * `offset`. Move elements over to fill in the gap.
      */
     void
     Excise(VArray *self, uint32_t offset, uint32_t length);
@@ -134,17 +134,17 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     void
     Clear(VArray *self);
 
-    /** Accessor for <code>size</code> member.
+    /** Accessor for `size` member.
      */
     public uint32_t
     Get_Size(VArray *self);
 
-    /** Accessor for <code>capacity</code> member.
+    /** Accessor for `capacity` member.
      */
     uint32_t
     Get_Capacity(VArray *self);
 
-    /** Return all elements for which <code>test</code> returns true.
+    /** Return all elements for which `test` returns true.
      */
     public incremented VArray*
     Gather(VArray *self, CFISH_VA_Gather_Test_t test, void *data);
