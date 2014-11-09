@@ -56,6 +56,11 @@ CFCC_write_callbacks(CFCC *self);
 void
 CFCC_write_hostdefs(CFCC *self);
 
+/** Write the HTML documentation.
+ */
+void
+CFCC_write_html_docs(CFCC *self);
+
 /** Write all man pages.
  */
 void

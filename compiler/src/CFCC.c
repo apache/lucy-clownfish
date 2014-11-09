@@ -22,6 +22,7 @@
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCC.h"
+#include "CFCCHtml.h"
 #include "CFCCMan.h"
 #include "CFCClass.h"
 #include "CFCHierarchy.h"
@@ -32,6 +33,7 @@
 struct CFCC {
     CFCBase base;
     CFCHierarchy *hierarchy;
+    CFCCHtml     *html_gen;
     char         *c_header;
     char         *c_footer;
     char         *man_header;
@@ -60,6 +62,7 @@ CFCC_init(CFCC *self, CFCHierarchy *hierarchy, const char *header,
     CFCUTIL_NULL_CHECK(header);
     CFCUTIL_NULL_CHECK(footer);
     self->hierarchy  = (CFCHierarchy*)CFCBase_incref((CFCBase*)hierarchy);
+    self->html_gen   = CFCCHtml_new(hierarchy, header, footer);
     self->c_header   = CFCUtil_make_c_comment(header);
     self->c_footer   = CFCUtil_make_c_comment(footer);
     self->man_header = CFCUtil_make_troff_comment(header);
@@ -70,6 +73,7 @@ CFCC_init(CFCC *self, CFCHierarchy *hierarchy, const char *header,
 void
 CFCC_destroy(CFCC *self) {
     CFCBase_decref((CFCBase*)self->hierarchy);
+    CFCBase_decref((CFCBase*)self->html_gen);
     FREEMEM(self->c_header);
     FREEMEM(self->c_footer);
     FREEMEM(self->man_header);
@@ -141,6 +145,11 @@ S_callback_decs(CFCClass *klass) {
     }
 
     return cb_decs;
+}
+
+void
+CFCC_write_html_docs(CFCC *self) {
+    CFCCHtml_write_html_docs(self->html_gen);
 }
 
 void

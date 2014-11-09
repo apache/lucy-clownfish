@@ -237,6 +237,12 @@ CFCUtil_make_c_comment(const char *text) {
 }
 
 char*
+CFCUtil_make_html_comment(const char *text) {
+    if (text && text[0] == '\0') { return CFCUtil_strdup(text); }
+    return CFCUtil_enclose_lines(text, "", "", "<!--\n", "-->\n");
+}
+
+char*
 CFCUtil_make_perl_comment(const char *text) {
     return CFCUtil_enclose_lines(text, "# ", "", "", "");
 }

@@ -239,6 +239,7 @@ main(int argc, char **argv) {
     CFCC_write_hostdefs(c_binding);
     if (args.num_source_dirs != 0) {
         CFCC_write_callbacks(c_binding);
+        CFCC_write_html_docs(c_binding);
         CFCC_write_man_pages(c_binding);
     }
 

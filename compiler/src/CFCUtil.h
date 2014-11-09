@@ -88,6 +88,11 @@ CFCUtil_enclose_lines(const char *text, const char *line_prefix,
 char*
 CFCUtil_make_c_comment(const char *text);
 
+/** Create a HTML comment.
+ */
+char*
+CFCUtil_make_html_comment(const char *text);
+
 /** Create a Perl comment.
  */
 char*
