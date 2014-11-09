@@ -128,6 +128,8 @@ S_write_makefile(struct chaz_CLI *cli) {
                                         NULL);
     char *src_dir      = chaz_Util_join(dir_sep, base_dir, "src", NULL);
     char *include_dir  = chaz_Util_join(dir_sep, base_dir, "include", NULL);
+    char *cmark_dir    = chaz_Util_join(dir_sep, base_dir, "modules",
+                                        "CommonMark", "src", NULL);
     char *parse_header = chaz_Util_join(dir_sep, src_dir, "CFCParseHeader",
                                         NULL);
     char *cfc_exe      = chaz_Util_join("", "cfc", exe_ext, NULL);
@@ -164,6 +166,7 @@ S_write_makefile(struct chaz_CLI *cli) {
     chaz_CFlags_add_include_dir(makefile_cflags, ".");
     chaz_CFlags_add_include_dir(makefile_cflags, include_dir);
     chaz_CFlags_add_include_dir(makefile_cflags, src_dir);
+    chaz_CFlags_add_include_dir(makefile_cflags, cmark_dir);
     if (chaz_CLI_defined(cli, "enable-coverage")) {
         chaz_CFlags_enable_code_coverage(makefile_cflags);
     }
@@ -181,6 +184,7 @@ S_write_makefile(struct chaz_CLI *cli) {
     sfc.test_cfc_objs = chaz_MakeFile_add_var(makefile, "TEST_CFC_OBJS", NULL);
 
     chaz_Make_list_files(src_dir, "c", S_source_file_callback, &sfc);
+    chaz_Make_list_files(cmark_dir, "c", S_source_file_callback, &sfc);
 
     scratch = chaz_Util_join("", parse_header, obj_ext, NULL);
     chaz_MakeVar_append(sfc.common_objs, scratch);
