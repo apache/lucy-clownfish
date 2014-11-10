@@ -22,8 +22,45 @@ package cfc
 // #include <stdlib.h>
 import "C"
 
+import "os"
+import "path"
+import "path/filepath"
 import "runtime"
+import "strings"
 import "unsafe"
+
+// Return the path of the main include directory holding clownfish parcel and
+// header files.
+func MainIncludeDir() string {
+	return mainIncDir
+}
+
+type CFCError struct {
+	mess string
+}
+
+func (e CFCError) Error() string {
+	return e.mess
+}
+
+// Given a package name for a Clownfish parcel with Go bindings, return the
+// install path for its C static archive.
+//
+// TODO: It would be better if we could embed the C archive contents within
+// the installed Go archive.
+func InstalledLibPath(packageName string) (string, error) {
+	goPathDirs := filepath.SplitList(os.Getenv("GOPATH"))
+	if len(goPathDirs) == 0 {
+		return "", CFCError{"GOPATH environment variable not set"}
+	}
+	packageParts := strings.Split(packageName, "/")
+	filename := "lib" + packageParts[len(packageParts)-1] + ".a"
+	parts := []string{goPathDirs[0], "pkg"}
+	parts = append(parts, runtime.GOOS+"_"+runtime.GOARCH)
+	parts = append(parts, packageParts...)
+	parts = append(parts, "_lib", filename)
+	return path.Join(parts...), nil
+}
 
 func DoStuff() {
 	hierarchy := NewHierarchy("autogen")
@@ -46,6 +83,7 @@ func NewHierarchy(dest string) Hierarchy {
 	destCString := C.CString(dest)
 	defer C.free(unsafe.Pointer(destCString))
 	obj := Hierarchy{C.CFCHierarchy_new(destCString)}
+	obj.AddIncludeDir(mainIncDir)
 	runtime.SetFinalizer(&obj, (*Hierarchy).RunDecRef)
 	return obj
 }
