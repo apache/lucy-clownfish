@@ -101,7 +101,8 @@ sub cf_include_dirs {
     my $self = shift;
 
     my $cf_include = $self->clownfish_params('include');
-    my @dirs = ref($cf_include) ? @$cf_include : ( $cf_include )
+    my @dirs;
+    @dirs = ref($cf_include) ? @$cf_include : ( $cf_include )
         if defined($cf_include);
 
     # Add include dirs from CLOWNFISH_INCLUDE environment variable.
@@ -125,7 +126,8 @@ sub cf_c_include_dirs {
     my $self = shift;
 
     my $include_dirs = $self->include_dirs;
-    my @dirs = ref($include_dirs) ? @$include_dirs : ( $include_dirs )
+    my @dirs;
+    @dirs = ref($include_dirs) ? @$include_dirs : ( $include_dirs )
         if defined($include_dirs);
 
     push( @dirs,
