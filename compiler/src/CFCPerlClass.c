@@ -359,14 +359,18 @@ CFCPerlClass_create_pod(CFCPerlClass *self) {
 
     // Get the class's brief description.
     const char *raw_brief = CFCDocuComment_get_brief(docucom);
-    char *brief = CFCPerlPod_perlify_doc_text(pod_spec, raw_brief);
+    char *brief = CFCPerlPod_md_to_pod(pod_spec, client, raw_brief);
 
     // Get the class's long description.
-    const char *raw_description = CFCPerlPod_get_description(pod_spec);
-    if (!raw_description || !strlen(raw_description)) {
-        raw_description = CFCDocuComment_get_long(docucom);
+    char *description;
+    const char *pod_description = CFCPerlPod_get_description(pod_spec);
+    if (pod_description && strlen(pod_description)) {
+        description = CFCUtil_sprintf("%s\n", pod_description);
     }
-    char *description = CFCPerlPod_perlify_doc_text(pod_spec, raw_description);
+    else {
+        const char *raw_description = CFCDocuComment_get_long(docucom);
+        description = CFCPerlPod_md_to_pod(pod_spec, client, raw_description);
+    }
 
     // Create SYNOPSIS.
     const char *raw_synopsis = CFCPerlPod_get_synopsis(pod_spec);
@@ -399,27 +403,21 @@ CFCPerlClass_create_pod(CFCPerlClass *self) {
                                           ancestor_klass, NULL);
             }
         }
-        inheritance = CFCUtil_cat(inheritance, ".\n", NULL);
+        inheritance = CFCUtil_cat(inheritance, ".\n\n", NULL);
     }
 
     // Put it all together.
     const char pattern[] =
         "=head1 NAME\n"
         "\n"
-        "%s - %s\n"
-        "\n"
-        "%s\n"
-        "\n"
+        "%s - %s"
+        "%s"
         "=head1 DESCRIPTION\n"
         "\n"
-        "%s\n"
-        "\n"
-        "%s\n"
-        "\n"
-        "%s\n"
-        "\n"
-        "%s\n"
-        "\n"
+        "%s"
+        "%s"
+        "%s"
+        "%s"
         "=cut\n"
         "\n";
     char *pod

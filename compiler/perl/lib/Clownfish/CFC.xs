@@ -2461,11 +2461,12 @@ PPCODE:
 
 
 SV*
-_perlify_doc_text(self, source)
-    CFCPerlPod   *self;
-    const char   *source;
+_md_to_pod(self, klass, source)
+    CFCPerlPod *self;
+    CFCClass   *klass;
+    const char *source;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlPod_perlify_doc_text(self, source));
+    RETVAL = S_sv_eat_c_string(CFCPerlPod_md_to_pod(self, klass, source));
 OUTPUT: RETVAL
 
 SV*

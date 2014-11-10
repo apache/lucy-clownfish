@@ -319,6 +319,14 @@ CFCClass_fetch_singleton(CFCParcel *parcel, const char *class_name) {
     }
     char key[MAX_SINGLETON_LEN + 1];
     sprintf(key, "%s%s", prefix, struct_sym);
+
+    return CFCClass_fetch_by_struct_sym(key);
+}
+
+CFCClass*
+CFCClass_fetch_by_struct_sym(const char *key) {
+    CFCUTIL_NULL_CHECK(key);
+
     for (size_t i = 0; i < registry_size; i++) {
         if (strcmp(registry[i].key, key) == 0) {
             return registry[i].klass;

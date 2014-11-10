@@ -82,6 +82,14 @@ CFCClass_destroy(CFCClass *self);
 CFCClass*
 CFCClass_fetch_singleton(struct CFCParcel *parcel, const char *class_name);
 
+/** Retrieve a Class by its struct sym.
+ *
+ * @param A Clownfish::CFC::Model::Parcel.
+ * @param full_struct_sym The Class's full struct sym.
+ */
+CFCClass*
+CFCClass_fetch_by_struct_sym(const char *full_struct_sym);
+
 /** Empty out the registry, decrementing the refcount of all Class singleton
  * objects.
  */
