@@ -42,29 +42,34 @@ my $CHARMONIZER_C;
 my $LEMON_DIR;
 my $INCLUDE;
 my $CFC_SOURCE_DIR;
+my $MODULES_DIR;
 my $IS_CPAN = -e 'LICENSE';
 if ($IS_CPAN) {
     $CHARMONIZER_C  = 'charmonizer.c';
     $INCLUDE        = 'include';
     $LEMON_DIR      = 'lemon';
     $CFC_SOURCE_DIR = 'src';
+    $MODULES_DIR    = 'modules';
 }
 else {
     $CHARMONIZER_C = catfile( updir(), 'common', 'charmonizer.c' );
     $INCLUDE        = catdir( updir(), 'include' );
     $LEMON_DIR      = catdir( updir(), updir(), 'lemon' );
     $CFC_SOURCE_DIR = catdir( updir(), 'src' );
+    $MODULES_DIR    = catdir( updir(), 'modules' );
 }
-my $LEMON_EXE_PATH = catfile( $LEMON_DIR, "lemon$Config{_exe}" );
-my $PPPORT_H_PATH  = catfile( $INCLUDE,   'ppport.h' );
+my $CMARK_SOURCE_DIR = catdir( $MODULES_DIR, 'CommonMark', 'src' );
+my $LEMON_EXE_PATH   = catfile( $LEMON_DIR, "lemon$Config{_exe}" );
+my $PPPORT_H_PATH    = catfile( $INCLUDE,   'ppport.h' );
 
 sub new {
     my ( $class, %args ) = @_;
-    $args{c_source} = $CFC_SOURCE_DIR;
+    $args{c_source} = [ $CFC_SOURCE_DIR, $CMARK_SOURCE_DIR ];
     $args{include_dirs} ||= [];
     my @aux_include = (
         $INCLUDE,
         $CFC_SOURCE_DIR,
+        $CMARK_SOURCE_DIR,
         curdir(),    # for charmony.h
     );
     push @{ $args{include_dirs} }, @aux_include;
