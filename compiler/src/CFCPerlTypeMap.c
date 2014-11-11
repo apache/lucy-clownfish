@@ -118,7 +118,6 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var) {
 
 char*
 CFCPerlTypeMap_to_perl(CFCType *type, const char *cf_var) {
-    const char *type_str = CFCType_to_c(type);
     char *result = NULL;
 
     if (CFCType_is_object(type)) {

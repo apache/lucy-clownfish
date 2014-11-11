@@ -230,8 +230,7 @@ CFCPerlSub_arg_name_list(CFCPerlSub *self) {
     char          *name_list  = CFCUtil_strdup("arg_self");
 
     for (int i = 1; i < num_vars; i++) {
-        CFCVariable *arg_var  = arg_vars[i];
-        const char  *var_name = CFCVariable_micro_sym(arg_vars[i]);
+        const char *var_name = CFCVariable_micro_sym(arg_vars[i]);
         name_list = CFCUtil_cat(name_list, ", arg_", var_name, NULL);
     }
 

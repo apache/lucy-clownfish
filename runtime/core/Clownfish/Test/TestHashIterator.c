@@ -53,8 +53,6 @@ test_Next(TestBatchRunner *runner) {
     VA_Sort(expected, NULL, NULL);
 
     {
-        Obj *key;
-        Obj *value;
         HashIterator *iter = HashIter_new(hash);
         while (HashIter_Next(iter)) {
             Obj *key = HashIter_Get_Key(iter);

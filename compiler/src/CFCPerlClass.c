@@ -229,7 +229,6 @@ CFCPerlClass_exclude_constructor(CFCPerlClass *self) {
 
 CFCPerlMethod**
 CFCPerlClass_method_bindings(CFCClass *klass) {
-    CFCClass       *parent        = CFCClass_get_parent(klass);
     size_t          num_bound     = 0;
     CFCMethod     **fresh_methods = CFCClass_fresh_methods(klass);
     CFCPerlMethod **bound 
