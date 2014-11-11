@@ -9,6 +9,8 @@
 /cygcfish-*.dll
 /libcfish-*.dll
 /libcfish.*.dylib
+/libcfish.a
+/libcfish.a.*
 /libcfish.dylib
 /libcfish.so
 /libcfish.so.*
