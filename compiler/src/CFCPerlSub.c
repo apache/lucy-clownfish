@@ -226,10 +226,10 @@ char*
 CFCPerlSub_arg_name_list(CFCPerlSub *self) {
     CFCParamList  *param_list = self->param_list;
     CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
-    size_t        num_vars   = CFCParamList_num_vars(param_list);
+    size_t         num_vars   = CFCParamList_num_vars(param_list);
     char          *name_list  = CFCUtil_strdup("arg_self");
 
-    for (int i = 1; i < num_vars; i++) {
+    for (size_t i = 1; i < num_vars; i++) {
         const char *var_name = CFCVariable_micro_sym(arg_vars[i]);
         name_list = CFCUtil_cat(name_list, ", arg_", var_name, NULL);
     }
