@@ -16,6 +16,7 @@
 
 #include <string.h>
 
+#define C_CFISH_VARRAY
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
 
@@ -293,9 +294,66 @@ test_Clone_and_Shallow_Copy(TestBatchRunner *runner) {
     DECREF(twin);
 }
 
+static void
+S_overflow_Push(void *context) {
+    UNUSED_VAR(context);
+    VArray *array = VA_new(0);
+    array->cap  = UINT32_MAX;
+    array->size = array->cap;
+    VA_Push(array, (Obj*)CFISH_TRUE);
+}
+
+static void
+S_overflow_Unshift(void *context) {
+    UNUSED_VAR(context);
+    VArray *array = VA_new(0);
+    array->cap  = UINT32_MAX;
+    array->size = array->cap;
+    VA_Unshift(array, (Obj*)CFISH_TRUE);
+}
+
+static void
+S_overflow_Push_VArray(void *context) {
+    UNUSED_VAR(context);
+    VArray *array = VA_new(0);
+    array->cap  = 1000000000;
+    array->size = array->cap;
+    VArray *other = VA_new(0);
+    other->cap  = UINT32_MAX - array->cap + 1;
+    other->size = other->cap;
+    VA_Push_VArray(array, other);
+}
+
+static void
+S_overflow_Store(void *context) {
+    UNUSED_VAR(context);
+    VArray *array = VA_new(0);
+    VA_Store(array, UINT32_MAX, (Obj*)CFISH_TRUE);
+}
+
+static void
+S_test_exception(TestBatchRunner *runner, Err_Attempt_t func,
+                 const char *test_name) {
+    Err *error = Err_trap(func, NULL);
+    TEST_TRUE(runner, error != NULL, test_name);
+    DECREF(error);
+}
+
+static void
+test_exceptions(TestBatchRunner *runner) {
+    S_test_exception(runner, S_overflow_Push,
+                     "Push throws on overflow");
+    S_test_exception(runner, S_overflow_Unshift,
+                     "Unshift throws on overflow");
+    S_test_exception(runner, S_overflow_Push_VArray,
+                     "Push_VArray throws on overflow");
+    S_test_exception(runner, S_overflow_Store,
+                     "Store throws on overflow");
+}
+
 void
 TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 43);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 47);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Shift_Unshift(runner);
@@ -305,6 +363,7 @@ TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
     test_Push_VArray(runner);
     test_Slice(runner);
     test_Clone_and_Shallow_Copy(runner);
+    test_exceptions(runner);
 }
 
 
