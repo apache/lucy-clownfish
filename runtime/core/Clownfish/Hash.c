@@ -320,6 +320,11 @@ Hash_Get_Size_IMP(Hash *self) {
 
 static CFISH_INLINE HashEntry*
 SI_rebuild_hash(Hash *self) {
+    // HashIterator ticks are int32_t.
+    if (self->capacity > INT32_MAX / 2) {
+        THROW(ERR, "Hash grew too large");
+    }
+
     HashEntry *old_entries = (HashEntry*)self->entries;
     HashEntry *entry       = old_entries;
     HashEntry *limit       = old_entries + self->capacity;

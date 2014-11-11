@@ -22,7 +22,7 @@ parcel Clownfish;
 
 class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
     Hash    *hash;
-    size_t   tick;
+    int32_t  tick;
     uint32_t capacity;
 
     inert void
