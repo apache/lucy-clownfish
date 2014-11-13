@@ -76,13 +76,13 @@ type LockFreeRegistry struct {
 	ref *C.cfish_LockFreeRegistry
 }
 
-func NewString(goString string) String {
+func NewString(goString string) *String {
 	str := C.CString(goString)
 	len := C.size_t(len(goString))
-	obj := String{
+	obj := &String{
 		C.cfish_Str_new_steal_utf8(str, len),
 	}
-	runtime.SetFinalizer(&obj, (*String).callDecRef)
+	runtime.SetFinalizer(obj, (*String).callDecRef)
 	return obj
 }
 

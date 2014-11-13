@@ -79,12 +79,12 @@ type BindC struct {
 	ref *C.CFCC
 }
 
-func NewHierarchy(dest string) Hierarchy {
+func NewHierarchy(dest string) *Hierarchy {
 	destCString := C.CString(dest)
 	defer C.free(unsafe.Pointer(destCString))
-	obj := Hierarchy{C.CFCHierarchy_new(destCString)}
+	obj := &Hierarchy{C.CFCHierarchy_new(destCString)}
 	obj.AddIncludeDir(mainIncDir)
-	runtime.SetFinalizer(&obj, (*Hierarchy).RunDecRef)
+	runtime.SetFinalizer(obj, (*Hierarchy).RunDecRef)
 	return obj
 }
 
@@ -96,39 +96,39 @@ func (obj *Hierarchy) Build() {
 	C.CFCHierarchy_build(obj.ref)
 }
 
-func (obj Hierarchy) AddSourceDir(dir string) {
+func (obj *Hierarchy) AddSourceDir(dir string) {
 	dirCString := C.CString(dir)
 	defer C.free(unsafe.Pointer(dirCString))
 	C.CFCHierarchy_add_source_dir(obj.ref, dirCString)
 }
 
-func (obj Hierarchy) AddIncludeDir(dir string) {
+func (obj *Hierarchy) AddIncludeDir(dir string) {
 	dirCString := C.CString(dir)
 	defer C.free(unsafe.Pointer(dirCString))
 	C.CFCHierarchy_add_include_dir(obj.ref, dirCString)
 }
 
-func (obj Hierarchy) WriteLog() {
+func (obj *Hierarchy) WriteLog() {
 	C.CFCHierarchy_write_log(obj.ref)
 }
 
-func NewBindCore(hierarchy Hierarchy, header string, footer string) BindCore {
+func NewBindCore(hierarchy *Hierarchy, header string, footer string) *BindCore {
 	headerCString := C.CString(header)
 	footerCString := C.CString(footer)
 	defer C.free(unsafe.Pointer(headerCString))
 	defer C.free(unsafe.Pointer(footerCString))
-	obj := BindCore{
+	obj := &BindCore{
 		C.CFCBindCore_new(hierarchy.ref, headerCString, footerCString),
 	}
-	runtime.SetFinalizer(&obj, (*BindCore).RunDecRef)
+	runtime.SetFinalizer(obj, (*BindCore).RunDecRef)
 	return obj
 }
 
-func (obj BindCore) RunDecRef() {
+func (obj *BindCore) RunDecRef() {
 	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
 }
 
-func (obj BindCore) WriteAllModified(modified bool) bool {
+func (obj *BindCore) WriteAllModified(modified bool) bool {
 	var mod C.int = 0
 	if modified {
 		mod = 1
@@ -136,26 +136,26 @@ func (obj BindCore) WriteAllModified(modified bool) bool {
 	return C.CFCBindCore_write_all_modified(obj.ref, mod) != 0
 }
 
-func NewBindC(hierarchy Hierarchy, header string, footer string) BindC {
+func NewBindC(hierarchy *Hierarchy, header string, footer string) *BindC {
 	headerCString := C.CString(header)
 	footerCString := C.CString(footer)
 	defer C.free(unsafe.Pointer(headerCString))
 	defer C.free(unsafe.Pointer(footerCString))
-	obj := BindC{
+	obj := &BindC{
 		C.CFCC_new(hierarchy.ref, headerCString, footerCString),
 	}
-	runtime.SetFinalizer(&obj, (*BindC).RunDecRef)
+	runtime.SetFinalizer(obj, (*BindC).RunDecRef)
 	return obj
 }
 
-func (obj BindC) RunDecRef() {
+func (obj *BindC) RunDecRef() {
 	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
 }
 
-func (obj BindC) WriteCallbacks() {
+func (obj *BindC) WriteCallbacks() {
 	C.CFCC_write_callbacks(obj.ref)
 }
 
-func (obj BindC) WriteHostDefs() {
+func (obj *BindC) WriteHostDefs() {
 	C.CFCC_write_hostdefs(obj.ref)
 }
