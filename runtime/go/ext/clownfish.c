@@ -21,7 +21,6 @@
 #define C_CFISH_ERR
 #define C_CFISH_LOCKFREEREGISTRY
 
-#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -35,6 +34,11 @@
 #include "Clownfish/String.h"
 #include "Clownfish/VArray.h"
 #include "Clownfish/LockFreeRegistry.h"
+
+/* These symbols must be assigned real values during Go initialization,
+ * which we'll confirm in Err_init().  */
+void (*GoCfish_PanicErr)(Err *error);
+Err* (*GoCfish_TrapErr)(Err_Attempt_t routine, void *context);
 
 /******************************** Obj **************************************/
 
@@ -199,11 +203,17 @@ Method_Host_Name_IMP(Method *self) {
 
 /* TODO: Thread safety */
 static Err *current_error;
-static Err *thrown_error;
-static jmp_buf  *current_env;
 
 void
 Err_init_class(void) {
+    if (GoCfish_PanicErr == NULL
+        || GoCfish_TrapErr == NULL
+       ) {
+        fprintf(stderr, "Error at file %s line %d: Unexpected internal "
+            "failure to initialize functions during bootstrapping\n",
+            __FILE__, __LINE__);
+        exit(1);
+    }
 }
 
 Err*
@@ -221,17 +231,7 @@ Err_set_error(Err *error) {
 
 void
 Err_do_throw(Err *error) {
-    if (current_env) {
-        thrown_error = error;
-        longjmp(*current_env, 1);
-    }
-    else {
-        String *message = Err_Get_Mess(error);
-        char *utf8 = Str_To_Utf8(message);
-        fprintf(stderr, "%s", utf8);
-        FREEMEM(utf8);
-        exit(EXIT_FAILURE);
-    }
+    GoCfish_PanicErr(error);
 }
 
 void*
@@ -258,19 +258,7 @@ Err_warn_mess(String *message) {
 
 Err*
 Err_trap(Err_Attempt_t routine, void *context) {
-    jmp_buf  env;
-    jmp_buf *prev_env = current_env;
-    current_env = &env;
-
-    if (!setjmp(env)) {
-        routine(context);
-    }
-
-    current_env = prev_env;
-
-    Err *error = thrown_error;
-    thrown_error = NULL;
-    return error;
+    return GoCfish_TrapErr(routine, context);
 }
 
 /************************** LockFreeRegistry *******************************/
