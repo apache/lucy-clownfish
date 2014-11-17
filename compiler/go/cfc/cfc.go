@@ -84,11 +84,11 @@ func NewHierarchy(dest string) *Hierarchy {
 	defer C.free(unsafe.Pointer(destCString))
 	obj := &Hierarchy{C.CFCHierarchy_new(destCString)}
 	obj.AddIncludeDir(mainIncDir)
-	runtime.SetFinalizer(obj, (*Hierarchy).RunDecRef)
+	runtime.SetFinalizer(obj, (*Hierarchy).finalize)
 	return obj
 }
 
-func (obj *Hierarchy) RunDecRef() {
+func (obj *Hierarchy) finalize() {
 	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
 }
 
@@ -120,11 +120,11 @@ func NewBindCore(hierarchy *Hierarchy, header string, footer string) *BindCore {
 	obj := &BindCore{
 		C.CFCBindCore_new(hierarchy.ref, headerCString, footerCString),
 	}
-	runtime.SetFinalizer(obj, (*BindCore).RunDecRef)
+	runtime.SetFinalizer(obj, (*BindCore).finalize)
 	return obj
 }
 
-func (obj *BindCore) RunDecRef() {
+func (obj *BindCore) finalize() {
 	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
 }
 
@@ -144,11 +144,11 @@ func NewBindC(hierarchy *Hierarchy, header string, footer string) *BindC {
 	obj := &BindC{
 		C.CFCC_new(hierarchy.ref, headerCString, footerCString),
 	}
-	runtime.SetFinalizer(obj, (*BindC).RunDecRef)
+	runtime.SetFinalizer(obj, (*BindC).finalize)
 	return obj
 }
 
-func (obj *BindC) RunDecRef() {
+func (obj *BindC) finalize() {
 	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
 }
 

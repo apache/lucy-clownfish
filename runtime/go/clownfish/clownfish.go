@@ -110,11 +110,11 @@ func NewString(goString string) *String {
 	obj := &String{
 		C.cfish_Str_new_steal_utf8(str, len),
 	}
-	runtime.SetFinalizer(obj, (*String).callDecRef)
+	runtime.SetFinalizer(obj, (*String).finalize)
 	return obj
 }
 
-func (obj *String) callDecRef() {
+func (obj *String) finalize() {
 	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
 	obj.ref = nil
 }
@@ -143,11 +143,11 @@ func NewError(mess string) error {
 	len := C.size_t(len(mess))
 	messC := C.cfish_Str_new_steal_utf8(str, len)
 	obj := &Err{C.cfish_Err_new(messC)}
-	runtime.SetFinalizer(obj, (*Err).callDecRef)
+	runtime.SetFinalizer(obj, (*Err).finalize)
 	return obj
 }
 
-func (obj *Err) callDecRef() {
+func (obj *Err) finalize() {
 	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
 	obj.ref = nil
 }
@@ -160,7 +160,7 @@ func (obj *Err) Error() string {
 func GoCfish_PanicErr_internal(cfErr *C.cfish_Err) {
 	goErr := &Err{cfErr}
 	C.cfish_inc_refcount(unsafe.Pointer(cfErr))
-	runtime.SetFinalizer(goErr, (*Err).callDecRef)
+	runtime.SetFinalizer(goErr, (*Err).finalize)
 	panic(goErr)
 }
 
