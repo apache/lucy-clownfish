@@ -15,7 +15,7 @@
 
 package Clownfish::CFC::Model::Parcel;
 use Clownfish::CFC;
-our $VERSION = '0.004001';
+our $VERSION = '0.004002';
 $VERSION = eval $VERSION;
 
 1;
