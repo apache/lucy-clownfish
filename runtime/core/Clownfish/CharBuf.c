@@ -353,6 +353,7 @@ CB_Mimic_IMP(CharBuf *self, Obj *other) {
     }
     else {
         THROW(ERR, "CharBuf can't mimic %o", Obj_Get_Class_Name(other));
+        return; // unreachable
     }
     SI_mimic_utf8(self, ptr, size);
 }
@@ -391,6 +392,7 @@ void
 CB_Set_Size_IMP(CharBuf *self, size_t size) {
     if (size >= self->cap) {
         THROW(ERR, "Can't set size of CharBuf beyond capacity");
+        return; // unreachable
     }
     self->size = size;
 }

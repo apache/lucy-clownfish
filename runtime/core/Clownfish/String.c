@@ -545,6 +545,7 @@ SStr_new_from_str(void *allocation, size_t alloc_size, String *string) {
 
     if (alloc_size < sizeof(StackString) + size + 1) {
         THROW(ERR, "alloc_size of StackString too small");
+        UNREACHABLE_RETURN(StackString*);
     }
 
     memcpy(ptr, string->ptr, size);
@@ -601,6 +602,7 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
     if (tail == NULL) {
         if (top == NULL) {
             THROW(ERR, "StrIter_substring: Both top and tail are NULL");
+            UNREACHABLE_RETURN(String*);
         }
         string      = top->string;
         tail_offset = string->size;
@@ -609,11 +611,13 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
         string = tail->string;
         if (top != NULL && string != top->string) {
             THROW(ERR, "StrIter_substring: strings don't match");
+            UNREACHABLE_RETURN(String*);
         }
 
         tail_offset = tail->byte_offset;
         if (tail_offset > string->size) {
             THROW(ERR, "Invalid StringIterator offset");
+            UNREACHABLE_RETURN(String*);
         }
     }
 
@@ -624,6 +628,7 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
         top_offset = top->byte_offset;
         if (top_offset > tail_offset) {
             THROW(ERR, "StrIter_substring: top is behind tail");
+            UNREACHABLE_RETURN(String*);
         }
     }
 
@@ -658,6 +663,7 @@ StrIter_Compare_To_IMP(StringIterator *self, Obj *other) {
     StringIterator *twin = (StringIterator*)CERTIFY(other, STRINGITERATOR);
     if (self->string != twin->string) {
         THROW(ERR, "Can't compare iterators of different strings");
+        UNREACHABLE_RETURN(int32_t);
     }
     if (self->byte_offset < twin->byte_offset) { return -1; }
     if (self->byte_offset > twin->byte_offset) { return 1; }
@@ -715,6 +721,7 @@ StrIter_Next_IMP(StringIterator *self) {
         do {
             if (byte_offset >= size) {
                 THROW(ERR, "StrIter_Next: Invalid UTF-8");
+                UNREACHABLE_RETURN(int32_t);
             }
 
             retval = (retval << 6) | (ptr[byte_offset++] & 0x3F);
@@ -742,6 +749,7 @@ StrIter_Prev_IMP(StringIterator *self) {
 
         if (byte_offset == 0) {
             THROW(ERR, "StrIter_Prev: Invalid UTF-8");
+            UNREACHABLE_RETURN(int32_t);
         }
 
         retval &= 0x3F;
@@ -752,6 +760,7 @@ StrIter_Prev_IMP(StringIterator *self) {
         while ((byte & 0xC0) == 0x80) {
             if (byte_offset == 0) {
                 THROW(ERR, "StrIter_Prev: Invalid UTF-8");
+                UNREACHABLE_RETURN(int32_t);
             }
 
             retval |= (byte & 0x3F) << shift;
@@ -785,6 +794,7 @@ StrIter_Advance_IMP(StringIterator *self, size_t num) {
 
     if (byte_offset > size) {
         THROW(ERR, "StrIter_Advance: Invalid UTF-8");
+        UNREACHABLE_RETURN(size_t);
     }
 
     self->byte_offset = byte_offset;
@@ -806,6 +816,7 @@ StrIter_Recede_IMP(StringIterator *self, size_t num) {
         do {
             if (byte_offset == 0) {
                 THROW(ERR, "StrIter_Recede: Invalid UTF-8");
+                UNREACHABLE_RETURN(size_t);
             }
 
             byte = ptr[--byte_offset];
@@ -862,6 +873,7 @@ StrIter_Starts_With_Utf8_IMP(StringIterator *self, const char *prefix,
 
     if (byte_offset > string->size) {
         THROW(ERR, "Invalid StringIterator offset");
+        UNREACHABLE_RETURN(bool);
     }
 
     if (string->size - byte_offset < size) { return false; }
@@ -882,6 +894,7 @@ StrIter_Ends_With_Utf8_IMP(StringIterator *self, const char *postfix,
 
     if (byte_offset > string->size) {
         THROW(ERR, "Invalid StringIterator offset");
+        UNREACHABLE_RETURN(bool);
     }
 
     if (byte_offset < size) { return false; }

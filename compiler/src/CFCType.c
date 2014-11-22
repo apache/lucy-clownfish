@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "charmony.h"
+
 #ifndef true
   #define true 1
   #define false 0
@@ -124,6 +126,7 @@ CFCType_new_integer(int flags, const char *specifier) {
     }
     else {
         CFCUtil_die("Unknown integer specifier: '%s'", specifier);
+        CHY_UNREACHABLE_RETURN(CFCType*);
     }
 
     // Add flags.
