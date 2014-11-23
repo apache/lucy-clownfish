@@ -79,10 +79,10 @@ S_run_basic_tests(CFCTest *test) {
 
     CFCHierarchy_build(hierarchy);
 
-    CFCFile **files = CFCHierarchy_files(hierarchy);
-    CFCFile *animal;
-    CFCFile *dog;
-    CFCFile *util;
+    CFCFile **files  = CFCHierarchy_files(hierarchy);
+    CFCFile  *animal = NULL;
+    CFCFile  *dog    = NULL;
+    CFCFile  *util   = NULL;
     for (int i = 0; i < 3; ++i) {
         CFCFile *file = files[i];
         OK(test, file != NULL, "files[%d]", i);
