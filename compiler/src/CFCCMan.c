@@ -17,7 +17,7 @@
 #include <string.h>
 
 #include "charmony.h"
-#include "CFCCClass.h"
+#include "CFCCMan.h"
 #include "CFCClass.h"
 #include "CFCDocuComment.h"
 #include "CFCFunction.h"
@@ -74,7 +74,7 @@ static void
 S_parse_pod_link(const char *content, CFCPodLink *pod_link);
 
 char*
-CFCCClass_create_man_page(CFCClass *klass) {
+CFCCMan_create_man_page(CFCClass *klass) {
     if (!CFCSymbol_public((CFCSymbol*)klass)) { return NULL; }
 
     const char *class_name = CFCClass_get_class_name(klass);

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef H_CFCCCLASS
-#define H_CFCCCLASS
+#ifndef H_CFCCMAN
+#define H_CFCCMAN
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,11 +26,11 @@ struct CFCClass;
 /** Return the man page for the class.
  */
 char*
-CFCCClass_create_man_page(struct CFCClass *klass);
+CFCCMan_create_man_page(struct CFCClass *klass);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* H_CFCCCLASS */
+#endif /* H_CFCCMAN */
 

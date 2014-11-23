@@ -22,7 +22,7 @@
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCC.h"
-#include "CFCCClass.h"
+#include "CFCCMan.h"
 #include "CFCClass.h"
 #include "CFCHierarchy.h"
 #include "CFCMethod.h"
@@ -163,7 +163,7 @@ CFCC_write_man_pages(CFCC *self) {
         CFCClass *klass = ordered[i];
         if (CFCClass_included(klass)) { continue; }
 
-        char *man_page = CFCCClass_create_man_page(klass);
+        char *man_page = CFCCMan_create_man_page(klass);
         man_pages[j++] = man_page;
     }
 
