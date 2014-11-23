@@ -77,6 +77,7 @@ sub error {$Clownfish::Err::error}
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
     no warnings 'redefine';
+    sub CLONE_SKIP { 0; }
     sub DESTROY { }    # leak all
 }
 
@@ -137,6 +138,7 @@ sub error {$Clownfish::Err::error}
     }
 
     no warnings 'redefine';
+    sub CLONE_SKIP { 0; }
     sub DESTROY { }    # leak all
 }
 
@@ -145,6 +147,7 @@ sub error {$Clownfish::Err::error}
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
     no warnings 'redefine';
+    sub CLONE_SKIP { 0; }
     sub DESTROY { }    # leak all
 }
 

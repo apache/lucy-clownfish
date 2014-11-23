@@ -38,6 +38,13 @@ use Time::HiRes qw( time usleep );
 use List::Util qw( shuffle );
 use Clownfish;
 
+package ImmortalString;
+use base qw(Clownfish::String);
+
+sub DESTROY {}
+
+package main;
+
 my $registry = Clownfish::LockFreeRegistry->new( capacity => 32 );
 
 sub register_many {
@@ -50,7 +57,7 @@ sub register_many {
 
     my $succeeded = 0;
     for my $number (@$nums) {
-        my $obj = Clownfish::String->new($number);
+        my $obj = ImmortalString->new($number);
         $succeeded += $registry->register( key => $obj, value => $obj );
     }
 
