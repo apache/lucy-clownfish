@@ -208,31 +208,26 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     return self;
 }
 
+static void
+S_free_cfcbase_array(CFCBase **array) {
+    if (array != NULL) {
+        for (size_t i = 0; array[i] != NULL; i++) {
+            CFCBase_decref(array[i]);
+        }
+        FREEMEM(array);
+    }
+}
+
 void
 CFCClass_destroy(CFCClass *self) {
     CFCBase_decref((CFCBase*)self->docucomment);
     CFCBase_decref((CFCBase*)self->parent);
-    for (size_t i = 0; self->children[i] != NULL; i++) {
-        CFCBase_decref((CFCBase*)self->children[i]);
-    }
-    for (size_t i = 0; self->functions[i] != NULL; i++) {
-        CFCBase_decref((CFCBase*)self->functions[i]);
-    }
-    for (size_t i = 0; self->methods[i] != NULL; i++) {
-        CFCBase_decref((CFCBase*)self->methods[i]);
-    }
-    for (size_t i = 0; self->member_vars[i] != NULL; i++) {
-        CFCBase_decref((CFCBase*)self->member_vars[i]);
-    }
-    for (size_t i = 0; self->inert_vars[i] != NULL; i++) {
-        CFCBase_decref((CFCBase*)self->inert_vars[i]);
-    }
     CFCBase_decref((CFCBase*)self->file_spec);
-    FREEMEM(self->children);
-    FREEMEM(self->functions);
-    FREEMEM(self->methods);
-    FREEMEM(self->member_vars);
-    FREEMEM(self->inert_vars);
+    S_free_cfcbase_array((CFCBase**)self->children);
+    S_free_cfcbase_array((CFCBase**)self->functions);
+    S_free_cfcbase_array((CFCBase**)self->methods);
+    S_free_cfcbase_array((CFCBase**)self->member_vars);
+    S_free_cfcbase_array((CFCBase**)self->inert_vars);
     FREEMEM(self->parent_class_name);
     FREEMEM(self->struct_sym);
     FREEMEM(self->ivars_struct);
