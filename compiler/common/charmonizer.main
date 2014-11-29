@@ -29,6 +29,9 @@ typedef struct SourceFileContext {
     chaz_MakeVar *common_test_objs;
 } SourceFileContext;
 
+static const char cfc_version[]       = "0.4.0";
+static const char cfc_major_version[] = "0.4";
+
 static void
 S_add_compiler_flags(struct chaz_CLI *cli);
 
@@ -133,6 +136,17 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
 }
 
 static void
+S_add_staticlib_makefile_target(chaz_MakeFile *makefile) {
+    chaz_Lib *static_lib = chaz_Lib_new("cfc", chaz_Lib_STATIC, cfc_version,
+                                        cfc_major_version);
+    char *static_lib_filename = chaz_Lib_filename(static_lib);
+    chaz_MakeFile_add_rule(makefile, "static", static_lib_filename);
+    chaz_MakeFile_add_static_lib(makefile, static_lib, "$(COMMON_OBJS)");
+    free(static_lib_filename);
+    chaz_Lib_destroy(static_lib);
+}
+
+static void
 S_write_makefile(struct chaz_CLI *cli) {
     SourceFileContext sfc;
 
@@ -219,6 +233,7 @@ S_write_makefile(struct chaz_CLI *cli) {
     /* Rules */
 
     chaz_MakeFile_add_rule(makefile, "all", cfc_exe);
+    S_add_staticlib_makefile_target(makefile);
 
     chaz_MakeFile_add_lemon_exe(makefile, lemon_dir);
     chaz_MakeFile_add_lemon_grammar(makefile, parse_header);
