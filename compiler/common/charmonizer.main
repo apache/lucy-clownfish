@@ -26,6 +26,7 @@
 typedef struct SourceFileContext {
     chaz_MakeVar *common_objs;
     chaz_MakeVar *test_cfc_objs;
+    chaz_MakeVar *common_test_objs;
 } SourceFileContext;
 
 static void
@@ -198,6 +199,7 @@ S_write_makefile(struct chaz_CLI *cli) {
 
     sfc.common_objs   = chaz_MakeFile_add_var(makefile, "COMMON_OBJS", NULL);
     sfc.test_cfc_objs = chaz_MakeFile_add_var(makefile, "TEST_CFC_OBJS", NULL);
+    sfc.common_test_objs = chaz_MakeFile_add_var(makefile, "COMMON_TEST_OBJS", NULL);
 
     chaz_Make_list_files(src_dir, "c", S_source_file_callback, &sfc);
     chaz_Make_list_files(cmark_dir, "c", S_source_file_callback, &sfc);
@@ -239,7 +241,8 @@ S_write_makefile(struct chaz_CLI *cli) {
     chaz_MakeFile_add_exe(makefile, cfc_exe, "$(COMMON_OBJS) $(CFC_OBJS)",
                           link_flags);
     chaz_MakeFile_add_exe(makefile, test_cfc_exe,
-                          "$(COMMON_OBJS) $(TEST_CFC_OBJS)", link_flags);
+                          "$(COMMON_OBJS) $(COMMON_TEST_OBJS) $(TEST_CFC_OBJS)",
+                          link_flags);
     chaz_CFlags_destroy(link_flags);
 
     rule = chaz_MakeFile_add_rule(makefile, "test", test_cfc_exe);
@@ -269,6 +272,7 @@ S_write_makefile(struct chaz_CLI *cli) {
     clean_rule = chaz_MakeFile_clean_rule(makefile);
 
     chaz_MakeRule_add_rm_command(clean_rule, "$(COMMON_OBJS)");
+    chaz_MakeRule_add_rm_command(clean_rule, "$(COMMON_TEST_OBJS)");
     chaz_MakeRule_add_rm_command(clean_rule, "$(CFC_OBJS)");
     chaz_MakeRule_add_rm_command(clean_rule, "$(TEST_CFC_OBJS)");
 
@@ -311,7 +315,7 @@ S_source_file_callback(const char *dir, char *file, void *context) {
 
     obj_file = chaz_Util_join("", dir, dir_sep, file, obj_ext, NULL);
     if (strlen(file) >= 7 && memcmp(file, "CFCTest", 7) == 0) {
-        chaz_MakeVar_append(sfc->test_cfc_objs, obj_file);
+        chaz_MakeVar_append(sfc->common_test_objs, obj_file);
     }
     else {
         chaz_MakeVar_append(sfc->common_objs, obj_file);
