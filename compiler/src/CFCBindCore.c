@@ -292,8 +292,8 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         for (size_t i = 0; prereq_parcels[i]; ++i) {
             const char *prereq_prefix
                 = CFCParcel_get_prefix(prereq_parcels[i]);
-            extra_includes = CFCUtil_cat(extra_includes, "#include <",
-                                         prereq_prefix, "parcel.h>\n", NULL);
+            extra_includes = CFCUtil_cat(extra_includes, "#include \"",
+                                         prereq_prefix, "parcel.h\"\n", NULL);
         }
         FREEMEM(prereq_parcels);
     }
