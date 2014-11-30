@@ -429,16 +429,13 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     char pattern[] =
         "%s\n"
         "\n"
-        "#define C_CFISH_CLASS\n"            // Needed for abstract methods.
         "#include <stdio.h>\n"
         "#include <stdlib.h>\n"
-        "%s\n"
-        "#include \"%sparcel.h\"\n"
+        "\n"
+        "#define C_CFISH_CLASS\n"            // Needed for abstract methods.
+        "%s"
+        "\n"
         "#include \"callbacks.h\"\n"
-        "#include \"Clownfish/String.h\"\n"  // Needed for dump/load.
-        "#include \"Clownfish/Err.h\"\n"     // Needed for dump/load.
-        "#include \"Clownfish/Num.h\"\n"     // Needed for dump/load.
-        "#include \"Clownfish/VArray.h\"\n"  // Needed for dump/load.
         "#include \"Clownfish/Class.h\"\n"   // Needed for bootstrap.
         "%s\n"
         "\n"
@@ -475,8 +472,8 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s\n";
     char *file_content
-        = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, prefix,
-                          includes, c_data, class_specs, prefix, inh_bootstrap,
+        = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, includes,
+                          c_data, class_specs, prefix, inh_bootstrap,
                           num_specs, prefix, prefix, prereq_bootstrap, prefix,
                           self->c_footer);
 
