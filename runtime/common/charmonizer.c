@@ -7851,6 +7851,9 @@ int main(int argc, const char **argv) {
     if (!chaz_Probe_parse_cli_args(argc, argv, cli)) {
         chaz_Probe_die_usage();
     }
+    if (!chaz_CLI_defined(cli, "host")) {
+        chaz_CLI_set(cli, "host", "c");
+    }
     chaz_Probe_init(cli);
     S_add_compiler_flags(cli);
 
@@ -7985,7 +7988,16 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     self->autogen_target
         = chaz_Util_join(dir_sep, "autogen", "hierarchy.json", NULL);
 
-    if (strcmp(chaz_CLI_strval(self->cli, "host"), "perl") == 0) {
+    if (strcmp(chaz_CLI_strval(cli, "host"), "go") == 0) {
+        static const char *go_autogen_src_files[] = {
+            "cfish_parcel",
+            "testcfish_parcel",
+            NULL
+        };
+        self->host_src_dir = "ext";
+        self->autogen_src_files = go_autogen_src_files;
+    }
+    else if (strcmp(chaz_CLI_strval(cli, "host"), "perl") == 0) {
         static const char *perl_autogen_src_files[] = {
             "boot",
             "callbacks",
@@ -8008,7 +8020,7 @@ cfish_MakeFile_new(chaz_CLI *cli) {
 
     self->shared_lib = chaz_Lib_new("cfish", chaz_Lib_SHARED, cfish_version,
                                     cfish_major_version);
-    self->static_lib = chaz_Lib_new("cfish", chaz_Lib_STATIC, cfish_version,
+    self->static_lib = chaz_Lib_new("clownfish", chaz_Lib_STATIC, cfish_version,
                                     cfish_major_version);
     self->shared_lib_filename = chaz_Lib_filename(self->shared_lib);
     self->static_lib_filename = chaz_Lib_filename(self->static_lib);
@@ -8100,10 +8112,8 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
 
     /* Rules */
 
-    scratch = chaz_Util_join(" ", self->shared_lib_filename,
-                             self->static_lib_filename, NULL);
-    chaz_MakeFile_add_rule(self->makefile, "all", scratch);
-    free(scratch);
+    chaz_MakeFile_add_rule(self->makefile, "all", self->shared_lib_filename);
+    chaz_MakeFile_add_rule(self->makefile, "static", self->static_lib_filename);
 
     if (strcmp(chaz_CLI_strval(self->cli, "host"), "c") == 0) {
         cfish_MakeFile_write_c_cfc_rules(self);
