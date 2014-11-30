@@ -432,7 +432,6 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "#include <stdio.h>\n"
         "#include <stdlib.h>\n"
         "\n"
-        "#define C_CFISH_CLASS\n"            // Needed for abstract methods.
         "%s"
         "\n"
         "#include \"callbacks.h\"\n"

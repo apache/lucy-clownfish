@@ -231,6 +231,13 @@ Err_certify(Obj *obj, Class *klass, const char *file, int line,
     return obj;
 }
 
+void
+Err_abstract_method_call(Obj *obj, Class *klass, const char *method_name) {
+    String *class_name = obj ? Obj_Get_Class_Name(obj) : Class_Get_Name(klass);
+    THROW(ERR, "Abstract method '%s' not defined by %o", method_name,
+          class_name);
+}
+
 #ifdef CHY_HAS_WINDOWS_H
 
 #include <windows.h>

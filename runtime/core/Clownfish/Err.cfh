@@ -162,6 +162,12 @@ public class Clownfish::Err inherits Clownfish::Obj {
     inert inline void
     abstract_class_check(Obj *obj, Class *klass);
 
+    /** Throw an error after abstract method `method_name` was called on
+     * object `obj` of class `klass`.
+     */
+    inert void
+    abstract_method_call(Obj *obj, Class *klass, const char *method_name);
+
     /** On Windows, return a newly allocated buffer containing the string
      * description for the the last error in the thread.
      */

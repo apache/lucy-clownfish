@@ -34,20 +34,6 @@ S_final_method_def(CFCMethod *method, CFCClass *klass);
 static char*
 S_virtual_method_def(CFCMethod *method, CFCClass *klass);
 
-/* Take a NULL-terminated list of CFCVariables and build up a string of
- * directives like:
- *
- *     UNUSED_VAR(var1);
- *     UNUSED_VAR(var2);
- */
-static char*
-S_build_unused_vars(CFCVariable **vars);
-
-/* Create an unreachable return statement if necessary, in order to thwart
- * compiler warnings. */
-static char*
-S_maybe_unreachable(CFCType *return_type);
-
 char*
 CFCBindMeth_method_def(CFCMethod *method, CFCClass *klass) {
     if (CFCMethod_final(method)) {
@@ -218,64 +204,21 @@ CFCBindMeth_inherited_spec_def(CFCMethod *method, CFCClass *klass) {
     return def;
 }
 
-static char*
-S_build_unused_vars(CFCVariable **vars) {
-    char *unused = CFCUtil_strdup("");
-
-    for (int i = 0; vars[i] != NULL; i++) {
-        const char *var_name = CFCVariable_micro_sym(vars[i]);
-        size_t size = strlen(unused) + strlen(var_name) + 80;
-        unused = (char*)REALLOCATE(unused, size);
-        strcat(unused, "\n    CFISH_UNUSED_VAR(");
-        strcat(unused, var_name);
-        strcat(unused, ");");
-    }
-
-    return unused;
-}
-
-static char*
-S_maybe_unreachable(CFCType *return_type) {
-    char *return_statement;
-    if (CFCType_is_void(return_type)) {
-        return_statement = CFCUtil_strdup("");
-    }
-    else {
-        const char *ret_type_str = CFCType_to_c(return_type);
-        char pattern[] = "\n    CFISH_UNREACHABLE_RETURN(%s);";
-        return_statement = CFCUtil_sprintf(pattern, ret_type_str);
-    }
-    return return_statement;
-}
-
 char*
 CFCBindMeth_abstract_method_def(CFCMethod *method) {
-    CFCParamList *param_list = CFCMethod_get_param_list(method);
-    const char *params = CFCParamList_to_c(param_list);
+    CFCType    *type          = CFCMethod_self_type(method);
     const char *full_func_sym = CFCMethod_imp_func(method);
-    const char *class_var
-        = CFCType_get_class_var(CFCMethod_self_type(method));
-    CFCType    *return_type  = CFCMethod_get_return_type(method);
-    const char *ret_type_str = CFCType_to_c(return_type);
-    const char *macro_sym    = CFCMethod_get_macro_sym(method);
-
-    // Thwart compiler warnings.
-    CFCVariable **param_vars = CFCParamList_get_variables(param_list);
-    char *unused = S_build_unused_vars(param_vars + 1);
-    char *return_statement = S_maybe_unreachable(return_type);
+    const char *class_var     = CFCType_get_class_var(type);
+    const char *macro_sym     = CFCMethod_get_macro_sym(method);
 
     char pattern[] =
-        "%s\n"
-        "%s(%s) {\n"
-        "    cfish_String *klass = self ? CFISH_Obj_Get_Class_Name((cfish_Obj*)self) : %s->name;%s\n"
-        "    CFISH_THROW(CFISH_ERR, \"Abstract method '%s' not defined by %%o\", klass);%s\n"
+        "void\n"
+        "%s(cfish_Obj *self) {\n"
+        "    cfish_Err_abstract_method_call(self, %s, \"%s\");\n"
         "}\n";
     char *abstract_def
-        = CFCUtil_sprintf(pattern, ret_type_str, full_func_sym, params,
-                          class_var, unused, macro_sym, return_statement);
+        = CFCUtil_sprintf(pattern, full_func_sym, class_var, macro_sym);
 
-    FREEMEM(unused);
-    FREEMEM(return_statement);
     return abstract_def;
 }
 
