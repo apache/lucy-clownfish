@@ -234,8 +234,12 @@ S_write_boot_c(CFCPerl *self) {
     char *isa_pushes      = CFCUtil_strdup("");
 
     for (size_t i = 0; parcels[i]; ++i) {
-        if (!CFCParcel_included(parcels[i])) {
-            const char *prefix = CFCParcel_get_prefix(parcels[i]);
+        CFCParcel *parcel = parcels[i];
+
+        if (!CFCParcel_included(parcel)) {
+            const char *prefix = CFCParcel_get_prefix(parcel);
+            pound_includes = CFCUtil_cat(pound_includes, "#include \"", prefix,
+                                         "parcel.h\"\n", NULL);
             bootstrap_code = CFCUtil_cat(bootstrap_code, "    ", prefix,
                                          "bootstrap_parcel();\n", NULL);
         }
@@ -243,14 +247,9 @@ S_write_boot_c(CFCPerl *self) {
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
+        if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
 
         const char *class_name = CFCClass_get_class_name(klass);
-        const char *include_h  = CFCClass_include_h(klass);
-        pound_includes = CFCUtil_cat(pound_includes, "#include \"",
-                                     include_h, "\"\n", NULL);
-
-        if (CFCClass_inert(klass)) { continue; }
 
         // Add aliases for selected KinoSearch classes which allow old indexes
         // to be read.
@@ -292,8 +291,6 @@ S_write_boot_c(CFCPerl *self) {
 
     const char pattern[] =
         "%s\n"
-        "\n"
-        "#include \"cfish_parcel.h\"\n"
         "\n"
         "/* Avoid conflicts with Clownfish bool type. */\n"
         "#define HAS_BOOL\n"
