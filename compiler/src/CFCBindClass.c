@@ -188,8 +188,6 @@ S_ivars_func(CFCBindClass *self) {
 static char*
 S_to_c_header_dynamic(CFCBindClass *self) {
     const char *privacy_symbol  = CFCClass_privacy_symbol(self->client);
-    const char *class_var       = CFCClass_full_class_var(self->client);
-    const char *PREFIX          = CFCClass_get_PREFIX(self->client);
     char *ivars                 = S_ivars_func(self);
     char *struct_def            = S_struct_definition(self);
     char *parent_include        = S_parent_include(self);
@@ -235,11 +233,6 @@ S_to_c_header_dynamic(CFCBindClass *self) {
         "\n"
         "%s\n"
         "\n"
-        "/* Declare the Class singleton for this class.\n"
-        " */\n"
-        "\n"
-        "extern %sVISIBLE cfish_Class *%s;\n"
-        "\n"
         "/* Define \"short names\" for this class's symbols.\n"
         " */\n"
         "\n"
@@ -249,7 +242,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
         = CFCUtil_sprintf(pattern, parent_include, privacy_symbol, ivars,
                           struct_def, privacy_symbol, inert_var_defs,
                           sub_declarations, method_typedefs, method_defs,
-                          PREFIX, class_var, short_names);
+                          short_names);
 
     FREEMEM(ivars);
     FREEMEM(struct_def);

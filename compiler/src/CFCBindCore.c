@@ -154,8 +154,10 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
     const char   *PREFIX      = CFCParcel_get_PREFIX(parcel);
     const char   *privacy_sym = CFCParcel_get_privacy_sym(parcel);
 
-    // Declare object structs for all instantiable classes.
-    char *typedefs = CFCUtil_strdup("");
+    // Declare object structs and class singletons for all instantiable
+    // classes.
+    char *typedefs    = CFCUtil_strdup("");
+    char *class_decls = CFCUtil_strdup("");
     CFCClass **ordered = CFCHierarchy_ordered_classes(hierarchy);
     for (int i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
@@ -166,6 +168,10 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
             const char *full_struct = CFCClass_full_struct_sym(klass);
             typedefs = CFCUtil_cat(typedefs, "typedef struct ", full_struct,
                                    " ", full_struct, ";\n", NULL);
+            const char *class_var = CFCClass_full_class_var(klass);
+            class_decls = CFCUtil_cat(class_decls, "extern ", PREFIX,
+                                      "VISIBLE cfish_Class *", class_var,
+                                      ";\n", NULL);
         }
     }
     FREEMEM(ordered);
@@ -311,6 +317,8 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s" // Typedefs.
         "\n"
+        "%s" // Class singletons.
+        "\n"
         "%s" // Extra definitions.
         "%sVISIBLE void\n"
         "%sbootstrap_inheritance();\n"
@@ -332,8 +340,8 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
     char *file_content
         = CFCUtil_sprintf(pattern, self->c_header, PREFIX, PREFIX,
                           extra_includes, privacy_sym, PREFIX, PREFIX,
-                          typedefs, extra_defs, PREFIX, prefix, PREFIX, prefix,
-                          prefix, PREFIX, self->c_footer);
+                          typedefs, class_decls, extra_defs, PREFIX, prefix,
+                          PREFIX, prefix, prefix, PREFIX, self->c_footer);
 
     // Unlink then write file.
     const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
