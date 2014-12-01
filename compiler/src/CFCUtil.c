@@ -145,6 +145,47 @@ CFCUtil_trim_whitespace(char *text) {
 }
 
 char*
+CFCUtil_global_replace(const char *string, const char *match,
+                       const char *replacement) {
+    char *found = (char*)string;
+    int   string_len      = (int)strlen(string);
+    int   match_len       = (int)strlen(match);
+    int   replacement_len = (int)strlen(replacement);
+    int   len_diff        = replacement_len - match_len;
+
+    // Allocate space.
+    unsigned count = 0;
+    while (NULL != (found = strstr(found, match))) {
+        count++;
+        found += match_len;
+    }
+    int size = string_len + count * len_diff + 1;
+    char *modified = (char*)MALLOCATE(size);
+    modified[size - 1] = 0; // NULL-terminate.
+
+    // Iterate through all matches.
+    found = (char*)string;
+    char *target = modified;
+    size_t last_end = 0;
+    if (count) {
+        while (NULL != (found = strstr(found, match))) {
+            size_t pos = found - string;
+            size_t unchanged_len = pos - last_end;
+            found += match_len;
+            memcpy(target, string + last_end, unchanged_len);
+            target += unchanged_len;
+            last_end = pos + match_len;
+            memcpy(target, replacement, replacement_len);
+            target += replacement_len;
+        }
+    }
+    size_t remaining = string_len - last_end;
+    memcpy(target, string + string_len - remaining, remaining);
+
+    return modified;
+}
+
+char*
 CFCUtil_enclose_lines(const char *text, const char *line_prefix,
                       const char *line_postfix, const char *prefix,
                       const char *postfix) {

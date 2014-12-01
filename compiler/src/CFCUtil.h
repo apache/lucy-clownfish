@@ -69,6 +69,12 @@ CFCUtil_cat(char *string, ...);
 void
 CFCUtil_trim_whitespace(char *text);
 
+/** Replace all occurrences of `match` in `string` with `replacement`.
+ */
+char*
+CFCUtil_global_replace(const char *string, const char *match,
+                       const char *replacement);
+
 /** Enclose every line in text with line_prefix and line_postfix and the
  * whole text with prefix and postfix.
  */
