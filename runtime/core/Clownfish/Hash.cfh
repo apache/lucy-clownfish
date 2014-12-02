@@ -20,8 +20,8 @@ parcel Clownfish;
  * Hashtable.
  *
  * Values are stored by reference and may be any kind of Obj. By default, keys
- * are cloned and so must belong to a class that implements Clone(); however,
- * this behavior can be changed by overridding Make_Key(), e.g. to implement
+ * are cloned and so must belong to a class that implements [](cfish:Obj.Clone); however,
+ * this behavior can be changed by overridding [](cfish:.Make_Key), e.g. to implement
  * efficient hash sets.
  */
 class Clownfish::Hash inherits Clownfish::Obj {
@@ -54,7 +54,7 @@ class Clownfish::Hash inherits Clownfish::Obj {
     Clear(Hash *self);
 
     /** Store a key-value pair.  If `key` is not already present,
-     * Make_Key() will be called to manufacture the internally used key.
+     * [](cfish:.Make_Key) will be called to manufacture the internally used key.
      */
     void
     Store(Hash *self, Obj *key, decremented Obj *value);
@@ -117,8 +117,8 @@ class Clownfish::Hash inherits Clownfish::Obj {
     Values(Hash *self);
 
     /** Create a key to be stored within the hash entry.  Implementations must
-     * supply an object which produces the same Hash_Sum() value and tests
-     * true for Equals().  By default, calls Clone().
+     * supply an object which produces the same [](cfish:Obj.Hash_Sum) value and tests
+     * true for [](cfish:Obj.Equals).  By default, calls [](cfish:Obj.Clone).
      */
     public incremented Obj*
     Make_Key(Hash *self, Obj *key, int32_t hash_sum);

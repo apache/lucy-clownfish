@@ -40,25 +40,25 @@ public class Clownfish::Obj {
     incremented Obj*
     Inc_RefCount(Obj *self);
 
-    /** NULL-safe invocation of Inc_RefCount().
+    /** NULL-safe invocation of [](cfish:.Inc_RefCount).
      *
      * @return NULL if `self` is NULL, otherwise the return value
-     * of Inc_RefCount().
+     * of [](cfish:.Inc_RefCount).
      */
     inert inline incremented Obj*
     incref(Obj *self);
 
-    /** Decrement an object's refcount, calling Destroy() if it hits 0.
+    /** Decrement an object's refcount, calling [](cfish:.Destroy) if it hits 0.
      *
      * @return the modified refcount.
      */
     uint32_t
     Dec_RefCount(Obj *self);
 
-    /** NULL-safe invocation of Dec_RefCount().
+    /** NULL-safe invocation of [](cfish:.Dec_RefCount).
      *
      * @return NULL if `self` is NULL, otherwise the return value
-     * of Dec_RefCount().
+     * of [](cfish:.Dec_RefCount).
      */
     inert inline uint32_t
     decref(Obj *self);
@@ -79,7 +79,7 @@ public class Clownfish::Obj {
     public void
     Destroy(Obj *self);
 
-    /** Invoke the Destroy() method found in `klass` on
+    /** Invoke the [](cfish:.Destroy) method found in `klass` on
      * `self`.
      *
      * TODO: Eliminate this function if we can arrive at a proper SUPER syntax.
@@ -142,7 +142,7 @@ public class Clownfish::Obj {
     To_F64(Obj *self);
 
     /** Evaluate the object in a boolean context.  By default, invokes
-     * To_I64() and returns true if it is non-zero.
+     * [](cfish:.To_I64) and returns true if it is non-zero.
      */
     public bool
     To_Bool(Obj *self);

@@ -92,7 +92,7 @@ class Clownfish::CharBuf nickname CB
      * hex:      %x32
      *
      * Note that all Clownfish Objects, including CharBufs, are printed via
-     * %o (which invokes Obj_To_String()).
+     * %o (which invokes [](cfish:Obj.To_String)).
      */
     void
     VCatF(CharBuf *self, const char *pattern, va_list args);
@@ -143,7 +143,7 @@ class Clownfish::CharBuf nickname CB
     To_String(CharBuf *self);
 
     /** Return the content of the CharBuf as String and clear the CharBuf.
-     * This is more efficient than To_String().
+     * This is more efficient than [](cfish:.To_String).
      */
     public incremented String*
     Yield_String(CharBuf *self);
