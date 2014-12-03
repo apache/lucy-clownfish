@@ -168,9 +168,6 @@ S_run_tests(CFCTest *test) {
         CFCVariable **fresh_member_vars = CFCClass_fresh_member_vars(foo);
         OK(test, fresh_member_vars[0] == thing, "fresh_member_vars[0]");
         OK(test, fresh_member_vars[1] == NULL, "fresh_member_vars[1]");
-
-        FREEMEM(fresh_methods);
-        FREEMEM(fresh_member_vars);
     }
 
     {
@@ -186,14 +183,11 @@ S_run_tests(CFCTest *test) {
 
         CFCVariable **inert_vars = CFCClass_inert_vars(foo_jr);
         OK(test, inert_vars[0] == NULL, "inert_vars[0]");
-
-        FREEMEM(fresh_member_vars);
     }
 
     {
         CFCMethod **fresh_methods = CFCClass_fresh_methods(final_foo);
         OK(test, fresh_methods[0] == NULL, "fresh_methods[0]");
-        FREEMEM(fresh_methods);
     }
 
     {
@@ -237,7 +231,8 @@ S_run_tests(CFCTest *test) {
             "    int num;\n"
             "}\n";
         CFCClass *klass = CFCTest_parse_class(test, parser, class_src);
-        CFCSymbol **member_vars = (CFCSymbol**)CFCClass_member_vars(klass);
+        CFCSymbol **member_vars
+            = (CFCSymbol**)CFCClass_fresh_member_vars(klass);
         OK(test, S_has_symbol(member_vars, "num"),
            "parsed member var");
 
@@ -277,9 +272,10 @@ S_run_tests(CFCTest *test) {
         CFCClass *klass = CFCTest_parse_class(test, parser, class_src);
 
         CFCSymbol **inert_vars  = (CFCSymbol**)CFCClass_inert_vars(klass);
-        CFCSymbol **member_vars = (CFCSymbol**)CFCClass_member_vars(klass);
+        CFCSymbol **member_vars
+            = (CFCSymbol**)CFCClass_fresh_member_vars(klass);
         CFCSymbol **functions   = (CFCSymbol**)CFCClass_functions(klass);
-        CFCSymbol **methods     = (CFCSymbol**)CFCClass_methods(klass);
+        CFCSymbol **methods     = (CFCSymbol**)CFCClass_fresh_methods(klass);
         OK(test, S_has_symbol(inert_vars, "num_dogs"), "parsed inert var");
         OK(test, S_has_symbol(inert_vars, "top_dog"), "parsed public inert var");
         OK(test, S_has_symbol(member_vars, "mom"), "parsed member var");
@@ -290,7 +286,7 @@ S_run_tests(CFCTest *test) {
         OK(test, S_has_symbol(methods, "scratch"),
            "parsed public abstract nullable method");
 
-        CFCMethod *scratch = CFCClass_method(klass, "scratch");
+        CFCMethod *scratch = CFCClass_fresh_method(klass, "scratch");
         OK(test, scratch != NULL, "find method 'scratch'");
         OK(test, CFCType_nullable(CFCMethod_get_return_type(scratch)),
            "public abstract incremented nullable flagged as nullable");

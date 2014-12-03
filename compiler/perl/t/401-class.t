@@ -178,7 +178,7 @@ my $class_content
     = 'public class Foo::Foodie nickname Foodie inherits Foo { int num; }';
 my $class = $parser->parse($class_content);
 isa_ok( $class, "Clownfish::CFC::Model::Class", "class_declaration FooJr" );
-ok( ( scalar grep { $_->micro_sym eq 'num' } @{ $class->member_vars } ),
+ok( ( scalar grep { $_->micro_sym eq 'num' } @{ $class->fresh_member_vars } ),
     "parsed member var" );
 
 $class_content = q|
@@ -217,26 +217,26 @@ ok( ( scalar grep { $_->micro_sym eq 'num_dogs' } @{ $class->inert_vars } ),
     "parsed inert var" );
 ok( ( scalar grep { $_->micro_sym eq 'top_dog' } @{ $class->inert_vars } ),
     "parsed public inert var" );
-ok( ( scalar grep { $_->micro_sym eq 'mom' } @{ $class->member_vars } ),
+ok( ( scalar grep { $_->micro_sym eq 'mom' } @{ $class->fresh_member_vars } ),
     "parsed member var" );
-ok( ( scalar grep { $_->micro_sym eq 'squishy' } @{ $class->member_vars } ),
+ok( ( scalar grep { $_->micro_sym eq 'squishy' } @{ $class->fresh_member_vars } ),
     "parsed member var" );
 ok( ( scalar grep { $_->micro_sym eq 'init' } @{ $class->functions } ),
     "parsed function" );
-ok( ( scalar grep { $_->micro_sym eq 'destroy' } @{ $class->methods } ),
+ok( ( scalar grep { $_->micro_sym eq 'destroy' } @{ $class->fresh_methods } ),
     "parsed parcel method" );
-ok( ( scalar grep { $_->micro_sym eq 'bury' } @{ $class->methods } ),
+ok( ( scalar grep { $_->micro_sym eq 'bury' } @{ $class->fresh_methods } ),
     "parsed public method" );
-ok( ( scalar grep { $_->micro_sym eq 'scratch' } @{ $class->methods } ),
+ok( ( scalar grep { $_->micro_sym eq 'scratch' } @{ $class->fresh_methods } ),
     "parsed public abstract nullable method" );
 
-for my $method ( @{ $class->methods } ) {
+for my $method ( @{ $class->fresh_methods } ) {
     if ( $method->micro_sym eq 'scratch' ) {
         ok( $method->get_return_type->nullable,
             "public abstract incremented nullable flagged as nullable" );
     }
 }
-is( ( scalar grep { $_->public } @{ $class->methods } ),
+is( ( scalar grep { $_->public } @{ $class->fresh_methods } ),
     6, "pass acl to Method constructor" );
 
 $class_content = qq|

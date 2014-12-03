@@ -264,8 +264,6 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
         bound[num_bound] = NULL;
     }
 
-    FREEMEM(fresh_methods);
-
     return bound;
 }
 
@@ -517,7 +515,6 @@ CFCPerlClass_method_metadata_code(CFCPerlClass *self) {
         }
     }
 
-    FREEMEM(fresh_methods);
     return code;
 }
 

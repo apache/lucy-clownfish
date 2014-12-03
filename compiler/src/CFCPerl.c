@@ -610,7 +610,6 @@ S_write_callbacks_c(CFCPerl *self) {
                 FREEMEM(cb_def);
             }
         }
-        FREEMEM(fresh_methods);
     }
 
     content = CFCUtil_cat(content, self->c_footer, NULL);

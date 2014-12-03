@@ -95,7 +95,7 @@ S_run_tests(CFCTest *test) {
            classes[0] != NULL && classes[1] != NULL && classes[2] != NULL
            && classes[3] == NULL,
            "classes() filters blocks");
-        CFCVariable **member_vars = CFCClass_member_vars(classes[0]);
+        CFCVariable **member_vars = CFCClass_fresh_member_vars(classes[0]);
         CFCType *foo_type = CFCVariable_get_type(member_vars[0]);
         CFCType_resolve(foo_type);
         STR_EQ(test, CFCType_get_specifier(foo_type), "stuff_Foo",

@@ -396,13 +396,11 @@ PPCODE:
         case 44: {
                 CFCMethod **fresh = CFCClass_fresh_methods(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)fresh);
-                FREEMEM(fresh);
                 break;
             }
         case 46: {
                 CFCVariable **fresh = CFCClass_fresh_member_vars(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)fresh);
-                FREEMEM(fresh);
                 break;
             }
         case 48: {

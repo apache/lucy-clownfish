@@ -139,8 +139,6 @@ S_callback_decs(CFCClass *klass) {
         }
     }
 
-    FREEMEM(fresh_methods);
-
     return cb_decs;
 }
 

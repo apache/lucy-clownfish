@@ -150,11 +150,13 @@ CFCClass**
 CFCClass_tree_to_ladder(CFCClass *self);
 
 /** Return an array of all methods implemented in this class.
+ * Must not be freed by the caller.
  */
 struct CFCMethod**
 CFCClass_fresh_methods(CFCClass *self);
 
 /** Return an array of all member variables declared in this class.
+ * Must not be freed by the caller.
  */
 struct CFCVariable**
 CFCClass_fresh_member_vars(CFCClass *self);

@@ -56,8 +56,12 @@ struct CFCClass {
     size_t num_kids;
     CFCFunction **functions;
     size_t num_functions;
+    CFCMethod **fresh_methods;
+    size_t num_fresh_meths;
     CFCMethod **methods;
     size_t num_methods;
+    CFCVariable **fresh_vars;
+    size_t num_fresh_vars;
     CFCVariable **member_vars;
     size_t num_member_vars;
     CFCVariable **inert_vars;
@@ -132,9 +136,13 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     self->num_kids        = 0;
     self->functions       = (CFCFunction**)CALLOCATE(1, sizeof(CFCFunction*));
     self->num_functions   = 0;
-    self->methods         = (CFCMethod**)CALLOCATE(1, sizeof(CFCMethod*));
+    self->fresh_methods   = (CFCMethod**)CALLOCATE(1, sizeof(CFCMethod*));
+    self->num_fresh_meths = 0;
+    self->methods         = NULL;
     self->num_methods     = 0;
-    self->member_vars     = (CFCVariable**)CALLOCATE(1, sizeof(CFCVariable*));
+    self->fresh_vars      = (CFCVariable**)CALLOCATE(1, sizeof(CFCVariable*));
+    self->num_fresh_vars  = 0;
+    self->member_vars     = NULL;
     self->num_member_vars = 0;
     self->inert_vars      = (CFCVariable**)CALLOCATE(1, sizeof(CFCVariable*));
     self->num_inert_vars  = 0;
@@ -225,7 +233,9 @@ CFCClass_destroy(CFCClass *self) {
     CFCBase_decref((CFCBase*)self->file_spec);
     S_free_cfcbase_array((CFCBase**)self->children);
     S_free_cfcbase_array((CFCBase**)self->functions);
+    S_free_cfcbase_array((CFCBase**)self->fresh_methods);
     S_free_cfcbase_array((CFCBase**)self->methods);
+    S_free_cfcbase_array((CFCBase**)self->fresh_vars);
     S_free_cfcbase_array((CFCBase**)self->member_vars);
     S_free_cfcbase_array((CFCBase**)self->inert_vars);
     FREEMEM(self->parent_class_name);
@@ -393,12 +403,12 @@ CFCClass_add_method(CFCClass *self, CFCMethod *method) {
     if (self->is_inert) {
         CFCUtil_die("Can't add_method to an inert class");
     }
-    self->num_methods++;
-    size_t size = (self->num_methods + 1) * sizeof(CFCMethod*);
-    self->methods = (CFCMethod**)REALLOCATE(self->methods, size);
-    self->methods[self->num_methods - 1]
+    self->num_fresh_meths++;
+    size_t size = (self->num_fresh_meths + 1) * sizeof(CFCMethod*);
+    self->fresh_methods = (CFCMethod**)REALLOCATE(self->fresh_methods, size);
+    self->fresh_methods[self->num_fresh_meths - 1]
         = (CFCMethod*)CFCBase_incref((CFCBase*)method);
-    self->methods[self->num_methods] = NULL;
+    self->fresh_methods[self->num_fresh_meths] = NULL;
 }
 
 void
@@ -407,12 +417,12 @@ CFCClass_add_member_var(CFCClass *self, CFCVariable *var) {
     if (self->tree_grown) {
         CFCUtil_die("Can't call add_member_var after grow_tree");
     }
-    self->num_member_vars++;
-    size_t size = (self->num_member_vars + 1) * sizeof(CFCVariable*);
-    self->member_vars = (CFCVariable**)REALLOCATE(self->member_vars, size);
-    self->member_vars[self->num_member_vars - 1]
+    self->num_fresh_vars++;
+    size_t size = (self->num_fresh_vars + 1) * sizeof(CFCVariable*);
+    self->fresh_vars = (CFCVariable**)REALLOCATE(self->fresh_vars, size);
+    self->fresh_vars[self->num_fresh_vars - 1]
         = (CFCVariable*)CFCBase_incref((CFCBase*)var);
-    self->member_vars[self->num_member_vars] = NULL;
+    self->fresh_vars[self->num_fresh_vars] = NULL;
 }
 
 void
@@ -464,15 +474,7 @@ CFCClass_method(CFCClass *self, const char *sym) {
 
 CFCMethod*
 CFCClass_fresh_method(CFCClass *self, const char *sym) {
-    CFCMethod *method = CFCClass_method(self, sym);
-    if (method) {
-        const char *class_name = CFCClass_get_class_name(self);
-        const char *meth_class_name = CFCMethod_get_class_name(method);
-        if (strcmp(class_name, meth_class_name) == 0) {
-            return method;
-        }
-    }
-    return NULL;
+    return (CFCMethod*)S_find_func((CFCFunction**)self->fresh_methods, sym);
 }
 
 void
@@ -480,11 +482,11 @@ CFCClass_resolve_types(CFCClass *self) {
     for (size_t i = 0; self->functions[i] != NULL; i++) {
         CFCFunction_resolve_types(self->functions[i]);
     }
-    for (size_t i = 0; self->methods[i] != NULL; i++) {
-        CFCMethod_resolve_types(self->methods[i]);
+    for (size_t i = 0; self->fresh_methods[i] != NULL; i++) {
+        CFCMethod_resolve_types(self->fresh_methods[i]);
     }
-    for (size_t i = 0; self->member_vars[i] != NULL; i++) {
-        CFCVariable_resolve_type(self->member_vars[i]);
+    for (size_t i = 0; self->fresh_vars[i] != NULL; i++) {
+        CFCVariable_resolve_type(self->fresh_vars[i]);
     }
     for (size_t i = 0; self->inert_vars[i] != NULL; i++) {
         CFCVariable_resolve_type(self->inert_vars[i]);
@@ -496,16 +498,16 @@ static void
 S_bequeath_member_vars(CFCClass *self) {
     for (size_t i = 0; self->children[i] != NULL; i++) {
         CFCClass *child = self->children[i];
-        size_t num_vars = self->num_member_vars + child->num_member_vars;
+        size_t num_vars = self->num_member_vars + child->num_fresh_vars;
         size_t size = (num_vars + 1) * sizeof(CFCVariable*);
         child->member_vars
             = (CFCVariable**)REALLOCATE(child->member_vars, size);
-        memmove(child->member_vars + self->num_member_vars,
-                child->member_vars,
-                child->num_member_vars * sizeof(CFCVariable*));
         memcpy(child->member_vars, self->member_vars,
                self->num_member_vars * sizeof(CFCVariable*));
-        for (size_t j = 0; self->member_vars[j] != NULL; j++) {
+        memcpy(child->member_vars + self->num_member_vars,
+               child->fresh_vars,
+               child->num_fresh_vars * sizeof(CFCVariable*));
+        for (size_t j = 0; j < num_vars; j++) {
             CFCBase_incref((CFCBase*)child->member_vars[j]);
         }
         child->num_member_vars = num_vars;
@@ -521,7 +523,7 @@ S_bequeath_methods(CFCClass *self) {
 
         // Create array of methods, preserving exact order so vtables match up.
         size_t num_methods = 0;
-        size_t max_methods = self->num_methods + child->num_methods;
+        size_t max_methods = self->num_methods + child->num_fresh_meths;
         CFCMethod **methods = (CFCMethod**)MALLOCATE(
                                   (max_methods + 1) * sizeof(CFCMethod*));
 
@@ -529,7 +531,7 @@ S_bequeath_methods(CFCClass *self) {
         for (size_t i = 0; i < self->num_methods; i++) {
             CFCMethod *method = self->methods[i];
             const char *macro_sym = CFCMethod_get_macro_sym(method);
-            CFCMethod *child_method = CFCClass_method(child, macro_sym);
+            CFCMethod *child_method = CFCClass_fresh_method(child, macro_sym);
             if (child_method) {
                 CFCMethod_override(child_method, method);
                 methods[num_methods++] = child_method;
@@ -541,8 +543,8 @@ S_bequeath_methods(CFCClass *self) {
 
         // Append novel child methods to array.  Child methods which were just
         // marked via CFCMethod_override() a moment ago are skipped.
-        for (size_t i = 0; i < child->num_methods; i++) {
-            CFCMethod *method = child->methods[i];
+        for (size_t i = 0; i < child->num_fresh_meths; i++) {
+            CFCMethod *method = child->fresh_methods[i];
             if (CFCMethod_novel(method)) {
                 methods[num_methods++] = method;
             }
@@ -566,10 +568,6 @@ S_bequeath_methods(CFCClass *self) {
                 CFCBase_incref((CFCBase*)methods[i]);
             }
         }
-        for (size_t i = 0; i < child->num_methods; i++) {
-            CFCBase_decref((CFCBase*)child->methods[i]);
-        }
-        FREEMEM(child->methods);
         child->methods     = methods;
         child->num_methods = num_methods;
 
@@ -600,14 +598,39 @@ S_family_tree_size(CFCClass *self) {
     return count;
 }
 
+static CFCBase**
+S_copy_cfcbase_array(CFCBase **array, size_t num_elems) {
+    CFCBase **copy = (CFCBase**)MALLOCATE((num_elems + 1) * sizeof(CFCBase*));
+    for (size_t i = 0; i < num_elems; i++) {
+        copy[i] = CFCBase_incref(array[i]);
+    }
+    copy[num_elems] = NULL;
+    return copy;
+}
+
 void
 CFCClass_grow_tree(CFCClass *self) {
     if (self->tree_grown) {
         CFCUtil_die("Can't call grow_tree more than once");
     }
     S_establish_ancestry(self);
+
+    // Copy fresh variabless for root class.
+    self->member_vars
+        = (CFCVariable**)S_copy_cfcbase_array((CFCBase**)self->fresh_vars,
+                                              self->num_fresh_vars);
+    self->num_member_vars = self->num_fresh_vars;
+
     S_bequeath_member_vars(self);
+
+    // Copy fresh methods for root class.
+    self->methods
+        = (CFCMethod**)S_copy_cfcbase_array((CFCBase**)self->fresh_methods,
+                                            self->num_fresh_meths);
+    self->num_methods = self->num_fresh_meths;
+
     S_bequeath_methods(self);
+
     self->tree_grown = 1;
 }
 
@@ -631,33 +654,14 @@ CFCClass_tree_to_ladder(CFCClass *self) {
     return ladder;
 }
 
-static CFCSymbol**
-S_fresh_syms(CFCClass *self, CFCSymbol **syms) {
-    const char *class_name = CFCClass_get_class_name(self);
-    size_t count = 0;
-    while (syms[count] != NULL) { count++; }
-    size_t amount = (count + 1) * sizeof(CFCSymbol*);
-    CFCSymbol **fresh = (CFCSymbol**)MALLOCATE(amount);
-    size_t num_fresh = 0;
-    for (size_t i = 0; i < count; i++) {
-        CFCSymbol *sym = syms[i];
-        const char *sym_class_name = CFCSymbol_get_class_name(sym);
-        if (strcmp(sym_class_name, class_name) == 0) {
-            fresh[num_fresh++] = sym;
-        }
-    }
-    fresh[num_fresh] = NULL;
-    return fresh;
-}
-
 CFCMethod**
 CFCClass_fresh_methods(CFCClass *self) {
-    return (CFCMethod**)S_fresh_syms(self, (CFCSymbol**)self->methods);
+    return self->fresh_methods;
 }
 
 CFCVariable**
 CFCClass_fresh_member_vars(CFCClass *self) {
-    return (CFCVariable**)S_fresh_syms(self, (CFCSymbol**)self->member_vars);
+    return self->fresh_vars;
 }
 
 CFCClass**
@@ -672,21 +676,33 @@ CFCClass_functions(CFCClass *self) {
 
 CFCMethod**
 CFCClass_methods(CFCClass *self) {
+    if (!self->tree_grown) {
+        CFCUtil_die("Can't call 'methods' before 'grow_tree'");
+    }
     return self->methods;
 }
 
 size_t
 CFCClass_num_methods(CFCClass *self) {
+    if (!self->tree_grown) {
+        CFCUtil_die("Can't call 'num_methods' before 'grow_tree'");
+    }
     return self->num_methods;
 }
 
 CFCVariable**
 CFCClass_member_vars(CFCClass *self) {
+    if (!self->tree_grown) {
+        CFCUtil_die("Can't call 'member_vars' before 'grow_tree'");
+    }
     return self->member_vars;
 }
 
 size_t
 CFCClass_num_member_vars(CFCClass *self) {
+    if (!self->tree_grown) {
+        CFCUtil_die("Can't call 'num_member_vars' before 'grow_tree'");
+    }
     return self->num_member_vars;
 }
 

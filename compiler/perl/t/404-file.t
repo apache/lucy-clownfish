@@ -69,7 +69,7 @@ my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     my $classes = $file->classes;
     is( scalar @$classes, 3, "classes() filters blocks" );
     my $class = $classes->[0];
-    my ( $foo, $bar ) = @{ $class->member_vars };
+    my ( $foo, $bar ) = @{ $class->fresh_member_vars };
     $foo->resolve_type;
     $bar->resolve_type;
     is( $foo->get_type->get_specifier,

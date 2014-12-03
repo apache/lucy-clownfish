@@ -587,8 +587,6 @@ CFCBindClass_callback_decs(CFCBindClass *self) {
         }
     }
 
-    FREEMEM(fresh_methods);
-
     return cb_decs;
 }
 
@@ -643,7 +641,6 @@ S_sub_declarations(CFCBindClass *self) {
         declarations = CFCUtil_cat(declarations, dec, "\n\n", NULL);
         FREEMEM(dec);
     }
-    FREEMEM(fresh_methods);
     return declarations;
 }
 
@@ -723,7 +720,6 @@ S_short_names(CFCBindClass *self) {
             short_names = CFCUtil_cat(short_names, "  #define ", short_imp,
                                       " ", full_imp, "\n", NULL);
         }
-        FREEMEM(fresh_methods);
 
         CFCMethod  **methods = CFCClass_methods(client);
         for (int i = 0; methods[i] != NULL; i++) {

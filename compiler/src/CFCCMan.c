@@ -248,7 +248,6 @@ S_man_create_methods(CFCClass *klass) {
 
     FREEMEM(methods_man);
     FREEMEM(novel_man);
-    FREEMEM(fresh_methods);
     return result;
 }
 
@@ -278,7 +277,6 @@ S_man_create_inherited_methods(CFCClass *klass) {
         FREEMEM(full_method_sym);
     }
 
-    FREEMEM(fresh_methods);
     return result;
 }
 
