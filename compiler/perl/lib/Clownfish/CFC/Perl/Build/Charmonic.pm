@@ -79,6 +79,7 @@ sub ACTION_charmony {
     my @command = (
         $CHARMONIZER_EXE_PATH,
         "--cc=$cc",
+        '--host=perl',
         '--enable-c',
         '--enable-perl',
     );

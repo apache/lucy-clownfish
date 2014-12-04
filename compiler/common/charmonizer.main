@@ -41,6 +41,8 @@ int main(int argc, const char **argv) {
     /* Initialize. */
     chaz_CLI *cli
         = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
+    chaz_CLI_register(cli, "host", "specify host binding language",
+                      CHAZ_CLI_ARG_REQUIRED);
     chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
     {
         int result = chaz_Probe_parse_cli_args(argc, argv, cli);
@@ -93,7 +95,7 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
                 "-DLUCY_DEBUG -pedantic -Wall -Wextra -Wno-variadic-macros"
             );
         }
-        if (chaz_CLI_defined(cli, "enable-perl")) {
+        if (strcmp(chaz_CLI_strval(cli, "host"), "perl") == 0) {
             chaz_CFlags_append(extra_cflags, "-DPERL_GCC_PEDANTIC");
         }
 

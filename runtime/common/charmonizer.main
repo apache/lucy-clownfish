@@ -97,6 +97,8 @@ int main(int argc, const char **argv) {
     /* Initialize. */
     chaz_CLI *cli
         = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
+    chaz_CLI_register(cli, "host", "specify host binding language",
+                      CHAZ_CLI_ARG_REQUIRED);
     chaz_CLI_register(cli, "disable-threads", "whether to disable threads",
                       CHAZ_CLI_NO_ARG);
     chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
@@ -185,7 +187,7 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
         else if (getenv("LUCY_DEBUG")) {
             chaz_CFlags_append(extra_cflags,
                 "-DLUCY_DEBUG -pedantic -Wall -Wextra -Wno-variadic-macros");
-            if (chaz_CLI_defined(cli, "enable-perl")) {
+            if (strcmp(chaz_CLI_strval(cli, "host"), "perl") == 0) {
                 chaz_CFlags_append(extra_cflags, "-DPERL_GCC_PEDANTIC");
             }
         }
@@ -235,7 +237,7 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     self->autogen_target
         = chaz_Util_join(dir_sep, "autogen", "hierarchy.json", NULL);
 
-    if (chaz_CLI_defined(cli, "enable-perl")) {
+    if (strcmp(chaz_CLI_strval(self->cli, "host"), "perl") == 0) {
         static const char *perl_autogen_src_files[] = {
             "boot",
             "callbacks",
@@ -355,7 +357,7 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_MakeFile_add_rule(self->makefile, "all", scratch);
     free(scratch);
 
-    if (!chaz_CLI_defined(self->cli, "enable-perl")) {
+    if (strcmp(chaz_CLI_strval(self->cli, "host"), "c") == 0) {
         cfish_MakeFile_write_c_cfc_rules(self);
     }
 
@@ -384,7 +386,7 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_MakeFile_add_static_lib(self->makefile, self->static_lib,
                                  "$(CLOWNFISH_OBJS)");
 
-    if (!chaz_CLI_defined(self->cli, "enable-perl")) {
+    if (strcmp(chaz_CLI_strval(self->cli, "host"), "c") == 0) {
         cfish_MakeFile_write_c_test_rules(self);
     }
 
