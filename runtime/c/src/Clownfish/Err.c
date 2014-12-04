@@ -28,10 +28,19 @@
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Class.h"
 
+typedef struct {
+    Err *current_error;
+    Err *thrown_error;
+    jmp_buf *current_env;
+} cfish_ErrGlobals;
+
 /* TODO: Thread safety */
-static Err *current_error;
-static Err *thrown_error;
-static jmp_buf  *current_env;
+static cfish_ErrGlobals err_globals;
+
+static cfish_ErrGlobals*
+S_get_globals() {
+    return &err_globals;
+}
 
 void
 Err_init_class(void) {
@@ -39,22 +48,26 @@ Err_init_class(void) {
 
 Err*
 Err_get_error() {
-    return current_error;
+    return S_get_globals()->current_error;
 }
 
 void
 Err_set_error(Err *error) {
-    if (current_error) {
-        DECREF(current_error);
+    cfish_ErrGlobals *globals = S_get_globals();
+
+    if (globals->current_error) {
+        DECREF(globals->current_error);
     }
-    current_error = error;
+    globals->current_error = error;
 }
 
 void
 Err_do_throw(Err *error) {
-    if (current_env) {
-        thrown_error = error;
-        longjmp(*current_env, 1);
+    cfish_ErrGlobals *globals = S_get_globals();
+
+    if (globals->current_env) {
+        globals->thrown_error = error;
+        longjmp(*globals->current_env, 1);
     }
     else {
         String *message = Err_Get_Mess(error);
@@ -89,18 +102,20 @@ Err_warn_mess(String *message) {
 
 Err*
 Err_trap(Err_Attempt_t routine, void *context) {
+    cfish_ErrGlobals *globals = S_get_globals();
+
     jmp_buf  env;
-    jmp_buf *prev_env = current_env;
-    current_env = &env;
+    jmp_buf *prev_env = globals->current_env;
+    globals->current_env = &env;
 
     if (!setjmp(env)) {
         routine(context);
     }
 
-    current_env = prev_env;
+    globals->current_env = prev_env;
 
-    Err *error = thrown_error;
-    thrown_error = NULL;
+    Err *error = globals->thrown_error;
+    globals->thrown_error = NULL;
     return error;
 }
 
