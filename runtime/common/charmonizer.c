@@ -7800,6 +7800,9 @@ S_cfh_file_callback(const char *dir, char *file, void *context);
 static int
 S_ends_with(const char *string, const char *postfix);
 
+static int
+S_need_libpthread(chaz_CLI *cli);
+
 int main(int argc, const char **argv) {
     /* Initialize. */
     chaz_CLI *cli
@@ -8084,6 +8087,9 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     if (math_library) {
         chaz_CFlags_add_external_library(link_flags, math_library);
     }
+    if (S_need_libpthread(self->cli)) {
+        chaz_CFlags_add_external_library(link_flags, "pthread");
+    }
     if (chaz_CLI_defined(self->cli, "enable-coverage")) {
         chaz_CFlags_enable_code_coverage(link_flags);
     }
@@ -8259,4 +8265,40 @@ S_ends_with(const char *string, const char *postfix) {
            && memcmp(string + len - postfix_len, postfix, postfix_len) == 0;
 }
 
+static int
+S_need_libpthread(chaz_CLI *cli) {
+    static const char source[] =
+        "#include <pthread.h>\n"
+        "\n"
+        "int main() {\n"
+        "    pthread_create(0, 0, 0, 0);\n"
+        "    pthread_key_create(0, 0);\n"
+        "    return 0;\n"
+        "}\n";
+    chaz_CFlags *temp_cflags;
+
+    if (chaz_CLI_defined(cli, "disable-threads")
+        || strcmp(chaz_CLI_strval(cli, "host"), "c") != 0
+        || chaz_HeadCheck_check_header("windows.h")
+    ) {
+        return 0;
+    }
+
+    if (!chaz_HeadCheck_check_header("pthread.h")) {
+        chaz_Util_die("pthread.h not found. Try --disable-threads.");
+    }
+
+    if (chaz_CC_test_link(source)) {
+        return 0;
+    }
+
+    temp_cflags = chaz_CC_get_temp_cflags();
+    chaz_CFlags_add_external_library(temp_cflags, "pthread");
+    if (!chaz_CC_test_link(source)) {
+        chaz_Util_die("Can't link with libpthread. Try --disable-threads.");
+    }
+    chaz_CFlags_clear(temp_cflags);
+
+    return 1;
+}
 
