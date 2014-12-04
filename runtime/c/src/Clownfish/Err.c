@@ -34,17 +34,116 @@ typedef struct {
     jmp_buf *current_env;
 } cfish_ErrGlobals;
 
-/* TODO: Thread safety */
+/**************************** No thread support ****************************/
+#ifdef CFISH_NOTHREADS
+
 static cfish_ErrGlobals err_globals;
+
+void
+Err_init_class() {
+}
 
 static cfish_ErrGlobals*
 S_get_globals() {
     return &err_globals;
 }
 
+/********************************** Windows ********************************/
+#elif defined(CHY_HAS_WINDOWS_H)
+
+#include <windows.h>
+
+static DWORD err_globals_tls_index;
+
 void
-Err_init_class(void) {
+Err_init_class() {
+    err_globals_tls_index = TlsAlloc();
+    if (err_globals_tls_index == TLS_OUT_OF_INDEXES) {
+        fprintf(stderr, "TlsAlloc failed (TLS_OUT_OF_INDEXES)\n");
+        abort();
+    }
 }
+
+static cfish_ErrGlobals*
+S_get_globals() {
+    cfish_ErrGlobals *globals
+        = (cfish_ErrGlobals*)TlsGetValue(err_globals_tls_index);
+
+    if (!globals) {
+        globals = (cfish_ErrGlobals*)CALLOCATE(1, sizeof(cfish_ErrGlobals));
+        if (!TlsSetValue(err_globals_tls_index, globals)) {
+            fprintf(stderr, "TlsSetValue failed: %d\n", GetLastError());
+            abort();
+        }
+    }
+
+    return globals;
+}
+
+BOOL WINAPI
+DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved) {
+    if (reason == DLL_THREAD_DETACH) {
+        cfish_ErrGlobals *globals
+            = (cfish_ErrGlobals*)TlsGetValue(err_globals_tls_index);
+
+        if (globals) {
+            DECREF(globals->current_error);
+            FREEMEM(globals);
+        }
+    }
+
+    return TRUE;
+}
+
+/******************************** pthreads *********************************/
+#elif defined(CHY_HAS_PTHREAD_H)
+
+#include <pthread.h>
+
+static pthread_key_t err_globals_key;
+
+static void
+S_destroy_globals(void *globals);
+
+void
+Err_init_class() {
+    int error = pthread_key_create(&err_globals_key, S_destroy_globals);
+    if (error) {
+        fprintf(stderr, "pthread_key_create failed: %d\n", error);
+        abort();
+    }
+}
+
+static cfish_ErrGlobals*
+S_get_globals() {
+    cfish_ErrGlobals *globals
+        = (cfish_ErrGlobals*)pthread_getspecific(err_globals_key);
+
+    if (!globals) {
+        globals = (cfish_ErrGlobals*)CALLOCATE(1, sizeof(cfish_ErrGlobals));
+        int error = pthread_setspecific(err_globals_key, globals);
+        if (error) {
+            fprintf(stderr, "pthread_setspecific failed: %d\n", error);
+            abort();
+        }
+    }
+
+    return globals;
+}
+
+static void
+S_destroy_globals(void *arg) {
+    cfish_ErrGlobals *globals = (cfish_ErrGlobals*)arg;
+    DECREF(globals->current_error);
+    FREEMEM(globals);
+}
+
+/****************** No support for thread-local storage ********************/
+#else
+
+#error "No support for thread-local storage."
+
+#endif
 
 Err*
 Err_get_error() {
