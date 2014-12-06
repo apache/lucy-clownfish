@@ -187,6 +187,11 @@ S_do_make_path(const char *path) {
 
 void
 CFCHierarchy_add_source_dir(CFCHierarchy *self, const char *source_dir) {
+    // Don't add directory twice.
+    for (size_t i = 0; self->sources[i] != NULL; ++i) {
+        if (strcmp(self->sources[i], source_dir) == 0) { return; }
+    }
+
     size_t n = self->num_sources;
     size_t size = (n + 2) * sizeof(char*);
     self->sources      = (char**)REALLOCATE(self->sources, size);
@@ -197,6 +202,11 @@ CFCHierarchy_add_source_dir(CFCHierarchy *self, const char *source_dir) {
 
 void
 CFCHierarchy_add_include_dir(CFCHierarchy *self, const char *include_dir) {
+    // Don't add directory twice.
+    for (size_t i = 0; self->includes[i] != NULL; ++i) {
+        if (strcmp(self->includes[i], include_dir) == 0) { return; }
+    }
+
     size_t n = self->num_includes;
     size_t size = (n + 2) * sizeof(char*);
     self->includes      = (char**)REALLOCATE(self->includes, size);
