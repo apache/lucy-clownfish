@@ -155,12 +155,11 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Class
 
 SV*
-_create(parcel, exposure_sv, class_name_sv, class_nickname_sv, name_sv, docucomment, file_spec, parent_class_name_sv, is_final, is_inert, is_abstract)
+_create(parcel, exposure_sv, class_name_sv, class_nickname_sv, docucomment, file_spec, parent_class_name_sv, is_final, is_inert, is_abstract)
     CFCParcel *parcel;
     SV *exposure_sv;
     SV *class_name_sv;
     SV *class_nickname_sv;
-    SV *name_sv;
     CFCDocuComment *docucomment;
     CFCFileSpec *file_spec;
     SV *parent_class_name_sv;
@@ -174,13 +173,11 @@ CODE:
         SvOK(class_name_sv) ? SvPV_nolen(class_name_sv) : NULL;
     const char *class_nickname =
         SvOK(class_nickname_sv) ? SvPV_nolen(class_nickname_sv) : NULL;
-    const char *name =
-        SvOK(name_sv) ? SvPV_nolen(name_sv) : NULL;
     const char *parent_class_name =
         SvOK(parent_class_name_sv) ? SvPV_nolen(parent_class_name_sv) : NULL;
     CFCClass *self
         = CFCClass_create(parcel, exposure, class_name, class_nickname,
-                          name, docucomment, file_spec, parent_class_name,
+                          docucomment, file_spec, parent_class_name,
                           is_final, is_inert, is_abstract);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
@@ -279,9 +276,11 @@ void
 _set_or_get(self, ...)
     CFCClass *self;
 ALIAS:
-    get_nickname          = 2
-    set_parent            = 5
-    get_parent            = 6
+    get_exposure          = 2
+    get_name              = 4
+    get_nickname          = 6
+    set_parent            = 7
+    get_parent            = 8
     get_path_part         = 10
     get_parent_class_name = 12
     final                 = 14
@@ -306,11 +305,21 @@ PPCODE:
 {
     START_SET_OR_GET_SWITCH
         case 2: {
+                const char *value = CFCClass_get_exposure(self);
+                retval = newSVpvn(value, strlen(value));
+            }
+            break;
+        case 4: {
+                const char *value = CFCClass_get_name(self);
+                retval = newSVpvn(value, strlen(value));
+            }
+            break;
+        case 6: {
                 const char *value = CFCClass_get_nickname(self);
                 retval = newSVpvn(value, strlen(value));
             }
             break;
-        case 5: {
+        case 7: {
                 CFCClass *parent = NULL;
                 if (SvOK(ST(1))
                     && sv_derived_from(ST(1), "Clownfish::CFC::Model::Class")
@@ -321,7 +330,7 @@ PPCODE:
                 CFCClass_set_parent(self, parent);
                 break;
             }
-        case 6: {
+        case 8: {
                 CFCClass *parent = CFCClass_get_parent(self);
                 retval = S_cfcbase_to_perlref(parent);
                 break;

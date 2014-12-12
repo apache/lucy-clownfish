@@ -242,7 +242,7 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || !CFCSymbol_public((CFCSymbol*)klass)) {
+        if (CFCClass_included(klass) || CFCClass_public(klass)) {
             continue;
         }
 
@@ -285,13 +285,13 @@ CFCCHtml_create_index_doc(CFCCHtml *self, CFCParcel *parcel,
     for (size_t i = 0; classes[i] != NULL; i++) {
         CFCClass *klass = classes[i];
         if (strcmp(CFCClass_get_prefix(klass), prefix) != 0
-            || !CFCSymbol_public((CFCSymbol*)klass)
+            || !CFCClass_public(klass)
         ) {
             continue;
         }
 
         const char *struct_sym = CFCClass_full_struct_sym(klass);
-        const char *class_name = CFCClass_get_class_name(klass);
+        const char *class_name = CFCClass_get_name(klass);
         class_list
             = CFCUtil_cat(class_list, "<li><a href=\"", struct_sym, ".html\">",
                           class_name, "</a></li>\n", NULL);
@@ -325,7 +325,7 @@ CFCCHtml_create_index_doc(CFCCHtml *self, CFCParcel *parcel,
 
 char*
 CFCCHtml_create_html_doc(CFCCHtml *self, CFCClass *klass) {
-    const char *class_name     = CFCClass_get_class_name(klass);
+    const char *class_name     = CFCClass_get_name(klass);
     char *title
         = CFCUtil_sprintf("%s " UTF8_NDASH " C API Documentation", class_name);
     char *header = CFCUtil_global_replace(self->header, "{title}", title);
@@ -343,7 +343,7 @@ char*
 CFCCHtml_create_html_body(CFCClass *klass) {
     CFCParcel  *parcel         = CFCClass_get_parcel(klass);
     const char *parcel_name    = CFCParcel_get_name(parcel);
-    const char *class_name     = CFCClass_get_class_name(klass);
+    const char *class_name     = CFCClass_get_name(klass);
     const char *class_nickname = CFCClass_get_nickname(klass);
     const char *class_var      = CFCClass_full_class_var(klass);
     const char *struct_sym     = CFCClass_full_struct_sym(klass);
@@ -418,8 +418,8 @@ CFCCHtml_create_html_body(CFCClass *klass) {
 
 static int
 S_compare_class_name(const void *va, const void *vb) {
-    const char *a = CFCClass_get_class_name(*(CFCClass**)va);
-    const char *b = CFCClass_get_class_name(*(CFCClass**)vb);
+    const char *a = CFCClass_get_name(*(CFCClass**)va);
+    const char *b = CFCClass_get_name(*(CFCClass**)vb);
 
     return strcmp(a, b);
 }
@@ -437,7 +437,7 @@ S_index_filename(CFCParcel *parcel) {
 
 static char*
 S_html_create_name(CFCClass *klass) {
-    const char     *class_name = CFCClass_get_class_name(klass);
+    const char     *class_name = CFCClass_get_name(klass);
     char           *md         = CFCUtil_strdup(class_name);
     CFCDocuComment *docucom    = CFCClass_get_docucomment(klass);
 
@@ -527,7 +527,7 @@ S_html_create_methods(CFCClass *klass) {
          ancestor;
          ancestor = CFCClass_get_parent(ancestor)
     ) {
-        const char *class_name = CFCClass_get_class_name(ancestor);
+        const char *class_name = CFCClass_get_name(ancestor);
         // Exclude methods inherited from Clownfish::Obj
         if (ancestor != klass && strcmp(class_name, "Clownfish::Obj") == 0) {
             break;
@@ -564,7 +564,7 @@ static char*
 S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
     CFCMethod  **fresh_methods = CFCClass_fresh_methods(klass);
     const char  *prefix        = CFCClass_get_prefix(klass);
-    const char  *ancestor_name = CFCClass_get_class_name(ancestor);
+    const char  *ancestor_name = CFCClass_get_name(ancestor);
     char        *result        = CFCUtil_strdup("");
 
     for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
@@ -741,11 +741,11 @@ S_html_create_inheritance(CFCClass *klass) {
 
     if (!ancestor) { return result; }
 
-    const char *class_name = CFCClass_get_class_name(klass);
+    const char *class_name = CFCClass_get_name(klass);
     result = CFCUtil_cat(result, "<h2>Inheritance</h2>\n<p>", class_name,
                          NULL);
     while (ancestor) {
-        const char *ancestor_name = CFCClass_get_class_name(ancestor);
+        const char *ancestor_name = CFCClass_get_name(ancestor);
         const char *ancestor_sym  = CFCClass_full_struct_sym(ancestor);
         result = CFCUtil_cat(result, " is a <a href=\"", ancestor_sym,
                              ".html\">", ancestor_name, "</a>", NULL);

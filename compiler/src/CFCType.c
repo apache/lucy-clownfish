@@ -30,7 +30,6 @@
 #include "CFCType.h"
 #include "CFCClass.h"
 #include "CFCParcel.h"
-#include "CFCSymbol.h"
 #include "CFCUtil.h"
 
 struct CFCType {
@@ -199,7 +198,7 @@ CFCType_new_object(int flags, CFCParcel *parcel, const char *specifier,
         }
         small_specifier++;
     }
-    if (!CFCSymbol_validate_class_name_component(small_specifier)) {
+    if (!CFCClass_validate_class_name_component(small_specifier)) {
         CFCUtil_die("Invalid specifier: '%s'", specifier);
     }
 

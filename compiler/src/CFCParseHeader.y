@@ -52,9 +52,9 @@ S_start_class(CFCParser *state, CFCDocuComment *docucomment, char *exposure,
     CFCParser_set_class_name(state, class_name);
     CFCParser_set_class_final(state, is_final);
     CFCClass *klass = CFCClass_create(CFCParser_get_parcel(state), exposure,
-                                      class_name, class_nickname, NULL,
-                                      docucomment, file_spec, inheritance,
-                                      is_final, is_inert, is_abstract);
+                                      class_name, class_nickname, docucomment,
+                                      file_spec, inheritance, is_final,
+                                      is_inert, is_abstract);
     CFCBase_decref((CFCBase*)docucomment);
     return klass;
 }

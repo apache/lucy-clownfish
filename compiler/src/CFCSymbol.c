@@ -54,44 +54,6 @@ S_validate_exposure(const char *exposure) {
 }
 
 static int
-S_validate_class_name(const char *class_name) {
-    // The last component must contain lowercase letters (for now).
-    const char *last_colon = strrchr(class_name, ':');
-    const char *substring = last_colon ? last_colon + 1 : class_name;
-    for (;;substring++) {
-        if (*substring == 0)          { return false; }
-        else if (*substring == ':')   { return false; }
-        else if (islower(*substring)) { break; }
-    }
-
-    // Must be UpperCamelCase, separated by "::".
-    const char *ptr = class_name;
-    if (!isupper(*ptr)) { return false; }
-    while (*ptr != 0) {
-        if (*ptr == 0) { break; }
-        else if (*ptr == ':') {
-            ptr++;
-            if (*ptr != ':') { return false; }
-            ptr++;
-            if (!isupper(*ptr)) { return false; }
-            ptr++;
-        }
-        else if (!isalnum(*ptr)) { return false; }
-        else { ptr++; }
-    }
-
-    return true;
-}
-
-int
-CFCSymbol_validate_class_name_component(const char *name) {
-    if (!name || !strlen(name)) { return false; }
-    if (!S_validate_class_name(name)) { return false; }
-    if (strchr(name, ':') != NULL) { return false; }
-    return true;
-}
-
-static int
 S_validate_identifier(const char *identifier) {
     const char *ptr = identifier;
     if (!isalpha(*ptr) && *ptr != '_') { return false; }
@@ -109,7 +71,7 @@ CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *class_name,
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid exposure: '%s'", exposure ? exposure : "[NULL]");
     }
-    if (class_name && !S_validate_class_name(class_name)) {
+    if (class_name && !CFCClass_validate_class_name(class_name)) {
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid class_name: '%s'", class_name);
     }

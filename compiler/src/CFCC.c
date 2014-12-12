@@ -216,8 +216,7 @@ CFCC_link_text(CFCUri *uri_obj, CFCClass *klass) {
                     CFCUtil_warn("URI class not found: %s", full_struct_sym);
                 }
                 else {
-                    const char *class_name
-                        = CFCClass_get_class_name(uri_class);
+                    const char *class_name = CFCClass_get_name(uri_class);
                     link_text = CFCUtil_strdup(class_name);
                 }
             }

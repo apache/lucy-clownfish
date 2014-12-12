@@ -23,9 +23,10 @@
   #define false 0
 #endif
 
-#define CFC_NEED_SYMBOL_STRUCT_DEF
-#include "CFCSymbol.h"
+#define CFC_NEED_BASE_STRUCT_DEF
+#include "CFCBase.h"
 #include "CFCClass.h"
+#include "CFCSymbol.h"
 #include "CFCFunction.h"
 #include "CFCMethod.h"
 #include "CFCParcel.h"
@@ -48,8 +49,10 @@ static void
 S_register(CFCClass *self);
 
 struct CFCClass {
-    CFCSymbol symbol;
+    CFCBase base;
     struct CFCParcel *parcel;
+    char *exposure;
+    char *name;
     char *nickname;
     int tree_grown;
     CFCDocuComment *docucomment;
@@ -106,14 +109,64 @@ static const CFCMeta CFCCLASS_META = {
 
 CFCClass*
 CFCClass_create(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *nickname,
-                const char *name, CFCDocuComment *docucomment,
-                CFCFileSpec *file_spec, const char *parent_class_name,
-                int is_final, int is_inert, int is_abstract) {
+                const char *name, const char *nickname,
+                CFCDocuComment *docucomment, CFCFileSpec *file_spec,
+                const char *parent_class_name, int is_final, int is_inert,
+                int is_abstract) {
     CFCClass *self = (CFCClass*)CFCBase_allocate(&CFCCLASS_META);
-    return CFCClass_do_create(self, parcel, exposure, class_name, nickname,
-                              name, docucomment, file_spec, parent_class_name,
+    return CFCClass_do_create(self, parcel, exposure, name, nickname,
+                              docucomment, file_spec, parent_class_name,
                               is_final, is_inert, is_abstract);
+}
+
+static int
+S_validate_exposure(const char *exposure) {
+    if (!exposure) { return false; }
+    if (strcmp(exposure, "public")
+        && strcmp(exposure, "parcel")
+        && strcmp(exposure, "private")
+       ) {
+        return false;
+    }
+    return true;
+}
+
+int
+CFCClass_validate_class_name(const char *class_name) {
+    // The last component must contain lowercase letters (for now).
+    const char *last_colon = strrchr(class_name, ':');
+    const char *substring = last_colon ? last_colon + 1 : class_name;
+    for (;;substring++) {
+        if (*substring == 0)          { return false; }
+        else if (*substring == ':')   { return false; }
+        else if (islower(*substring)) { break; }
+    }
+
+    // Must be UpperCamelCase, separated by "::".
+    const char *ptr = class_name;
+    if (!isupper(*ptr)) { return false; }
+    while (*ptr != 0) {
+        if (*ptr == 0) { break; }
+        else if (*ptr == ':') {
+            ptr++;
+            if (*ptr != ':') { return false; }
+            ptr++;
+            if (!isupper(*ptr)) { return false; }
+            ptr++;
+        }
+        else if (!isalnum(*ptr)) { return false; }
+        else { ptr++; }
+    }
+
+    return true;
+}
+
+int
+CFCClass_validate_class_name_component(const char *name) {
+    if (!name || !strlen(name)) { return false; }
+    if (!CFCClass_validate_class_name(name)) { return false; }
+    if (strchr(name, ':') != NULL) { return false; }
+    return true;
 }
 
 static int
@@ -129,53 +182,57 @@ S_validate_nickname(const char *nickname) {
     }
 
     // Same as one component of a class name.
-    return CFCSymbol_validate_class_name_component(nickname);
+    return CFCClass_validate_class_name_component(nickname);
 }
 
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
-                   const char *exposure, const char *class_name,
-                   const char *nickname, const char *name,
-                   CFCDocuComment *docucomment, CFCFileSpec *file_spec,
-                   const char *parent_class_name, int is_final, int is_inert,
-                   int is_abstract) {
+                   const char *exposure, const char *name,
+                   const char *nickname, CFCDocuComment *docucomment,
+                   CFCFileSpec *file_spec, const char *parent_class_name,
+                   int is_final, int is_inert, int is_abstract) {
     CFCUTIL_NULL_CHECK(parcel);
-    CFCUTIL_NULL_CHECK(class_name);
-    exposure = exposure  ? exposure  : "parcel";
-    name     = name ? name : "class";
+    CFCUTIL_NULL_CHECK(name);
+    exposure = exposure ? exposure  : "parcel";
+
+    // Validate.
+    if (!S_validate_exposure(exposure)) {
+        CFCBase_decref((CFCBase*)self);
+        CFCUtil_die("Invalid exposure: '%s'", exposure);
+    }
+    if (!CFCClass_validate_class_name(name)) {
+        CFCBase_decref((CFCBase*)self);
+        CFCUtil_die("Invalid name: '%s'", name);
+    }
+
+    const char *last_colon = strrchr(name, ':');
+    const char *struct_sym = last_colon ? last_colon + 1 : name;
 
     // Derive nickname if necessary, then validate.
     const char *real_nickname = NULL;
-    if (class_name) {
-        if (nickname) {
-            real_nickname = nickname;
-        }
-        else {
-            const char *last_colon = strrchr(class_name, ':');
-            real_nickname = last_colon ? last_colon + 1 : class_name;
-        }
-    }
-    else if (nickname) {
-        // Sanity check nickname without class_name.
-        CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Can't supply nickname without class_name");
+    if (nickname) {
+        real_nickname = nickname;
     }
     else {
-        real_nickname = NULL;
+        real_nickname = struct_sym;
     }
-    if (real_nickname && !S_validate_nickname(real_nickname)) {
+    if (!S_validate_nickname(real_nickname)) {
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid nickname: '%s'", real_nickname);
     }
 
-    CFCSymbol_init((CFCSymbol*)self, exposure, class_name, name);
+    // Default parent class name is "Clownfish::Obj".
     if (!is_inert
         && !parent_class_name
-        && strcmp(class_name, "Clownfish::Obj") != 0
+        && strcmp(name, "Clownfish::Obj") != 0
        ) {
         parent_class_name = "Clownfish::Obj";
     }
+
+    // Assign.
     self->parcel          = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
+    self->exposure        = CFCUtil_strdup(exposure);
+    self->name            = CFCUtil_strdup(name);
     self->nickname        = CFCUtil_strdup(real_nickname);
     self->tree_grown      = false;
     self->parent          = NULL;
@@ -199,33 +256,30 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     self->file_spec = (CFCFileSpec*)CFCBase_incref((CFCBase*)file_spec);
 
     // Cache several derived symbols.
-    const char *last_colon = strrchr(class_name, ':');
-    self->struct_sym = last_colon
-                       ? CFCUtil_strdup(last_colon + 1)
-                       : CFCUtil_strdup(class_name);
+
     const char *prefix = CFCClass_get_prefix(self);
-    size_t struct_sym_len = strlen(self->struct_sym);
-    self->short_class_var = (char*)MALLOCATE(struct_sym_len + 1);
+    self->struct_sym        = CFCUtil_strdup(struct_sym);
+    self->full_struct_sym   = CFCUtil_sprintf("%s%s", prefix, struct_sym);
+    self->ivars_struct      = CFCUtil_sprintf("%sIVARS", struct_sym);
+    self->full_ivars_struct = CFCUtil_sprintf("%s%s", prefix,
+                                              self->ivars_struct);
+    self->ivars_func        = CFCUtil_sprintf("%s_IVARS", self->nickname);
+    self->full_ivars_func   = CFCUtil_sprintf("%s%s", prefix,
+                                              self->ivars_func);
+    self->full_ivars_offset = CFCUtil_sprintf("%s_OFFSET",
+                                              self->full_ivars_func);
+
+    const char *PREFIX = CFCClass_get_PREFIX(self);
+    size_t struct_sym_len = strlen(struct_sym);
+    char *short_class_var = (char*)MALLOCATE(struct_sym_len + 1);
     size_t i;
     for (i = 0; i < struct_sym_len; i++) {
-        self->short_class_var[i] = toupper(self->struct_sym[i]);
+        short_class_var[i] = toupper(struct_sym[i]);
     }
-    self->short_class_var[struct_sym_len] = '\0';
-    self->full_struct_sym   = CFCUtil_sprintf("%s%s", prefix, self->struct_sym);
-    self->ivars_struct      = CFCUtil_sprintf("%sIVARS", self->struct_sym);
-    self->full_ivars_struct = CFCUtil_sprintf("%sIVARS", self->full_struct_sym);
-    self->ivars_func        = CFCUtil_sprintf("%s_IVARS",
-                                              CFCClass_get_nickname(self));
-    self->full_ivars_func   = CFCUtil_sprintf("%s%s_IVARS", prefix,
-                                              CFCClass_get_nickname(self));
-    self->full_ivars_offset = CFCUtil_sprintf("%s_OFFSET", self->full_ivars_func);
-    size_t full_struct_sym_len = strlen(self->full_struct_sym);
-    self->full_class_var = (char*)MALLOCATE(full_struct_sym_len + 1);
-    for (i = 0; self->full_struct_sym[i] != '\0'; i++) {
-        self->full_class_var[i] = toupper(self->full_struct_sym[i]);
-    }
-    self->full_class_var[i] = '\0';
-    self->privacy_symbol = CFCUtil_sprintf("C_%s", self->full_class_var);
+    short_class_var[struct_sym_len] = '\0';
+    self->short_class_var = short_class_var;
+    self->full_class_var  = CFCUtil_sprintf("%s%s", PREFIX, short_class_var);
+    self->privacy_symbol  = CFCUtil_sprintf("C_%s", self->full_class_var);
 
     // Build the relative path to the autogenerated C header file.
     if (file_spec) {
@@ -240,10 +294,11 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     self->is_inert    = !!is_inert;
     self->is_abstract = !!is_abstract;
 
+    // Check for include flag mismatch.
     if (!CFCClass_included(self) && CFCParcel_included(parcel)) {
         CFCUtil_die("Class %s from source dir found in parcel %s from"
                     " include dir",
-                    class_name, CFCParcel_get_name(parcel));
+                    name, CFCParcel_get_name(parcel));
     }
 
     // Skip class if it's from an include dir and the parcel was already
@@ -277,6 +332,8 @@ S_free_cfcbase_array(CFCBase **array) {
 void
 CFCClass_destroy(CFCClass *self) {
     CFCBase_decref((CFCBase*)self->parcel);
+    FREEMEM(self->exposure);
+    FREEMEM(self->name);
     FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->docucomment);
     CFCBase_decref((CFCBase*)self->parent);
@@ -300,7 +357,7 @@ CFCClass_destroy(CFCClass *self) {
     FREEMEM(self->full_class_var);
     FREEMEM(self->privacy_symbol);
     FREEMEM(self->include_h);
-    CFCSymbol_destroy((CFCSymbol*)self);
+    CFCBase_destroy((CFCBase*)self);
 }
 
 static void
@@ -317,31 +374,29 @@ S_register(CFCClass *self) {
         registry_cap = new_cap;
     }
 
-    CFCParcel  *parcel     = CFCClass_get_parcel(self);
-    const char *prefix     = CFCParcel_get_prefix(parcel);
-    const char *class_name = CFCClass_get_class_name(self);
-    const char *nickname   = CFCClass_get_nickname(self);
-    const char *key        = self->full_struct_sym;
+    const char *prefix   = CFCParcel_get_prefix(self->parcel);
+    const char *name     = self->name;
+    const char *nickname = self->nickname;
+    const char *key      = self->full_struct_sym;
 
     for (size_t i = 0; i < registry_size; i++) {
-        CFCClass   *other            = registry[i].klass;
-        CFCParcel  *other_parcel     = CFCClass_get_parcel(other);
-        const char *other_prefix     = CFCParcel_get_prefix(other_parcel);
-        const char *other_class_name = CFCClass_get_class_name(other);
-        const char *other_nickname   = CFCClass_get_nickname(other);
+        CFCClass   *other          = registry[i].klass;
+        const char *other_prefix   = CFCParcel_get_prefix(other->parcel);
+        const char *other_name     = other->name;
+        const char *other_nickname = other->nickname;
 
-        if (strcmp(class_name, other_class_name) == 0) {
-            CFCUtil_die("Two classes with name %s", class_name);
+        if (strcmp(name, other_name) == 0) {
+            CFCUtil_die("Two classes with name %s", name);
         }
         if (strcmp(registry[i].key, key) == 0) {
             CFCUtil_die("Class name conflict between %s and %s",
-                        class_name, other_class_name);
+                        name, other_name);
         }
         if (strcmp(prefix, other_prefix) == 0
             && strcmp(nickname, other_nickname) == 0
            ) {
             CFCUtil_die("Class nickname conflict between %s and %s",
-                        class_name, other_class_name);
+                        name, other_name);
         }
     }
 
@@ -410,12 +465,10 @@ CFCClass_add_child(CFCClass *self, CFCClass *child) {
         CFCUtil_die("Can't call add_child after grow_tree");
     }
     if (self->is_inert) {
-        CFCUtil_die("Can't inherit from inert class %s",
-                    CFCClass_get_class_name(self));
+        CFCUtil_die("Can't inherit from inert class %s", self->name);
     }
     if (child->is_inert) {
-        CFCUtil_die("Inert class %s can't inherit",
-                    CFCClass_get_class_name(child));
+        CFCUtil_die("Inert class %s can't inherit", child->name);
     }
     self->num_kids++;
     size_t size = (self->num_kids + 1) * sizeof(CFCClass*);
@@ -430,8 +483,7 @@ CFCClass_add_child(CFCClass *self, CFCClass *child) {
     if (!CFCParcel_has_prereq(child_parcel, parcel)) {
         CFCUtil_die("Class '%s' inherits from '%s', but parcel '%s' is not a"
                     " prerequisite of '%s'",
-                    CFCClass_get_class_name(child),
-                    CFCClass_get_class_name(self),
+                    child->name, self->name,
                     CFCParcel_get_name(parcel),
                     CFCParcel_get_name(child_parcel));
     }
@@ -872,9 +924,9 @@ CFCClass_include_h(CFCClass *self) {
     return self->include_h;
 }
 
-struct CFCDocuComment*
-CFCClass_get_docucomment(CFCClass *self) {
-    return self->docucomment;
+CFCParcel*
+CFCClass_get_parcel(CFCClass *self) {
+    return self->parcel;
 }
 
 const char*
@@ -893,12 +945,22 @@ CFCClass_get_PREFIX(CFCClass *self) {
 }
 
 const char*
-CFCClass_get_class_name(CFCClass *self) {
-    return CFCSymbol_get_class_name((CFCSymbol*)self);
+CFCClass_get_exposure(CFCClass *self) {
+    return self->exposure;
 }
 
-CFCParcel*
-CFCClass_get_parcel(CFCClass *self) {
-    return self->parcel;
+int
+CFCClass_public(CFCClass *self) {
+    return !strcmp(self->exposure, "public");
+}
+
+const char*
+CFCClass_get_name(CFCClass *self) {
+    return self->name;
+}
+
+struct CFCDocuComment*
+CFCClass_get_docucomment(CFCClass *self) {
+    return self->docucomment;
 }
 

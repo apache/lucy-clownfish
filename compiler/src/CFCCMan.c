@@ -76,9 +76,9 @@ S_man_escape(const char *content);
 
 char*
 CFCCMan_create_man_page(CFCClass *klass) {
-    if (!CFCSymbol_public((CFCSymbol*)klass)) { return NULL; }
+    if (!CFCClass_public(klass)) { return NULL; }
 
-    const char *class_name = CFCClass_get_class_name(klass);
+    const char *class_name = CFCClass_get_name(klass);
 
     // Create NAME.
     char *name = S_man_create_name(klass);
@@ -124,7 +124,7 @@ CFCCMan_create_man_page(CFCClass *klass) {
 static char*
 S_man_create_name(CFCClass *klass) {
     char *result = CFCUtil_strdup(".SH NAME\n");
-    result = CFCUtil_cat(result, CFCClass_get_class_name(klass), NULL);
+    result = CFCUtil_cat(result, CFCClass_get_name(klass), NULL);
 
     const char *raw_brief = NULL;
     CFCDocuComment *docucom = CFCClass_get_docucomment(klass);
@@ -201,7 +201,7 @@ S_man_create_methods(CFCClass *klass) {
          ancestor;
          ancestor = CFCClass_get_parent(ancestor)
     ) {
-        const char *class_name = CFCClass_get_class_name(ancestor);
+        const char *class_name = CFCClass_get_name(ancestor);
         // Exclude methods inherited from Clownfish::Obj
         if (ancestor != klass && strcmp(class_name, "Clownfish::Obj") == 0) {
             break;
@@ -235,7 +235,7 @@ S_man_create_methods(CFCClass *klass) {
 static char*
 S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
     CFCMethod  **fresh_methods = CFCClass_fresh_methods(klass);
-    const char  *ancestor_name = CFCClass_get_class_name(ancestor);
+    const char  *ancestor_name = CFCClass_get_name(ancestor);
     char        *result        = CFCUtil_strdup("");
 
     for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
@@ -398,10 +398,10 @@ S_man_create_inheritance(CFCClass *klass) {
 
     if (!ancestor) { return result; }
 
-    const char *class_name = CFCClass_get_class_name(klass);
+    const char *class_name = CFCClass_get_name(klass);
     result = CFCUtil_cat(result, ".SH INHERITANCE\n", class_name, NULL);
     while (ancestor) {
-        const char *ancestor_name = CFCClass_get_class_name(ancestor);
+        const char *ancestor_name = CFCClass_get_name(ancestor);
         result = CFCUtil_cat(result, " is a ", ancestor_name, NULL);
         ancestor = CFCClass_get_parent(ancestor);
     }

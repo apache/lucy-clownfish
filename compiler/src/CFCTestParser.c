@@ -284,7 +284,7 @@ S_run_tests(CFCTest *test) {
             char *class_string = CFCUtil_sprintf("class %s { }", class_name);
             CFCClass *klass
                 = CFCTest_parse_class(test, parser, class_string);
-            STR_EQ(test, CFCClass_get_class_name(klass), class_name,
+            STR_EQ(test, CFCClass_get_name(klass), class_name,
                    "class_name: %s", class_name);
             FREEMEM(class_string);
             CFCBase_decref((CFCBase*)klass);

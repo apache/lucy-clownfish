@@ -106,7 +106,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
 
 {
     package Clownfish::CFC::Model::Class;
-    BEGIN { push our @ISA, 'Clownfish::CFC::Model::Symbol' }
+    BEGIN { push our @ISA, 'Clownfish::CFC::Base' }
     use Carp;
     use Config;
     use Clownfish::CFC::Util qw(
@@ -156,8 +156,8 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
             = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
         return _create(
             @args{
-                qw( parcel exposure class_name nickname name docucomment
-                    file_spec parent_class_name final inert abstract )
+                qw( parcel exposure class_name nickname docucomment
+                    file_spec parent_class_name final inert abstract)
                 }
         );
     }

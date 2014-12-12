@@ -57,7 +57,7 @@ CFCPerlConstructor_init(CFCPerlConstructor *self, CFCClass *klass,
                         const char *alias, const char *initializer) {
     CFCUTIL_NULL_CHECK(alias);
     CFCUTIL_NULL_CHECK(klass);
-    const char *class_name = CFCClass_get_class_name(klass);
+    const char *class_name = CFCClass_get_name(klass);
     initializer = initializer ? initializer : "init";
 
     // Find the implementing function.

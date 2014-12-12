@@ -43,13 +43,6 @@ struct CFCSymbol {
 };
 #endif
 
-/** Return true if the supplied string is comprised solely of alphanumeric
- * characters, begins with an uppercase letter, and contains at least one
- * lower case letter.
- */
-int
-CFCSymbol_validate_class_name_component(const char *name);
-
 /**
  * @param exposure The scope in which the symbol is exposed.  Must be
  * 'public', 'parcel', 'private', or 'local'.

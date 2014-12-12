@@ -142,7 +142,7 @@ SKIP: {
         for (qw( foo fooBar Foo_Bar FOOBAR 1Foo 1FOO ));
 }
 
-is( $parser->parse("class $_ { }")->get_class_name, $_, "class_name: $_" )
+is( $parser->parse("class $_ { }")->get_name, $_, "class_name: $_" )
     for (qw( Foo Foo::FooJr Foo::FooJr::FooIII Foo::FooJr::FooIII::Foo4th ));
 
 SKIP: {

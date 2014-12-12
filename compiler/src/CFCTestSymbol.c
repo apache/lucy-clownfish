@@ -102,7 +102,7 @@ S_run_tests(CFCTest *test) {
         CFCParcel_register(eep_parcel);
         CFCClass *ork
             = CFCClass_create(eep_parcel, NULL, "Op::Ork", NULL, NULL, NULL,
-                              NULL, NULL, false, false, false);
+                              NULL, false, false, false);
         CFCSymbol *eep = CFCSymbol_new("parcel", "Op::Ork", "ah_ah");
         char *short_sym = CFCSymbol_short_sym(eep, ork);
         STR_EQ(test, short_sym, "Ork_ah_ah", "short_sym");

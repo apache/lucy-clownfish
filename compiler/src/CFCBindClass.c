@@ -268,7 +268,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
 char*
 CFCBindClass_to_c_data(CFCBindClass *self) {
     CFCClass *client = self->client;
-    const char *class_name = CFCClass_get_class_name(client);
+    const char *class_name = CFCClass_get_name(client);
 
     if (CFCClass_inert(client)) {
         return CFCUtil_strdup("");
@@ -475,7 +475,7 @@ CFCBindClass_spec_def(CFCBindClass *self) {
     CFCClass *client = self->client;
 
     CFCClass   *parent       = CFCClass_get_parent(client);
-    const char *class_name   = CFCClass_get_class_name(client);
+    const char *class_name   = CFCClass_get_name(client);
     const char *class_var    = CFCClass_full_class_var(client);
     const char *struct_sym   = CFCClass_full_struct_sym(client);
     const char *ivars_struct = CFCClass_full_ivars_struct(client);

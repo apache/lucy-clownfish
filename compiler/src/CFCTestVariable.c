@@ -79,7 +79,7 @@ S_run_tests(CFCTest *test) {
         CFCClass *ork
             = CFCClass_create(neato_parcel, NULL,
                               "Crustacean::Lobster::LobsterClaw", "LobClaw",
-                              NULL, NULL, NULL, NULL, false, false, false);
+                              NULL, NULL, NULL, false, false, false);
 
         char *global_c = CFCVariable_global_c(var, ork);
         STR_EQ(test, global_c, "neato_Foo* neato_LobClaw_foo", "global_c");

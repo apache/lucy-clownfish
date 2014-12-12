@@ -38,16 +38,27 @@ struct CFCMethod;
 struct CFCVariable;
 struct CFCFileSpec;
 
+/** Return true if the string is a valid class name.
+ */
+int
+CFCClass_validate_class_name(const char *class_name);
+
+/** Return true if the supplied string is comprised solely of alphanumeric
+ * characters, begins with an uppercase letter, and contains at least one
+ * lower case letter.
+ */
+int
+CFCClass_validate_class_name_component(const char *name);
+
 /** Create and register a quasi-singleton.  May only be called once for each
  * unique parcel/class_name combination.
  *
  * @param parcel A Clownfish::CFC::Model::Parcel.
- * @param exposure See Clownfish::CFC::Model::Symbol.
- * @param class_name See Clownfish::CFC::Model::Symbol.
- * @param class_nickname The C nickname associated with the supplied class
+ * @param exposure The scope of the class. May be NULL.
+ * @param name The class name.
+ * @param nickname The C nickname associated with the supplied class
  * name.  If not supplied, will be derived if possible from C<class_name> by
  * extracting the last class name component.
- * @param name Defaults to "class".
  * @param docucomment An optional Clownfish::CFC::Model::DocuComment attached
  * to this class.
  * @param file_spec - Clownfish::CFC::Model::FileSpec of the file in which
@@ -61,16 +72,15 @@ struct CFCFileSpec;
  */
 CFCClass*
 CFCClass_create(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *nickname,
-                const char *name, struct CFCDocuComment *docucomment,
+                const char *name, const char *nickname,
+                struct CFCDocuComment *docucomment,
                 struct CFCFileSpec *file_spec, const char *parent_class_name,
                 int is_final, int is_inert, int is_abstract);
 
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
-                   const char *exposure, const char *class_name,
-                   const char *nickname, const char *name,
-                   struct CFCDocuComment *docucomment,
+                   const char *exposure, const char *name,
+                   const char *nickname, struct CFCDocuComment *docucomment,
                    struct CFCFileSpec *file_spec, const char *parent_class_name,
                    int is_final, int is_inert, int is_abstract);
 
@@ -292,8 +302,8 @@ CFCClass_privacy_symbol(CFCClass *self);
 const char*
 CFCClass_include_h(CFCClass *self);
 
-struct CFCDocuComment*
-CFCClass_get_docucomment(CFCClass *self);
+struct CFCParcel*
+CFCClass_get_parcel(CFCClass *self);
 
 const char*
 CFCClass_get_prefix(CFCClass *self);
@@ -305,10 +315,18 @@ const char*
 CFCClass_get_PREFIX(CFCClass *self);
 
 const char*
-CFCClass_get_class_name(CFCClass *self);
+CFCClass_get_exposure(CFCClass *self);
 
-struct CFCParcel*
-CFCClass_get_parcel(CFCClass *self);
+/** Return true if the Class's exposure is "public".
+ */
+int
+CFCClass_public(CFCClass *self);
+
+const char*
+CFCClass_get_name(CFCClass *self);
+
+struct CFCDocuComment*
+CFCClass_get_docucomment(CFCClass *self);
 
 #ifdef __cplusplus
 }

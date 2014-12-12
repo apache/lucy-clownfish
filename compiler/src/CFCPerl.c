@@ -249,7 +249,7 @@ S_write_boot_c(CFCPerl *self) {
         CFCClass *klass = ordered[i];
         if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
 
-        const char *class_name = CFCClass_get_class_name(klass);
+        const char *class_name = CFCClass_get_name(klass);
 
         // Add aliases for selected KinoSearch classes which allow old indexes
         // to be read.
@@ -279,7 +279,7 @@ S_write_boot_c(CFCPerl *self) {
 
         CFCClass *parent = CFCClass_get_parent(klass);
         if (parent) {
-            const char *parent_class_name = CFCClass_get_class_name(parent);
+            const char *parent_class_name = CFCClass_get_name(parent);
             isa_pushes
                 = CFCUtil_cat(isa_pushes, "    isa = get_av(\"",
                               class_name, "::ISA\", 1);\n", NULL);

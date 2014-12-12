@@ -272,7 +272,7 @@ static const char NEW[] = "new";
 
 CFCPerlConstructor**
 CFCPerlClass_constructor_bindings(CFCClass *klass) {
-    const char    *class_name = CFCClass_get_class_name(klass);
+    const char    *class_name = CFCClass_get_name(klass);
     CFCPerlClass  *perl_class = CFCPerlClass_singleton(class_name);
     CFCFunction  **functions  = CFCClass_functions(klass);
     size_t         num_bound  = 0;
@@ -394,7 +394,7 @@ CFCPerlClass_create_pod(CFCPerlClass *self) {
                                   class_name, NULL);
         CFCClass *ancestor = client;
         while (NULL != (ancestor = CFCClass_get_parent(ancestor))) {
-            const char *ancestor_klass = CFCClass_get_class_name(ancestor);
+            const char *ancestor_klass = CFCClass_get_name(ancestor);
             if (CFCPerlClass_singleton(ancestor_klass)) {
                 inheritance = CFCUtil_cat(inheritance, " isa L<",
                                           ancestor_klass, ">", NULL);
