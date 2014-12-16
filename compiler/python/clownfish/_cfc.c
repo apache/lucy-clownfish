@@ -22,8 +22,10 @@ typedef struct {
     void *cfc_obj;
 } CFCPyWrapper;
 
+/***************************** CFCHierarchy *****************************/
+
 static CFCHierarchy*
-S_extract_hierarchy(PyObject *wrapper) {
+S_to_Hierarchy(PyObject *wrapper) {
     return (CFCHierarchy*)((CFCPyWrapper*)wrapper)->cfc_obj;
 }
 
@@ -55,10 +57,30 @@ S_CFCHierarchy_dealloc(CFCPyWrapper *wrapper) {
 }
 
 static PyObject*
+S_CFCHierarchy_build(PyObject *wrapper, PyObject *unused) {
+    CHY_UNUSED_VAR(unused);
+    CFCHierarchy_build(S_to_Hierarchy(wrapper));
+    Py_RETURN_NONE;
+}
+
+static PyObject*
 S_CFCHierarchy_add_include_dir(PyObject *wrapper, PyObject *dir) {
-    CFCHierarchy *wrapped  = S_extract_hierarchy(wrapper);
-    CFCHierarchy_add_include_dir(S_extract_hierarchy(wrapper),
+    CFCHierarchy_add_include_dir(S_to_Hierarchy(wrapper),
                                  PyUnicode_AsUTF8(dir));
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+S_CFCHierarchy_add_source_dir(PyObject *wrapper, PyObject *dir) {
+    CFCHierarchy_add_source_dir(S_to_Hierarchy(wrapper),
+                                PyUnicode_AsUTF8(dir));
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+S_CFCHierarchy_write_log(PyObject *wrapper, PyObject *unused) {
+    CHY_UNUSED_VAR(unused);
+    CFCHierarchy_write_log(S_to_Hierarchy(wrapper));
     Py_RETURN_NONE;
 }
 
@@ -79,8 +101,10 @@ static PyModuleDef cfc_model_module_def = {
 };
 
 static PyMethodDef hierarchy_methods[] = {
-    {"add_include_dir", (PyCFunction)S_CFCHierarchy_add_include_dir, METH_O,
-     NULL},
+    {"add_include_dir", (PyCFunction)S_CFCHierarchy_add_include_dir, METH_O,      NULL},
+    {"add_source_dir",  (PyCFunction)S_CFCHierarchy_add_source_dir,  METH_O,      NULL},
+    {"build",           (PyCFunction)S_CFCHierarchy_build,           METH_NOARGS, NULL},
+    {"write_log",       (PyCFunction)S_CFCHierarchy_write_log,       METH_NOARGS, NULL},
     {NULL}
 };
 
