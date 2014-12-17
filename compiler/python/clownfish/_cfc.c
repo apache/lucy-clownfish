@@ -22,14 +22,57 @@ typedef struct {
     void *cfc_obj;
 } CFCPyWrapper;
 
-/***************************** CFCHierarchy *****************************/
+static PyModuleDef cfc_module_def = {
+    PyModuleDef_HEAD_INIT,
+    "clownfish._cfc",
+    "CFC: Clownfish compiler",
+    -1,
+    NULL, NULL, NULL, NULL, NULL
+};
+
+static PyModuleDef cfc_model_module_def = {
+    PyModuleDef_HEAD_INIT,
+    "clownfish.cfc.model",
+    "CFC classes which model language constructs",
+    -1,
+    NULL, NULL, NULL, NULL, NULL
+};
+
+static PyObject *cfc_module;
+static PyObject *cfc_model_module;
+
+static PyObject*
+S_wrap_cfcbase(PyTypeObject *type, void *cfc_obj) {
+    if (cfc_obj == NULL) {
+        Py_RETURN_NONE;
+    }
+    CFCPyWrapper *wrapper = (CFCPyWrapper*)type->tp_alloc(type, 0);
+    if (wrapper == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to allocate object");
+        return NULL;
+    }
+    wrapper->cfc_obj = cfc_obj;
+    return (PyObject*)wrapper;
+}
+
+static void
+S_CFCBase_dealloc(CFCPyWrapper *wrapper) {
+    CFCBase *temp = (CFCBase*)wrapper->cfc_obj;
+    wrapper->cfc_obj = NULL;
+    CFCBase_decref(temp);
+    Py_TYPE(wrapper)->tp_free(wrapper);
+}
 
 static CFCHierarchy*
 S_to_Hierarchy(PyObject *wrapper) {
     return (CFCHierarchy*)((CFCPyWrapper*)wrapper)->cfc_obj;
 }
 
-static CFCPyWrapper*
+static PyTypeObject *Hierarchy_pytype;
+
+/***************************** CFCHierarchy *****************************/
+
+static PyObject*
 S_CFCHierarchy_new(PyTypeObject *type, PyObject *args,
                    PyObject *keyword_args) {
     char *dest = NULL;
@@ -41,19 +84,9 @@ S_CFCHierarchy_new(PyTypeObject *type, PyObject *args,
         PyErr_SetString(PyExc_TypeError, "Missing required arg 'dest'");
         return NULL;
     }
-    CFCPyWrapper *wrapper = (CFCPyWrapper*)type->tp_alloc(type, 0);
-    if (wrapper) {
-        wrapper->cfc_obj = CFCHierarchy_new(dest);
-    }
-    return wrapper;
-}
+    CFCHierarchy *hierarchy = CFCHierarchy_new(dest);
 
-static void
-S_CFCHierarchy_dealloc(CFCPyWrapper *wrapper) {
-    CFCBase *temp = (CFCBase*)wrapper->cfc_obj;
-    wrapper->cfc_obj = NULL;
-    CFCBase_decref(temp);
-    Py_TYPE(wrapper)->tp_free(wrapper);
+    return S_wrap_cfcbase(Hierarchy_pytype, hierarchy);
 }
 
 static PyObject*
@@ -84,22 +117,6 @@ S_CFCHierarchy_write_log(PyObject *wrapper, PyObject *unused) {
     Py_RETURN_NONE;
 }
 
-static PyModuleDef cfc_module_def = {
-    PyModuleDef_HEAD_INIT,
-    "clownfish.cfc",
-    "CFC: Clownfish compiler",
-    -1,
-    NULL, NULL, NULL, NULL, NULL
-};
-
-static PyModuleDef cfc_model_module_def = {
-    PyModuleDef_HEAD_INIT,
-    "clownfish.cfc.model",
-    "CFC classes which model language constructs",
-    -1,
-    NULL, NULL, NULL, NULL, NULL
-};
-
 static PyMethodDef hierarchy_methods[] = {
     {"add_include_dir", (PyCFunction)S_CFCHierarchy_add_include_dir, METH_O,      NULL},
     {"add_source_dir",  (PyCFunction)S_CFCHierarchy_add_source_dir,  METH_O,      NULL},
@@ -108,12 +125,12 @@ static PyMethodDef hierarchy_methods[] = {
     {NULL}
 };
 
-static PyTypeObject CFCHierarchy_pytype = {
+static PyTypeObject Hierarchy_pytype_struct = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "clownfish.cfc.model.Hierarchy",    // tp_name
     sizeof(CFCPyWrapper),               // tp_basicsize
     0,                                  // tp_itemsize
-    (destructor)S_CFCHierarchy_dealloc, // tp_dealloc
+    (destructor)S_CFCBase_dealloc,      // tp_dealloc
     0,                                  // tp_print
     0,                                  // tp_getattr
     0,                                  // tp_setattr
@@ -151,15 +168,18 @@ static PyTypeObject CFCHierarchy_pytype = {
 
 PyMODINIT_FUNC
 PyInit__cfc(void) {
-    if (PyType_Ready(&CFCHierarchy_pytype) < 0) {
+    // Initialize type object pointers.
+    Hierarchy_pytype = &Hierarchy_pytype_struct;
+
+    if (PyType_Ready(Hierarchy_pytype) < 0) {
         return NULL;
     }
-    PyObject *cfc_module = PyModule_Create(&cfc_module_def);
-    PyObject *cfc_model_module = PyModule_Create(&cfc_model_module_def);
+    cfc_module = PyModule_Create(&cfc_module_def);
+    cfc_model_module = PyModule_Create(&cfc_model_module_def);
     PyModule_AddObject(cfc_module, "model", (PyObject*)cfc_model_module);
-    Py_INCREF(&CFCHierarchy_pytype);
+    Py_INCREF(Hierarchy_pytype);
     PyModule_AddObject(cfc_model_module, "Hierarchy",
-                       (PyObject*)&CFCHierarchy_pytype);
+                       (PyObject*)Hierarchy_pytype);
 
     return cfc_module;
 }
