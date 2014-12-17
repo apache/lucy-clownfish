@@ -84,7 +84,32 @@ S_CFCHierarchy_new(PyTypeObject *type, PyObject *args,
         PyErr_SetString(PyExc_TypeError, "Missing required arg 'dest'");
         return NULL;
     }
+    PyObject *inc_func = PyObject_GetAttrString(cfc_module, "_get_inc_dirs");
+    PyObject *dirs = NULL;
+    if (PyCallable_Check(inc_func)) {
+        dirs = PyObject_CallObject(inc_func, NULL);
+    }
+    if (dirs == NULL || !PyList_Check(dirs)) {
+        Py_XDECREF(inc_func);
+        Py_XDECREF(dirs);
+        PyErr_SetString(PyExc_RuntimeError, "_get_inc_dirs failed");
+        return NULL;
+    }
     CFCHierarchy *hierarchy = CFCHierarchy_new(dest);
+    for (Py_ssize_t i = 0, max = PyList_Size(dirs); i < max; i++) {
+        PyObject *dir = PyList_GetItem(dirs, i);
+        if (PyUnicode_Check(dir)) {
+            char *dir_utf8 = PyUnicode_AsUTF8(dir);
+            CFCHierarchy_add_include_dir(hierarchy, dir_utf8);
+        }
+        else {
+            PyErr_SetString(PyExc_RuntimeError, "not a string");
+            return NULL;
+        }
+    }
+
+    Py_XDECREF(inc_func);
+    Py_XDECREF(dirs);
 
     return S_wrap_cfcbase(Hierarchy_pytype, hierarchy);
 }
