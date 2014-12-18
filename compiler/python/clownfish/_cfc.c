@@ -38,8 +38,17 @@ static PyModuleDef cfc_model_module_def = {
     NULL, NULL, NULL, NULL, NULL
 };
 
+static PyModuleDef cfc_binding_module_def = {
+    PyModuleDef_HEAD_INIT,
+    "clownfish.cfc.binding",
+    "CFC components which generate bindings",
+    -1,
+    NULL, NULL, NULL, NULL, NULL
+};
+
 static PyObject *cfc_module;
 static PyObject *cfc_model_module;
+static PyObject *cfc_binding_module;
 
 static PyObject*
 S_wrap_cfcbase(PyTypeObject *type, void *cfc_obj) {
@@ -88,8 +97,15 @@ S_to_Parcel(PyObject *wrapper) {
         "Clownfish::CFC::Model::Parcel");
 }
 
+static CFCBindCore*
+S_to_BindCore(PyObject *wrapper) {
+    return (CFCBindCore*)S_to_cfc_something(wrapper,
+        "Clownfish::CFC::Binding::Core");
+}
+
 static PyTypeObject *Hierarchy_pytype;
 static PyTypeObject *Parcel_pytype;
+static PyTypeObject *BindCore_pytype;
 
 /***************************** CFCHierarchy *****************************/
 
@@ -266,6 +282,80 @@ static PyTypeObject Parcel_pytype_struct = {
     0                                   // tp_new
 };
 
+/***************************** CFCBindCore *****************************/
+
+static PyObject*
+S_CFCBindCore_new(PyTypeObject *type, PyObject *args,
+                   PyObject *keyword_args) {
+    PyObject *hierarchy_wrapped;
+    char *header = "";
+    char *footer = "";
+    char *keywords[] = {"hierarchy", "header", "footer", NULL};
+    int result = PyArg_ParseTupleAndKeywords(args, keyword_args, "O!|ss",
+                                             keywords, Hierarchy_pytype,
+                                             &hierarchy_wrapped, &header,
+                                             &footer);
+    if (!result) { return NULL; }
+    CFCHierarchy *hierarchy = S_to_Hierarchy(hierarchy_wrapped);
+    CFCBindCore *obj = CFCBindCore_new(hierarchy, header, footer);
+    return S_wrap_cfcbase(BindCore_pytype, obj);
+}
+
+static PyObject*
+S_CFCBindCore_write_all_modified(PyObject *wrapper, PyObject *args) {
+    int modified = 0;
+    int result = PyArg_ParseTuple(args, "|p", &modified);
+    if (!result) { return NULL; }
+    CFCBindCore_write_all_modified(S_to_BindCore(wrapper), modified);
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef bindcore_methods[] = {
+    {"write_all_modified", (PyCFunction)S_CFCBindCore_write_all_modified, METH_VARARGS, NULL},
+    {NULL}
+};
+
+static PyTypeObject BindCore_pytype_struct = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "clownfish.cfc.binding.BindCore",   // tp_name
+    sizeof(CFCPyWrapper),               // tp_basicsize
+    0,                                  // tp_itemsize
+    (destructor)S_CFCBase_dealloc,      // tp_dealloc
+    0,                                  // tp_print
+    0,                                  // tp_getattr
+    0,                                  // tp_setattr
+    0,                                  // tp_reserved
+    0,                                  // tp_repr
+    0,                                  // tp_as_number
+    0,                                  // tp_as_sequence
+    0,                                  // tp_as_mapping
+    0,                                  // tp_hash
+    0,                                  // tp_call
+    0,                                  // tp_str
+    0,                                  // tp_getattro
+    0,                                  // tp_setattro
+    0,                                  // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,                 // tp_flags
+    "CFCBindCore",                      // tp_doc
+    0,                                  // tp_traverse
+    0,                                  // tp_clear
+    0,                                  // tp_richcompare
+    0,                                  // tp_weaklistoffset
+    0,                                  // tp_iter
+    0,                                  // tp_iternext
+    bindcore_methods,                   // tp_methods
+    0,                                  // tp_members
+    0,                                  // tp_getset
+    0,                                  // tp_base
+    0,                                  // tp_dict
+    0,                                  // tp_descr_get
+    0,                                  // tp_descr_set
+    0,                                  // tp_dictoffset
+    0,                                  // tp_init
+    0,                                  // tp_allow
+    (newfunc)S_CFCBindCore_new          // tp_new
+};
+
 /******************************* common ******************************/
 
 PyMODINIT_FUNC
@@ -273,25 +363,36 @@ PyInit__cfc(void) {
     // Initialize Python type objects.
     Hierarchy_pytype = &Hierarchy_pytype_struct;
     Parcel_pytype    = &Parcel_pytype_struct;
+    BindCore_pytype  = &BindCore_pytype_struct;
     if (PyType_Ready(Hierarchy_pytype) < 0) {
         return NULL;
     }
     if (PyType_Ready(Parcel_pytype) < 0) {
         return NULL;
     }
+    if (PyType_Ready(BindCore_pytype) < 0) {
+        return NULL;
+    }
 
     // Initialize modules.
     cfc_module = PyModule_Create(&cfc_module_def);
     cfc_model_module = PyModule_Create(&cfc_model_module_def);
+    cfc_binding_module = PyModule_Create(&cfc_binding_module_def);
     PyModule_AddObject(cfc_module, "model", (PyObject*)cfc_model_module);
+    PyModule_AddObject(cfc_module, "binding", (PyObject*)cfc_binding_module);
 
-    // Add type objects to modules.
+    // Add type objects to "model" module.
     Py_INCREF(Hierarchy_pytype);
     PyModule_AddObject(cfc_model_module, "Hierarchy",
                        (PyObject*)Hierarchy_pytype);
     Py_INCREF(Parcel_pytype);
     PyModule_AddObject(cfc_model_module, "Parcel",
                        (PyObject*)Parcel_pytype);
+
+    // Add type objects to "binding" module.
+    Py_INCREF(BindCore_pytype);
+    PyModule_AddObject(cfc_binding_module, "BindCore",
+                       (PyObject*)BindCore_pytype);
 
     return cfc_module;
 }
