@@ -63,12 +63,33 @@ S_CFCBase_dealloc(CFCPyWrapper *wrapper) {
     Py_TYPE(wrapper)->tp_free(wrapper);
 }
 
+void*
+S_to_cfc_something(PyObject *wrapper, const char *class_name) {
+    if (wrapper == NULL || wrapper == Py_None) {
+        return NULL;
+    }
+    CFCBase *obj = (CFCBase*)((CFCPyWrapper*)wrapper)->cfc_obj;
+    if (strcmp(CFCBase_get_cfc_class(obj), class_name) != 0) {
+        CFCUtil_die("Object is not a %s, it's a %s", class_name,
+                    CFCBase_get_cfc_class(obj));
+    }
+    return obj;
+}
+
 static CFCHierarchy*
 S_to_Hierarchy(PyObject *wrapper) {
-    return (CFCHierarchy*)((CFCPyWrapper*)wrapper)->cfc_obj;
+    return (CFCHierarchy*)S_to_cfc_something(wrapper,
+        "Clownfish::CFC::Model::Hierarchy");
+}
+
+static CFCParcel*
+S_to_Parcel(PyObject *wrapper) {
+    return (CFCParcel*)S_to_cfc_something(wrapper,
+        "Clownfish::CFC::Model::Parcel");
 }
 
 static PyTypeObject *Hierarchy_pytype;
+static PyTypeObject *Parcel_pytype;
 
 /***************************** CFCHierarchy *****************************/
 
@@ -191,20 +212,86 @@ static PyTypeObject Hierarchy_pytype_struct = {
     (newfunc)S_CFCHierarchy_new         // tp_new
 };
 
+/***************************** CFCParcel *****************************/
+
+PyObject*
+S_CFCParcel_fetch(PyObject *ignored, PyObject *name) {
+    CFCParcel *parcel = CFCParcel_fetch(PyUnicode_AsUTF8(name));
+    return S_wrap_cfcbase(Parcel_pytype, parcel);
+}
+
+static PyMethodDef parcel_methods[] = {
+    {"fetch", (PyCFunction)S_CFCParcel_fetch, METH_STATIC, NULL},
+    {NULL}
+};
+
+static PyTypeObject Parcel_pytype_struct = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "clownfish.cfc.model.Parcel",       // tp_name
+    sizeof(CFCPyWrapper),               // tp_basicsize
+    0,                                  // tp_itemsize
+    (destructor)S_CFCBase_dealloc,      // tp_dealloc
+    0,                                  // tp_print
+    0,                                  // tp_getattr
+    0,                                  // tp_setattr
+    0,                                  // tp_reserved
+    0,                                  // tp_repr
+    0,                                  // tp_as_number
+    0,                                  // tp_as_sequence
+    0,                                  // tp_as_mapping
+    0,                                  // tp_hash
+    0,                                  // tp_call
+    0,                                  // tp_str
+    0,                                  // tp_getattro
+    0,                                  // tp_setattro
+    0,                                  // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,                 // tp_flags
+    "CFCParcel",                        // tp_doc
+    0,                                  // tp_traverse
+    0,                                  // tp_clear
+    0,                                  // tp_richcompare
+    0,                                  // tp_weaklistoffset
+    0,                                  // tp_iter
+    0,                                  // tp_iternext
+    parcel_methods,                     // tp_methods
+    0,                                  // tp_members
+    0,                                  // tp_getset
+    0,                                  // tp_base
+    0,                                  // tp_dict
+    0,                                  // tp_descr_get
+    0,                                  // tp_descr_set
+    0,                                  // tp_dictoffset
+    0,                                  // tp_init
+    0,                                  // tp_allow
+    0                                   // tp_new
+};
+
+/******************************* common ******************************/
+
 PyMODINIT_FUNC
 PyInit__cfc(void) {
-    // Initialize type object pointers.
+    // Initialize Python type objects.
     Hierarchy_pytype = &Hierarchy_pytype_struct;
-
+    Parcel_pytype    = &Parcel_pytype_struct;
     if (PyType_Ready(Hierarchy_pytype) < 0) {
         return NULL;
     }
+    if (PyType_Ready(Parcel_pytype) < 0) {
+        return NULL;
+    }
+
+    // Initialize modules.
     cfc_module = PyModule_Create(&cfc_module_def);
     cfc_model_module = PyModule_Create(&cfc_model_module_def);
     PyModule_AddObject(cfc_module, "model", (PyObject*)cfc_model_module);
+
+    // Add type objects to modules.
     Py_INCREF(Hierarchy_pytype);
     PyModule_AddObject(cfc_model_module, "Hierarchy",
                        (PyObject*)Hierarchy_pytype);
+    Py_INCREF(Parcel_pytype);
+    PyModule_AddObject(cfc_model_module, "Parcel",
+                       (PyObject*)Parcel_pytype);
 
     return cfc_module;
 }
