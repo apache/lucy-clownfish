@@ -31,6 +31,7 @@
 #include "Clownfish/Test/TestLockFreeRegistry.h"
 #include "Clownfish/Test/TestNum.h"
 #include "Clownfish/Test/TestObj.h"
+#include "Clownfish/Test/TestThreads.h"
 #include "Clownfish/Test/TestVArray.h"
 #include "Clownfish/Test/Util/TestAtomic.h"
 #include "Clownfish/Test/Util/TestMemory.h"
@@ -55,6 +56,7 @@ Test_create_test_suite() {
     TestSuite_Add_Batch(suite, (TestBatch*)TestAtomic_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestLFReg_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestMemory_new());
+    TestSuite_Add_Batch(suite, (TestBatch*)TestThreads_new());
 
     return suite;
 }

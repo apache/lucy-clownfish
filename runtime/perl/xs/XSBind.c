@@ -25,6 +25,8 @@
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Method.h"
+#include "Clownfish/Test/TestThreads.h"
+#include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Util/NumberUtils.h"
 #include "Clownfish/Util/Memory.h"
@@ -957,5 +959,13 @@ CFISH_LFReg_To_Host_IMP(cfish_LockFreeRegistry *self) {
         SvSHARE((SV*)self->ref.host_obj);
     }
     return host_obj;
+}
+
+/*********************** Clownfish::Test::TestThreads ***********************/
+
+void
+TESTCFISH_TestThreads_Run_IMP(testcfish_TestThreads *self,
+                              cfish_TestBatchRunner *runner) {
+    CFISH_TestBatchRunner_Plan(runner, (cfish_TestBatch*)self, 0);
 }
 
