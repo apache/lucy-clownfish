@@ -26,6 +26,7 @@
 #include "CFCClass.h"
 #include "CFCHierarchy.h"
 #include "CFCMethod.h"
+#include "CFCUri.h"
 #include "CFCUtil.h"
 
 struct CFCC {
@@ -227,4 +228,83 @@ CFCC_write_hostdefs(CFCC *self) {
     FREEMEM(content);
 }
 
+char*
+CFCC_link_text(CFCUri *uri_obj, CFCClass *klass) {
+    char *link_text = NULL;
+    int   type      = CFCUri_get_type(uri_obj);
+
+    switch (type) {
+        case CFC_URI_CLASS: {
+            if (strcmp(CFCUri_get_prefix(uri_obj),
+                       CFCClass_get_prefix(klass)) == 0
+            ) {
+                // Same parcel.
+                const char *struct_sym = CFCUri_get_struct_sym(uri_obj);
+                link_text = CFCUtil_strdup(struct_sym);
+            }
+            else {
+                // Other parcel.
+                const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
+                CFCClass *uri_class
+                    = CFCClass_fetch_by_struct_sym(full_struct_sym);
+                if (!uri_class) {
+                    CFCUtil_warn("URI class not found: %s", full_struct_sym);
+                }
+                else {
+                    const char *class_name
+                        = CFCClass_get_class_name(uri_class);
+                    link_text = CFCUtil_strdup(class_name);
+                }
+            }
+
+            break;
+        }
+
+        case CFC_URI_FUNCTION:
+        case CFC_URI_METHOD: {
+#if 1
+            const char *func_sym = CFCUri_get_func_sym(uri_obj);
+            link_text = CFCUtil_sprintf("%s()", func_sym);
+#else
+            // Full function sym.
+            const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
+            const char *func_sym        = CFCUri_get_func_sym(uri_obj);
+
+            if (strcmp(full_struct_sym,
+                       CFCClass_full_struct_sym(klass)) == 0
+            ) {
+                // Same class.
+                link_text = CFCUtil_sprintf("%s()", func_sym);
+            }
+            else {
+                CFCClass *uri_class
+                    = CFCClass_fetch_by_struct_sym(full_struct_sym);
+
+                if (!uri_class) {
+                    CFCUtil_warn("URI class not found: %s", full_struct_sym);
+                    link_text = CFCUtil_sprintf("%s()", func_sym);
+                }
+                else {
+                    const char *prefix   = CFCUri_get_prefix(uri_obj);
+                    const char *nickname = CFCClass_get_nickname(uri_class);
+
+                    if (strcmp(prefix, CFCClass_get_prefix(klass)) == 0) {
+                        // Same parcel.
+                        link_text = CFCUtil_sprintf("%s_%s()", nickname,
+                                                    func_sym);
+                    }
+                    else {
+                        // Other parcel.
+                        link_text = CFCUtil_sprintf("%s%s_%s()", prefix,
+                                                    nickname, func_sym);
+                    }
+                }
+            }
+#endif
+            break;
+        }
+    }
+
+    return link_text;
+}
 

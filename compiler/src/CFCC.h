@@ -24,7 +24,9 @@ extern "C" {
 #endif
 
 typedef struct CFCC CFCC;
+struct CFCClass;
 struct CFCHierarchy;
+struct CFCUri;
 
 /**
  * @param hierarchy A L<Clownfish::CFC::Model::Hierarchy>.
@@ -58,6 +60,9 @@ CFCC_write_hostdefs(CFCC *self);
  */
 void
 CFCC_write_man_pages(CFCC *self);
+
+char*
+CFCC_link_text(struct CFCUri *uri_obj, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }
