@@ -162,6 +162,11 @@ static void S_free_arguments(CFCArgs *args) {
         FREEMEM(args->include_dirs[i]);
     }
     FREEMEM(args->include_dirs);
+
+    for (i = 0; args->parcels[i]; ++i) {
+        FREEMEM(args->parcels[i]);
+    }
+    FREEMEM(args->parcels);
 }
 
 int
