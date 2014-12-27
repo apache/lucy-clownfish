@@ -51,6 +51,17 @@ abstract class Clownfish::TestHarness::TestFormatter inherits Clownfish::Obj {
     VTest_Result(TestFormatter *self, bool pass, uint32_t test_num,
                  const char *fmt, va_list args);
 
+    /** Print diagnostics for skipped tests.
+     *
+     * @param test_num The sequence number of the first skipped test.
+     * @param num_skipped The number of skipped tests.
+     * @param fmt printf-style format string.
+     * @param args Additional arguments.
+     */
+    abstract void
+    VTest_Skip(TestFormatter *self, uint32_t test_num, uint32_t num_skipped,
+               const char *fmt, va_list args);
+
     /** Print additional diagnosis for a test.
      *
      * @param fmt printf-style format string.
@@ -98,6 +109,10 @@ class Clownfish::Test::Formatter::TestFormatterCF
                  const char *fmt, va_list args);
 
     void
+    VTest_Skip(TestFormatterCF *self, uint32_t test_num, uint32_t num_skipped,
+               const char *fmt, va_list args);
+
+    void
     VTest_Comment(TestFormatterCF *self, const char *fmt, va_list args);
 
     void
@@ -128,6 +143,10 @@ class Clownfish::Test::Formatter::TestFormatterTAP
     void
     VTest_Result(TestFormatterTAP *self, bool pass, uint32_t test_num,
                  const char *fmt, va_list args);
+
+    void
+    VTest_Skip(TestFormatterTAP *self, uint32_t test_num, uint32_t num_skipped,
+               const char *fmt, va_list args);
 
     void
     VTest_Comment(TestFormatterTAP *self, const char *fmt, va_list args);

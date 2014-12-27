@@ -200,10 +200,11 @@ TestBatchRunner_fail(TestBatchRunner *self, const char *pattern, ...) {
 }
 
 void
-TestBatchRunner_skip(TestBatchRunner *self, const char *pattern, ...) {
+TestBatchRunner_skip(TestBatchRunner *self, uint32_t num, const char *pattern,
+                     ...) {
     va_list args;
     va_start(args, pattern);
-    TestBatchRunner_VSkip(self, pattern, args);
+    TestBatchRunner_VSkip(self, num, pattern, args);
     va_end(args);
 }
 
@@ -275,13 +276,12 @@ TestBatchRunner_VFail_IMP(TestBatchRunner *self, const char *pattern,
 }
 
 void
-TestBatchRunner_VSkip_IMP(TestBatchRunner *self, const char *pattern,
-                          va_list args) {
-    self->test_num++;
-    // TODO: Add a VTest_Skip method to TestFormatter
-    TestFormatter_VTest_Result(self->formatter, true, self->test_num,
-                               pattern, args);
-    self->num_skipped++;
+TestBatchRunner_VSkip_IMP(TestBatchRunner *self, uint32_t num,
+                          const char *pattern, va_list args) {
+    self->test_num += num;
+    TestFormatter_VTest_Skip(self->formatter, self->test_num, num, pattern,
+                             args);
+    self->num_skipped += num;
 }
 
 static bool

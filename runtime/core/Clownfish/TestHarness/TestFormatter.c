@@ -95,6 +95,17 @@ TestFormatterCF_VTest_Result_IMP(TestFormatterCF *self, bool pass,
 }
 
 void
+TestFormatterCF_VTest_Skip_IMP(TestFormatterCF *self, uint32_t test_num,
+                               uint32_t num_skipped, const char *fmt,
+                               va_list args) {
+    UNUSED_VAR(self);
+    UNUSED_VAR(test_num);
+    UNUSED_VAR(num_skipped);
+    UNUSED_VAR(fmt);
+    UNUSED_VAR(args);
+}
+
+void
 TestFormatterCF_VTest_Comment_IMP(TestFormatterCF *self, const char *fmt,
                                   va_list args) {
     UNUSED_VAR(self);
@@ -163,6 +174,18 @@ TestFormatterTAP_VTest_Result_IMP(TestFormatterTAP *self, bool pass,
     printf("%s %u - ", result, test_num);
     vprintf(fmt, args);
     printf("\n");
+}
+
+void
+TestFormatterTAP_VTest_Skip_IMP(TestFormatterTAP *self, uint32_t test_num,
+                                uint32_t num_skipped, const char *fmt,
+                                va_list args) {
+    UNUSED_VAR(self);
+    for (uint32_t i = 0; i < num_skipped; ++i) {
+        printf("ok %u # SKIP ", test_num + i);
+        vprintf(fmt, args);
+        printf("\n");
+    }
 }
 
 void

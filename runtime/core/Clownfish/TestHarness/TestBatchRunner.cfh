@@ -86,7 +86,7 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
     fail(TestBatchRunner *self, const char *pattern, ...);
 
     inert void
-    skip(TestBatchRunner *self, const char *pattern, ...);
+    skip(TestBatchRunner *self, uint32_t num, const char *pattern, ...);
 
     bool
     VTest_True(TestBatchRunner *self, bool condition, const char *pattern,
@@ -116,7 +116,8 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
     VFail(TestBatchRunner *self, const char *pattern, va_list args);
 
     void
-    VSkip(TestBatchRunner *self, const char *pattern, va_list args);
+    VSkip(TestBatchRunner *self, uint32_t num, const char *pattern,
+          va_list args);
 }
 
 __C__
