@@ -24,7 +24,7 @@ typedef struct {
 
 static PyModuleDef cfc_module_def = {
     PyModuleDef_HEAD_INIT,
-    "clownfish._cfc",
+    "cfc._cfc",
     "CFC: Clownfish compiler",
     -1,
     NULL, NULL, NULL, NULL, NULL
@@ -32,7 +32,7 @@ static PyModuleDef cfc_module_def = {
 
 static PyModuleDef cfc_model_module_def = {
     PyModuleDef_HEAD_INIT,
-    "clownfish.cfc.model",
+    "cfc.model",
     "CFC classes which model language constructs",
     -1,
     NULL, NULL, NULL, NULL, NULL
@@ -40,7 +40,7 @@ static PyModuleDef cfc_model_module_def = {
 
 static PyModuleDef cfc_binding_module_def = {
     PyModuleDef_HEAD_INIT,
-    "clownfish.cfc.binding",
+    "cfc.binding",
     "CFC components which generate bindings",
     -1,
     NULL, NULL, NULL, NULL, NULL
@@ -189,7 +189,7 @@ static PyMethodDef hierarchy_methods[] = {
 
 static PyTypeObject Hierarchy_pytype_struct = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "clownfish.cfc.model.Hierarchy",    // tp_name
+    "cfc.model.Hierarchy",              // tp_name
     sizeof(CFCPyWrapper),               // tp_basicsize
     0,                                  // tp_itemsize
     (destructor)S_CFCBase_dealloc,      // tp_dealloc
@@ -243,7 +243,7 @@ static PyMethodDef parcel_methods[] = {
 
 static PyTypeObject Parcel_pytype_struct = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "clownfish.cfc.model.Parcel",       // tp_name
+    "cfc.model.Parcel",                 // tp_name
     sizeof(CFCPyWrapper),               // tp_basicsize
     0,                                  // tp_itemsize
     (destructor)S_CFCBase_dealloc,      // tp_dealloc
@@ -317,7 +317,7 @@ static PyMethodDef bindcore_methods[] = {
 
 static PyTypeObject BindCore_pytype_struct = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "clownfish.cfc.binding.BindCore",   // tp_name
+    "cfc.binding.BindCore",             // tp_name
     sizeof(CFCPyWrapper),               // tp_basicsize
     0,                                  // tp_itemsize
     (destructor)S_CFCBase_dealloc,      // tp_dealloc

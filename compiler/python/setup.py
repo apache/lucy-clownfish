@@ -53,7 +53,7 @@ CHARMONY_H_PATH      = 'charmony.h'
 LIBCFC_NAME          = 'libcfc.a' # TODO portability
 LIBCFC_PATH          = os.path.abspath(os.path.join(os.curdir, LIBCFC_NAME))
 
-c_filepaths = [os.path.join('src', 'clownfish', '_cfc.c')]
+c_filepaths = [os.path.join('src', 'cfc', '_cfc.c')]
 paths_to_clean = [
     CHARMONIZER_EXE_PATH,
     CHARMONY_H_PATH,
@@ -111,7 +111,7 @@ class libcfc(_Command):
         self.run_command('charmony')
         subprocess.check_call([make_command, '-j', 'static'])
         # Touch Python binding file if the library has changed.
-        cfc_c = os.path.join('src', 'clownfish', '_cfc.c')
+        cfc_c = os.path.join('src', 'cfc', '_cfc.c')
         if newer_group(['libcfc.a'], cfc_c):
             os.utime(cfc_c, None)
 
@@ -161,7 +161,7 @@ class test(_Command):
         # restore sys.path
         sys.path = orig_sys_path
 
-cfc_extension = Extension('clownfish._cfc',
+cfc_extension = Extension('cfc._cfc',
                           define_macros = [('CFCPYTHON', None)],
                           include_dirs = [
                               CFC_INCLUDE_DIR,
@@ -177,7 +177,7 @@ setup(name = 'clownfish-cfc',
       author = 'Apache Lucy Project',
       author_email = 'dev at lucy dot apache dot org',
       url = 'http://lucy.apache.org',
-      packages = ['clownfish.cfc',
+      packages = ['cfc',
                  ],
       cmdclass = {
           'build': my_build,

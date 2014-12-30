@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import clownfish._cfc
-from clownfish._cfc import *
+import cfc._cfc
+from cfc._cfc import *
 import site
 import os.path
 
@@ -25,5 +25,5 @@ def _get_inc_dirs():
         dirs.append(path)
     return dirs
 
-clownfish._cfc._get_inc_dirs = _get_inc_dirs
+cfc._cfc._get_inc_dirs = _get_inc_dirs
 
