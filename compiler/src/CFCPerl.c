@@ -515,18 +515,23 @@ CFCPerl_write_callbacks(CFCPerl *self) {
  */
 static void
 S_write_callbacks_h(CFCPerl *self) {
+    CFCParcel    **parcels   = CFCParcel_all_parcels();
     CFCHierarchy  *hierarchy = self->hierarchy;
     CFCClass     **ordered   = CFCHierarchy_ordered_classes(hierarchy);
     char          *includes  = CFCUtil_strdup("");
     char          *cb_decs   = CFCUtil_strdup("");
 
+    for (int i = 0; parcels[i]; ++i) {
+        CFCParcel *parcel = parcels[i];
+        if (!CFCParcel_included(parcel)) {
+            const char *prefix = CFCParcel_get_prefix(parcel);
+            includes = CFCUtil_cat(includes, "#include \"", prefix,
+                                   "parcel.h\"\n", NULL);
+        }
+    }
+
     for (int i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-
-        const char *include_h = CFCClass_include_h(klass);
-        includes = CFCUtil_cat(includes, "#include \"", include_h, "\"\n",
-                               NULL);
-
         if (CFCClass_included(klass)) { continue; }
 
         CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
@@ -589,6 +594,8 @@ S_write_callbacks_c(CFCPerl *self) {
         "\n"
         "#include \"XSBind.h\"\n"
         "#include \"callbacks.h\"\n"
+        "#include \"Clownfish/Err.h\"\n"
+        "#include \"Clownfish/Obj.h\"\n"
         "\n"
         "static void\n"
         "S_finish_callback_void(const char *meth_name) {\n"
