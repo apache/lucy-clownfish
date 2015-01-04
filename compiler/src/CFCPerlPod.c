@@ -71,9 +71,6 @@ S_convert_link(CFCClass *klass, cmark_node *link);
 static char*
 S_pod_link(const char *text, const char *name);
 
-static char*
-S_perlify_pod(const char *source);
-
 CFCPerlPod*
 CFCPerlPod_new(void) {
     CFCPerlPod *self
@@ -327,10 +324,8 @@ CFCPerlPod_md_to_pod(CFCPerlPod *self, CFCClass *klass, const char *md) {
     cmark_node *doc = cmark_parse_document(md, strlen(md));
     char *pod = S_nodes_to_pod(klass, doc);
     cmark_node_free(doc);
-    char *perlified = S_perlify_pod(pod);
 
-    FREEMEM(pod);
-    return perlified;
+    return pod;
 }
 
 static char*
@@ -675,11 +670,5 @@ S_pod_link(const char *text, const char *name) {
     else {
         return CFCUtil_sprintf("L<%s|%s>", text, name);
     }
-}
-
-static char*
-S_perlify_pod(const char *source) {
-    // Change all instances of NULL to 'undef'
-    return CFCUtil_global_replace(source, "NULL", "undef");
 }
 
