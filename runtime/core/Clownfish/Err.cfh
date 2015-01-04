@@ -168,6 +168,11 @@ public class Clownfish::Err inherits Clownfish::Obj {
     inert void
     abstract_method_call(Obj *obj, Class *klass, const char *method_name);
 
+    /** Throw an error after an invalid callback was called.
+     */
+    inert void
+    invalid_callback(const char *method_name);
+
     /** On Windows, return a newly allocated buffer containing the string
      * description for the the last error in the thread.
      */

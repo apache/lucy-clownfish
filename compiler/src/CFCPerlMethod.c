@@ -53,20 +53,6 @@ S_xsub_def_labeled_params(CFCPerlMethod *self);
 static char*
 S_xsub_def_positional_args(CFCPerlMethod *self);
 
-/* Take a NULL-terminated list of CFCVariables and build up a string of
- * directives like:
- *
- *     UNUSED_VAR(var1);
- *     UNUSED_VAR(var2);
- */
-static char*
-S_build_unused_vars(CFCVariable **vars);
-
-/* Create an unreachable return statement if necessary, in order to thwart
- * compiler warnings. */
-static char*
-S_maybe_unreachable(CFCType *return_type);
-
 /* Generate code which converts C types to Perl types and pushes arguments
  * onto the Perl stack.
  */
@@ -442,16 +428,27 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
 
 char*
 CFCPerlMethod_callback_dec(CFCMethod *method) {
-    CFCType *return_type = CFCMethod_get_return_type(method);
-    const char *ret_type_str = CFCType_to_c(return_type);
     const char *override_sym = CFCMethod_full_override_sym(method);
-    const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
 
-    char pattern[] =
-        "%s\n"
-        "%s(%s);\n";
-    char *callback_dec
-        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
+    char *callback_dec;
+    if (!CFCPerlMethod_can_be_bound(method)) {
+        char pattern[] =
+            "void\n"
+            "%s(cfish_Obj *self);\n";
+        callback_dec = CFCUtil_sprintf(pattern, override_sym);
+    }
+    else {
+        CFCType      *return_type  = CFCMethod_get_return_type(method);
+        CFCParamList *param_list   = CFCMethod_get_param_list(method);
+        const char   *ret_type_str = CFCType_to_c(return_type);
+        const char   *params       = CFCParamList_to_c(param_list);
+
+        char pattern[] =
+            "%s\n"
+            "%s(%s);\n";
+        callback_dec
+            = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
+    }
 
     return callback_dec;
 }
@@ -488,36 +485,6 @@ CFCPerlMethod_callback_def(CFCMethod *method) {
     FREEMEM(start);
     FREEMEM(refcount_mods);
     return callback_def;
-}
-
-static char*
-S_build_unused_vars(CFCVariable **vars) {
-    char *unused = CFCUtil_strdup("");
-
-    for (int i = 0; vars[i] != NULL; i++) {
-        const char *var_name = CFCVariable_micro_sym(vars[i]);
-        size_t size = strlen(unused) + strlen(var_name) + 80;
-        unused = (char*)REALLOCATE(unused, size);
-        strcat(unused, "\n    CFISH_UNUSED_VAR(");
-        strcat(unused, var_name);
-        strcat(unused, ");");
-    }
-
-    return unused;
-}
-
-static char*
-S_maybe_unreachable(CFCType *return_type) {
-    char *return_statement;
-    if (CFCType_is_void(return_type)) {
-        return_statement = CFCUtil_strdup("");
-    }
-    else {
-        const char *ret_type_str = CFCType_to_c(return_type);
-        char pattern[] = "\n    CFISH_UNREACHABLE_RETURN(%s);";
-        return_statement = CFCUtil_sprintf(pattern, ret_type_str);
-    }
-    return return_statement;
 }
 
 static char*
@@ -638,31 +605,19 @@ S_callback_refcount_mods(CFCMethod *method) {
 
 static char*
 S_invalid_callback_def(CFCMethod *method) {
+    const char *override_sym = CFCMethod_full_override_sym(method);
     char *full_method_sym = CFCMethod_full_method_sym(method, NULL);
 
-    const char *override_sym = CFCMethod_full_override_sym(method);
-    CFCParamList *param_list = CFCMethod_get_param_list(method);
-    const char *params = CFCParamList_to_c(param_list);
-    CFCVariable **param_vars = CFCParamList_get_variables(param_list);
-
-    // Thwart compiler warnings.
-    CFCType *return_type = CFCMethod_get_return_type(method);
-    const char *ret_type_str = CFCType_to_c(return_type);
-    char *unused = S_build_unused_vars(param_vars);
-    char *unreachable = S_maybe_unreachable(return_type);
-
     char pattern[] =
-        "%s\n"
-        "%s(%s) {%s\n"
-        "    CFISH_THROW(CFISH_ERR, \"Can't override %s via binding\");%s\n"
+        "void\n"
+        "%s(cfish_Obj *self) {\n"
+        "    CFISH_UNUSED_VAR(self);\n"
+        "    cfish_Err_invalid_callback(\"%s\");\n"
         "}\n";
     char *callback_def
-        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params, unused,
-                          full_method_sym, unreachable);
+        = CFCUtil_sprintf(pattern, override_sym, full_method_sym);
 
     FREEMEM(full_method_sym);
-    FREEMEM(unreachable);
-    FREEMEM(unused);
     return callback_def;
 }
 

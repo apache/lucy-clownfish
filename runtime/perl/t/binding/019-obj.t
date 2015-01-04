@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 22;
 
 package TestObj;
 use base qw( Clownfish::Obj );
@@ -47,6 +47,12 @@ use base qw( Clownfish::Obj );
 {
     sub STORABLE_freeze {"meep"}
     sub DESTROY {}
+}
+
+package InvalidCallbackTestObj;
+use base qw( Clownfish::Obj );
+{
+    sub to_host {}
 }
 
 package OverriddenAliasTestObj;
@@ -127,6 +133,9 @@ SKIP: {
     like( $@, qr/NULL/,
         "Don't allow methods without nullable return values to return NULL" );
 }
+
+eval { InvalidCallbackTestObj->new; };
+like( $@, qr/Can't override CFISH_Obj_To_Host via binding/ );
 
 my $alias_test = Clownfish::Test::AliasTestObj->new;
 is( $alias_test->perl_alias, 'C', "Host method aliases work" );

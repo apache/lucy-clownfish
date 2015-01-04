@@ -238,6 +238,11 @@ Err_abstract_method_call(Obj *obj, Class *klass, const char *method_name) {
           class_name);
 }
 
+void
+Err_invalid_callback(const char *method_name) {
+    THROW(ERR, "Can't override %s via binding", method_name);
+}
+
 #ifdef CHY_HAS_WINDOWS_H
 
 #include <windows.h>
