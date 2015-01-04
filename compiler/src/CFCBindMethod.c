@@ -223,22 +223,6 @@ CFCBindMeth_abstract_method_def(CFCMethod *method) {
 }
 
 char*
-CFCBindMeth_callback_dec(CFCMethod *method) {
-    CFCType *return_type = CFCMethod_get_return_type(method);
-    const char *ret_type_str = CFCType_to_c(return_type);
-    const char *override_sym = CFCMethod_full_override_sym(method);
-    const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
-
-    char pattern[] =
-        "%s\n"
-        "%s(%s);\n";
-    char *callback_dec
-        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
-
-    return callback_dec;
-}
-
-char*
 CFCBindMeth_imp_declaration(CFCMethod *method) {
     CFCType      *return_type    = CFCMethod_get_return_type(method);
     CFCParamList *param_list     = CFCMethod_get_param_list(method);

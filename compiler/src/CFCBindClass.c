@@ -562,27 +562,6 @@ CFCBindClass_spec_def(CFCBindClass *self) {
     return code;
 }
 
-// Declare host callbacks.
-char*
-CFCBindClass_callback_decs(CFCBindClass *self) {
-    CFCClass   *client        = self->client;
-    CFCMethod **fresh_methods = CFCClass_fresh_methods(client);
-    char       *cb_decs       = CFCUtil_strdup("");
-
-    for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
-        CFCMethod *method = fresh_methods[meth_num];
-
-        // Declare callback.
-        if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-            char *cb_dec = CFCBindMeth_callback_dec(method);
-            cb_decs = CFCUtil_cat(cb_decs, cb_dec, "\n", NULL);
-            FREEMEM(cb_dec);
-        }
-    }
-
-    return cb_decs;
-}
-
 // Declare typedefs for every method, to ease casting.
 static char*
 S_method_typedefs(CFCBindClass *self) {

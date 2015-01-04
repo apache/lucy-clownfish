@@ -441,6 +441,22 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
 }
 
 char*
+CFCPerlMethod_callback_dec(CFCMethod *method) {
+    CFCType *return_type = CFCMethod_get_return_type(method);
+    const char *ret_type_str = CFCType_to_c(return_type);
+    const char *override_sym = CFCMethod_full_override_sym(method);
+    const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
+
+    char pattern[] =
+        "%s\n"
+        "%s(%s);\n";
+    char *callback_dec
+        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
+
+    return callback_dec;
+}
+
+char*
 CFCPerlMethod_callback_def(CFCMethod *method) {
     // Return a callback wrapper that throws an error if there are no
     // bindings for a method.

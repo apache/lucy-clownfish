@@ -62,6 +62,11 @@ CFCPerlMethod_perl_name(struct CFCMethod *method);
 char*
 CFCPerlMethod_xsub_def(CFCPerlMethod *self);
 
+/** Return C code declaring a callback to the Host for this method.
+ */
+char*
+CFCPerlMethod_callback_dec(struct CFCMethod *method);
+
 /** Return C code implementing a callback to Perl for this method.  This code
  * is run when a Perl subclass has overridden a method in a Clownfish base
  * class.

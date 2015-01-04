@@ -54,6 +54,9 @@ static void
 S_replace_double_colons(char *text, char replacement);
 
 static void
+S_write_callbacks_h(CFCPerl *self);
+
+static void
 S_write_callbacks_c(CFCPerl *self);
 
 static const CFCMeta CFCPERL_META = {
@@ -503,12 +506,79 @@ CFCPerl_write_bindings(CFCPerl *self) {
 
 void
 CFCPerl_write_callbacks(CFCPerl *self) {
-    CFCBindCore *core_binding
-        = CFCBindCore_new(self->hierarchy, self->header, self->footer);
-    CFCBindCore_write_callbacks_h(core_binding);
-    CFCBase_decref((CFCBase*)core_binding);
-
+    S_write_callbacks_h(self);
     S_write_callbacks_c(self);
+}
+
+/* Write the "callbacks.h" header file, which contains declarations of host
+ * callbacks.
+ */
+static void
+S_write_callbacks_h(CFCPerl *self) {
+    CFCHierarchy  *hierarchy = self->hierarchy;
+    CFCClass     **ordered   = CFCHierarchy_ordered_classes(hierarchy);
+    char          *includes  = CFCUtil_strdup("");
+    char          *cb_decs   = CFCUtil_strdup("");
+
+    for (int i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+
+        const char *include_h = CFCClass_include_h(klass);
+        includes = CFCUtil_cat(includes, "#include \"", include_h, "\"\n",
+                               NULL);
+
+        if (CFCClass_included(klass)) { continue; }
+
+        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
+        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
+            CFCMethod *method = fresh_methods[meth_num];
+
+            // Declare callback.
+            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
+                char *cb_dec = CFCPerlMethod_callback_dec(method);
+                cb_decs = CFCUtil_cat(cb_decs, cb_dec, "\n", NULL);
+                FREEMEM(cb_dec);
+            }
+        }
+    }
+
+    FREEMEM(ordered);
+
+    const char pattern[] =
+        "%s\n"
+        "#ifndef CFCCALLBACKS_H\n"
+        "#define CFCCALLBACKS_H 1\n"
+        "\n"
+        "#ifdef __cplusplus\n"
+        "extern \"C\" {\n"
+        "#endif\n"
+        "\n"
+        "%s"
+        "\n"
+        "%s"
+        "\n"
+        "#ifdef __cplusplus\n"
+        "}\n"
+        "#endif\n"
+        "\n"
+        "#endif /* CFCCALLBACKS_H */\n"
+        "\n"
+        "%s\n"
+        "\n";
+    char *file_content
+        = CFCUtil_sprintf(pattern, self->c_header, includes, cb_decs,
+                          self->c_footer);
+
+    // Unlink then write file.
+    const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
+    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "callbacks.h", inc_dest);
+    remove(filepath);
+    CFCUtil_write_file(filepath, file_content, strlen(file_content));
+    FREEMEM(filepath);
+
+    FREEMEM(includes);
+    FREEMEM(cb_decs);
+    FREEMEM(file_content);
 }
 
 static void
