@@ -331,66 +331,56 @@ CFCPerlPod_md_to_pod(CFCPerlPod *self, CFCClass *klass, const char *md) {
 static char*
 S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
     char *result = CFCUtil_strdup("");
+    if (node == NULL) {
+        return result;
+    }
 
-    while (node) {
+    cmark_iter *iter = cmark_iter_new(node);
+    cmark_event_type ev_type;
+
+    while (CMARK_EVENT_DONE != (ev_type = cmark_iter_next(iter))) {
+        cmark_node *node = cmark_iter_get_node(iter);
         cmark_node_type type = cmark_node_get_type(node);
 
         switch (type) {
-            case CMARK_NODE_DOCUMENT: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                result = CFCUtil_cat(result, children_pod, NULL);
-                FREEMEM(children_pod);
+            case CMARK_NODE_DOCUMENT:
                 break;
-            }
 
-            case CMARK_NODE_PARAGRAPH: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                result = CFCUtil_cat(result, children_pod, "\n\n", NULL);
-                FREEMEM(children_pod);
+            case CMARK_NODE_PARAGRAPH:
+                if (ev_type == CMARK_EVENT_EXIT) {
+                    result = CFCUtil_cat(result, "\n\n", NULL);
+                }
                 break;
-            }
 
-            case CMARK_NODE_BLOCK_QUOTE: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                result = CFCUtil_cat(result, "=over\n\n", children_pod,
-                                     "\n=back\n\n", NULL);
-                FREEMEM(children_pod);
+            case CMARK_NODE_BLOCK_QUOTE:
+            case CMARK_NODE_LIST:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, "=over\n\n", NULL);
+                }
+                else {
+                    result = CFCUtil_cat(result, "=back\n\n", NULL);
+                }
                 break;
-            }
 
-            case CMARK_NODE_ITEM: {
+            case CMARK_NODE_ITEM:
                 // TODO: Ordered lists.
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                result = CFCUtil_cat(result, "=item *\n\n", children_pod,
-                                     NULL);
-                FREEMEM(children_pod);
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, "=item *\n\n", NULL);
+                }
                 break;
-            }
 
-            case CMARK_NODE_LIST: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                result = CFCUtil_cat(result, "=over\n\n", children_pod,
-                                     "=back\n\n", NULL);
-                FREEMEM(children_pod);
+            case CMARK_NODE_HEADER:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    int header_level = cmark_node_get_header_level(node);
+                    char *header = CFCUtil_sprintf("=head%d ",
+                                                   header_level + 2);
+                    result = CFCUtil_cat(result, header, NULL);
+                    FREEMEM(header);
+                }
+                else {
+                    result = CFCUtil_cat(result, "\n\n", NULL);
+                }
                 break;
-            }
-
-            case CMARK_NODE_HEADER: {
-                cmark_node *child = cmark_node_first_child(node);
-                int header_level = cmark_node_get_header_level(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                char *header = CFCUtil_sprintf("=head%d %s\n\n",
-                                               header_level + 2, children_pod);
-                result = CFCUtil_cat(result, header, NULL);
-                FREEMEM(header);
-                FREEMEM(children_pod);
-                break;
-            }
 
             case CMARK_NODE_CODE_BLOCK: {
                 const char *content = cmark_node_get_literal(node);
@@ -449,41 +439,44 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case CMARK_NODE_LINK: {
-                char *pod = S_convert_link(klass, node);
-                result = CFCUtil_cat(result, pod, NULL);
-                FREEMEM(pod);
+            case CMARK_NODE_LINK:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    char *pod = S_convert_link(klass, node);
+                    result = CFCUtil_cat(result, pod, NULL);
+                    FREEMEM(pod);
+                    cmark_iter_reset(iter, node, CMARK_EVENT_EXIT);
+                }
                 break;
-            }
 
             case CMARK_NODE_IMAGE:
                 CFCUtil_warn("Images not supported in POD");
                 break;
 
-            case CMARK_NODE_STRONG: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                result = CFCUtil_cat(result, "B<", children_pod, ">", NULL);
-                FREEMEM(children_pod);
+            case CMARK_NODE_STRONG:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, "B<", NULL);
+                }
+                else {
+                    result = CFCUtil_cat(result, ">", NULL);
+                }
                 break;
-            }
 
-            case CMARK_NODE_EMPH: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_pod = S_nodes_to_pod(klass, child);
-                result = CFCUtil_cat(result, "I<", children_pod, ">", NULL);
-                FREEMEM(children_pod);
+            case CMARK_NODE_EMPH:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, "I<", NULL);
+                }
+                else {
+                    result = CFCUtil_cat(result, ">", NULL);
+                }
                 break;
-            }
 
             default:
                 CFCUtil_die("Invalid cmark node type: %d", type);
                 break;
         }
-
-        node = cmark_node_next(node);
     }
 
+    cmark_iter_free(iter);
     return result;
 }
 

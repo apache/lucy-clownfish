@@ -762,37 +762,18 @@ S_md_to_html(CFCClass *klass, const char *md) {
 
 static void
 S_convert_uris(CFCClass *klass, cmark_node *node) {
-    cmark_node *cur = node;
+    cmark_iter *iter = cmark_iter_new(node);
+    cmark_event_type ev_type;
 
-    while (cur) {
-        cmark_node_type type = cmark_node_get_type(cur);
+    while (CMARK_EVENT_DONE != (ev_type = cmark_iter_next(iter))) {
+        cmark_node *cur = cmark_iter_get_node(iter);
 
-        // Find the next node in the tree before possibly deleting cur.
-        cmark_node *tree_next = NULL;
-
-        cmark_node *child = cmark_node_first_child(cur);
-        // Don't descend into links.
-        if (type != CMARK_NODE_LINK && child) {
-            tree_next = child;
-        }
-        else {
-            cmark_node *ancestor = cur;
-            while (ancestor != node) {
-                cmark_node *next = cmark_node_next(ancestor);
-                if (next) {
-                    tree_next = next;
-                    break;
-                }
-                ancestor = cmark_node_parent(ancestor);
-            }
-        }
-
-        if (type == NODE_LINK) {
+        if (cmark_node_get_type(cur) == NODE_LINK) {
             S_convert_uri(klass, cur);
         }
-
-        cur = tree_next;
     }
+
+    cmark_iter_free(iter);
 }
 
 static void

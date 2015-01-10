@@ -421,111 +421,80 @@ S_md_to_man(CFCClass *klass, const char *md, int needs_indent) {
 static char*
 S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
     char *result = CFCUtil_strdup("");
+    int level      = needs_indent ? 1 : 0;
     int has_indent = needs_indent;
     int has_vspace = true;
+    cmark_iter *iter = cmark_iter_new(node);
+    cmark_event_type ev_type;
 
-    while (node) {
-        cmark_node_type type = cmark_node_get_type(node);
+    while (CMARK_EVENT_DONE != (ev_type = cmark_iter_next(iter))) {
+        cmark_node      *node = cmark_iter_get_node(iter);
+        cmark_node_type  type = cmark_node_get_type(node);
 
         switch (type) {
-            case CMARK_NODE_DOCUMENT: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child,
-                                                    needs_indent);
-                result = CFCUtil_cat(result, children_man, NULL);
-                FREEMEM(children_man);
+            case CMARK_NODE_DOCUMENT:
                 break;
-            }
 
-            case CMARK_NODE_PARAGRAPH: {
-                if (needs_indent && !has_indent) {
-                    result = CFCUtil_cat(result, ".IP\n", NULL);
-                    has_indent = true;
+            case CMARK_NODE_PARAGRAPH:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    if (level > 0 && !has_indent) {
+                        result = CFCUtil_cat(result, ".IP\n", NULL);
+                        has_indent = true;
+                    }
+                    else if (level == 0 && has_indent) {
+                        result = CFCUtil_cat(result, ".P\n", NULL);
+                        has_indent = false;
+                    }
+                    else if (!has_vspace) {
+                        result = CFCUtil_cat(result, "\n", NULL);
+                    }
                 }
-                else if (!needs_indent && has_indent) {
-                    result = CFCUtil_cat(result, ".P\n", NULL);
-                    has_indent = false;
-                }
-                else if (!has_vspace) {
+                else {
                     result = CFCUtil_cat(result, "\n", NULL);
+                    has_vspace = false;
                 }
-
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child,
-                                                    needs_indent);
-                result = CFCUtil_cat(result, children_man, "\n", NULL);
-                FREEMEM(children_man);
-
-                has_vspace = false;
-
                 break;
-            }
 
-            case CMARK_NODE_BLOCK_QUOTE: {
-                if (needs_indent) {
-                    result = CFCUtil_cat(result, ".RS\n", NULL);
+            case CMARK_NODE_BLOCK_QUOTE:
+            case CMARK_NODE_LIST:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    if (level > 0) {
+                        result = CFCUtil_cat(result, ".RS\n", NULL);
+                        has_indent = false;
+                    }
+                    ++level;
                 }
+                else {
+                    --level;
+                    if (level > 0) {
+                        result = CFCUtil_cat(result, ".RE\n", NULL);
+                        has_indent = false;
+                    }
+                }
+                break;
 
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child, true);
-                result = CFCUtil_cat(result, ".IP\n", children_man, NULL);
-                FREEMEM(children_man);
+            case CMARK_NODE_ITEM:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, ".IP \\(bu\n", NULL);
+                    has_indent = true;
+                    has_vspace = true;
+                }
+                break;
 
-                if (needs_indent) {
-                    result = CFCUtil_cat(result, ".RE\n", NULL);
+            case CMARK_NODE_HEADER:
+                // Only works on top level for now.
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, ".SS\n", NULL);
                     has_indent = false;
                 }
                 else {
-                    has_indent = true;
+                    result = CFCUtil_cat(result, "\n", NULL);
+                    has_vspace = true;
                 }
-
                 break;
-            }
-
-            case CMARK_NODE_ITEM: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child, true);
-                result = CFCUtil_cat(result, ".IP \\(bu\n", children_man,
-                                     NULL);
-                FREEMEM(children_man);
-                break;
-            }
-
-            case CMARK_NODE_LIST: {
-                if (needs_indent) {
-                    result = CFCUtil_cat(result, ".RS\n", NULL);
-                }
-
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child,
-                                                    needs_indent);
-                result = CFCUtil_cat(result, children_man, NULL);
-                FREEMEM(children_man);
-
-                if (needs_indent) {
-                    result = CFCUtil_cat(result, ".RE\n", NULL);
-                    has_indent = false;
-                }
-                else {
-                    has_indent = true;
-                }
-
-                break;
-            }
-
-            case CMARK_NODE_HEADER: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child,
-                                                    needs_indent);
-                result = CFCUtil_cat(result, ".SS\n", children_man, "\n", NULL);
-                FREEMEM(children_man);
-                has_indent = false;
-                has_vspace = true;
-                break;
-            }
 
             case CMARK_NODE_CODE_BLOCK: {
-                if (needs_indent) {
+                if (level > 0) {
                     result = CFCUtil_cat(result, ".RS\n", NULL);
                 }
 
@@ -535,12 +504,13 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                                      ".fam\n.fi\n", NULL);
                 FREEMEM(escaped);
 
-                if (needs_indent) {
+                if (level > 0) {
                     result = CFCUtil_cat(result, ".RE\n", NULL);
                     has_indent = false;
                 }
                 else {
                     has_indent = true;
+                    has_vspace = false;
                 }
 
                 break;
@@ -584,15 +554,13 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
             }
 
             case CMARK_NODE_LINK: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child,
-                                                    needs_indent);
                 const char *url = cmark_node_get_url(node);
+
                 if (CFCUri_is_clownfish_uri(url)) {
-                    if (children_man[0] != '\0') {
-                        result = CFCUtil_cat(result, children_man, NULL);
-                    }
-                    else {
+                    if (ev_type == CMARK_EVENT_ENTER
+                        && !cmark_node_first_child(node)
+                    ) {
+                        // Empty link text.
                         CFCUri *uri_obj = CFCUri_new(url, klass);
                         char *link_text = CFCC_link_text(uri_obj, klass);
                         if (link_text) {
@@ -603,11 +571,15 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                     }
                 }
                 else {
-                    result = CFCUtil_cat(result, "\n.UR ", url, "\n",
-                                         children_man, "\n.UE\n",
-                                         NULL);
+                    if (ev_type == CMARK_EVENT_ENTER) {
+                        result = CFCUtil_cat(result, "\n.UR ", url, "\n",
+                                             NULL);
+                    }
+                    else {
+                        result = CFCUtil_cat(result, "\n.UE\n", NULL);
+                    }
                 }
-                FREEMEM(children_man);
+
                 break;
             }
 
@@ -615,34 +587,31 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 CFCUtil_warn("Images not supported in man pages");
                 break;
 
-            case CMARK_NODE_STRONG: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child,
-                                                    needs_indent);
-                result = CFCUtil_cat(result, "\\fB", children_man, "\\f[]",
-                                     NULL);
-                FREEMEM(children_man);
+            case CMARK_NODE_STRONG:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, "\\fB", NULL);
+                }
+                else {
+                    result = CFCUtil_cat(result, "\\f[]", NULL);
+                }
                 break;
-            }
 
-            case CMARK_NODE_EMPH: {
-                cmark_node *child = cmark_node_first_child(node);
-                char *children_man = S_nodes_to_man(klass, child,
-                                                    needs_indent);
-                result = CFCUtil_cat(result, "\\fI", children_man, "\\f[]",
-                                     NULL);
-                FREEMEM(children_man);
+            case CMARK_NODE_EMPH:
+                if (ev_type == CMARK_EVENT_ENTER) {
+                    result = CFCUtil_cat(result, "\\fI", NULL);
+                }
+                else {
+                    result = CFCUtil_cat(result, "\\f[]", NULL);
+                }
                 break;
-            }
 
             default:
                 CFCUtil_die("Invalid cmark node type: %d", type);
                 break;
         }
-
-        node = cmark_node_next(node);
     }
 
+    cmark_iter_free(iter);
     return result;
 }
 
