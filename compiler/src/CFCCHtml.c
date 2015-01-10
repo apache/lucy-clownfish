@@ -754,7 +754,7 @@ static char*
 S_md_to_html(CFCClass *klass, const char *md) {
     cmark_node *doc = cmark_parse_document(md, strlen(md));
     S_convert_uris(klass, doc);
-    char *html = cmark_render_html(doc);
+    char *html = cmark_render_html(doc, CMARK_OPT_DEFAULT);
     cmark_node_free(doc);
 
     return html;
@@ -831,7 +831,7 @@ S_convert_uri(CFCClass *klass, cmark_node *link) {
 
             if (link_text) {
                 cmark_node *text_node = cmark_node_new(CMARK_NODE_TEXT);
-                cmark_node_set_string_content(text_node, link_text);
+                cmark_node_set_literal(text_node, link_text);
                 cmark_node_append_child(link, text_node);
                 FREEMEM(link_text);
             }

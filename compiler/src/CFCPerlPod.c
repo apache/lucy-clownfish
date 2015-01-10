@@ -336,7 +336,7 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
         cmark_node_type type = cmark_node_get_type(node);
 
         switch (type) {
-            case NODE_DOCUMENT: {
+            case CMARK_NODE_DOCUMENT: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
                 result = CFCUtil_cat(result, children_pod, NULL);
@@ -344,7 +344,7 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_PARAGRAPH: {
+            case CMARK_NODE_PARAGRAPH: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
                 result = CFCUtil_cat(result, children_pod, "\n\n", NULL);
@@ -352,7 +352,7 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_BLOCK_QUOTE: {
+            case CMARK_NODE_BLOCK_QUOTE: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
                 result = CFCUtil_cat(result, "=over\n\n", children_pod,
@@ -361,7 +361,7 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_LIST_ITEM: {
+            case CMARK_NODE_ITEM: {
                 // TODO: Ordered lists.
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
@@ -371,7 +371,7 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_LIST: {
+            case CMARK_NODE_LIST: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
                 result = CFCUtil_cat(result, "=over\n\n", children_pod,
@@ -380,7 +380,7 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_HEADER: {
+            case CMARK_NODE_HEADER: {
                 cmark_node *child = cmark_node_first_child(node);
                 int header_level = cmark_node_get_header_level(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
@@ -392,8 +392,8 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_CODE_BLOCK: {
-                const char *content = cmark_node_get_string_content(node);
+            case CMARK_NODE_CODE_BLOCK: {
+                const char *content = cmark_node_get_literal(node);
                 char *escaped = S_pod_escape(content);
                 // Chomp trailing newline.
                 size_t len = strlen(escaped);
@@ -408,62 +408,59 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_HTML: {
-                const char *html = cmark_node_get_string_content(node);
+            case CMARK_NODE_HTML: {
+                const char *html = cmark_node_get_literal(node);
                 result = CFCUtil_cat(result, "=begin html\n\n", html,
                                      "\n=end\n\n", NULL);
                 break;
             }
 
-            case NODE_HRULE:
+            case CMARK_NODE_HRULE:
                 break;
 
-            case NODE_REFERENCE_DEF:
-                break;
-
-            case NODE_TEXT: {
-                const char *content = cmark_node_get_string_content(node);
+            case CMARK_NODE_TEXT: {
+                const char *content = cmark_node_get_literal(node);
                 char *escaped = S_pod_escape(content);
                 result = CFCUtil_cat(result, escaped, NULL);
                 FREEMEM(escaped);
                 break;
             }
 
-            case NODE_LINEBREAK:
+            case CMARK_NODE_LINEBREAK:
                 // POD doesn't support line breaks. Start a new paragraph.
                 result = CFCUtil_cat(result, "\n\n", NULL);
                 break;
 
-            case NODE_SOFTBREAK:
+            case CMARK_NODE_SOFTBREAK:
                 result = CFCUtil_cat(result, "\n", NULL);
                 break;
 
-            case NODE_INLINE_CODE: {
-                const char *content = cmark_node_get_string_content(node);
+            case CMARK_NODE_CODE: {
+                const char *content = cmark_node_get_literal(node);
                 char *escaped = S_pod_escape(content);
                 result = CFCUtil_cat(result, "C<", escaped, ">", NULL);
                 FREEMEM(escaped);
                 break;
             }
 
-            case NODE_INLINE_HTML: {
-                const char *html = cmark_node_get_string_content(node);
+            case CMARK_NODE_INLINE_HTML: {
+                const char *html = cmark_node_get_literal(node);
                 CFCUtil_warn("Inline HTML not supported in POD: %s", html);
                 break;
             }
 
-            case NODE_LINK: {
+            case CMARK_NODE_LINK: {
                 char *pod = S_convert_link(klass, node);
                 result = CFCUtil_cat(result, pod, NULL);
                 FREEMEM(pod);
                 break;
             }
 
-            case NODE_IMAGE:
+            case CMARK_NODE_IMAGE:
                 CFCUtil_warn("Images not supported in POD");
                 break;
 
-            case NODE_STRONG: {
+            case CMARK_NODE_STRONG: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
                 result = CFCUtil_cat(result, "B<", children_pod, ">", NULL);
@@ -471,7 +468,7 @@ S_nodes_to_pod(CFCClass *klass, cmark_node *node) {
                 break;
             }
 
-            case NODE_EMPH: {
+            case CMARK_NODE_EMPH: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_pod = S_nodes_to_pod(klass, child);
                 result = CFCUtil_cat(result, "I<", children_pod, ">", NULL);

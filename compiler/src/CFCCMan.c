@@ -428,7 +428,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
         cmark_node_type type = cmark_node_get_type(node);
 
         switch (type) {
-            case NODE_DOCUMENT: {
+            case CMARK_NODE_DOCUMENT: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_man = S_nodes_to_man(klass, child,
                                                     needs_indent);
@@ -437,7 +437,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_PARAGRAPH: {
+            case CMARK_NODE_PARAGRAPH: {
                 if (needs_indent && !has_indent) {
                     result = CFCUtil_cat(result, ".IP\n", NULL);
                     has_indent = true;
@@ -461,7 +461,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_BLOCK_QUOTE: {
+            case CMARK_NODE_BLOCK_QUOTE: {
                 if (needs_indent) {
                     result = CFCUtil_cat(result, ".RS\n", NULL);
                 }
@@ -482,7 +482,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_LIST_ITEM: {
+            case CMARK_NODE_ITEM: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_man = S_nodes_to_man(klass, child, true);
                 result = CFCUtil_cat(result, ".IP \\(bu\n", children_man,
@@ -491,7 +491,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_LIST: {
+            case CMARK_NODE_LIST: {
                 if (needs_indent) {
                     result = CFCUtil_cat(result, ".RS\n", NULL);
                 }
@@ -513,7 +513,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_HEADER: {
+            case CMARK_NODE_HEADER: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_man = S_nodes_to_man(klass, child,
                                                     needs_indent);
@@ -524,12 +524,12 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_CODE_BLOCK: {
+            case CMARK_NODE_CODE_BLOCK: {
                 if (needs_indent) {
                     result = CFCUtil_cat(result, ".RS\n", NULL);
                 }
 
-                const char *content = cmark_node_get_string_content(node);
+                const char *content = cmark_node_get_literal(node);
                 char *escaped = S_man_escape(content);
                 result = CFCUtil_cat(result, ".IP\n.nf\n.fam C\n", escaped,
                                      ".fam\n.fi\n", NULL);
@@ -546,47 +546,44 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_HTML:
+            case CMARK_NODE_HTML:
                 CFCUtil_warn("HTML not supported in man pages");
                 break;
 
-            case NODE_HRULE:
+            case CMARK_NODE_HRULE:
                 break;
 
-            case NODE_REFERENCE_DEF:
-                break;
-
-            case NODE_TEXT: {
-                const char *content = cmark_node_get_string_content(node);
+            case CMARK_NODE_TEXT: {
+                const char *content = cmark_node_get_literal(node);
                 char *escaped = S_man_escape(content);
                 result = CFCUtil_cat(result, escaped, NULL);
                 FREEMEM(escaped);
                 break;
             }
 
-            case NODE_LINEBREAK:
+            case CMARK_NODE_LINEBREAK:
                 result = CFCUtil_cat(result, "\n.br\n", NULL);
                 break;
 
-            case NODE_SOFTBREAK:
+            case CMARK_NODE_SOFTBREAK:
                 result = CFCUtil_cat(result, "\n", NULL);
                 break;
 
-            case NODE_INLINE_CODE: {
-                const char *content = cmark_node_get_string_content(node);
+            case CMARK_NODE_CODE: {
+                const char *content = cmark_node_get_literal(node);
                 char *escaped = S_man_escape(content);
                 result = CFCUtil_cat(result, "\\FC", escaped, "\\F[]", NULL);
                 FREEMEM(escaped);
                 break;
             }
 
-            case NODE_INLINE_HTML: {
-                const char *html = cmark_node_get_string_content(node);
+            case CMARK_NODE_INLINE_HTML: {
+                const char *html = cmark_node_get_literal(node);
                 CFCUtil_warn("HTML not supported in man pages: %s", html);
                 break;
             }
 
-            case NODE_LINK: {
+            case CMARK_NODE_LINK: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_man = S_nodes_to_man(klass, child,
                                                     needs_indent);
@@ -614,11 +611,11 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_IMAGE:
+            case CMARK_NODE_IMAGE:
                 CFCUtil_warn("Images not supported in man pages");
                 break;
 
-            case NODE_STRONG: {
+            case CMARK_NODE_STRONG: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_man = S_nodes_to_man(klass, child,
                                                     needs_indent);
@@ -628,7 +625,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
             }
 
-            case NODE_EMPH: {
+            case CMARK_NODE_EMPH: {
                 cmark_node *child = cmark_node_first_child(node);
                 char *children_man = S_nodes_to_man(klass, child,
                                                     needs_indent);
