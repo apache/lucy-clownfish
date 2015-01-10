@@ -17,21 +17,32 @@
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCDocuComment.h"
+#include "CFCCHtml.h"
+#include "CFCCMan.h"
+#include "CFCClass.h"
+#include "CFCParcel.h"
 #include "CFCParser.h"
+#include "CFCPerlClass.h"
+#include "CFCPerlPod.h"
 #include "CFCTest.h"
 #include "CFCUtil.h"
+
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
 
 static void
 S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_DOCU_COMMENT = {
     "Clownfish::CFC::Model::DocuComment",
-    15,
+    18,
     S_run_tests
 };
 
 static void
-S_run_tests(CFCTest *test) {
+S_test_parser(CFCTest *test) {
     CFCDocuComment *docucomment;
 
     docucomment = CFCDocuComment_parse("/** foo. */");
@@ -103,5 +114,187 @@ S_run_tests(CFCTest *test) {
 
     CFCBase_decref((CFCBase*)docucomment);
     CFCBase_decref((CFCBase*)parser);
+}
+
+static void
+S_test_generator(CFCTest *test) {
+    CFCParcel *parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
+    CFCDocuComment *docu = CFCDocuComment_parse(
+        "/** Test documentation generator.\n"
+        " * \n"
+        " * # Heading 1\n"
+        " * \n"
+        " * Paragraph: *emphasized*, **strong**, `code`.\n"
+        " * \n"
+        " * Paragraph: [link](http://example.com/).\n"
+        " * \n"
+        " *     Code 1\n"
+        " *     Code 2\n"
+        " * \n"
+        " * * List item 1\n"
+        " *   * List item 1.1\n"
+        " *     > Blockquote\n"
+        " * \n"
+        " *   Paragraph in list\n"
+        " * \n"
+        " * Paragraph after list\n"
+        " */\n"
+    );
+    CFCClass *klass
+        = CFCClass_create(parcel, "public", "Neato::Object", NULL, NULL,
+                          docu, NULL, NULL, 0, 0);
+
+    char *man_page = CFCCMan_create_man_page(klass);
+    const char *expected_man =
+        ".TH Neato::Object 3\n"
+        ".SH NAME\n"
+        "Neato::Object \\- Test documentation generator.\n"
+        ".SH DESCRIPTION\n"
+        ".SS\n"
+        "Heading 1\n"
+        "Paragraph: \\fIemphasized\\f[], \\fBstrong\\f[], \\FCcode\\F[]\\&.\n"
+        "\n"
+        "Paragraph: \n"
+        ".UR http://example.com/\n"
+        "link\n"
+        ".UE\n"
+        "\\&.\n"
+        ".IP\n"
+        ".nf\n"
+        ".fam C\n"
+        "Code 1\n"
+        "Code 2\n"
+        ".fam\n"
+        ".fi\n"
+        ".IP \\(bu\n"
+        "List item 1\n"
+        ".RS\n"
+        ".IP \\(bu\n"
+        "List item 1.1\n"
+        ".RS\n"
+        ".IP\n"
+        "Blockquote\n"
+        ".RE\n"
+        ".RE\n"
+        ".IP\n"
+        "Paragraph in list\n"
+        ".P\n"
+        "Paragraph after list\n";
+    STR_EQ(test, man_page, expected_man, "create man page");
+
+    char *html = CFCCHtml_create_html_body(klass);
+    const char *expected_html =
+        "<h1>Neato::Object</h1>\n"
+        "<table>\n"
+        "<tr>\n"
+        "<td class=\"label\">parcel</td>\n"
+        "<td><a href=\"neato.html\">Neato</a></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">class name</td>\n"
+        "<td>Neato::Object</td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">class nickname</td>\n"
+        "<td>Object</td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">class variable</td>\n"
+        "<td><code>NEATO_OBJECT</code></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">struct symbol</td>\n"
+        "<td><code>neato_Object</code></td>\n"
+        "</tr>\n"
+        "</table>\n"
+        "<h2>Name</h2>\n"
+        "<p>Neato::Object – Test documentation generator.</p>\n"
+        "<h2>Description</h2>\n"
+        "<h1>Heading 1</h1>\n"
+        "<p>Paragraph: <em>emphasized</em>, <strong>strong</strong>, <code>code</code>.</p>\n"
+        "<p>Paragraph: <a href=\"http://example.com/\">link</a>.</p>\n"
+        "<pre><code>Code 1\n"
+        "Code 2\n"
+        "</code></pre>\n"
+        "<ul>\n"
+        "<li>\n"
+        "<p>List item 1</p>\n"
+        "<ul>\n"
+        "<li>List item 1.1\n"
+        "<blockquote>\n"
+        "<p>Blockquote</p>\n"
+        "</blockquote>\n"
+        "</li>\n"
+        "</ul>\n"
+        "<p>Paragraph in list</p>\n"
+        "</li>\n"
+        "</ul>\n"
+        "<p>Paragraph after list</p>\n";
+    STR_EQ(test, html, expected_html, "create HTML");
+
+    CFCPerlClass *perl_class = CFCPerlClass_new(parcel, "Neato::Object");
+    CFCPerlPod *perl_pod = CFCPerlPod_new();
+    CFCPerlClass_set_pod_spec(perl_class, perl_pod);
+    char *pod = CFCPerlClass_create_pod(perl_class);
+    const char *expected_pod =
+        "=head1 NAME\n"
+        "\n"
+        "Neato::Object - Test documentation generator.\n"
+        "\n"
+        "=head1 DESCRIPTION\n"
+        "\n"
+        "=head3 Heading 1\n"
+        "\n"
+        "Paragraph: I<emphasized>, B<strong>, C<code>.\n"
+        "\n"
+        "Paragraph: L<link|http://example.com/>.\n"
+        "\n"
+        "    Code 1\n"
+        "    Code 2\n"
+        "\n"
+        "=over\n"
+        "\n"
+        "=item *\n"
+        "\n"
+        "List item 1\n"
+        "\n"
+        "=over\n"
+        "\n"
+        "=item *\n"
+        "\n"
+        "List item 1.1\n"
+        "\n"
+        "=over\n"
+        "\n"
+        "Blockquote\n"
+        "\n"
+        "=back\n"
+        "\n"
+        "=back\n"
+        "\n"
+        "Paragraph in list\n"
+        "\n"
+        "=back\n"
+        "\n"
+        "Paragraph after list\n"
+        "\n"
+        "=cut\n"
+        "\n";
+    STR_EQ(test, pod, expected_pod, "create POD");
+
+    FREEMEM(pod);
+    CFCBase_decref((CFCBase*)perl_pod);
+    CFCBase_decref((CFCBase*)perl_class);
+    FREEMEM(html);
+    FREEMEM(man_page);
+    CFCBase_decref((CFCBase*)klass);
+    CFCBase_decref((CFCBase*)docu);
+    CFCBase_decref((CFCBase*)parcel);
+}
+
+static void
+S_run_tests(CFCTest *test) {
+    S_test_parser(test);
+    S_test_generator(test);
 }
 

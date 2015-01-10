@@ -63,6 +63,9 @@ CFCCHtml_create_index_doc(CFCCHtml *self, struct CFCParcel *parcel,
 char*
 CFCCHtml_create_html_doc(CFCCHtml *self, struct CFCClass *klass);
 
+char*
+CFCCHtml_create_html_body(struct CFCClass *klass);
+
 #ifdef __cplusplus
 }
 #endif

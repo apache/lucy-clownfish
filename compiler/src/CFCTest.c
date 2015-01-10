@@ -128,7 +128,6 @@ static const CFCTestBatch *const S_batches[] = {
     &CFCTEST_BATCH_FILE,
     &CFCTEST_BATCH_HIERARCHY,
     &CFCTEST_BATCH_PARSER,
-    &CFCTEST_BATCH_C_MAN,
     NULL
 };
 

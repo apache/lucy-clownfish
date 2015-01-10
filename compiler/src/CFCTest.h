@@ -155,7 +155,6 @@ CFCTest_set_file_times(const char *path, time_t time);
 
 extern const CFCTestBatch CFCTEST_BATCH_CLASS;
 extern const CFCTestBatch CFCTEST_BATCH_C_BLOCK;
-extern const CFCTestBatch CFCTEST_BATCH_C_MAN;
 extern const CFCTestBatch CFCTEST_BATCH_DOCU_COMMENT;
 extern const CFCTestBatch CFCTEST_BATCH_FILE;
 extern const CFCTestBatch CFCTEST_BATCH_FILE_SPEC;

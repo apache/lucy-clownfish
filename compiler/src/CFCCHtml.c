@@ -325,6 +325,22 @@ CFCCHtml_create_index_doc(CFCCHtml *self, CFCParcel *parcel,
 
 char*
 CFCCHtml_create_html_doc(CFCCHtml *self, CFCClass *klass) {
+    const char *class_name     = CFCClass_get_class_name(klass);
+    char *title
+        = CFCUtil_sprintf("%s " UTF8_NDASH " C API Documentation", class_name);
+    char *header = CFCUtil_global_replace(self->header, "{title}", title);
+    char *body = CFCCHtml_create_html_body(klass);
+
+    char *html_doc = CFCUtil_sprintf("%s%s%s", header, body, self->footer);
+
+    FREEMEM(body);
+    FREEMEM(header);
+    FREEMEM(title);
+    return html_doc;
+}
+
+char*
+CFCCHtml_create_html_body(CFCClass *klass) {
     CFCParcel  *parcel         = CFCClass_get_parcel(klass);
     const char *parcel_name    = CFCParcel_get_name(parcel);
     const char *class_name     = CFCClass_get_class_name(klass);
@@ -350,14 +366,10 @@ CFCCHtml_create_html_doc(CFCCHtml *self, CFCClass *klass) {
     // Build an INHERITANCE section describing class ancestry.
     char *inheritance = S_html_create_inheritance(klass);
 
-    char *title
-        = CFCUtil_sprintf("%s " UTF8_NDASH " C API Documentation", class_name);
-    char *header = CFCUtil_global_replace(self->header, "{title}", title);
     char *index_filename = S_index_filename(parcel);
 
     // Put it all together.
     const char pattern[] =
-        "%s"
         "<h1>%s</h1>\n"
         "<table>\n"
         "<tr>\n"
@@ -386,18 +398,14 @@ CFCCHtml_create_html_doc(CFCCHtml *self, CFCClass *klass) {
         "%s"
         "%s"
         "%s"
-        "%s"
         "%s";
-    char *html_doc
-        = CFCUtil_sprintf(pattern, header, class_name, index_filename,
+    char *html_body
+        = CFCUtil_sprintf(pattern, class_name, index_filename,
                           parcel_name, class_name, class_nickname, class_var,
                           struct_sym, name, synopsis, description,
-                          functions_html, methods_html, inheritance,
-                          self->footer);
+                          functions_html, methods_html, inheritance);
 
     FREEMEM(index_filename);
-    FREEMEM(header);
-    FREEMEM(title);
     FREEMEM(name);
     FREEMEM(synopsis);
     FREEMEM(description);
@@ -405,7 +413,7 @@ CFCCHtml_create_html_doc(CFCCHtml *self, CFCClass *klass) {
     FREEMEM(methods_html);
     FREEMEM(inheritance);
 
-    return html_doc;
+    return html_body;
 }
 
 static int
