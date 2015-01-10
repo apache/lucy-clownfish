@@ -2,9 +2,9 @@
 #define CMARK_CHUNK_H
 
 #include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "cmark_ctype.h"
 #include "buffer.h"
 
 typedef struct {
@@ -27,7 +27,7 @@ static inline void cmark_chunk_ltrim(cmark_chunk *c)
 {
 	assert(!c->alloc);
 
-	while (c->len && isspace(c->data[0])) {
+	while (c->len && cmark_isspace(c->data[0])) {
 		c->data++;
 		c->len--;
 	}
@@ -36,7 +36,7 @@ static inline void cmark_chunk_ltrim(cmark_chunk *c)
 static inline void cmark_chunk_rtrim(cmark_chunk *c)
 {
 	while (c->len > 0) {
-		if (!isspace(c->data[c->len - 1]))
+		if (!cmark_isspace(c->data[c->len - 1]))
 			break;
 
 		c->len--;
@@ -106,17 +106,5 @@ static inline cmark_chunk cmark_chunk_buf_detach(cmark_strbuf *buf)
 
 	return c;
 }
-
-// Convenience macros
-#define chunk             cmark_chunk
-#define chunk_free        cmark_chunk_free
-#define chunk_ltrim       cmark_chunk_ltrim
-#define chunk_rtrim       cmark_chunk_rtrim
-#define chunk_trim        cmark_chunk_trim
-#define chunk_strchr      cmark_chunk_strchr
-#define chunk_to_cstr     cmark_chunk_to_cstr
-#define chunk_literal     cmark_chunk_literal
-#define chunk_dup         cmark_chunk_dup
-#define chunk_buf_detach  cmark_chunk_buf_detach
 
 #endif

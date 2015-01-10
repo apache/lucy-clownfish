@@ -9,3 +9,7 @@ typedef char bool;
 #endif
 
 #define CMARK_ATTRIBUTE(list)
+
+#ifndef CHY_HAS_VA_COPY
+  #define va_copy(dest, src) ((dest) = (src))
+#endif

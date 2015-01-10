@@ -2,7 +2,7 @@
 #include "chunk.h"
 #include "scanners.h"
 
-int _scan_at(int (*scanner)(const unsigned char *), chunk *c, int offset)
+int _scan_at(int (*scanner)(const unsigned char *), cmark_chunk *c, int offset)
 {
 	int res;
 	unsigned char *ptr = (unsigned char *)c->data;
@@ -49,7 +49,7 @@ int _scan_at(int (*scanner)(const unsigned char *), chunk *c, int offset)
   opentag = tagname attribute* spacechar* [/]? [>];
   closetag = [/] tagname spacechar* [>];
 
-  htmlcomment = "!--" ([^-\x00]+ | [-][^-\x00]+)* "-->";
+  htmlcomment = "!---->" | ("!--" ([-]? [^\x00>-]) ([-]? [^\x00-])* "-->");
 
   processinginstruction = "?" ([^?>\x00]+ | [?][^>\x00] | [>])* "?>";
 
@@ -216,7 +216,8 @@ int _scan_close_code_fence(const unsigned char *p)
   const unsigned char *marker = NULL;
   const unsigned char *start = p;
 /*!re2c
-  ([`]{3,} | [~]{3,}) / spacechar* [\n] { return (p - start); }
+  [`]{3,} / [ \t]*[\n] { return (p - start); }
+  [~]{3,} / [ \t]*[\n] { return (p - start); }
   .? { return 0; }
 */
 }

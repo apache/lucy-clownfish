@@ -26,7 +26,8 @@ typedef struct {
 	int               fence_length;
 	int               fence_offset;
 	unsigned char     fence_char;
-	cmark_strbuf      info;
+	cmark_chunk       info;
+	cmark_chunk       literal;
 } cmark_code;
 
 typedef struct {
@@ -51,6 +52,7 @@ struct cmark_node {
 	int start_line;
 	int start_column;
 	int end_line;
+	int end_column;
 	bool open;
 	bool last_line_blank;
 
@@ -73,4 +75,3 @@ cmark_node_check(cmark_node *node, FILE *out);
 #endif
 
 #endif
-
