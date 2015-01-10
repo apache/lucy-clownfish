@@ -599,6 +599,10 @@ chaz_HeadCheck_check_header(const char *header_name);
 int
 chaz_HeadCheck_check_many_headers(const char **header_names);
 
+/* Return true if the symbol is defined (possibly as a macro). */
+int
+chaz_HeadCheck_defines_symbol(const char *symbol, const char *includes);
+
 /* Return true if the member is present in the struct. */
 int
 chaz_HeadCheck_contains_member(const char *struct_name, const char *member,
@@ -4205,6 +4209,34 @@ chaz_HeadCheck_check_many_headers(const char **header_names) {
 }
 
 int
+chaz_HeadCheck_defines_symbol(const char *symbol, const char *includes) {
+    /*
+     * Casting function pointers to object pointers like 'char*' is a C
+     * extension, so for a bullet-proof check, a separate test for functions
+     * might be necessary.
+     */
+    static const char defines_code[] =
+        CHAZ_QUOTE(  %s                                            )
+        CHAZ_QUOTE(  int main() {                                  )
+        CHAZ_QUOTE(  #ifdef %s                                     )
+        CHAZ_QUOTE(      return 0;                                 )
+        CHAZ_QUOTE(  #else                                         )
+        CHAZ_QUOTE(      return *(char*)&%s;                       )
+        CHAZ_QUOTE(  #endif                                        )
+        CHAZ_QUOTE(  }                                             );
+    long needed = sizeof(defines_code)
+                  + 2 * strlen(symbol)
+                  + strlen(includes)
+                  + 10;
+    char *buf = (char*)malloc(needed);
+    int retval;
+    sprintf(buf, defines_code, includes, symbol, symbol);
+    retval = chaz_CC_test_compile(buf);
+    free(buf);
+    return retval;
+}
+
+int
 chaz_HeadCheck_contains_member(const char *struct_name, const char *member,
                                const char *includes) {
     static const char contains_code[] =
@@ -7782,6 +7814,11 @@ int main(int argc, const char **argv) {
 
     if (chaz_CLI_defined(cli, "enable-makefile")) {
         S_write_makefile(cli);
+    }
+
+    /* Needed by cmark. */
+    if (chaz_HeadCheck_defines_symbol("va_copy", "#include <stdarg.h>")) {
+        chaz_ConfWriter_append_conf("#define CHY_HAS_VA_COPY\n\n");
     }
 
     /* Clean up. */
