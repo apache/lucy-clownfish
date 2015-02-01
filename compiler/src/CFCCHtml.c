@@ -776,7 +776,9 @@ S_convert_uris(CFCClass *klass, cmark_node *node) {
     while (CMARK_EVENT_DONE != (ev_type = cmark_iter_next(iter))) {
         cmark_node *cur = cmark_iter_get_node(iter);
 
-        if (cmark_node_get_type(cur) == NODE_LINK) {
+        if (ev_type == CMARK_EVENT_EXIT
+            && cmark_node_get_type(cur) == NODE_LINK
+        ) {
             S_convert_uri(klass, cur);
         }
     }
