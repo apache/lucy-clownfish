@@ -183,35 +183,6 @@ Class_Clone_IMP(Class *self) {
     return twin;
 }
 
-Obj*
-Class_Inc_RefCount_IMP(Class *self) {
-    return (Obj*)self;
-}
-
-uint32_t
-Class_Dec_RefCount_IMP(Class *self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-
-uint32_t
-Class_Get_RefCount_IMP(Class *self) {
-    UNUSED_VAR(self);
-    /* Class_Get_RefCount() lies to other Clownfish code about the refcount
-     * because we don't want to have to synchronize access to the cached host
-     * object to which we have delegated responsibility for keeping refcounts.
-     * It always returns 1 because 1 is a positive number, and thus other
-     * Clownfish code will be fooled into believing it never needs to take
-     * action such as initiating a destructor.
-     *
-     * It's possible that the host has in fact increased the refcount of the
-     * cached host object if there are multiple refs to it on the other side
-     * of the Clownfish/host border, but returning 1 is good enough to fool
-     * Clownfish code.
-     */
-    return 1;
-}
-
 void
 Class_Override_IMP(Class *self, cfish_method_t method, size_t offset) {
     union { char *char_ptr; cfish_method_t *func_ptr; } pointer;

@@ -138,15 +138,6 @@ class Clownfish::Class inherits Clownfish::Obj {
     public incremented Class*
     Clone(Class *self);
 
-    incremented Obj*
-    Inc_RefCount(Class *self);
-
-    uint32_t
-    Dec_RefCount(Class *self);
-
-    uint32_t
-    Get_RefCount(Class *self);
-
     void*
     To_Host(Class *self);
 

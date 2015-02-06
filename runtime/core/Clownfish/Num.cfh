@@ -260,12 +260,6 @@ class Clownfish::BoolNum nickname Bool inherits Clownfish::IntNum {
 
     public incremented String*
     To_String(BoolNum *self);
-
-    incremented BoolNum*
-    Inc_RefCount(BoolNum *self);
-
-    uint32_t
-    Dec_RefCount(BoolNum *self);
 }
 
 __C__

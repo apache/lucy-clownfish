@@ -353,23 +353,3 @@ Hash_get_tombstone() {
     return TOMBSTONE;
 }
 
-/***************************************************************************/
-
-uint32_t
-HashTombStone_Get_RefCount_IMP(HashTombStone* self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-
-HashTombStone*
-HashTombStone_Inc_RefCount_IMP(HashTombStone* self) {
-    return self;
-}
-
-uint32_t
-HashTombStone_Dec_RefCount_IMP(HashTombStone* self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-
-

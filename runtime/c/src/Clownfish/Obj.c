@@ -27,14 +27,44 @@ Obj_Get_RefCount_IMP(Obj *self) {
     return self->refcount;
 }
 
+static CFISH_INLINE bool
+SI_immortal(cfish_Class *klass) {
+    if (klass == CFISH_CLASS
+        || klass == CFISH_METHOD
+        || klass == CFISH_BOOLNUM
+        || klass == CFISH_HASHTOMBSTONE
+       ){
+        return true;
+    }
+    return false;
+}
+
+Obj*
+cfish_inc_refcount(void *vself) {
+    Obj *self = (Obj*)vself;
+    cfish_Class *const klass = self->klass;
+    if (SI_immortal(klass)) {
+        return self;
+    }
+    else {
+        self->refcount++;
+        return self;
+    }
+}
+
 Obj*
 Obj_Inc_RefCount_IMP(Obj *self) {
-    self->refcount++;
-    return self;
+    return cfish_inc_refcount(self);
 }
 
 uint32_t
-Obj_Dec_RefCount_IMP(Obj *self) {
+cfish_dec_refcount(void *vself) {
+    cfish_Obj *self = (Obj*)vself;
+    cfish_Class *klass = self->klass;
+    if (SI_immortal(klass)) {
+        return self->refcount;
+    }
+
     uint32_t modified_refcount = INT32_MAX;
     switch (self->refcount) {
         case 0:
@@ -49,6 +79,11 @@ Obj_Dec_RefCount_IMP(Obj *self) {
             break;
     }
     return modified_refcount;
+}
+
+uint32_t
+Obj_Dec_RefCount_IMP(Obj *self) {
+    return cfish_dec_refcount(self);
 }
 
 void*

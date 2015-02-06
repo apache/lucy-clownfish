@@ -44,24 +44,6 @@ Method_Destroy_IMP(Method *self) {
     THROW(ERR, "Insane attempt to destroy Method '%o'", self->name);
 }
 
-Obj*
-Method_Inc_RefCount_IMP(Method *self) {
-    return (Obj*)self;
-}
-
-uint32_t
-Method_Dec_RefCount_IMP(Method *self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-
-uint32_t
-Method_Get_RefCount_IMP(Method *self) {
-    UNUSED_VAR(self);
-    // See comments in Class.c
-    return 1;
-}
-
 String*
 Method_Get_Name_IMP(Method *self) {
     return self->name;

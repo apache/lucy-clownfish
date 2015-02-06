@@ -596,6 +596,18 @@ XSBind_allot_params(SV** stack, int32_t start, int32_t num_stack_elems, ...) {
 
 /**************************** Clownfish::Obj *******************************/
 
+static CFISH_INLINE bool
+SI_immortal(cfish_Class *klass) {
+    if (klass == CFISH_CLASS
+        || klass == CFISH_METHOD
+        || klass == CFISH_BOOLNUM
+        || klass == CFISH_HASHTOMBSTONE
+       ){
+        return true;
+    }
+    return false;
+}
+
 static void
 S_lazy_init_host_obj(cfish_Obj *self) {
     SV *inner_obj = newSV(0);
@@ -630,7 +642,13 @@ CFISH_Obj_Get_RefCount_IMP(cfish_Obj *self) {
 }
 
 cfish_Obj*
-CFISH_Obj_Inc_RefCount_IMP(cfish_Obj *self) {
+cfish_inc_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
+    cfish_Class *const klass = self->klass;
+    if (SI_immortal(klass)) {
+        return self;
+    }
+
     if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
         if (self->ref.count == XSBIND_REFCOUNT_FLAG) {
             CFISH_THROW(CFISH_ERR, "Illegal refcount of 0");
@@ -643,8 +661,19 @@ CFISH_Obj_Inc_RefCount_IMP(cfish_Obj *self) {
     return self;
 }
 
+cfish_Obj*
+CFISH_Obj_Inc_RefCount_IMP(cfish_Obj *self) {
+    return cfish_inc_refcount(self);
+}
+
 uint32_t
-CFISH_Obj_Dec_RefCount_IMP(cfish_Obj *self) {
+cfish_dec_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
+    cfish_Class *klass = self->klass;
+    if (SI_immortal(klass)) {
+        return 1;
+    }
+
     uint32_t modified_refcount = I32_MAX;
     if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
         if (self->ref.count == XSBIND_REFCOUNT_FLAG) {
@@ -667,6 +696,11 @@ CFISH_Obj_Dec_RefCount_IMP(cfish_Obj *self) {
         SvREFCNT_dec((SV*)self->ref.host_obj);
     }
     return modified_refcount;
+}
+
+uint32_t
+CFISH_Obj_Dec_RefCount_IMP(cfish_Obj *self) {
+    return cfish_dec_refcount(self);
 }
 
 void*

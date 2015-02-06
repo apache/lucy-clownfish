@@ -46,15 +46,6 @@ class Clownfish::Method inherits Clownfish::Obj {
     incremented String*
     Host_Name(Method *self);
 
-    incremented Obj*
-    Inc_RefCount(Method *self);
-
-    uint32_t
-    Dec_RefCount(Method *self);
-
-    uint32_t
-    Get_RefCount(Method *self);
-
     public void
     Destroy(Method *self);
 }
