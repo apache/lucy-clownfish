@@ -120,7 +120,7 @@ like( $object->to_string, qr/STRING:.*?SonOfTestObj/,
     "overridden XS bindings can be called via SUPER" );
 
 SKIP: {
-    skip( "Exception thrown within callback leaks", 1 )
+    skip( "Exception thrown within callback leaks", 2 )
         if $ENV{LUCY_VALGRIND};
 
     # The Perl binding for VArray#store calls inc_refcount() from C space.
@@ -132,10 +132,10 @@ SKIP: {
     eval { $array->store( 1, BadRefCount->new ); };
     like( $@, qr/NULL/,
         "Don't allow methods without nullable return values to return NULL" );
-}
 
-eval { InvalidCallbackTestObj->new; };
-like( $@, qr/Can't override CFISH_Obj_To_Host via binding/ );
+    eval { InvalidCallbackTestObj->new; };
+    like( $@, qr/Can't override CFISH_Obj_To_Host via binding/ );
+}
 
 my $alias_test = Clownfish::Test::AliasTestObj->new;
 is( $alias_test->perl_alias, 'C', "Host method aliases work" );
