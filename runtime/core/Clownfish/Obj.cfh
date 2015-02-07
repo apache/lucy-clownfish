@@ -112,6 +112,11 @@ public class Clownfish::Obj {
 }
 
 __C__
+
+typedef void
+(*cfish_destroy_t)(void *vself);
+extern CFISH_VISIBLE size_t CFISH_Obj_Destroy_OFFSET;
+
 /** Invoke the [](cfish:.Destroy) method found in `klass` on
  * `self`.
  *
@@ -121,8 +126,8 @@ static CFISH_INLINE void
 cfish_super_destroy(void *vself, cfish_Class *klass) {
     cfish_Obj *self = (cfish_Obj*)vself;
     if (self != NULL) {
-        CFISH_Obj_Destroy_t super_destroy
-            = CFISH_SUPER_METHOD_PTR(klass, CFISH_Obj_Destroy);
+        cfish_destroy_t super_destroy
+            = (cfish_destroy_t)cfish_super_method(klass, CFISH_Obj_Destroy_OFFSET);
         super_destroy(self);
     }
 }
