@@ -185,7 +185,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "#include \"cfish_hostdefs.h\"\n";
 
     // Special definitions for Clownfish parcel.
-    const char *cfish_defs =
+    const char *cfish_defs_1 =
         "#define CFISH_UNUSED_VAR(var) ((void)var)\n"
         "#define CFISH_UNREACHABLE_RETURN(type) return (type)0\n"
         "\n"
@@ -234,6 +234,70 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "    return cfish_method(*parent_ptr, offset);\n"
         "}\n"
         "\n"
+        "typedef void\n"
+        "(*cfish_destroy_t)(void *vself);\n"
+        "extern CFISH_VISIBLE size_t CFISH_Obj_Destroy_OFFSET;\n"
+        "\n"
+        "/** Invoke the [](cfish:.Destroy) method found in `klass` on\n"
+        " * `self`.\n"
+        " *\n"
+        " * TODO: Eliminate this function if we can arrive at a proper SUPER syntax.\n"
+        " */\n"
+        "static CFISH_INLINE void\n"
+        "cfish_super_destroy(void *vself, cfish_Class *klass) {\n"
+        "    cfish_Obj *self = (cfish_Obj*)vself;\n"
+        "    if (self != NULL) {\n"
+        "        cfish_destroy_t super_destroy\n"
+        "            = (cfish_destroy_t)cfish_super_method(klass, CFISH_Obj_Destroy_OFFSET);\n"
+        "        super_destroy(self);\n"
+        "    }\n"
+        "}\n"
+        "\n"
+        "#define CFISH_SUPER_DESTROY(_self, _class) \\\n"
+        "    cfish_super_destroy(_self, _class)\n"
+        "\n"
+        "extern CFISH_VISIBLE cfish_Obj*\n"
+        "cfish_inc_refcount(void *vself);\n"
+        "\n"
+        "/** NULL-safe invocation invocation of `cfish_inc_refcount`.\n"
+        " *\n"
+        " * @return NULL if `self` is NULL, otherwise the return value\n"
+        " * of `cfish_inc_refcount`.\n"
+        " */\n"
+        "static CFISH_INLINE cfish_Obj*\n"
+        "cfish_incref(void *vself) {\n"
+        "    if (vself != NULL) { return cfish_inc_refcount(vself); }\n"
+        "    else { return NULL; }\n"
+        "}\n"
+        "\n"
+        "#define CFISH_INCREF(_self) cfish_incref(_self)\n"
+        "#define CFISH_INCREF_NN(_self) cfish_inc_refcount(_self)\n"
+        "\n"
+        "extern CFISH_VISIBLE uint32_t\n"
+        "cfish_dec_refcount(void *vself);\n"
+        "\n"
+        "/** NULL-safe invocation of `cfish_dec_refcount`.\n"
+        " *\n"
+        " * @return NULL if `self` is NULL, otherwise the return value\n"
+        " * of `cfish_dec_refcount`.\n"
+        " */\n"
+        "static CFISH_INLINE uint32_t\n"
+        "cfish_decref(void *vself) {\n"
+        "    if (vself != NULL) { return cfish_dec_refcount(vself); }\n"
+        "    else { return 0; }\n"
+        "}\n"
+        "\n"
+        "#define CFISH_DECREF(_self) cfish_decref(_self)\n"
+        "#define CFISH_DECREF_NN(_self) cfish_dec_refcount(_self)\n"
+        "\n"
+        "extern CFISH_VISIBLE uint32_t\n"
+        "cfish_get_refcount(void *vself);\n"
+        "\n"
+        "#define CFISH_REFCOUNT_NN(_self) \\\n"
+        "    cfish_get_refcount(_self)\n"
+        "\n"
+        ;
+    const char *cfish_defs_2 =
         "/* Structs for Class initialization.\n"
         " */\n"
         "\n"
@@ -274,17 +338,23 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "  #define UNREACHABLE_RETURN       CFISH_UNREACHABLE_RETURN\n"
         "  #define METHOD_PTR               CFISH_METHOD_PTR\n"
         "  #define SUPER_METHOD_PTR         CFISH_SUPER_METHOD_PTR\n"
+        "  #define SUPER_DESTROY(_self, _class) CFISH_SUPER_DESTROY(_self, _class)\n"
+        "  #define INCREF(_self)                CFISH_INCREF(_self)\n"
+        "  #define INCREF_NN(_self)             CFISH_INCREF_NN(_self)\n"
+        "  #define DECREF(_self)                CFISH_DECREF(_self)\n"
+        "  #define DECREF_NN(_self)             CFISH_DECREF_NN(_self)\n"
+        "  #define REFCOUNT_NN(_self)           CFISH_REFCOUNT_NN(_self)\n"
         "#endif\n"
         "\n";
 
     const char *extra_defs;
     char *extra_includes;
     if (strcmp(prefix, "cfish_") == 0) {
-        extra_defs = cfish_defs;
+        extra_defs = CFCUtil_sprintf("%s%s", cfish_defs_1, cfish_defs_2);
         extra_includes = CFCUtil_strdup(cfish_includes);
     }
     else {
-        extra_defs = "";
+        extra_defs = CFCUtil_strdup("");
         extra_includes = CFCUtil_strdup("");
 
         // Include parcel.h of prerequisite parcels.
