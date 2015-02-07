@@ -40,28 +40,12 @@ public class Clownfish::Obj {
     incremented Obj*
     Inc_RefCount(Obj *self);
 
-    /** NULL-safe invocation of [](cfish:.Inc_RefCount).
-     *
-     * @return NULL if `self` is NULL, otherwise the return value
-     * of [](cfish:.Inc_RefCount).
-     */
-    inert inline incremented Obj*
-    incref(Obj *self);
-
     /** Decrement an object's refcount, calling [](cfish:.Destroy) if it hits 0.
      *
      * @return the modified refcount.
      */
     uint32_t
     Dec_RefCount(Obj *self);
-
-    /** NULL-safe invocation of [](cfish:.Dec_RefCount).
-     *
-     * @return NULL if `self` is NULL, otherwise the return value
-     * of [](cfish:.Dec_RefCount).
-     */
-    inert inline uint32_t
-    decref(Obj *self);
 
     /** Return a host-language object wrapper for this object.
      */
@@ -78,14 +62,6 @@ public class Clownfish::Obj {
      */
     public void
     Destroy(Obj *self);
-
-    /** Invoke the [](cfish:.Destroy) method found in `klass` on
-     * `self`.
-     *
-     * TODO: Eliminate this function if we can arrive at a proper SUPER syntax.
-     */
-    inert inline void
-    super_destroy(Obj *self, Class *klass);
 
     /** Indicate whether two objects are the same.  By default, compares the
      * memory address.
@@ -155,32 +131,52 @@ public class Clownfish::Obj {
 }
 
 __C__
+/** Invoke the [](cfish:.Destroy) method found in `klass` on
+ * `self`.
+ *
+ * TODO: Eliminate this function if we can arrive at a proper SUPER syntax.
+ */
 static CFISH_INLINE void
-cfish_Obj_super_destroy(cfish_Obj *self, cfish_Class *klass) {
-    CFISH_Obj_Destroy_t super_destroy
-        = CFISH_SUPER_METHOD_PTR(klass, CFISH_Obj_Destroy);
-    super_destroy(self);
+cfish_super_destroy(void *vself, cfish_Class *klass) {
+    cfish_Obj *self = (cfish_Obj*)vself;
+    if (self != NULL) {
+        CFISH_Obj_Destroy_t super_destroy
+            = CFISH_SUPER_METHOD_PTR(klass, CFISH_Obj_Destroy);
+        super_destroy(self);
+    }
 }
 
 #define CFISH_SUPER_DESTROY(_self, _class) \
-    cfish_Obj_super_destroy((cfish_Obj*)_self, _class)
+    cfish_super_destroy(_self, _class)
 
+/** NULL-safe invocation of [](cfish:.Inc_RefCount).
+ *
+ * @return NULL if `self` is NULL, otherwise the return value
+ * of [](cfish:.Inc_RefCount).
+ */
 static CFISH_INLINE cfish_Obj*
-cfish_Obj_incref(cfish_Obj *self) {
+cfish_incref(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
     if (self != NULL) { return CFISH_Obj_Inc_RefCount(self); }
     else { return NULL; }
 }
 
-#define CFISH_INCREF(_self) cfish_Obj_incref((cfish_Obj*)_self)
+#define CFISH_INCREF(_self) cfish_incref(_self)
 #define CFISH_INCREF_NN(_self) CFISH_Obj_Inc_RefCount((cfish_Obj*)_self)
 
+/** NULL-safe invocation of [](cfish:.Dec_RefCount).
+ *
+ * @return NULL if `self` is NULL, otherwise the return value
+ * of [](cfish:.Dec_RefCount).
+ */
 static CFISH_INLINE uint32_t
-cfish_Obj_decref(cfish_Obj *self) {
+cfish_decref(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
     if (self != NULL) { return CFISH_Obj_Dec_RefCount(self); }
     else { return 0; }
 }
 
-#define CFISH_DECREF(_self) cfish_Obj_decref((cfish_Obj*)_self)
+#define CFISH_DECREF(_self) cfish_decref(_self)
 #define CFISH_DECREF_NN(_self) CFISH_Obj_Dec_RefCount((cfish_Obj*)_self)
 
 static CFISH_INLINE uint32_t
