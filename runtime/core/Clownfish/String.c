@@ -169,18 +169,9 @@ S_new_substring(String *string, size_t byte_offset, size_t size) {
     return self;
 }
 
-Obj*
-Str_Inc_RefCount_IMP(String *self) {
-    if (self->origin == NULL) {
-        // Copy wrapped strings when the refcount is increased.
-        String *copy = (String*)Class_Make_Obj(STRING);
-        return (Obj*)Str_init_from_trusted_utf8(copy, self->ptr, self->size);
-    }
-    else {
-        Str_Inc_RefCount_t super_incref
-            = SUPER_METHOD_PTR(STRING, CFISH_Str_Inc_RefCount);
-        return super_incref(self);
-    }
+bool
+Str_Is_Copy_On_IncRef_IMP(String *self) {
+    return self->origin == NULL;
 }
 
 void

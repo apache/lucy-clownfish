@@ -21,6 +21,7 @@
 
 #include "Clownfish/Obj.h"
 #include "Clownfish/Err.h"
+#include "Clownfish/String.h"
 
 uint32_t
 Obj_Get_RefCount_IMP(Obj *self) {
@@ -39,12 +40,27 @@ SI_immortal(cfish_Class *klass) {
     return false;
 }
 
+static CFISH_INLINE bool
+SI_is_string(cfish_Class *klass) {
+    if (klass == CFISH_STRING || klass == CFISH_STACKSTRING) {
+        return true;
+    }
+    return false;
+}
+
 Obj*
 cfish_inc_refcount(void *vself) {
     Obj *self = (Obj*)vself;
     cfish_Class *const klass = self->klass;
     if (SI_immortal(klass)) {
         return self;
+    }
+    else if (SI_is_string(klass)
+             && CFISH_Str_Is_Copy_On_IncRef((cfish_String*)self)
+            ) {
+        const char *utf8 = CFISH_Str_Get_Ptr8((cfish_String*)self);
+        size_t size = CFISH_Str_Get_Size((cfish_String*)self);
+        return (cfish_Obj*)cfish_Str_new_from_trusted_utf8(utf8, size);
     }
     else {
         self->refcount++;

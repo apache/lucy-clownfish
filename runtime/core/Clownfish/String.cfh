@@ -203,8 +203,8 @@ class Clownfish::String nickname Str
     public incremented String*
     Clone(String *self);
 
-    incremented Obj*
-    Inc_RefCount(String *self);
+    bool
+    Is_Copy_On_IncRef(String *self);
 
     public void
     Destroy(String *self);
