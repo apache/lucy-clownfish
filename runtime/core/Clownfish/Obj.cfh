@@ -28,25 +28,6 @@ public class Clownfish::Obj {
     public inert Obj*
     init(Obj* self);
 
-    /** Return an object's refcount.
-     */
-    uint32_t
-    Get_RefCount(Obj *self);
-
-    /** Increment an object's refcount.
-     *
-     * @return The object, allowing an assignment idiom.
-     */
-    incremented Obj*
-    Inc_RefCount(Obj *self);
-
-    /** Decrement an object's refcount, calling [](cfish:.Destroy) if it hits 0.
-     *
-     * @return the modified refcount.
-     */
-    uint32_t
-    Dec_RefCount(Obj *self);
-
     /** Return a host-language object wrapper for this object.
      */
     void*
@@ -149,43 +130,45 @@ cfish_super_destroy(void *vself, cfish_Class *klass) {
 #define CFISH_SUPER_DESTROY(_self, _class) \
     cfish_super_destroy(_self, _class)
 
-/** NULL-safe invocation of [](cfish:.Inc_RefCount).
+extern CFISH_VISIBLE cfish_Obj*
+cfish_inc_refcount(void *vself);
+
+/** NULL-safe invocation invocation of `cfish_inc_refcount`.
  *
  * @return NULL if `self` is NULL, otherwise the return value
- * of [](cfish:.Inc_RefCount).
+ * of `cfish_inc_refcount`.
  */
 static CFISH_INLINE cfish_Obj*
 cfish_incref(void *vself) {
-    cfish_Obj *self = (cfish_Obj*)vself;
-    if (self != NULL) { return CFISH_Obj_Inc_RefCount(self); }
+    if (vself != NULL) { return cfish_inc_refcount(vself); }
     else { return NULL; }
 }
 
 #define CFISH_INCREF(_self) cfish_incref(_self)
-#define CFISH_INCREF_NN(_self) CFISH_Obj_Inc_RefCount((cfish_Obj*)_self)
+#define CFISH_INCREF_NN(_self) cfish_inc_refcount(_self)
 
-/** NULL-safe invocation of [](cfish:.Dec_RefCount).
+extern CFISH_VISIBLE uint32_t
+cfish_dec_refcount(void *vself);
+
+/** NULL-safe invocation of `cfish_dec_refcount`.
  *
  * @return NULL if `self` is NULL, otherwise the return value
- * of [](cfish:.Dec_RefCount).
+ * of `cfish_dec_refcount`.
  */
 static CFISH_INLINE uint32_t
 cfish_decref(void *vself) {
-    cfish_Obj *self = (cfish_Obj*)vself;
-    if (self != NULL) { return CFISH_Obj_Dec_RefCount(self); }
+    if (vself != NULL) { return cfish_dec_refcount(vself); }
     else { return 0; }
 }
 
 #define CFISH_DECREF(_self) cfish_decref(_self)
-#define CFISH_DECREF_NN(_self) CFISH_Obj_Dec_RefCount((cfish_Obj*)_self)
+#define CFISH_DECREF_NN(_self) cfish_dec_refcount(_self)
 
-static CFISH_INLINE uint32_t
-cfish_refcount(void *vself) {
-    return CFISH_Obj_Get_RefCount((cfish_Obj*)vself);
-}
+extern CFISH_VISIBLE uint32_t
+cfish_get_refcount(void *vself);
 
 #define CFISH_REFCOUNT_NN(_self) \
-    cfish_refcount(_self)
+    cfish_get_refcount(_self)
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define SUPER_DESTROY(_self, _class)    CFISH_SUPER_DESTROY(_self, _class)

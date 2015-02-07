@@ -643,7 +643,8 @@ S_lazy_init_host_obj(cfish_Obj *self) {
 }
 
 uint32_t
-CFISH_Obj_Get_RefCount_IMP(cfish_Obj *self) {
+cfish_get_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
     return self->ref.count & XSBIND_REFCOUNT_FLAG
            ? self->ref.count >> XSBIND_REFCOUNT_SHIFT
            : SvREFCNT((SV*)self->ref.host_obj);
@@ -676,11 +677,6 @@ cfish_inc_refcount(void *vself) {
     return self;
 }
 
-cfish_Obj*
-CFISH_Obj_Inc_RefCount_IMP(cfish_Obj *self) {
-    return cfish_inc_refcount(self);
-}
-
 uint32_t
 cfish_dec_refcount(void *vself) {
     cfish_Obj *self = (cfish_Obj*)vself;
@@ -711,11 +707,6 @@ cfish_dec_refcount(void *vself) {
         SvREFCNT_dec((SV*)self->ref.host_obj);
     }
     return modified_refcount;
-}
-
-uint32_t
-CFISH_Obj_Dec_RefCount_IMP(cfish_Obj *self) {
-    return cfish_dec_refcount(self);
 }
 
 void*

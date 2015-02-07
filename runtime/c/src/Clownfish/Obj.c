@@ -24,7 +24,8 @@
 #include "Clownfish/String.h"
 
 uint32_t
-Obj_Get_RefCount_IMP(Obj *self) {
+cfish_get_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
     return self->refcount;
 }
 
@@ -68,11 +69,6 @@ cfish_inc_refcount(void *vself) {
     }
 }
 
-Obj*
-Obj_Inc_RefCount_IMP(Obj *self) {
-    return cfish_inc_refcount(self);
-}
-
 uint32_t
 cfish_dec_refcount(void *vself) {
     cfish_Obj *self = (Obj*)vself;
@@ -95,11 +91,6 @@ cfish_dec_refcount(void *vself) {
             break;
     }
     return modified_refcount;
-}
-
-uint32_t
-Obj_Dec_RefCount_IMP(Obj *self) {
-    return cfish_dec_refcount(self);
 }
 
 void*
