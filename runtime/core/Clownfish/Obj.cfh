@@ -172,6 +172,7 @@ cfish_Obj_incref(cfish_Obj *self) {
 }
 
 #define CFISH_INCREF(_self) cfish_Obj_incref((cfish_Obj*)_self)
+#define CFISH_INCREF_NN(_self) CFISH_Obj_Inc_RefCount((cfish_Obj*)_self)
 
 static CFISH_INLINE uint32_t
 cfish_Obj_decref(cfish_Obj *self) {
@@ -180,11 +181,23 @@ cfish_Obj_decref(cfish_Obj *self) {
 }
 
 #define CFISH_DECREF(_self) cfish_Obj_decref((cfish_Obj*)_self)
+#define CFISH_DECREF_NN(_self) CFISH_Obj_Dec_RefCount((cfish_Obj*)_self)
+
+static CFISH_INLINE uint32_t
+cfish_refcount(void *vself) {
+    return CFISH_Obj_Get_RefCount((cfish_Obj*)vself);
+}
+
+#define CFISH_REFCOUNT_NN(_self) \
+    cfish_refcount(_self)
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define SUPER_DESTROY(_self, _class)    CFISH_SUPER_DESTROY(_self, _class)
   #define INCREF(_self)                   CFISH_INCREF(_self)
+  #define INCREF_NN(_self)                CFISH_INCREF_NN(_self)
   #define DECREF(_self)                   CFISH_DECREF(_self)
+  #define DECREF_NN(_self)                CFISH_DECREF_NN(_self)
+  #define REFCOUNT_NN(_self)              CFISH_REFCOUNT_NN(_self)
 #endif
 
 __END_C__

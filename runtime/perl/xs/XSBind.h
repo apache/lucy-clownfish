@@ -100,7 +100,7 @@ cfish_XSBind_cfish_obj_to_sv_noinc(cfish_Obj *obj) {
     SV *retval;
     if (obj) {
         retval = (SV*)CFISH_Obj_To_Host(obj);
-        CFISH_Obj_Dec_RefCount(obj);
+        CFISH_DECREF_NN(obj);
     }
     else {
         retval = newSV(0);

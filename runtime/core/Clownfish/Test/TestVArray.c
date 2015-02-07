@@ -89,10 +89,10 @@ test_Store_Fetch(TestBatchRunner *runner) {
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Store");
 
     elem = (String*)INCREF(elem);
-    TEST_INT_EQ(runner, 2, Str_Get_RefCount(elem),
+    TEST_INT_EQ(runner, 2, CFISH_REFCOUNT_NN(elem),
                 "start with refcount of 2");
     VA_Store(array, 2, (Obj*)Str_newf("bar"));
-    TEST_INT_EQ(runner, 1, Str_Get_RefCount(elem),
+    TEST_INT_EQ(runner, 1, CFISH_REFCOUNT_NN(elem),
                 "Displacing elem via Store updates refcount");
     DECREF(elem);
     elem = (String*)CERTIFY(VA_Fetch(array, 2), STRING);

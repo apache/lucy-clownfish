@@ -50,14 +50,14 @@ static void
 test_refcounts(TestBatchRunner *runner) {
     Obj *obj = S_new_testobj();
 
-    TEST_INT_EQ(runner, Obj_Get_RefCount(obj), 1,
+    TEST_INT_EQ(runner, CFISH_REFCOUNT_NN(obj), 1,
                 "Correct starting refcount");
 
-    obj = Obj_Inc_RefCount(obj);
-    TEST_INT_EQ(runner, Obj_Get_RefCount(obj), 2, "Inc_RefCount");
+    obj = CFISH_INCREF_NN(obj);
+    TEST_INT_EQ(runner, CFISH_REFCOUNT_NN(obj), 2, "INCREF_NN");
 
-    Obj_Dec_RefCount(obj);
-    TEST_INT_EQ(runner, Obj_Get_RefCount(obj), 1, "Dec_RefCount");
+    CFISH_DECREF_NN(obj);
+    TEST_INT_EQ(runner, CFISH_REFCOUNT_NN(obj), 1, "DECREF_NN");
 
     DECREF(obj);
 }

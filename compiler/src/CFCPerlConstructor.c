@@ -134,7 +134,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         "    retval = %s(%s);\n"
         "    if (retval) {\n"
         "        ST(0) = (SV*)CFISH_Obj_To_Host((cfish_Obj*)retval);\n"
-        "        CFISH_Obj_Dec_RefCount((cfish_Obj*)retval);\n"
+        "        CFISH_DECREF_NN(retval);\n"
         "    }\n"
         "    else {\n"
         "        ST(0) = newSV(0);\n"
