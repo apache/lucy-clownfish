@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 21;
 
 package TestObj;
 use base qw( Clownfish::Obj );
@@ -102,15 +102,16 @@ my $stringified_perl_obj = "$object";
 require Clownfish::Hash;
 my $hash = Clownfish::Hash->new;
 $hash->store( foo => $object );
-is( $object->get_refcount, 2, "refcount increased via C code" );
-is( $object->get_refcount, 2, "refcount increased via C code" );
+is( Clownfish::Test::refcount($object), 2, "refcount increased via C code" );
 undef $object;
 $object = $hash->fetch("foo");
 is( "$object", $stringified_perl_obj, "same perl object as before" );
 
-is( $object->get_refcount, 2, "correct refcount after retrieval" );
+is( Clownfish::Test::refcount($object),
+    2, "correct refcount after retrieval" );
 undef $hash;
-is( $object->get_refcount, 1, "correct refcount after destruction of ref" );
+is( Clownfish::Test::refcount($object),
+    1, "correct refcount after destruction of ref" );
 
 $object = SonOfTestObj->new;
 like( $object->to_string, qr/STRING:.*?SonOfTestObj/,
