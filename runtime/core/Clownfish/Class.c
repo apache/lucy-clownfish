@@ -93,9 +93,20 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
 
         klass->parent           = parent;
         klass->parcel_id        = parcel_id;
-        klass->flags            = 0;
         klass->obj_alloc_size   = ivars_offset + spec->ivars_size;
         klass->class_alloc_size = class_alloc_size;
+
+        klass->flags = 0;
+        if (spec->klass == &CLASS
+            || spec->klass == &METHOD
+            || spec->klass == &BOOLNUM
+            || spec->klass == &HASHTOMBSTONE
+            || spec->klass == &STRING
+            || spec->klass == &STACKSTRING
+            || spec->klass == &LOCKFREEREGISTRY
+           ) {
+            klass->flags |= CFISH_fREFCOUNTSPECIAL;
+        }
 
         if (parent) {
             // Copy parent vtable.

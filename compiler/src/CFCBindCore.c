@@ -296,6 +296,8 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "#define CFISH_REFCOUNT_NN(_self) \\\n"
         "    cfish_get_refcount(_self)\n"
         "\n"
+        "/* Flags for internal use. */\n"
+        "#define CFISH_fREFCOUNTSPECIAL 0x00000001\n"
         ;
     const char *cfish_defs_2 =
         "/* Structs for Class initialization.\n"
