@@ -673,9 +673,10 @@ S_lazy_init_host_obj(cfish_Obj *self) {
 uint32_t
 cfish_get_refcount(void *vself) {
     cfish_Obj *self = (cfish_Obj*)vself;
-    return self->ref.count & XSBIND_REFCOUNT_FLAG
-           ? self->ref.count >> XSBIND_REFCOUNT_SHIFT
-           : SvREFCNT((SV*)self->ref.host_obj);
+    cfish_ref_t ref = self->ref;
+    return ref.count & XSBIND_REFCOUNT_FLAG
+           ? ref.count >> XSBIND_REFCOUNT_SHIFT
+           : SvREFCNT((SV*)ref.host_obj);
 }
 
 cfish_Obj*
