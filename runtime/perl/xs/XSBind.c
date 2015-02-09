@@ -27,6 +27,7 @@
 #include "Clownfish/Method.h"
 #include "Clownfish/Test/TestThreads.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
+#include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Util/NumberUtils.h"
 #include "Clownfish/Util/Memory.h"
@@ -645,9 +646,28 @@ S_lazy_init_host_obj(cfish_Obj *self) {
      * will assume responsibility for maintaining the refcount.  ref.host_obj
      * starts off with a refcount of 1, so we need to transfer any refcounts
      * in excess of that. */
-    size_t old_refcount = self->ref.count;
-    self->ref.host_obj = inner_obj;
-    SvREFCNT(inner_obj) += (old_refcount >> XSBIND_REFCOUNT_SHIFT) - 1;
+    cfish_ref_t old_ref = self->ref;
+    size_t excess = (old_ref.count >> XSBIND_REFCOUNT_SHIFT) - 1;
+    SvREFCNT(inner_obj) += excess;
+
+    // Overwrite refcount with host object.
+    cfish_Class *klass = self->klass;
+    if (SI_immortal(klass) || SI_threadsafe_but_not_immortal(klass)) {
+        if (!cfish_Atomic_cas_ptr((void**)&self->ref, old_ref.host_obj, inner_obj)) {
+            // Another thread beat us to it.  Now we have a Perl object to defuse.
+            SvSTASH_set(inner_obj, NULL);
+            SvREFCNT_dec((SV*)stash);
+            SvOBJECT_off(inner_obj);
+            SvREFCNT(inner_obj) -= excess;
+            SvREFCNT_dec(inner_obj);
+#if (PERL_VERSION <= 16)
+            PL_sv_objcount--;
+#endif
+        }
+    }
+    else {
+        self->ref.host_obj = inner_obj;
+    }
 }
 
 uint32_t
