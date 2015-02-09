@@ -54,9 +54,3 @@ cfish_Class_find_parent_class(const cfish_String *class_name) {
     UNREACHABLE_RETURN(cfish_String*);
 }
 
-void*
-CFISH_Class_To_Host_IMP(cfish_Class *self) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(void*);
-}
-

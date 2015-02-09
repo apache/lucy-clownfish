@@ -653,6 +653,7 @@ S_lazy_init_host_obj(cfish_Obj *self) {
     // Overwrite refcount with host object.
     cfish_Class *klass = self->klass;
     if (SI_immortal(klass) || SI_threadsafe_but_not_immortal(klass)) {
+        SvSHARE(inner_obj);
         if (!cfish_Atomic_cas_ptr((void**)&self->ref, old_ref.host_obj, inner_obj)) {
             // Another thread beat us to it.  Now we have a Perl object to defuse.
             SvSTASH_set(inner_obj, NULL);
@@ -842,19 +843,6 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     return parent_class;
 }
 
-void*
-CFISH_Class_To_Host_IMP(cfish_Class *self) {
-    bool first_time = self->ref.count & XSBIND_REFCOUNT_FLAG ? true : false;
-    CFISH_Class_To_Host_t to_host
-        = CFISH_SUPER_METHOD_PTR(CFISH_CLASS, CFISH_Class_To_Host);
-    SV *host_obj = (SV*)to_host(self);
-    if (first_time) {
-        SvSHARE((SV*)self->ref.host_obj);
-    }
-    return host_obj;
-}
-
-
 /*************************** Clownfish::Method ******************************/
 
 cfish_String*
@@ -1029,20 +1017,6 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
-}
-
-/*********************** Clownfish::LockFreeRegistry ************************/
-
-void*
-CFISH_LFReg_To_Host_IMP(cfish_LockFreeRegistry *self) {
-    bool first_time = self->ref.count & XSBIND_REFCOUNT_FLAG ? true : false;
-    CFISH_LFReg_To_Host_t to_host
-        = CFISH_SUPER_METHOD_PTR(CFISH_LOCKFREEREGISTRY, CFISH_LFReg_To_Host);
-    SV *host_obj = (SV*)to_host(self);
-    if (first_time) {
-        SvSHARE((SV*)self->ref.host_obj);
-    }
-    return host_obj;
 }
 
 /*********************** Clownfish::Test::TestThreads ***********************/

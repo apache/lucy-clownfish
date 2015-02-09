@@ -37,9 +37,6 @@ class Clownfish::LockFreeRegistry nickname LFReg inherits Clownfish::Obj {
 
     nullable Obj*
     Fetch(LockFreeRegistry *self, Obj *key);
-
-    void*
-    To_Host(LockFreeRegistry *self);
 }
 
 

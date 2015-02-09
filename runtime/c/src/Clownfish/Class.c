@@ -69,10 +69,3 @@ Class_find_parent_class(String *class_name) {
     UNREACHABLE_RETURN(String*);
 }
 
-void*
-Class_To_Host_IMP(Class *self) {
-    UNUSED_VAR(self);
-    THROW(ERR, "TODO");
-    UNREACHABLE_RETURN(void*);
-}
-
