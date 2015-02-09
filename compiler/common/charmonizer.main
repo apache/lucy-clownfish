@@ -77,6 +77,11 @@ int main(int argc, const char **argv) {
         S_write_makefile(cli);
     }
 
+    if (chaz_HeadCheck_defines_symbol("__sync_bool_compare_and_swap", "")) {
+        chaz_ConfWriter_append_conf(
+            "#define CHY_HAS___SYNC_BOOL_COMPARE_AND_SWAP\n\n");
+    }
+
     /* Needed by cmark. */
     if (chaz_HeadCheck_defines_symbol("va_copy", "#include <stdarg.h>")) {
         chaz_ConfWriter_append_conf("#define CHY_HAS_VA_COPY\n\n");

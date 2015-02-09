@@ -73,6 +73,14 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
     return atomic_cas_ptr(target, old_value, new_value) == old_value;
 }
 
+/****************************** GCC 4.1 and later *************************/
+#elif defined(CFISH_HAS___SYNC_BOOL_COMPARE_AND_SWAP)
+
+static CFISH_INLINE bool
+cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
+    return __sync_bool_compare_and_swap(target, old_value, new_value);
+}
+
 /************************ Fall back to pthread.h. **************************/
 #elif defined(CFISH_HAS_PTHREAD_H)
 #include <pthread.h>

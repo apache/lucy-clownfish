@@ -589,6 +589,11 @@ S_charmony_feature_defines() {
     defines = CFCUtil_cat(defines, "#define CFISH_HAS_OSATOMIC_CAS_PTR\n",
                           NULL);
 #endif
+#ifdef CHY_HAS___SYNC_BOOL_COMPARE_AND_SWAP
+    defines = CFCUtil_cat(defines,
+                          "#define CFISH_HAS___SYNC_BOOL_COMPARE_AND_SWAP\n",
+                          NULL);
+#endif
 
     return defines;
 }
