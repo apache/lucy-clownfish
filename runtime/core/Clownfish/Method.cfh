@@ -22,7 +22,9 @@ parcel Clownfish;
 class Clownfish::Method inherits Clownfish::Obj {
 
     String         *name;
+    String         *name_internal;
     String         *host_alias;
+    String         *host_alias_internal;
     cfish_method_t  callback_func;
     size_t          offset;
     bool            is_excluded;
@@ -36,6 +38,9 @@ class Clownfish::Method inherits Clownfish::Obj {
 
     String*
     Get_Name(Method *self);
+
+    void
+    Set_Host_Alias(Method *self, String *name);
 
     nullable String*
     Get_Host_Alias(Method *self);
