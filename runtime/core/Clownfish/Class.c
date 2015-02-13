@@ -93,9 +93,20 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
 
         klass->parent           = parent;
         klass->parcel_id        = parcel_id;
-        klass->flags            = 0;
         klass->obj_alloc_size   = ivars_offset + spec->ivars_size;
         klass->class_alloc_size = class_alloc_size;
+
+        klass->flags = 0;
+        if (spec->klass == &CLASS
+            || spec->klass == &METHOD
+            || spec->klass == &BOOLNUM
+            || spec->klass == &HASHTOMBSTONE
+            || spec->klass == &STRING
+            || spec->klass == &STACKSTRING
+            || spec->klass == &LOCKFREEREGISTRY
+           ) {
+            klass->flags |= CFISH_fREFCOUNTSPECIAL;
+        }
 
         if (parent) {
             // Copy parent vtable.
@@ -141,23 +152,30 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
      * Pass 3:
      * - Inititalize name and method array.
      * - Register class.
+     *
+     * We use a "wrapped" String for `name` because it's effectively
+     * threadsafe: the sole reference is owned by an immortal object and any
+     * INCREF spawns a copy.
      */
     for (size_t i = 0; i < num_specs; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass = *spec->klass;
 
-        klass->name    = Str_newf("%s", spec->name);
+        klass->name_internal = Str_newf("%s", spec->name);
+        klass->name
+            = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(klass->name_internal),
+                                        Str_Get_Size(klass->name_internal));
         klass->methods = (Method**)MALLOCATE((spec->num_novel_meths + 1)
                                              * sizeof(Method*));
 
         // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
-            String *name = Str_newf("%s", mspec->name);
-            Method *method = Method_new(name, mspec->callback_func,
+            StackString *name
+                = SSTR_WRAP_UTF8(mspec->name, strlen(mspec->name));
+            Method *method = Method_new((String*)name, mspec->callback_func,
                                         *mspec->offset);
             klass->methods[i] = method;
-            DECREF(name);
         }
 
         klass->methods[spec->num_novel_meths] = NULL;
@@ -181,35 +199,6 @@ Class_Clone_IMP(Class *self) {
     twin->name = Str_Clone(self->name);
 
     return twin;
-}
-
-Obj*
-Class_Inc_RefCount_IMP(Class *self) {
-    return (Obj*)self;
-}
-
-uint32_t
-Class_Dec_RefCount_IMP(Class *self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-
-uint32_t
-Class_Get_RefCount_IMP(Class *self) {
-    UNUSED_VAR(self);
-    /* Class_Get_RefCount() lies to other Clownfish code about the refcount
-     * because we don't want to have to synchronize access to the cached host
-     * object to which we have delegated responsibility for keeping refcounts.
-     * It always returns 1 because 1 is a positive number, and thus other
-     * Clownfish code will be fooled into believing it never needs to take
-     * action such as initiating a destructor.
-     *
-     * It's possible that the host has in fact increased the refcount of the
-     * cached host object if there are multiple refs to it on the other side
-     * of the Clownfish/host border, but returning 1 is good enough to fool
-     * Clownfish code.
-     */
-    return 1;
 }
 
 void
@@ -381,11 +370,12 @@ void
 Class_Add_Host_Method_Alias_IMP(Class *self, const char *alias,
                              const char *meth_name) {
     Method *method = S_find_method(self, meth_name);
+    StackString *alias_cf = SSTR_WRAP_UTF8(alias, strlen(alias));
     if (!method) {
         fprintf(stderr, "Method %s not found\n", meth_name);
         abort();
     }
-    method->host_alias = Str_newf("%s", alias);
+    Method_Set_Host_Alias(method, (String*)alias_cf);
 }
 
 void

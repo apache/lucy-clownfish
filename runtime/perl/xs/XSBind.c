@@ -27,6 +27,7 @@
 #include "Clownfish/Method.h"
 #include "Clownfish/Test/TestThreads.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
+#include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Util/NumberUtils.h"
 #include "Clownfish/Util/Memory.h"
@@ -596,6 +597,34 @@ XSBind_allot_params(SV** stack, int32_t start, int32_t num_stack_elems, ...) {
 
 /**************************** Clownfish::Obj *******************************/
 
+static CFISH_INLINE bool
+SI_immortal(cfish_Class *klass) {
+    if (klass == CFISH_CLASS
+        || klass == CFISH_METHOD
+        || klass == CFISH_BOOLNUM
+        || klass == CFISH_HASHTOMBSTONE
+       ){
+        return true;
+    }
+    return false;
+}
+
+static CFISH_INLINE bool
+SI_is_string_type(cfish_Class *klass) {
+    if (klass == CFISH_STRING || klass == CFISH_STACKSTRING) {
+        return true;
+    }
+    return false;
+}
+
+static CFISH_INLINE bool
+SI_threadsafe_but_not_immortal(cfish_Class *klass) {
+    if (klass == CFISH_LOCKFREEREGISTRY) {
+        return true;
+    }
+    return false;
+}
+
 static void
 S_lazy_init_host_obj(cfish_Obj *self) {
     SV *inner_obj = newSV(0);
@@ -617,20 +646,64 @@ S_lazy_init_host_obj(cfish_Obj *self) {
      * will assume responsibility for maintaining the refcount.  ref.host_obj
      * starts off with a refcount of 1, so we need to transfer any refcounts
      * in excess of that. */
-    size_t old_refcount = self->ref.count;
-    self->ref.host_obj = inner_obj;
-    SvREFCNT(inner_obj) += (old_refcount >> XSBIND_REFCOUNT_SHIFT) - 1;
+    cfish_ref_t old_ref = self->ref;
+    size_t excess = (old_ref.count >> XSBIND_REFCOUNT_SHIFT) - 1;
+    SvREFCNT(inner_obj) += excess;
+
+    // Overwrite refcount with host object.
+    cfish_Class *klass = self->klass;
+    if (SI_immortal(klass) || SI_threadsafe_but_not_immortal(klass)) {
+        SvSHARE(inner_obj);
+        if (!cfish_Atomic_cas_ptr((void**)&self->ref, old_ref.host_obj, inner_obj)) {
+            // Another thread beat us to it.  Now we have a Perl object to defuse.
+            SvSTASH_set(inner_obj, NULL);
+            SvREFCNT_dec((SV*)stash);
+            SvOBJECT_off(inner_obj);
+            SvREFCNT(inner_obj) -= excess;
+            SvREFCNT_dec(inner_obj);
+#if (PERL_VERSION <= 16)
+            PL_sv_objcount--;
+#endif
+        }
+    }
+    else {
+        self->ref.host_obj = inner_obj;
+    }
 }
 
 uint32_t
-CFISH_Obj_Get_RefCount_IMP(cfish_Obj *self) {
-    return self->ref.count & XSBIND_REFCOUNT_FLAG
-           ? self->ref.count >> XSBIND_REFCOUNT_SHIFT
-           : SvREFCNT((SV*)self->ref.host_obj);
+cfish_get_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
+    cfish_ref_t ref = self->ref;
+    return ref.count & XSBIND_REFCOUNT_FLAG
+           ? ref.count >> XSBIND_REFCOUNT_SHIFT
+           : SvREFCNT((SV*)ref.host_obj);
 }
 
 cfish_Obj*
-CFISH_Obj_Inc_RefCount_IMP(cfish_Obj *self) {
+cfish_inc_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
+
+    // Handle special cases.
+    cfish_Class *const klass = self->klass;
+    if (klass->flags & CFISH_fREFCOUNTSPECIAL) {
+        if (SI_is_string_type(klass)) {
+            // Only copy-on-incref Strings get special-cased.  Ordinary
+            // Strings fall through to the general case.
+            if (CFISH_Str_Is_Copy_On_IncRef((cfish_String*)self)) {
+                const char *utf8 = CFISH_Str_Get_Ptr8((cfish_String*)self);
+                size_t size = CFISH_Str_Get_Size((cfish_String*)self);
+                return (cfish_Obj*)cfish_Str_new_from_trusted_utf8(utf8, size);
+            }
+        }
+        else if (SI_immortal(klass)) {
+            return self;
+        }
+        else if (SI_threadsafe_but_not_immortal(klass)) {
+            // TODO: use atomic operation
+        }
+    }
+
     if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
         if (self->ref.count == XSBIND_REFCOUNT_FLAG) {
             CFISH_THROW(CFISH_ERR, "Illegal refcount of 0");
@@ -644,7 +717,19 @@ CFISH_Obj_Inc_RefCount_IMP(cfish_Obj *self) {
 }
 
 uint32_t
-CFISH_Obj_Dec_RefCount_IMP(cfish_Obj *self) {
+cfish_dec_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
+
+    cfish_Class *klass = self->klass;
+    if (klass->flags & CFISH_fREFCOUNTSPECIAL) {
+        if (SI_immortal(klass)) {
+            return 1;
+        }
+        else if (SI_threadsafe_but_not_immortal(klass)) {
+            // TODO: use atomic operation
+        }
+    }
+
     uint32_t modified_refcount = I32_MAX;
     if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
         if (self->ref.count == XSBIND_REFCOUNT_FLAG) {
@@ -757,19 +842,6 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     LEAVE;
     return parent_class;
 }
-
-void*
-CFISH_Class_To_Host_IMP(cfish_Class *self) {
-    bool first_time = self->ref.count & XSBIND_REFCOUNT_FLAG ? true : false;
-    CFISH_Class_To_Host_t to_host
-        = CFISH_SUPER_METHOD_PTR(CFISH_CLASS, CFISH_Class_To_Host);
-    SV *host_obj = (SV*)to_host(self);
-    if (first_time) {
-        SvSHARE((SV*)self->ref.host_obj);
-    }
-    return host_obj;
-}
-
 
 /*************************** Clownfish::Method ******************************/
 
@@ -945,20 +1017,6 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
-}
-
-/*********************** Clownfish::LockFreeRegistry ************************/
-
-void*
-CFISH_LFReg_To_Host_IMP(cfish_LockFreeRegistry *self) {
-    bool first_time = self->ref.count & XSBIND_REFCOUNT_FLAG ? true : false;
-    CFISH_LFReg_To_Host_t to_host
-        = CFISH_SUPER_METHOD_PTR(CFISH_LOCKFREEREGISTRY, CFISH_LFReg_To_Host);
-    SV *host_obj = (SV*)to_host(self);
-    if (first_time) {
-        SvSHARE((SV*)self->ref.host_obj);
-    }
-    return host_obj;
 }
 
 /*********************** Clownfish::Test::TestThreads ***********************/

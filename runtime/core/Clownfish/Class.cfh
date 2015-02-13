@@ -27,6 +27,7 @@ class Clownfish::Class inherits Clownfish::Obj {
 
     Class              *parent;
     String             *name;
+    String             *name_internal;
     uint32_t            flags;
     int32_t             parcel_id;
     size_t              obj_alloc_size;
@@ -137,18 +138,6 @@ class Clownfish::Class inherits Clownfish::Obj {
 
     public incremented Class*
     Clone(Class *self);
-
-    incremented Obj*
-    Inc_RefCount(Class *self);
-
-    uint32_t
-    Dec_RefCount(Class *self);
-
-    uint32_t
-    Get_RefCount(Class *self);
-
-    void*
-    To_Host(Class *self);
 
     public void
     Destroy(Class *self);

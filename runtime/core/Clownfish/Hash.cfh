@@ -142,15 +142,6 @@ class Clownfish::Hash inherits Clownfish::Obj {
 
 class Clownfish::Hash::HashTombStone
     inherits Clownfish::Obj {
-
-    uint32_t
-    Get_RefCount(HashTombStone* self);
-
-    incremented HashTombStone*
-    Inc_RefCount(HashTombStone* self);
-
-    uint32_t
-    Dec_RefCount(HashTombStone* self);
 }
 
 

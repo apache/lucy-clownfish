@@ -15,6 +15,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 
 #define C_CFISH_VARRAY
 #define CFISH_USE_SHORT_NAMES
@@ -88,10 +89,10 @@ test_Store_Fetch(TestBatchRunner *runner) {
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Store");
 
     elem = (String*)INCREF(elem);
-    TEST_INT_EQ(runner, 2, Str_Get_RefCount(elem),
+    TEST_INT_EQ(runner, 2, CFISH_REFCOUNT_NN(elem),
                 "start with refcount of 2");
     VA_Store(array, 2, (Obj*)Str_newf("bar"));
-    TEST_INT_EQ(runner, 1, Str_Get_RefCount(elem),
+    TEST_INT_EQ(runner, 1, CFISH_REFCOUNT_NN(elem),
                 "Displacing elem via Store updates refcount");
     DECREF(elem);
     elem = (String*)CERTIFY(VA_Fetch(array, 2), STRING);
@@ -341,6 +342,10 @@ S_test_exception(TestBatchRunner *runner, Err_Attempt_t func,
 
 static void
 test_exceptions(TestBatchRunner *runner) {
+    if (getenv("LUCY_VALGRIND")) {
+        SKIP(runner, 4, "memory leak");
+        return;
+    }
     S_test_exception(runner, S_overflow_Push,
                      "Push throws on overflow");
     S_test_exception(runner, S_overflow_Unshift,

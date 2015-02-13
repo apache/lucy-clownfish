@@ -19,19 +19,19 @@
 #include "CFBind.h"
 
 uint32_t
-CFISH_Obj_Get_RefCount_IMP(cfish_Obj *self) {
+cfish_get_refcount(void *vself) {
     THROW(CFISH_ERR, "TODO");
     UNREACHABLE_RETURN(uint32_t);
 }
 
 cfish_Obj*
-CFISH_Obj_Inc_RefCount_IMP(cfish_Obj *self) {
+cfish_inc_refcount(void *vself) {
     THROW(CFISH_ERR, "TODO");
     UNREACHABLE_RETURN(cfish_Obj*);
 }
 
 uint32_t
-CFISH_Obj_Dec_RefCount_IMP(cfish_Obj *self) {
+cfish_dec_refcount(void *vself) {
     THROW(CFISH_ERR, "TODO");
     UNREACHABLE_RETURN(uint32_t);
 }

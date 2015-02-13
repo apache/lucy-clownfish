@@ -31,11 +31,20 @@ Method_new(String *name, cfish_method_t callback_func, size_t offset) {
 Method*
 Method_init(Method *self, String *name, cfish_method_t callback_func,
             size_t offset) {
-    self->name          = Str_Clone(name);
+    /* The `name` member which Method exposes via the `Get_Name` accessor uses
+     * a "wrapped" string because that is effectively threadsafe: an INCREF
+     * results in a copy and the only reference is owned by an immortal
+     * object. */
+    self->name_internal = Str_Clone(name);
+    self->name
+        = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(self->name_internal),
+                                    Str_Get_Size(self->name_internal));
+
     self->host_alias    = NULL;
     self->callback_func = callback_func;
     self->offset        = offset;
     self->is_excluded   = false;
+
     return self;
 }
 
@@ -44,27 +53,20 @@ Method_Destroy_IMP(Method *self) {
     THROW(ERR, "Insane attempt to destroy Method '%o'", self->name);
 }
 
-Obj*
-Method_Inc_RefCount_IMP(Method *self) {
-    return (Obj*)self;
-}
-
-uint32_t
-Method_Dec_RefCount_IMP(Method *self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-
-uint32_t
-Method_Get_RefCount_IMP(Method *self) {
-    UNUSED_VAR(self);
-    // See comments in Class.c
-    return 1;
-}
-
 String*
 Method_Get_Name_IMP(Method *self) {
     return self->name;
+}
+
+void
+Method_Set_Host_Alias_IMP(Method *self, String *name) {
+    if (self->host_alias) {
+        THROW(ERR, "Can't Set_Host_Alias more than once");
+    }
+    self->host_alias_internal = Str_Clone(name);
+    self->host_alias
+        = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(self->host_alias_internal),
+                                    Str_Get_Size(self->host_alias_internal));
 }
 
 String*

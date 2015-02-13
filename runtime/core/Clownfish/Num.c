@@ -382,14 +382,3 @@ Bool_Equals_IMP(BoolNum *self, Obj *other) {
     return self == (BoolNum*)other;
 }
 
-BoolNum*
-Bool_Inc_RefCount_IMP(BoolNum *self) {
-    return self;
-}
-
-uint32_t
-Bool_Dec_RefCount_IMP(BoolNum *self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-

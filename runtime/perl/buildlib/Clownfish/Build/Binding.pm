@@ -102,6 +102,21 @@ CODE:
 
     RETVAL = result;
 OUTPUT: RETVAL
+
+void
+invoke_to_string(sv)
+    SV *sv;
+PPCODE:
+    cfish_Obj *obj = XSBind_sv_to_cfish_obj(sv, CFISH_OBJ, NULL);
+    cfish_String *str = CFISH_Obj_To_String(obj);
+    CFISH_DECREF(str);
+
+int
+refcount(obj)
+    cfish_Obj *obj;
+CODE:
+    RETVAL = (int)CFISH_REFCOUNT_NN(obj);
+OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
