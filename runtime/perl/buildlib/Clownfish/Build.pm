@@ -61,7 +61,7 @@ else {
 
 sub new {
     my ( $class, %args ) = @_;
-    $args{include_dirs}     = $XS_SOURCE_DIR;
+    $args{include_dirs}     = [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ];
     $args{clownfish_params} = {
         autogen_header => _autogen_header(),
         include        => [],                  # Don't use default includes.

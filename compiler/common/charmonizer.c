@@ -7810,7 +7810,6 @@ int main(int argc, const char **argv) {
     chaz_BuildEnv_run();
     chaz_DirManip_run();
     chaz_Headers_run();
-    chaz_AtomicOps_run();
     chaz_FuncMacro_run();
     chaz_Booleans_run();
     chaz_Integers_run();
@@ -7822,11 +7821,6 @@ int main(int argc, const char **argv) {
 
     if (chaz_CLI_defined(cli, "enable-makefile")) {
         S_write_makefile(cli);
-    }
-
-    if (chaz_HeadCheck_defines_symbol("__sync_bool_compare_and_swap", "")) {
-        chaz_ConfWriter_append_conf(
-            "#define CHY_HAS___SYNC_BOOL_COMPARE_AND_SWAP\n\n");
     }
 
     /* Needed by cmark. */

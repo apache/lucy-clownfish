@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-parcel Clownfish;
+#ifndef H_CLOWNFISH_UTIL_ATOMIC
+#define H_CLOWNFISH_UTIL_ATOMIC 1
 
-/** Provide atomic memory operations.
- */
-inert class Clownfish::Util::Atomic { }
+#include "charmony.h"
+#include "cfish_parcel.h"
 
-__C__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Compare and swap a pointer.  Test whether the value at `target`
  * matches `old_value`.  If it does, set `target` to
@@ -44,7 +46,7 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
 }
 
 /************************** Mac OS X 10.4 and later ***********************/
-#elif defined(CFISH_HAS_OSATOMIC_CAS_PTR)
+#elif defined(CHY_HAS_OSATOMIC_CAS_PTR)
 #include <libkern/OSAtomic.h>
 
 static CFISH_INLINE bool
@@ -53,7 +55,7 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
 }
 
 /********************************** Windows *******************************/
-#elif defined(CFISH_HAS_WINDOWS_H)
+#elif defined(CHY_HAS_WINDOWS_H)
 
 bool
 cfish_Atomic_wrapped_cas_ptr(void *volatile *target, void *old_value,
@@ -65,7 +67,7 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
 }
 
 /**************************** Solaris 10 and later ************************/
-#elif defined(CFISH_HAS_SYS_ATOMIC_H)
+#elif defined(CHY_HAS_SYS_ATOMIC_H)
 #include <sys/atomic.h>
 
 static CFISH_INLINE bool
@@ -74,7 +76,7 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
 }
 
 /****************************** GCC 4.1 and later *************************/
-#elif defined(CFISH_HAS___SYNC_BOOL_COMPARE_AND_SWAP)
+#elif defined(CHY_HAS___SYNC_BOOL_COMPARE_AND_SWAP)
 
 static CFISH_INLINE bool
 cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
@@ -82,7 +84,7 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
 }
 
 /************************ Fall back to pthread.h. **************************/
-#elif defined(CFISH_HAS_PTHREAD_H)
+#elif defined(CHY_HAS_PTHREAD_H)
 #include <pthread.h>
 
 extern pthread_mutex_t cfish_Atomic_mutex;
@@ -112,6 +114,9 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
   #define Atomic_cas_ptr cfish_Atomic_cas_ptr
 #endif
 
-__END_C__
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* H_CLOWNFISH_UTIL_ATOMIC */
 

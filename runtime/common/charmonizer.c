@@ -7880,6 +7880,10 @@ int main(int argc, const char **argv) {
     chaz_VariadicMacros_run();
 
     /* Write custom postamble. */
+    if (chaz_HeadCheck_defines_symbol("__sync_bool_compare_and_swap", "")) {
+        chaz_ConfWriter_append_conf(
+            "#define CHY_HAS___SYNC_BOOL_COMPARE_AND_SWAP\n\n");
+    }
     chaz_ConfWriter_append_conf(
         "#ifdef CHY_HAS_SYS_TYPES_H\n"
         "  #include <sys/types.h>\n"
@@ -8086,6 +8090,7 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     }
 
     chaz_CFlags_add_include_dir(makefile_cflags, ".");
+    chaz_CFlags_add_include_dir(makefile_cflags, self->core_dir);
     chaz_CFlags_add_include_dir(makefile_cflags, self->host_src_dir);
     chaz_CFlags_add_include_dir(makefile_cflags, self->autogen_inc_dir);
 
