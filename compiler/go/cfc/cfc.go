@@ -83,6 +83,10 @@ type BindC struct {
 	ref *C.CFCC
 }
 
+type BindGo struct {
+	ref *C.CFCGo
+}
+
 func FetchParcel(name string) *Parcel {
 	nameC := C.CString(name)
 	defer C.free(unsafe.Pointer(nameC))
@@ -179,3 +183,34 @@ func (obj *BindC) WriteCallbacks() {
 func (obj *BindC) WriteHostDefs() {
 	C.CFCC_write_hostdefs(obj.ref)
 }
+
+func NewBindGo(hierarchy *Hierarchy) *BindGo {
+	obj := &BindGo{
+		C.CFCGo_new(hierarchy.ref),
+	}
+	runtime.SetFinalizer(obj, (*BindGo).finalize)
+	return obj
+}
+
+func (obj *BindGo) finalize() {
+	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
+}
+
+func (obj *BindGo) SetHeader(header string) {
+	headerCString := C.CString(header)
+	defer C.free(unsafe.Pointer(headerCString))
+	C.CFCGo_set_header(obj.ref, headerCString)
+}
+
+func (obj *BindGo) SetFooter(header string) {
+	headerCString := C.CString(header)
+	defer C.free(unsafe.Pointer(headerCString))
+	C.CFCGo_set_header(obj.ref, headerCString)
+}
+
+func (obj *BindGo) WriteBindings(parcel *Parcel, dest string) {
+	destC := C.CString(dest)
+	defer C.free(unsafe.Pointer(destC))
+	C.CFCGo_write_bindings(obj.ref, parcel.ref, destC)
+}
+

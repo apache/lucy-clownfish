@@ -43,6 +43,8 @@
 #include "CFCBindFunction.h"
 #include "CFCBindMethod.h"
 
+#include "CFCGo.h"
+
 #include "CFCPerl.h"
 #include "CFCPerlSub.h"
 #include "CFCPerlMethod.h"
