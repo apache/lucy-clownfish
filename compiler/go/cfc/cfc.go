@@ -67,6 +67,10 @@ func DoStuff() {
 	hierarchy.Build()
 }
 
+type Parcel struct {
+	ref *C.CFCParcel
+}
+
 type Hierarchy struct {
 	ref *C.CFCHierarchy
 }
@@ -77,6 +81,22 @@ type BindCore struct {
 
 type BindC struct {
 	ref *C.CFCC
+}
+
+func FetchParcel(name string) *Parcel {
+	nameC := C.CString(name)
+	defer C.free(unsafe.Pointer(nameC))
+	parcelC := C.CFCParcel_fetch(nameC)
+	if parcelC == nil {
+		return nil
+	}
+	obj := &Parcel{parcelC}
+	runtime.SetFinalizer(obj, (*Parcel).finalize)
+	return obj
+}
+
+func (obj *Parcel) finalize() {
+	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
 }
 
 func NewHierarchy(dest string) *Hierarchy {
