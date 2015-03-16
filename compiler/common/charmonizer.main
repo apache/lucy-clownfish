@@ -253,11 +253,13 @@ S_write_makefile(struct chaz_CLI *cli) {
     if (chaz_CLI_defined(cli, "enable-coverage")) {
         chaz_CFlags_enable_code_coverage(link_flags);
     }
-    chaz_MakeFile_add_exe(makefile, cfc_exe, "$(COMMON_OBJS) $(CFC_OBJS)",
-                          link_flags);
-    chaz_MakeFile_add_exe(makefile, test_cfc_exe,
-                          "$(COMMON_OBJS) $(COMMON_TEST_OBJS) $(TEST_CFC_OBJS)",
-                          link_flags);
+    if (strcmp(chaz_CLI_strval(cli, "host"), "c") == 0) {
+        chaz_MakeFile_add_exe(makefile, cfc_exe, "$(COMMON_OBJS) $(CFC_OBJS)",
+                              link_flags);
+        chaz_MakeFile_add_exe(makefile, test_cfc_exe,
+                              "$(COMMON_OBJS) $(COMMON_TEST_OBJS) $(TEST_CFC_OBJS)",
+                              link_flags);
+    }
     chaz_CFlags_destroy(link_flags);
 
     rule = chaz_MakeFile_add_rule(makefile, "test", test_cfc_exe);
