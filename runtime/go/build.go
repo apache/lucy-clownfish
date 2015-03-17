@@ -121,8 +121,6 @@ func runCFC() {
 	coreBinding := cfc.NewBindCore(hierarchy, autogenHeader, "")
 	modified := coreBinding.WriteAllModified(false)
 	if modified {
-		cBinding := cfc.NewBindC(hierarchy, autogenHeader, "")
-		cBinding.WriteHostDefs()
 		goBinding := cfc.NewBindGo(hierarchy)
 		goBinding.SetHeader(autogenHeader)
 		parcel := cfc.FetchParcel("Clownfish")
