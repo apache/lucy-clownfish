@@ -506,7 +506,6 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s"
         "\n"
-        "#include \"callbacks.h\"\n"
         "#include \"Clownfish/Class.h\"\n"   // Needed for bootstrap.
         "%s\n"
         "\n"

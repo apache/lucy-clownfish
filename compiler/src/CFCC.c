@@ -85,47 +85,7 @@ CFCC_destroy(CFCC *self) {
  */
 void
 CFCC_write_callbacks(CFCC *self) {
-    CFCHierarchy  *hierarchy   = self->hierarchy;
-    CFCClass     **ordered     = CFCHierarchy_ordered_classes(hierarchy);
-    char          *all_cb_decs = CFCUtil_strdup("");
-
-    for (int i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-
-        if (!CFCClass_included(klass)) {
-            char *cb_decs = S_callback_decs(klass);
-            all_cb_decs = CFCUtil_cat(all_cb_decs, cb_decs, NULL);
-            FREEMEM(cb_decs);
-        }
-    }
-
-    FREEMEM(ordered);
-
-    const char pattern[] =
-        "%s\n"
-        "#ifndef CFCCALLBACKS_H\n"
-        "#define CFCCALLBACKS_H 1\n"
-        "\n"
-        "#include <stddef.h>\n"
-        "\n"
-        "%s"
-        "\n"
-        "#endif /* CFCCALLBACKS_H */\n"
-        "\n"
-        "%s\n"
-        "\n";
-    char *file_content = CFCUtil_sprintf(pattern, self->c_header, all_cb_decs,
-                                         self->c_footer);
-
-    // Unlink then write file.
-    const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
-    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "callbacks.h", inc_dest);
-    remove(filepath);
-    CFCUtil_write_file(filepath, file_content, strlen(file_content));
-    FREEMEM(filepath);
-
-    FREEMEM(all_cb_decs);
-    FREEMEM(file_content);
+    return;
 }
 
 static char*
@@ -219,6 +179,8 @@ CFCC_write_hostdefs(CFCC *self) {
         "\n"
         "#define CFISH_OBJ_HEAD \\\n"
         "    size_t refcount;\n"
+        "\n"
+        "#define CFISH_NO_DYNAMIC_OVERRIDES\n"
         "\n"
         "#endif /* H_CFISH_HOSTDEFS */\n"
         "\n"
