@@ -89,10 +89,39 @@ CFCGo_set_footer(CFCGo *self, const char *footer) {
     self->c_footer = CFCUtil_make_c_comment(footer);
 }
 
+static void
+S_write_hostdefs(CFCGo *self) {
+    const char pattern[] =
+        "/*\n"
+        " * %s\n"
+        " */\n"
+        "\n"
+        "#ifndef H_CFISH_HOSTDEFS\n"
+        "#define H_CFISH_HOSTDEFS 1\n"
+        "\n"
+        "#define CFISH_OBJ_HEAD \\\n"
+        "    size_t refcount;\n"
+        "\n"
+        "#endif /* H_CFISH_HOSTDEFS */\n"
+        "\n"
+        "%s\n";
+    char *content
+        = CFCUtil_sprintf(pattern, self->header, self->footer);
+
+    // Write if the content has changed.
+    const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
+    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "cfish_hostdefs.h",
+                                     inc_dest);
+    CFCUtil_write_if_changed(filepath, content, strlen(content));
+
+    FREEMEM(filepath);
+    FREEMEM(content);
+}
+
 void
 CFCGo_write_bindings(CFCGo *self, CFCParcel *parcel, const char *dest) {
-    CHY_UNUSED_VAR(self);
     CHY_UNUSED_VAR(parcel);
     CHY_UNUSED_VAR(dest);
+    S_write_hostdefs(self);
 }
 
