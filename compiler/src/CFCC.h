@@ -46,11 +46,6 @@ CFCC_init(CFCC *self, struct CFCHierarchy *hierarchy, const char *header,
 void
 CFCC_destroy(CFCC *self);
 
-/** Write the "callbacks.h" header file with dummy callbacks.
- */
-void
-CFCC_write_callbacks(CFCC *self);
-
 /** Write the "cfish_hostdefs.h" header file.
  */
 void

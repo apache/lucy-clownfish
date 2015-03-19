@@ -81,13 +81,6 @@ CFCC_destroy(CFCC *self) {
     CFCBase_destroy((CFCBase*)self);
 }
 
-/* Write "callbacks.h" with NULL callbacks.
- */
-void
-CFCC_write_callbacks(CFCC *self) {
-    return;
-}
-
 static char*
 S_callback_decs(CFCClass *klass) {
     CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
