@@ -593,6 +593,8 @@ S_write_platform_h(CFCBindCore *self) {
         "\n"
         "%s"
         "\n"
+        "#include <stdarg.h>\n"
+        "\n"
         "#ifdef __cplusplus\n"
         "}\n"
         "#endif\n"
