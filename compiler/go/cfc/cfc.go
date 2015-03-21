@@ -152,6 +152,10 @@ func (obj *BindC) finalize() {
 	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
 }
 
+func (obj *BindC) WriteCallbacks() {
+	// no-op
+}
+
 func (obj *BindC) WriteHostDefs() {
 	C.CFCC_write_hostdefs(obj.ref)
 }
