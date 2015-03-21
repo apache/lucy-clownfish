@@ -74,6 +74,10 @@ S_inert_var_declarations(CFCBindClass *self);
 static char*
 S_method_defs(CFCBindClass *self);
 
+// Declare override symbols for functions which wrap host callbacks.
+static char*
+S_override_decs(CFCBindClass *self);
+
 // Define short names for all of the symbols associated with this class.
 static char*
 S_short_names(CFCBindClass *self);
@@ -195,6 +199,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
     char *inert_var_defs        = S_inert_var_declarations(self);
     char *method_typedefs       = S_method_typedefs(self);
     char *method_defs           = S_method_defs(self);
+    char *override_decs         = S_override_decs(self);
     char *short_names           = S_short_names(self);
 
     char pattern[] =
@@ -233,6 +238,11 @@ S_to_c_header_dynamic(CFCBindClass *self) {
         "\n"
         "%s\n"
         "\n"
+        "/* Declare callbacks for wrapping host overrides.\n"
+        " */\n"
+        "\n"
+        "%s\n"
+        "\n"
         "/* Define \"short names\" for this class's symbols.\n"
         " */\n"
         "\n"
@@ -242,7 +252,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
         = CFCUtil_sprintf(pattern, parent_include, privacy_symbol, ivars,
                           struct_def, privacy_symbol, inert_var_defs,
                           sub_declarations, method_typedefs, method_defs,
-                          short_names);
+                          override_decs, short_names);
 
     FREEMEM(ivars);
     FREEMEM(struct_def);
@@ -645,6 +655,46 @@ S_method_defs(CFCBindClass *self) {
     return method_defs;
 }
 
+static char*
+S_override_decs(CFCBindClass *self) {
+    CFCMethod **fresh_methods = CFCClass_fresh_methods(self->client);
+    char *decs  = CFCUtil_strdup("");
+    char *nulls = CFCUtil_strdup("");
+
+    for (int i = 0; fresh_methods[i] != NULL; i++) {
+        CFCMethod *method = fresh_methods[i];
+        if (CFCMethod_final(method) || !CFCMethod_novel(method)) {
+            continue;
+        }
+        const char *override_sym = CFCMethod_full_override_sym(method);
+        CFCType      *return_type  = CFCMethod_get_return_type(method);
+        CFCParamList *param_list   = CFCMethod_get_param_list(method);
+        const char   *ret_type_str = CFCType_to_c(return_type);
+        const char   *params       = CFCParamList_to_c(param_list);
+        char pattern[] =
+            "%s\n"
+            "%s(%s);\n";
+        char *callback_dec
+            = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
+        decs = CFCUtil_cat(decs, callback_dec, NULL);
+        FREEMEM(callback_dec);
+
+        nulls = CFCUtil_cat(nulls, "#define ", override_sym, " NULL\n", NULL);
+    }
+
+    char pattern[] =
+        "#ifdef CFISH_NO_DYNAMIC_OVERRIDES\n"
+        "%s"
+        "#else\n"
+        "%s"
+        "#endif\n"
+        ;
+    char *content = CFCUtil_sprintf(pattern, nulls, decs);
+
+    FREEMEM(nulls);
+    FREEMEM(decs);
+    return content;
+}
 
 // Define short names for all of the symbols associated with this class.
 static char*

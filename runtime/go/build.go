@@ -122,7 +122,6 @@ func runCFC() {
 	modified := coreBinding.WriteAllModified(false)
 	if modified {
 		cBinding := cfc.NewBindC(hierarchy, autogenHeader, "")
-		cBinding.WriteCallbacks()
 		cBinding.WriteHostDefs()
 		hierarchy.WriteLog()
 	}

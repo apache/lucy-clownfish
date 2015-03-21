@@ -429,27 +429,15 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
 char*
 CFCPerlMethod_callback_dec(CFCMethod *method) {
     const char *override_sym = CFCMethod_full_override_sym(method);
-
-    char *callback_dec;
-    if (!CFCPerlMethod_can_be_bound(method)) {
-        char pattern[] =
-            "void\n"
-            "%s(cfish_Obj *self);\n";
-        callback_dec = CFCUtil_sprintf(pattern, override_sym);
-    }
-    else {
-        CFCType      *return_type  = CFCMethod_get_return_type(method);
-        CFCParamList *param_list   = CFCMethod_get_param_list(method);
-        const char   *ret_type_str = CFCType_to_c(return_type);
-        const char   *params       = CFCParamList_to_c(param_list);
-
-        char pattern[] =
-            "%s\n"
-            "%s(%s);\n";
-        callback_dec
-            = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
-    }
-
+    CFCType      *return_type  = CFCMethod_get_return_type(method);
+    CFCParamList *param_list   = CFCMethod_get_param_list(method);
+    const char   *ret_type_str = CFCType_to_c(return_type);
+    const char   *params       = CFCParamList_to_c(param_list);
+    char pattern[] =
+        "%s\n"
+        "%s(%s);\n";
+    char *callback_dec
+        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
     return callback_dec;
 }
 
@@ -605,19 +593,28 @@ S_callback_refcount_mods(CFCMethod *method) {
 
 static char*
 S_invalid_callback_def(CFCMethod *method) {
-    const char *override_sym = CFCMethod_full_override_sym(method);
-    char *full_method_sym = CFCMethod_full_method_sym(method, NULL);
-
+    const char *override_sym   = CFCMethod_full_override_sym(method);
+    char *full_method_sym      = CFCMethod_full_method_sym(method, NULL);
+    CFCType      *return_type  = CFCMethod_get_return_type(method);
+    CFCParamList *param_list   = CFCMethod_get_param_list(method);
+    const char   *ret_type_str = CFCType_to_c(return_type);
+    const char   *params       = CFCParamList_to_c(param_list);
+    char *maybe_ret
+        = CFCType_is_void(return_type)
+          ? CFCUtil_sprintf("")
+          : CFCUtil_sprintf("CFISH_UNREACHABLE_RETURN(%s);\n", ret_type_str);
     char pattern[] =
-        "void\n"
-        "%s(cfish_Obj *self) {\n"
+        "%s\n"
+        "%s(%s) {\n"
         "    CFISH_UNUSED_VAR(self);\n"
         "    cfish_Err_invalid_callback(\"%s\");\n"
-        "}\n";
-    char *callback_def
-        = CFCUtil_sprintf(pattern, override_sym, full_method_sym);
-
+        "%s"
+        "}\n"
+        ;
+    char *callback_def = CFCUtil_sprintf(pattern, ret_type_str, override_sym,
+                                         params, full_method_sym, maybe_ret);
     FREEMEM(full_method_sym);
+    FREEMEM(maybe_ret);
     return callback_def;
 }
 

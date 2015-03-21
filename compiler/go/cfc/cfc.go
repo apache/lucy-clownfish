@@ -153,7 +153,7 @@ func (obj *BindC) finalize() {
 }
 
 func (obj *BindC) WriteCallbacks() {
-	C.CFCC_write_callbacks(obj.ref)
+	// no-op
 }
 
 func (obj *BindC) WriteHostDefs() {

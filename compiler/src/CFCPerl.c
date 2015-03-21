@@ -54,9 +54,6 @@ static void
 S_replace_double_colons(char *text, char replacement);
 
 static void
-S_write_callbacks_h(CFCPerl *self);
-
-static void
 S_write_callbacks_c(CFCPerl *self);
 
 static const CFCMeta CFCPERL_META = {
@@ -506,22 +503,16 @@ CFCPerl_write_bindings(CFCPerl *self) {
 
 void
 CFCPerl_write_callbacks(CFCPerl *self) {
-    S_write_callbacks_h(self);
     S_write_callbacks_c(self);
 }
 
-/* Write the "callbacks.h" header file, which contains declarations of host
- * callbacks.
- */
 static void
-S_write_callbacks_h(CFCPerl *self) {
-    CFCParcel    **parcels   = CFCParcel_all_parcels();
-    CFCHierarchy  *hierarchy = self->hierarchy;
-    CFCClass     **ordered   = CFCHierarchy_ordered_classes(hierarchy);
-    char          *includes  = CFCUtil_strdup("");
-    char          *cb_decs   = CFCUtil_strdup("");
+S_write_callbacks_c(CFCPerl *self) {
+    CFCClass  **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCParcel **parcels  = CFCParcel_all_parcels();
+    char       *includes = CFCUtil_strdup("");
 
-    for (int i = 0; parcels[i]; ++i) {
+    for (int i = 0; parcels[i]; i++) {
         CFCParcel *parcel = parcels[i];
         if (!CFCParcel_included(parcel)) {
             const char *prefix = CFCParcel_get_prefix(parcel);
@@ -530,72 +521,13 @@ S_write_callbacks_h(CFCPerl *self) {
         }
     }
 
-    for (int i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
-
-        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
-        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
-            CFCMethod *method = fresh_methods[meth_num];
-
-            // Declare callback.
-            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-                char *cb_dec = CFCPerlMethod_callback_dec(method);
-                cb_decs = CFCUtil_cat(cb_decs, cb_dec, "\n", NULL);
-                FREEMEM(cb_dec);
-            }
-        }
-    }
-
-    FREEMEM(ordered);
-
-    const char pattern[] =
-        "%s\n"
-        "#ifndef CFCCALLBACKS_H\n"
-        "#define CFCCALLBACKS_H 1\n"
-        "\n"
-        "#ifdef __cplusplus\n"
-        "extern \"C\" {\n"
-        "#endif\n"
-        "\n"
-        "%s"
-        "\n"
-        "%s"
-        "\n"
-        "#ifdef __cplusplus\n"
-        "}\n"
-        "#endif\n"
-        "\n"
-        "#endif /* CFCCALLBACKS_H */\n"
-        "\n"
-        "%s\n"
-        "\n";
-    char *file_content
-        = CFCUtil_sprintf(pattern, self->c_header, includes, cb_decs,
-                          self->c_footer);
-
-    // Unlink then write file.
-    const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
-    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "callbacks.h", inc_dest);
-    remove(filepath);
-    CFCUtil_write_file(filepath, file_content, strlen(file_content));
-    FREEMEM(filepath);
-
-    FREEMEM(includes);
-    FREEMEM(cb_decs);
-    FREEMEM(file_content);
-}
-
-static void
-S_write_callbacks_c(CFCPerl *self) {
-    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
     static const char pattern[] =
         "%s"
         "\n"
         "#include \"XSBind.h\"\n"
-        "#include \"callbacks.h\"\n"
         "#include \"Clownfish/Err.h\"\n"
         "#include \"Clownfish/Obj.h\"\n"
+        "%s"
         "\n"
         "static void\n"
         "S_finish_callback_void(const char *meth_name) {\n"
@@ -668,7 +600,7 @@ S_write_callbacks_c(CFCPerl *self) {
         "    return retval;\n"
         "}\n"
         "\n";
-    char *content = CFCUtil_sprintf(pattern, self->c_header);
+    char *content = CFCUtil_sprintf(pattern, self->c_header, includes);
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
@@ -697,6 +629,7 @@ S_write_callbacks_c(CFCPerl *self) {
 
     FREEMEM(filepath);
     FREEMEM(content);
+    FREEMEM(includes);
     FREEMEM(ordered);
 }
 
