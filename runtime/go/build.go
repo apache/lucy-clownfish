@@ -39,12 +39,14 @@ var charmonyH string = "charmony.h"
 var buildDir string
 var buildGO string
 var configGO string
+var cfbindGO string
 var installedLibPath string
 
 func init() {
 	_, buildGO, _, _ = runtime.Caller(1)
 	buildDir = path.Dir(buildGO)
 	configGO = path.Join(buildDir, "clownfish", "config.go")
+	cfbindGO = path.Join(buildDir, "clownfish", "cfbind.go")
 	var err error
 	installedLibPath, err = cfc.InstalledLibPath(packageName)
 	if err != nil {
@@ -229,7 +231,7 @@ func clean() {
 	}
 	fmt.Println("Cleaning")
 	runCommand("make", "clean")
-	cleanables := []string{charmonizerEXE, charmonyH, "Makefile", configGO}
+	cleanables := []string{charmonizerEXE, charmonyH, "Makefile", configGO, cfbindGO}
 	for _, file := range cleanables {
 		err := os.Remove(file)
 		if err == nil {
