@@ -99,6 +99,8 @@ S_write_hostdefs(CFCGo *self) {
         "#ifndef H_CFISH_HOSTDEFS\n"
         "#define H_CFISH_HOSTDEFS 1\n"
         "\n"
+        "#define CFISH_NO_DYNAMIC_OVERRIDES\n"
+        "\n"
         "#define CFISH_OBJ_HEAD \\\n"
         "    size_t refcount;\n"
         "\n"
