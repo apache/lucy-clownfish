@@ -120,10 +120,99 @@ S_write_hostdefs(CFCGo *self) {
     FREEMEM(content);
 }
 
+// Pound-includes for generated headers.
+static char*
+S_gen_h_includes(CFCGo *self) {
+    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    char *h_includes = CFCUtil_strdup("");
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        const char *include_h = CFCClass_include_h(klass);
+        h_includes = CFCUtil_cat(h_includes, "#include \"", include_h,
+                                   "\"\n", NULL);
+    }
+    FREEMEM(ordered);
+    return h_includes;
+}
+
+static char*
+S_gen_cgo_comment(CFCGo *self, CFCParcel *parcel, const char *h_includes) {
+    const char *prefix = CFCParcel_get_prefix(parcel);
+    // Bake in parcel privacy define, so that binding code can be compiled
+    // without extra compiler flags.
+    const char *privacy_sym = CFCParcel_get_privacy_sym(parcel);
+    char pattern[] =
+        "#define %s\n"
+        "\n"
+        "%s\n"
+        "\n"
+        ;
+    return CFCUtil_sprintf(pattern, privacy_sym, h_includes, prefix);
+}
+
+static char*
+S_gen_init_code(CFCParcel *parcel) {
+    const char *prefix = CFCParcel_get_prefix(parcel);
+
+    // Hack to allow custom init for Clownfish runtime.
+    // In the future we may want to facilitate customizable init.
+    if (strcmp(prefix, "cfish_") == 0) {
+        return CFCUtil_strdup("");
+    }
+
+    const char pattern[] =
+        "func init() {\n"
+        "    C.%sbootstrap_parcel()\n"
+        "}\n";
+    return CFCUtil_sprintf(pattern, prefix);
+}
+
+static void
+S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
+                  const char *h_includes) {
+    const char *PREFIX = CFCParcel_get_PREFIX(parcel);
+    char *go_short_package = CFCGoTypeMap_go_short_package(parcel);
+    char *cgo_comment   = S_gen_cgo_comment(self, parcel, h_includes);
+    char *init_code     = S_gen_init_code(parcel);
+    const char pattern[] =
+        "%s"
+        "\n"
+        "package %s\n"
+        "\n"
+        "/*\n"
+        "%s\n"
+        "*/\n"
+        "import \"C\"\n"
+        "\n"
+        "%s\n"
+        "\n"
+        "//export %sDummyExport\n"
+        "func %sDummyExport() int {\n"
+        "\treturn 1\n"
+        "}\n"
+        "%s";
+    char *content
+        = CFCUtil_sprintf(pattern, self->c_header, go_short_package,
+                          cgo_comment, init_code, PREFIX, PREFIX,
+                          self->c_footer);
+
+    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "cfbind.go", dest);
+    CFCUtil_write_if_changed(filepath, content, strlen(content));
+
+    FREEMEM(filepath);
+    FREEMEM(content);
+    FREEMEM(init_code);
+    FREEMEM(cgo_comment);
+    FREEMEM(go_short_package);
+}
+
 void
 CFCGo_write_bindings(CFCGo *self, CFCParcel *parcel, const char *dest) {
-    CHY_UNUSED_VAR(parcel);
-    CHY_UNUSED_VAR(dest);
+    char *h_includes = S_gen_h_includes(self);
+
     S_write_hostdefs(self);
+    S_write_cfbind_go(self, parcel, dest, h_includes);
+
+    FREEMEM(h_includes);
 }
 
