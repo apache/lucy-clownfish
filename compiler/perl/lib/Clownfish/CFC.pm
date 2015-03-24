@@ -123,6 +123,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         inert             => undef,
         final             => undef,
         parcel            => undef,
+        abstract          => undef,
         exposure          => 'parcel',
     );
 
@@ -156,7 +157,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         return _create(
             @args{
                 qw( parcel exposure class_name nickname micro_sym docucomment
-                    file_spec parent_class_name final inert)
+                    file_spec parent_class_name final inert abstract )
                 }
         );
     }
