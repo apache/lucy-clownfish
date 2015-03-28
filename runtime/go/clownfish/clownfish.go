@@ -69,7 +69,7 @@ func init() {
 }
 
 type Obj interface {
-	ToPtr() unsafe.Pointer
+	ToPtr() uintptr
 }
 
 type Err struct {
@@ -119,8 +119,8 @@ func (obj *String) finalize() {
 	obj.ref = nil
 }
 
-func (obj *String) ToPtr() unsafe.Pointer {
-	return unsafe.Pointer(obj.ref)
+func (obj *String) ToPtr() uintptr {
+	return uintptr(unsafe.Pointer(obj.ref))
 }
 
 func CFStringToGo(ptr unsafe.Pointer) string {
