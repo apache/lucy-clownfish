@@ -72,54 +72,70 @@ type Obj interface {
 	ToPtr() uintptr
 }
 
-type Err struct {
+type implObj struct {
+	ref *C.cfish_Obj
+}
+
+type Err interface {
+	Obj
+	Error() string
+}
+
+type implErr struct {
 	ref *C.cfish_Err
 }
 
-type String struct {
+type String interface {
+	Obj
+}
+
+type implString struct {
 	ref *C.cfish_String
 }
 
-type ByteBuf struct {
+type implByteBuf struct {
 	ref *C.cfish_ByteBuf
 }
 
-type Hash struct {
+type implHash struct {
 	ref *C.cfish_Hash
 }
 
-type VArray struct {
+type implVArray struct {
 	ref *C.cfish_VArray
 }
 
-type Class struct {
+type implClass struct {
 	ref *C.cfish_Class
 }
 
-type Method struct {
+type implMethod struct {
 	ref *C.cfish_Method
 }
 
-type LockFreeRegistry struct {
+type implLockFreeRegistry struct {
 	ref *C.cfish_LockFreeRegistry
 }
 
-func NewString(goString string) *String {
+func NewString(goString string) String {
 	str := C.CString(goString)
 	len := C.size_t(len(goString))
-	obj := &String{
-		C.cfish_Str_new_steal_utf8(str, len),
-	}
-	runtime.SetFinalizer(obj, (*String).finalize)
+	cfObj := C.cfish_Str_new_steal_utf8(str, len)
+	return WRAPString(unsafe.Pointer(cfObj))
+}
+
+func WRAPString(ptr unsafe.Pointer) String {
+	obj := &implString{((*C.cfish_String)(ptr))}
+	runtime.SetFinalizer(obj, (*implString).finalize)
 	return obj
 }
 
-func (obj *String) finalize() {
+func (obj *implString) finalize() {
 	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
 	obj.ref = nil
 }
 
-func (obj *String) ToPtr() uintptr {
+func (obj *implString) ToPtr() uintptr {
 	return uintptr(unsafe.Pointer(obj.ref))
 }
 
@@ -137,30 +153,36 @@ func CFStringToGo(ptr unsafe.Pointer) string {
 	return C.GoStringN(data, size)
 }
 
-// TODO: Err should be an interface.
-func NewError(mess string) error {
+func NewErr(mess string) Err {
 	str := C.CString(mess)
 	len := C.size_t(len(mess))
 	messC := C.cfish_Str_new_steal_utf8(str, len)
-	obj := &Err{C.cfish_Err_new(messC)}
-	runtime.SetFinalizer(obj, (*Err).finalize)
+	cfObj := C.cfish_Err_new(messC)
+	return WRAPErr(unsafe.Pointer(cfObj))
+}
+
+func WRAPErr(ptr unsafe.Pointer) Err {
+	obj := &implErr{((*C.cfish_Err)(ptr))}
+	runtime.SetFinalizer(obj, (*implErr).finalize)
 	return obj
 }
 
-func (obj *Err) finalize() {
+func (obj *implErr) finalize() {
 	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
 	obj.ref = nil
 }
 
-func (obj *Err) Error() string {
+func (obj *implErr) ToPtr() uintptr {
+	return uintptr(unsafe.Pointer(obj.ref))
+}
+
+func (obj *implErr) Error() string {
 	return CFStringToGo(unsafe.Pointer(C.CFISH_Err_Get_Mess(obj.ref)))
 }
 
 //export GoCfish_PanicErr_internal
 func GoCfish_PanicErr_internal(cfErr *C.cfish_Err) {
-	goErr := &Err{cfErr}
-	C.cfish_inc_refcount(unsafe.Pointer(cfErr))
-	runtime.SetFinalizer(goErr, (*Err).finalize)
+	goErr := WRAPErr(unsafe.Pointer(cfErr))
 	panic(goErr)
 }
 
@@ -169,18 +191,19 @@ func GoCfish_TrapErr_internal(routine C.CFISH_Err_Attempt_t,
 	context unsafe.Pointer) *C.cfish_Err {
 	err := TrapErr(func() { C.GoCfish_RunRoutine(routine, context) })
 	if err != nil {
-		return (err.(*Err)).ref
+		ptr := (err.(Err)).ToPtr()
+		return ((*C.cfish_Err)(unsafe.Pointer(ptr)))
 	}
 	return nil
 }
 
-// Run the supplied routine, and if it panics with a *clownfish.Err, trap and
+// Run the supplied routine, and if it panics with a clownfish.Err, trap and
 // return it.
 func TrapErr(routine func()) (trapped error) {
 	defer func() {
 		if r := recover(); r != nil {
 			// TODO: pass whitelist of Err types to trap.
-			myErr, ok := r.(*Err)
+			myErr, ok := r.(Err)
 			if ok {
 				trapped = myErr
 			} else {

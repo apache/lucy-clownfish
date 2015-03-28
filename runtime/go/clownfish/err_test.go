@@ -22,10 +22,10 @@ import "errors"
 
 func TestTrapErr(t *testing.T) {
 	err := clownfish.TrapErr(
-		func() { panic(clownfish.NewError("mistakes were made")) },
+		func() { panic(clownfish.NewErr("mistakes were made")) },
 	)
 	if err == nil {
-		t.Error("Failed to trap *clownfish.Err")
+		t.Error("Failed to trap clownfish.Err")
 	}
 }
 
