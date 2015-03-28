@@ -18,10 +18,11 @@ package clownfish_test
 
 import "git-wip-us.apache.org/repos/asf/lucy-clownfish.git/runtime/go/clownfish"
 import "testing"
+import "unsafe"
 
 func TestStuff(t *testing.T) {
 	cfString := clownfish.NewString("foo")
-	goString := clownfish.CFStringToGo(cfString.ToPtr())
+	goString := clownfish.CFStringToGo(unsafe.Pointer(cfString.ToPtr()))
 	if goString != "foo" {
 		t.Error("Round-tripping strings failed")
 	}
