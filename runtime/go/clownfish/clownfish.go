@@ -68,55 +68,6 @@ func init() {
 	C.cfish_bootstrap_parcel()
 }
 
-type Obj interface {
-	TOPTR() uintptr
-}
-
-type implObj struct {
-	ref *C.cfish_Obj
-}
-
-type Err interface {
-	Obj
-	Error() string
-}
-
-type implErr struct {
-	ref *C.cfish_Err
-}
-
-type String interface {
-	Obj
-}
-
-type implString struct {
-	ref *C.cfish_String
-}
-
-type implByteBuf struct {
-	ref *C.cfish_ByteBuf
-}
-
-type implHash struct {
-	ref *C.cfish_Hash
-}
-
-type implVArray struct {
-	ref *C.cfish_VArray
-}
-
-type implClass struct {
-	ref *C.cfish_Class
-}
-
-type implMethod struct {
-	ref *C.cfish_Method
-}
-
-type implLockFreeRegistry struct {
-	ref *C.cfish_LockFreeRegistry
-}
-
 func NewString(goString string) String {
 	str := C.CString(goString)
 	len := C.size_t(len(goString))
