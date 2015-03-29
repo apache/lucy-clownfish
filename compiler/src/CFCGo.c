@@ -29,6 +29,7 @@
 #include "CFCMethod.h"
 #include "CFCHierarchy.h"
 #include "CFCUtil.h"
+#include "CFCGoClass.h"
 #include "CFCGoTypeMap.h"
 
 static void
@@ -135,6 +136,24 @@ S_gen_h_includes(CFCGo *self) {
     return h_includes;
 }
 
+static void
+S_register_classes(CFCGo *self, CFCParcel *parcel) {
+    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass)
+            || CFCClass_get_parcel(klass) != parcel
+           ) {
+            continue;
+        }
+        const char *class_name = CFCClass_get_class_name(klass);
+        if (!CFCGoClass_singleton(class_name)) {
+            CFCGoClass *binding = CFCGoClass_new(parcel, class_name);
+            CFCGoClass_register(binding);
+        }
+    }
+}
+
 static char*
 S_gen_cgo_comment(CFCGo *self, CFCParcel *parcel, const char *h_includes) {
     const char *prefix = CFCParcel_get_prefix(parcel);
@@ -167,6 +186,30 @@ S_gen_init_code(CFCParcel *parcel) {
     return CFCUtil_sprintf(pattern, prefix);
 }
 
+static char*
+S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
+    CFCGoClass **registry = CFCGoClass_registry();
+    char *type_decs = CFCUtil_strdup("");
+
+    for (int i = 0; registry[i] != NULL; i++) {
+        CFCGoClass *class_binding = registry[i];
+
+        char *type_dec = CFCGoClass_go_typing(class_binding);
+        type_decs = CFCUtil_cat(type_decs, type_dec, "\n", NULL);
+        FREEMEM(type_dec);
+    }
+
+    char pattern[] =
+        "// Type declarations.\n"
+        "%s\n"
+        "\n"
+        ;
+    char *content = CFCUtil_sprintf(pattern, type_decs);
+
+    FREEMEM(type_decs);
+    return content;
+}
+
 static void
 S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
                   const char *h_includes) {
@@ -174,6 +217,7 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
     char *go_short_package = CFCGoTypeMap_go_short_package(parcel);
     char *cgo_comment   = S_gen_cgo_comment(self, parcel, h_includes);
     char *init_code     = S_gen_init_code(parcel);
+    char *autogen_go    = S_gen_autogen_go(self, parcel);
     const char pattern[] =
         "%s"
         "\n"
@@ -186,6 +230,8 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
         "\n"
         "%s\n"
         "\n"
+        "%s\n"
+        "\n"
         "//export %sDummyExport\n"
         "func %sDummyExport() int {\n"
         "\treturn 1\n"
@@ -193,14 +239,15 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
         "%s";
     char *content
         = CFCUtil_sprintf(pattern, self->c_header, go_short_package,
-                          cgo_comment, init_code, PREFIX, PREFIX,
-                          self->c_footer);
+                          cgo_comment, init_code, autogen_go,
+                          PREFIX, PREFIX, self->c_footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "cfbind.go", dest);
     CFCUtil_write_if_changed(filepath, content, strlen(content));
 
     FREEMEM(filepath);
     FREEMEM(content);
+    FREEMEM(autogen_go);
     FREEMEM(init_code);
     FREEMEM(cgo_comment);
     FREEMEM(go_short_package);
@@ -210,6 +257,7 @@ void
 CFCGo_write_bindings(CFCGo *self, CFCParcel *parcel, const char *dest) {
     char *h_includes = S_gen_h_includes(self);
 
+    S_register_classes(self, parcel);
     S_write_hostdefs(self);
     S_write_cfbind_go(self, parcel, dest, h_includes);
 

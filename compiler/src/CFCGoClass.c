@@ -131,3 +131,72 @@ CFCGoClass_clear_registry(void) {
     registry      = NULL;
 }
 
+char*
+CFCGoClass_go_typing(CFCGoClass *self) {
+    char *content = NULL;
+    if (!self->client) {
+        CFCUtil_die("Can't find class for %s", self->class_name);
+    }
+    else if (CFCClass_inert(self->client)) {
+        content = CFCUtil_strdup("");
+    } else {
+        const char *short_struct = CFCClass_get_struct_sym(self->client);
+        const char *full_struct  = CFCClass_full_struct_sym(self->client);
+
+        CFCClass *parent = CFCClass_get_parent(self->client);
+        char *parent_iface;
+        char *go_struct_def;
+        if (parent) {
+            const char *parent_struct = CFCClass_get_struct_sym(parent);
+            CFCParcel *parent_parcel = CFCClass_get_parcel(parent);
+            char *parent_type_str;
+            if (parent_parcel == self->parcel) {
+                parent_type_str = CFCUtil_strdup(parent_struct);
+            }
+            else {
+                char *parent_package
+                    = CFCGoTypeMap_go_short_package(parent_parcel);
+                parent_type_str = CFCUtil_sprintf("%s.%s", parent_package,
+                                                  parent_struct);
+                FREEMEM(parent_package);
+            }
+            parent_iface = CFCUtil_sprintf("\t%s\n", parent_type_str);
+            go_struct_def
+                = CFCUtil_sprintf("type %sIMP struct {\n\t%sIMP\n}\n",
+                                  short_struct, parent_type_str);
+            FREEMEM(parent_type_str);
+        }
+        else {
+            parent_iface = CFCUtil_strdup("");
+            go_struct_def = CFCUtil_strdup("");
+        }
+
+        // Temporary hack until it's possible to customize interfaces.
+        char *temp_hack_iface_methods;
+        if (strcmp(self->class_name, "Clownfish::Obj") == 0) {
+            temp_hack_iface_methods = CFCUtil_strdup("\tTOPTR() uintptr\n");
+        }
+        else if (strcmp(self->class_name, "Clownfish::Err") == 0) {
+            temp_hack_iface_methods = CFCUtil_strdup("\tError() string\n");
+        }
+        else {
+            temp_hack_iface_methods = CFCUtil_strdup("");
+        }
+
+        char pattern[] =
+            "type %s interface {\n"
+            "%s"
+            "%s"
+            "}\n"
+            "\n"
+            "%s"
+            ;
+        content = CFCUtil_sprintf(pattern, short_struct, parent_iface,
+                                  temp_hack_iface_methods, go_struct_def);
+        FREEMEM(temp_hack_iface_methods);
+        FREEMEM(go_struct_def);
+        FREEMEM(parent_iface);
+    }
+    return content;
+}
+

@@ -57,6 +57,11 @@ CFCGoClass_registry();
 void
 CFCGoClass_clear_registry(void);
 
+/** Return any Go type statements describing the Clownfish class.
+ */
+char*
+CFCGoClass_go_typing(CFCGoClass *self);
+
 #ifdef __cplusplus
 }
 #endif

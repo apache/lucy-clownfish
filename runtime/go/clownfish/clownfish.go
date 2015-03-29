@@ -68,53 +68,8 @@ func init() {
 	C.cfish_bootstrap_parcel()
 }
 
-type Obj interface {
-	TOPTR() uintptr
-}
-
 type ObjIMP struct {
 	ref uintptr
-}
-
-type Err interface {
-	Obj
-	Error() string
-}
-
-type ErrIMP struct {
-	ObjIMP
-}
-
-type String interface {
-	Obj
-}
-
-type StringIMP struct {
-	ObjIMP
-}
-
-type ByteBufIMP struct {
-	ObjIMP
-}
-
-type HashIMP struct {
-	ObjIMP
-}
-
-type VectorIMP struct {
-	ObjIMP
-}
-
-type ClassIMP struct {
-	ObjIMP
-}
-
-type MethodIMP struct {
-	ObjIMP
-}
-
-type LockFreeRegistryIMP struct {
-	ObjIMP
 }
 
 func NewString(goString string) String {
