@@ -124,3 +124,23 @@ CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
     return NULL;
 }
 
+char*
+CFCGoTypeMap_go_short_package(CFCParcel *parcel) {
+    // The Go short package name is the last component of the dot-separated
+    // Clownfish parcel name.
+    const char *parcel_frag = strrchr(CFCParcel_get_name(parcel), '.');
+    if (parcel_frag) {
+        parcel_frag += 1;
+    }
+    else {
+        parcel_frag = CFCParcel_get_name(parcel);
+    }
+    // TODO: Don't downcase package name once caps are forbidden in Clownfish
+    // parcel names.
+    char *go_short_package = CFCUtil_strdup(parcel_frag);
+    for (int i = 0; go_short_package[i] != '\0'; i++) {
+        go_short_package[i] = tolower(go_short_package[i]);
+    }
+    return go_short_package;
+}
+

@@ -28,6 +28,11 @@ char*
 CFCGoTypeMap_go_type_name(struct CFCType *type,
                           struct CFCParcel *current_parcel);
 
+/** Return the Go package name associated with a Clownfish parcel.
+ */
+char*
+CFCGoTypeMap_go_short_package(struct CFCParcel *parcel);
+
 #ifdef __cplusplus
 }
 #endif
