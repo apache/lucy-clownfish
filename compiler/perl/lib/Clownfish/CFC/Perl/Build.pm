@@ -148,7 +148,7 @@ sub cf_linker_flags {
 
     my $dlext = $Config{dlext};
     # Only needed on Windows
-    return () if $dlext ne 'dll';
+    return () if $dlext !~ /dll$/i;
 
     # Link against import library on MSVC
     my $ext = $Config{cc} =~ /^cl\b/ ? 'lib' : $dlext;
