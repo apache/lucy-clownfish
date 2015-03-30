@@ -278,9 +278,9 @@ TestBatchRunner_VFail_IMP(TestBatchRunner *self, const char *pattern,
 void
 TestBatchRunner_VSkip_IMP(TestBatchRunner *self, uint32_t num,
                           const char *pattern, va_list args) {
-    self->test_num += num;
-    TestFormatter_VTest_Skip(self->formatter, self->test_num, num, pattern,
+    TestFormatter_VTest_Skip(self->formatter, self->test_num + 1, num, pattern,
                              args);
+    self->test_num    += num;
     self->num_skipped += num;
 }
 
