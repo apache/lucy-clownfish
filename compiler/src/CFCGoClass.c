@@ -122,6 +122,11 @@ CFCGoClass_singleton(const char *class_name) {
     return NULL;
 }
 
+CFCClass*
+CFCGoClass_get_client(CFCGoClass *self) {
+    return self->client;
+}
+
 CFCGoClass**
 CFCGoClass_registry() {
     if (!registry) {
