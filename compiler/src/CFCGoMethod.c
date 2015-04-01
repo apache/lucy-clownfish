@@ -85,30 +85,30 @@ S_prep_cfargs(CFCParamList *param_list) {
         else if (CFCType_is_object(type)) {
             char *obj_pattern;
             if (CFCType_decremented(type)) {
-                obj_pattern = "%s(*C.%s)(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(%s.TOPTR()))))";
+                obj_pattern = "(*C.%s)(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(%s.TOPTR()))))";
             }
             else {
-                obj_pattern = "%s(*C.%s)(unsafe.Pointer(%s.TOPTR()))";
+                obj_pattern = "(*C.%s)(unsafe.Pointer(%s.TOPTR()))";
             }
-            char *temp = CFCUtil_sprintf(obj_pattern, cfargs,
+            char *temp = CFCUtil_sprintf(obj_pattern,
                                          CFCType_get_specifier(type), name);
-            FREEMEM(cfargs);
-            cfargs = temp;
+            cfargs = CFCUtil_cat(cfargs, temp, NULL);
+            FREEMEM(temp);
         }
     }
     return cfargs;
 }
 
 char*
-CFCGoMethod_func_def(CFCGoMethod *self) {
-    CFCMethod    *method     = self->method;
-    CFCParcel    *parcel     = CFCMethod_get_parcel(method);
-    CFCParamList *param_list = CFCMethod_get_param_list(method);
-    CFCType      *ret_type   = CFCMethod_get_return_type(method);
-    char *name = CFCGoFunc_go_meth_name(CFCMethod_get_macro_sym(method));
-    char *first_line = CFCGoFunc_func_start(parcel, name, param_list,
-                                            ret_type, true);
-    char *full_meth_sym = CFCMethod_full_method_sym(method, NULL);
+CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
+    CFCMethod    *novel_method = CFCMethod_find_novel_method(self->method);
+    CFCParcel    *parcel     = CFCClass_get_parcel(invoker);
+    CFCParamList *param_list = CFCMethod_get_param_list(novel_method);
+    CFCType      *ret_type   = CFCMethod_get_return_type(novel_method);
+    char *name = CFCGoFunc_go_meth_name(CFCMethod_get_macro_sym(novel_method));
+    char *first_line = CFCGoFunc_func_start(parcel, name, invoker,
+                                            param_list, ret_type, true);
+    char *full_meth_sym = CFCMethod_full_method_sym(novel_method, NULL);
 
     char *cfargs = S_prep_cfargs(param_list);
 

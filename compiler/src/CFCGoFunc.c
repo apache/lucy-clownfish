@@ -20,6 +20,7 @@
 #include "CFCGoFunc.h"
 #include "CFCGoTypeMap.h"
 #include "CFCBase.h"
+#include "CFCClass.h"
 #include "CFCFunction.h"
 #include "CFCUtil.h"
 #include "CFCParcel.h"
@@ -44,18 +45,14 @@ CFCGoFunc_go_meth_name(const char *orig) {
 }
 
 char*
-CFCGoFunc_func_start(CFCParcel *parcel, const char *name,
+CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
                      CFCParamList *param_list, CFCType *return_type,
                      int is_method) {
     CFCVariable **param_vars = CFCParamList_get_variables(param_list);
     char *invocant;
     if (is_method) {
-        CFCVariable *var = param_vars[0];
-        CFCType *type = CFCVariable_get_type(var);
-        char *go_type_name = CFCGoTypeMap_go_type_name(type, parcel);
-        invocant = CFCUtil_sprintf("(%s *impl%s) ", CFCVariable_micro_sym(var),
-                                   go_type_name);
-        FREEMEM(go_type_name);
+        invocant = CFCUtil_sprintf("(self *impl%s) ",
+                                   CFCClass_get_struct_sym(invoker));
     }
     else {
         invocant = CFCUtil_strdup("");
