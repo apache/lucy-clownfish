@@ -93,12 +93,6 @@ func (o *ObjIMP) TOPTR() uintptr {
 	return o.ref
 }
 
-func WRAPString(ptr unsafe.Pointer) String {
-	s := &StringIMP{ObjIMP{}}
-	s.INITOBJ(ptr)
-	return s
-}
-
 func CFStringToGo(ptr unsafe.Pointer) string {
 	cfString := (*C.cfish_String)(ptr)
 	if cfString == nil {
@@ -119,12 +113,6 @@ func NewErr(mess string) Err {
 	messC := C.cfish_Str_new_steal_utf8(str, len)
 	cfObj := C.cfish_Err_new(messC)
 	return WRAPErr(unsafe.Pointer(cfObj))
-}
-
-func WRAPErr(ptr unsafe.Pointer) Err {
-	e := &ErrIMP{ObjIMP{}}
-	e.INITOBJ(ptr)
-	return e
 }
 
 func (e *ErrIMP) Error() string {
