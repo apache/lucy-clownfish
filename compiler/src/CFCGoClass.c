@@ -295,7 +295,8 @@ CFCGoClass_gen_meth_glue(CFCGoClass *self) {
     char *meth_defs = CFCUtil_strdup("");
     for (size_t i = 0; self->method_bindings[i] != NULL; i++) {
         CFCGoMethod *meth_binding = self->method_bindings[i];
-        char *method_def = CFCGoMethod_func_def(meth_binding);
+        char *method_def
+            = CFCGoMethod_func_def(meth_binding, self->client);
         meth_defs = CFCUtil_cat(meth_defs, method_def, "\n", NULL);
         FREEMEM(method_def);
     }
