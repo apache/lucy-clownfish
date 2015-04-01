@@ -26,12 +26,13 @@ extern "C" {
 
 typedef struct CFCGoMethod CFCGoMethod;
 struct CFCMethod;
+struct CFCClass;
 
 CFCGoMethod*
 CFCGoMethod_new(struct CFCMethod *method);
 
 char*
-CFCGoMethod_func_def(CFCGoMethod *self);
+CFCGoMethod_func_def(CFCGoMethod *self, struct CFCClass *invoker);
 
 #ifdef __cplusplus
 }

@@ -25,6 +25,7 @@ extern "C" {
 struct CFCFunction;
 struct CFCParcel;
 struct CFCType;
+struct CFCClass;
 struct CFCParamList;
 
 char*
@@ -32,6 +33,7 @@ CFCGoFunc_go_meth_name(const char *orig);
 
 char*
 CFCGoFunc_func_start(struct CFCParcel *parcel, const char *name,
+                     struct CFCClass *invoker,
                      struct CFCParamList *param_list,
                      struct CFCType *return_type, int is_method);
 
