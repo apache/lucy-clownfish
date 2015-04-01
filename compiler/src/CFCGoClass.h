@@ -65,6 +65,11 @@ CFCGoClass_get_client(CFCGoClass *self);
 char*
 CFCGoClass_go_typing(CFCGoClass *self);
 
+/** Return boilerplate Go code needed for each Clownfish class.
+ */
+char*
+CFCGoClass_boilerplate_funcs(CFCGoClass *self);
+
 #ifdef __cplusplus
 }
 #endif

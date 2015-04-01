@@ -215,6 +215,31 @@ CFCGoClass_go_typing(CFCGoClass *self) {
     return content;
 }
 
+char*
+CFCGoClass_boilerplate_funcs(CFCGoClass *self) {
+    char *content = NULL;
+    if (!self->client) {
+        CFCUtil_die("Can't find class for %s", self->class_name);
+    }
+    else if (CFCClass_inert(self->client)) {
+        content = CFCUtil_strdup("");
+    } else {
+        const char *short_struct = CFCClass_get_struct_sym(self->client);
+        const char *full_struct  = CFCClass_full_struct_sym(self->client);
+        char pattern[] =
+            "func WRAP%s(ptr unsafe.Pointer) %s {\n"
+            "\tobj := &%sIMP{}\n"
+            "\tobj.INITOBJ(ptr)\n"
+            "\treturn obj\n"
+            "}\n"
+            ;
+
+        content = CFCUtil_sprintf(pattern, short_struct, short_struct,
+                                  short_struct, full_struct, short_struct);
+    }
+    return content;
+}
+
 static void
 S_lazy_init_method_bindings(CFCGoClass *self) {
     if (self->method_bindings) {
