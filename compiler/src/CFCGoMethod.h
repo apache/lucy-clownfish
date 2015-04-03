@@ -31,6 +31,12 @@ struct CFCClass;
 CFCGoMethod*
 CFCGoMethod_new(struct CFCMethod *method);
 
+struct CFCMethod*
+CFCGoMethod_get_client(CFCGoMethod *self);
+
+char*
+CFCGoMethod_iface_sig(CFCGoMethod *self);
+
 char*
 CFCGoMethod_func_def(CFCGoMethod *self, struct CFCClass *invoker);
 

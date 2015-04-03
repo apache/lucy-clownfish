@@ -190,8 +190,28 @@ CFCGoClass_go_typing(CFCGoClass *self) {
             temp_hack_iface_methods = CFCUtil_strdup("");
         }
 
+        char *novel_iface = CFCUtil_strdup("");
+        S_lazy_init_method_bindings(self);
+        for (int i = 0; self->method_bindings[i] != NULL; i++) {
+            CFCGoMethod *meth_binding = self->method_bindings[i];
+            CFCMethod *method = CFCGoMethod_get_client(meth_binding);
+            if (!CFCMethod_novel(method)) {
+                continue;
+            }
+            const char *sym = CFCMethod_get_macro_sym(method);
+            if (!CFCClass_fresh_method(self->client, sym)) {
+                continue;
+            }
+
+            char *iface_sig = CFCGoMethod_iface_sig(meth_binding);
+            novel_iface
+                = CFCUtil_cat(novel_iface, "\t", iface_sig, "\n", NULL);
+            FREEMEM(iface_sig);
+        }
+
         char pattern[] =
             "type %s interface {\n"
+            "%s"
             "%s"
             "%s"
             "}\n"
@@ -202,7 +222,7 @@ CFCGoClass_go_typing(CFCGoClass *self) {
             ;
         content = CFCUtil_sprintf(pattern, short_struct, parent_iface,
                                   temp_hack_iface_methods,
-                                  short_struct, full_struct);
+                                  novel_iface, short_struct, full_struct);
         FREEMEM(temp_hack_iface_methods);
         FREEMEM(parent_iface);
     }
@@ -250,15 +270,15 @@ S_lazy_init_method_bindings(CFCGoClass *self) {
         return;
     }
     CFCUTIL_NULL_CHECK(self->client);
-    CFCClass     *parent        = CFCClass_get_parent(self->client);
-    size_t        num_bound     = 0;
-    CFCMethod   **fresh_methods = CFCClass_fresh_methods(self->client);
+    CFCClass     *parent    = CFCClass_get_parent(self->client);
+    size_t        num_bound = 0;
+    CFCMethod   **methods   = CFCClass_methods(self->client);
     CFCGoMethod **bound
         = (CFCGoMethod**)CALLOCATE(1, sizeof(CFCGoMethod*));
 
-     // Iterate over the class's fresh methods.
-    for (size_t i = 0; fresh_methods[i] != NULL; i++) {
-        CFCMethod *method = fresh_methods[i];
+     // Iterate over all of the class's methods.
+    for (size_t i = 0; methods[i] != NULL; i++) {
+        CFCMethod *method = methods[i];
 
         // Skip methods which have been explicitly excluded.
         if (CFCMethod_excluded_from_host(method)) {
@@ -288,14 +308,12 @@ char*
 CFCGoClass_gen_meth_glue(CFCGoClass *self) {
     S_lazy_init_method_bindings(self);
     char *meth_defs = CFCUtil_strdup("");
-    if (!CFCClass_abstract(self->client)) {
-        for (size_t i = 0; self->method_bindings[i] != NULL; i++) {
-            CFCGoMethod *meth_binding = self->method_bindings[i];
-            char *method_def
-                = CFCGoMethod_func_def(meth_binding, self->client);
-            meth_defs = CFCUtil_cat(meth_defs, method_def, "\n", NULL);
-            FREEMEM(method_def);
-        }
+    for (size_t i = 0; self->method_bindings[i] != NULL; i++) {
+        CFCGoMethod *meth_binding = self->method_bindings[i];
+        char *method_def
+            = CFCGoMethod_func_def(meth_binding, self->client);
+        meth_defs = CFCUtil_cat(meth_defs, method_def, "\n", NULL);
+        FREEMEM(method_def);
     }
     return meth_defs;
 }

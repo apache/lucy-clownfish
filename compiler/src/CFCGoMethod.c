@@ -67,6 +67,43 @@ S_CFCGoMethod_destroy(CFCGoMethod *self) {
     CFCBase_destroy((CFCBase*)self);
 }
 
+CFCMethod*
+CFCGoMethod_get_client(CFCGoMethod *self) {
+    return self->method;
+}
+
+char*
+CFCGoMethod_iface_sig(CFCGoMethod *self) {
+    CFCMethod *method = self->method;
+    CFCParcel *parcel = CFCMethod_get_parcel(method);
+    CFCType *return_type = CFCMethod_get_return_type(method);
+    char *name = CFCGoFunc_go_meth_name(CFCMethod_get_macro_sym(method));
+    char *go_ret_type = CFCType_is_void(return_type)
+                        ? CFCUtil_strdup("")
+                        : CFCGoTypeMap_go_type_name(return_type, parcel);
+
+    // Assemble list of argument types.
+    char *args = CFCUtil_strdup("");
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    for (int i = 1; vars[i] != NULL; i++) {
+        CFCType *type = CFCVariable_get_type(vars[i]);
+        if (i > 1) {
+            args = CFCUtil_cat(args, ", ", NULL);
+        }
+        char *go_type = CFCGoTypeMap_go_type_name(type, parcel);
+        args = CFCUtil_cat(args, go_type, NULL);
+        FREEMEM(go_type);
+    }
+
+    char *sig = CFCUtil_sprintf("%s(%s) %s", name, args, go_ret_type);
+
+    FREEMEM(args);
+    FREEMEM(go_ret_type);
+    FREEMEM(name);
+    return sig;
+}
+
 static char*
 S_prep_cfargs(CFCParamList *param_list) {
     CFCVariable **vars = CFCParamList_get_variables(param_list);
