@@ -198,8 +198,28 @@ CFCGoClass_go_typing(CFCGoClass *self) {
             temp_hack_iface_methods = CFCUtil_strdup("");
         }
 
+        char *novel_iface = CFCUtil_strdup("");
+        S_lazy_init_method_bindings(self);
+        for (int i = 0; self->method_bindings[i] != NULL; i++) {
+            CFCGoMethod *meth_binding = self->method_bindings[i];
+            CFCMethod *method = CFCGoMethod_get_client(meth_binding);
+            if (!CFCMethod_novel(method)) {
+                continue;
+            }
+            const char *sym = CFCMethod_get_macro_sym(method);
+            if (!CFCClass_fresh_method(self->client, sym)) {
+                continue;
+            }
+
+            char *iface_sig = CFCGoMethod_iface_sig(meth_binding);
+            novel_iface
+                = CFCUtil_cat(novel_iface, "\t", iface_sig, "\n", NULL);
+            FREEMEM(iface_sig);
+        }
+
         char pattern[] =
             "type %s interface {\n"
+            "%s"
             "%s"
             "%s"
             "}\n"
@@ -207,7 +227,8 @@ CFCGoClass_go_typing(CFCGoClass *self) {
             "%s"
             ;
         content = CFCUtil_sprintf(pattern, short_struct, parent_iface,
-                                  temp_hack_iface_methods, go_struct_def);
+                                  temp_hack_iface_methods, novel_iface,
+                                  go_struct_def);
         FREEMEM(temp_hack_iface_methods);
         FREEMEM(go_struct_def);
         FREEMEM(parent_iface);
