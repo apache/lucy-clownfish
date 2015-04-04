@@ -22,7 +22,7 @@ import "unsafe"
 
 func TestStuff(t *testing.T) {
 	cfString := clownfish.NewString("foo")
-	goString := clownfish.CFStringToGo(unsafe.Pointer(cfString.ToPtr()))
+	goString := clownfish.CFStringToGo(unsafe.Pointer(cfString.TOPTR()))
 	if goString != "foo" {
 		t.Error("Round-tripping strings failed")
 	}
