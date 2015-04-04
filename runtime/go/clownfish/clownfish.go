@@ -69,7 +69,7 @@ func init() {
 }
 
 type Obj interface {
-	ToPtr() uintptr
+	TOPTR() uintptr
 }
 
 type implObj struct {
@@ -135,7 +135,7 @@ func (obj *implString) finalize() {
 	obj.ref = nil
 }
 
-func (obj *implString) ToPtr() uintptr {
+func (obj *implString) TOPTR() uintptr {
 	return uintptr(unsafe.Pointer(obj.ref))
 }
 
@@ -172,7 +172,7 @@ func (obj *implErr) finalize() {
 	obj.ref = nil
 }
 
-func (obj *implErr) ToPtr() uintptr {
+func (obj *implErr) TOPTR() uintptr {
 	return uintptr(unsafe.Pointer(obj.ref))
 }
 
@@ -191,7 +191,7 @@ func GoCfish_TrapErr_internal(routine C.CFISH_Err_Attempt_t,
 	context unsafe.Pointer) *C.cfish_Err {
 	err := TrapErr(func() { C.GoCfish_RunRoutine(routine, context) })
 	if err != nil {
-		ptr := (err.(Err)).ToPtr()
+		ptr := (err.(Err)).TOPTR()
 		return ((*C.cfish_Err)(unsafe.Pointer(ptr)))
 	}
 	return nil
