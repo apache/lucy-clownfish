@@ -46,11 +46,6 @@ CFCPerlMethod_init(CFCPerlMethod *self, struct CFCMethod *method);
 void
 CFCPerlMethod_destroy(CFCPerlMethod *self);
 
-/** Test whether bindings should be generated for a method.
-  */
-int
-CFCPerlMethod_can_be_bound(struct CFCMethod *method);
-
 /**
  * Create the Perl name of the method.
  */

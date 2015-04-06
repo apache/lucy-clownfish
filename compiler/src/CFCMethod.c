@@ -261,6 +261,17 @@ CFCMethod_finalize(CFCMethod *self) {
     return finalized;
 }
 
+int
+CFCMethod_can_be_bound(CFCMethod *method) {
+    /*
+     * Check for
+     * - private methods
+     * - methods with types which cannot be mapped automatically
+     */
+    return !CFCSymbol_private((CFCSymbol*)method)
+           && CFCFunction_can_be_bound((CFCFunction*)method);
+}
+
 void
 CFCMethod_set_host_alias(CFCMethod *self, const char *alias) {
     if (!alias || !alias[0]) {

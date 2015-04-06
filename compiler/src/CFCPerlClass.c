@@ -245,7 +245,7 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
         }
 
         // Skip methods that shouldn't be bound.
-        if (!CFCPerlMethod_can_be_bound(method)) {
+        if (!CFCMethod_can_be_bound(method)) {
             continue;
         }
 

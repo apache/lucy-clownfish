@@ -121,17 +121,6 @@ CFCPerlMethod_destroy(CFCPerlMethod *self) {
     CFCPerlSub_destroy((CFCPerlSub*)self);
 }
 
-int
-CFCPerlMethod_can_be_bound(CFCMethod *method) {
-    /*
-     * Check for
-     * - private methods
-     * - methods with types which cannot be mapped automatically
-     */
-    return !CFCSymbol_private((CFCSymbol*)method)
-           && CFCFunction_can_be_bound((CFCFunction*)method);
-}
-
 char*
 CFCPerlMethod_perl_name(CFCMethod *method) {
     // See if the user wants the method to have a specific alias.
@@ -445,7 +434,7 @@ char*
 CFCPerlMethod_callback_def(CFCMethod *method) {
     // Return a callback wrapper that throws an error if there are no
     // bindings for a method.
-    if (!CFCPerlMethod_can_be_bound(method)) {
+    if (!CFCMethod_can_be_bound(method)) {
         return S_invalid_callback_def(method);
     }
 
