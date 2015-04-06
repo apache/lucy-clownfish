@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-package clownfish_test
+#ifndef H_CFCGOTYPEMAP
+#define H_CFCGOTYPEMAP
 
-import "git-wip-us.apache.org/repos/asf/lucy-clownfish.git/runtime/go/clownfish"
-import "testing"
-import "unsafe"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-func TestStuff(t *testing.T) {
-	cfString := clownfish.NewString("foo")
-	goString := clownfish.CFStringToGo(unsafe.Pointer(cfString.TOPTR()))
-	if goString != "foo" {
-		t.Error("Round-tripping strings failed")
-	}
+struct CFCType;
+struct CFCParcel;
+
+char*
+CFCGoTypeMap_go_type_name(struct CFCType *type,
+                          struct CFCParcel *current_parcel);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* H_CFCGOTYPEMAP */
+
