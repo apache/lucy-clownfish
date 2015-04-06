@@ -129,7 +129,7 @@ CFCPerlMethod_can_be_bound(CFCMethod *method) {
      * - methods with types which cannot be mapped automatically
      */
     return !CFCSymbol_private((CFCSymbol*)method)
-           && CFCPerlSub_can_be_bound((CFCFunction*)method);
+           && CFCFunction_can_be_bound((CFCFunction*)method);
 }
 
 char*

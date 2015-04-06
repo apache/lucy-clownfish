@@ -23,6 +23,7 @@
 #include "CFCPerlClass.h"
 #include "CFCUtil.h"
 #include "CFCClass.h"
+#include "CFCFunction.h"
 #include "CFCMethod.h"
 #include "CFCParcel.h"
 #include "CFCParamList.h"
@@ -288,7 +289,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
         if (perl_class == NULL) {
             // Bind init() to new() when possible.
             if (strcmp(micro_sym, "init") == 0
-                && CFCPerlSub_can_be_bound(function)
+                && CFCFunction_can_be_bound(function)
                ) {
                 alias = NEW;
             }
@@ -297,7 +298,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
             for (size_t j = 0; j < perl_class->num_cons; j++) {
                 if (strcmp(micro_sym, perl_class->cons_inits[j]) == 0) {
                     alias = perl_class->cons_aliases[j];
-                    if (!CFCPerlSub_can_be_bound(function)) {
+                    if (!CFCFunction_can_be_bound(function)) {
                         CFCUtil_die("Can't bind %s as %s"
                                     " -- types can't be mapped",
                                     micro_sym, alias);
@@ -310,7 +311,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
             if (!alias
                 && !perl_class->exclude_cons
                 && strcmp(micro_sym, "init") == 0
-                && CFCPerlSub_can_be_bound(function)
+                && CFCFunction_can_be_bound(function)
                ) {
                 int saw_new = 0;
                 for (size_t j = 0; j < perl_class->num_cons; j++) {
