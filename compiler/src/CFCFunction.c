@@ -27,6 +27,7 @@
 #include "CFCParcel.h"
 #include "CFCType.h"
 #include "CFCParamList.h"
+#include "CFCVariable.h"
 #include "CFCDocuComment.h"
 #include "CFCUtil.h"
 
@@ -95,6 +96,28 @@ CFCFunction_destroy(CFCFunction *self) {
     CFCBase_decref((CFCBase*)self->param_list);
     CFCBase_decref((CFCBase*)self->docucomment);
     CFCSymbol_destroy((CFCSymbol*)self);
+}
+
+int
+CFCFunction_can_be_bound(CFCFunction *self) {
+    // Test whether parameters can be mapped automatically.
+    CFCVariable **arg_vars = CFCParamList_get_variables(self->param_list);
+    for (size_t i = 0; arg_vars[i] != NULL; i++) {
+        CFCType *type = CFCVariable_get_type(arg_vars[i]);
+        if (!CFCType_is_object(type) && !CFCType_is_primitive(type)) {
+            return false;
+        }
+    }
+
+    // Test whether return type can be mapped automatically.
+    if (!CFCType_is_void(self->return_type)
+        && !CFCType_is_object(self->return_type)
+        && !CFCType_is_primitive(self->return_type)
+    ) {
+        return false;
+    }
+
+    return true;
 }
 
 CFCType*

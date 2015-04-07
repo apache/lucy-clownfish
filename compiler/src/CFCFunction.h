@@ -78,6 +78,11 @@ CFCFunction_init(CFCFunction *self, struct CFCParcel *parcel,
 void
 CFCFunction_destroy(CFCFunction *self);
 
+/** Test whether bindings can be generated for a function.
+  */
+int
+CFCFunction_can_be_bound(CFCFunction *function);
+
 struct CFCType*
 CFCFunction_get_return_type(CFCFunction *self);
 

@@ -107,6 +107,11 @@ CFCMethod_override(CFCMethod *self, CFCMethod *orig);
 CFCMethod*
 CFCMethod_finalize(CFCMethod *self);
 
+/** Test whether bindings should be generated for a method.
+  */
+int
+CFCMethod_can_be_bound(CFCMethod *method);
+
 /**
  * Find the first declaration of the method in the class hierarchy.
  */
