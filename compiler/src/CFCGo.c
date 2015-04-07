@@ -30,6 +30,7 @@
 #include "CFCHierarchy.h"
 #include "CFCUtil.h"
 #include "CFCGoClass.h"
+#include "CFCGoMethod.h"
 #include "CFCGoTypeMap.h"
 
 static void
@@ -191,9 +192,15 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
     CFCGoClass **registry = CFCGoClass_registry();
     char *type_decs   = CFCUtil_strdup("");
     char *boilerplate = CFCUtil_strdup("");
+    char *meth_defs   = CFCUtil_strdup("");
 
     for (int i = 0; registry[i] != NULL; i++) {
         CFCGoClass *class_binding = registry[i];
+        CFCClass *client = CFCGoClass_get_client(class_binding);
+
+        if (CFCClass_get_parcel(client) != parcel) {
+            continue;
+        }
 
         char *type_dec = CFCGoClass_go_typing(class_binding);
         type_decs = CFCUtil_cat(type_decs, type_dec, "\n", NULL);
@@ -202,6 +209,10 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         char *boiler_code = CFCGoClass_boilerplate_funcs(class_binding);
         boilerplate = CFCUtil_cat(boilerplate, boiler_code, "\n", NULL);
         FREEMEM(boiler_code);
+
+        char *glue = CFCGoClass_gen_meth_glue(class_binding);
+        meth_defs = CFCUtil_cat(meth_defs, glue, "\n", NULL);
+        FREEMEM(glue);
     }
 
     char pattern[] =
@@ -213,9 +224,15 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         "\n"
         "%s\n"
         "\n"
+        "// Method bindings.\n"
+        "\n"
+        "%s\n"
+        "\n"
         ;
-    char *content = CFCUtil_sprintf(pattern, type_decs, boilerplate);
+    char *content
+        = CFCUtil_sprintf(pattern, type_decs, boilerplate, meth_defs);
 
+    FREEMEM(meth_defs);
     FREEMEM(boilerplate);
     FREEMEM(type_decs);
     return content;
