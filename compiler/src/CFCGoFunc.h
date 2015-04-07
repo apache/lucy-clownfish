@@ -14,28 +14,30 @@
  * limitations under the License.
  */
 
-#ifndef H_CFCGOMETHOD
-#define H_CFCGOMETHOD
+
+#ifndef H_CFCGOFUNC
+#define H_CFCGOFUNC
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** Clownfish::CFC::Binding::Go::Method - Binding for a method.
- */
-
-typedef struct CFCGoMethod CFCGoMethod;
-struct CFCMethod;
-
-CFCGoMethod*
-CFCGoMethod_new(struct CFCMethod *method);
+struct CFCFunction;
+struct CFCParcel;
+struct CFCType;
+struct CFCParamList;
 
 char*
-CFCGoMethod_func_def(CFCGoMethod *self);
+CFCGoFunc_go_meth_name(const char *orig);
+
+char*
+CFCGoFunc_func_start(struct CFCParcel *parcel, const char *name,
+                     struct CFCParamList *param_list,
+                     struct CFCType *return_type, int is_method);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* H_CFCGOMETHOD */
+#endif /* H_CFCGOFUNC */
 
