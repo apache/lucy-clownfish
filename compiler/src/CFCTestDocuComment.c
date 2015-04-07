@@ -142,7 +142,7 @@ S_test_generator(CFCTest *test) {
     );
     CFCClass *klass
         = CFCClass_create(parcel, "public", "Neato::Object", NULL, NULL,
-                          docu, NULL, NULL, 0, 0);
+                          docu, NULL, NULL, 0, 0, 0);
 
     char *man_page = CFCCMan_create_man_page(klass);
     const char *expected_man =

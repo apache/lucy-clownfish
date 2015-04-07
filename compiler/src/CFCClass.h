@@ -55,13 +55,14 @@ struct CFCFileSpec;
  * @param is_inert Should be true if the class is inert, i.e. cannot be
  * instantiated.
  * @param is_final Should be true if the class is final.
+ * @param is_abstract Should be true if the class is abstract.
  */
 CFCClass*
 CFCClass_create(struct CFCParcel *parcel, const char *exposure,
                 const char *class_name, const char *nickname,
                 const char *micro_sym, struct CFCDocuComment *docucomment,
                 struct CFCFileSpec *file_spec, const char *parent_class_name,
-                int is_final, int is_inert);
+                int is_final, int is_inert, int is_abstract);
 
 CFCClass*
 CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
@@ -69,7 +70,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    const char *nickname, const char *micro_sym,
                    struct CFCDocuComment *docucomment,
                    struct CFCFileSpec *file_spec, const char *parent_class_name,
-                   int is_final, int is_inert);
+                   int is_final, int is_inert, int is_abstract);
 
 void
 CFCClass_destroy(CFCClass *self);
@@ -228,6 +229,9 @@ CFCClass_final(CFCClass *self);
 
 int
 CFCClass_inert(CFCClass *self);
+
+int
+CFCClass_abstract(CFCClass *self);
 
 const char*
 CFCClass_get_struct_sym(CFCClass *self);

@@ -19,7 +19,7 @@ parcel Clownfish;
 /** Base class for all objects.
  */
 
-public class Clownfish::Obj {
+public abstract class Clownfish::Obj {
 
     Class *klass;
 

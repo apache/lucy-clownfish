@@ -40,20 +40,21 @@ S_start_class(CFCParser *state, CFCDocuComment *docucomment, char *exposure,
     CFCFileSpec *file_spec = CFCParser_get_file_spec(state);
     int is_final = false;
     int is_inert = false;
+    int is_abstract = false;
     if (modifiers) {
-        /* TODO: Decide how to handle abstract classes. */
         if (strstr(modifiers, "inline")) {
             CFCUtil_die("Illegal class modifiers: '%s'", modifiers);
         }
         is_final = !!strstr(modifiers, "final");
         is_inert = !!strstr(modifiers, "inert");
+        is_abstract = !!strstr(modifiers, "abstract");
     }
     CFCParser_set_class_name(state, class_name);
     CFCParser_set_class_nickname(state, class_nickname);
     CFCClass *klass = CFCClass_create(CFCParser_get_parcel(state), exposure,
                                       class_name, class_nickname, NULL,
                                       docucomment, file_spec, inheritance,
-                                      is_final, is_inert);
+                                      is_final, is_inert, is_abstract);
     CFCBase_decref((CFCBase*)docucomment);
     return klass;
 }

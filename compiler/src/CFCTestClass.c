@@ -87,7 +87,7 @@ S_run_tests(CFCTest *test) {
 
     CFCClass *foo
         = CFCClass_create(neato, NULL, "Foo", NULL, NULL, NULL, NULL, NULL,
-                          0, 0);
+                          0, 0, 0);
     CFCClass_add_function(foo, tread_water);
     CFCClass_add_member_var(foo, thing);
     CFCClass_add_inert_var(foo, widget);
@@ -99,7 +99,7 @@ S_run_tests(CFCTest *test) {
 
     CFCClass *foo_jr
         = CFCClass_create(neato, NULL, "Foo::FooJr", NULL, NULL, NULL, NULL,
-                          "Foo", 0, 0);
+                          "Foo", 0, 0, 0);
     STR_EQ(test, CFCClass_get_struct_sym(foo_jr), "FooJr",
            "get_struct_sym");
     STR_EQ(test, CFCClass_full_struct_sym(foo_jr), "neato_FooJr",
@@ -107,7 +107,7 @@ S_run_tests(CFCTest *test) {
 
     CFCClass *final_foo
         = CFCClass_create(neato, NULL, "Foo::FooJr::FinalFoo", NULL, NULL, NULL,
-                          file_spec, "Foo::FooJr", 1, 0);
+                          file_spec, "Foo::FooJr", 1, 0, 0);
     OK(test, CFCClass_final(final_foo), "final");
     STR_EQ(test, CFCClass_include_h(final_foo), "Foo/FooJr.h",
            "include_h uses path_part");

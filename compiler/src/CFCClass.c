@@ -70,6 +70,7 @@ struct CFCClass {
     char *parent_class_name;
     int is_final;
     int is_inert;
+    int is_abstract;
     char *struct_sym;
     char *full_struct_sym;
     char *ivars_struct;
@@ -106,11 +107,12 @@ CFCClass_create(struct CFCParcel *parcel, const char *exposure,
                 const char *class_name, const char *nickname,
                 const char *micro_sym, CFCDocuComment *docucomment,
                 CFCFileSpec *file_spec, const char *parent_class_name,
-                int is_final, int is_inert) {
+                int is_final, int is_inert, int is_abstract) {
     CFCClass *self = (CFCClass*)CFCBase_allocate(&CFCCLASS_META);
     return CFCClass_do_create(self, parcel, exposure, class_name, nickname,
                               micro_sym, docucomment, file_spec,
-                              parent_class_name, is_final, is_inert);
+                              parent_class_name, is_final, is_inert,
+                              is_abstract);
 }
 
 CFCClass*
@@ -118,7 +120,8 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                    const char *exposure, const char *class_name,
                    const char *nickname, const char *micro_sym,
                    CFCDocuComment *docucomment, CFCFileSpec *file_spec,
-                   const char *parent_class_name, int is_final, int is_inert) {
+                   const char *parent_class_name, int is_final, int is_inert,
+                   int is_abstract) {
     CFCUTIL_NULL_CHECK(class_name);
     exposure  = exposure  ? exposure  : "parcel";
     micro_sym = micro_sym ? micro_sym : "class";
@@ -191,6 +194,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
 
     self->is_final    = !!is_final;
     self->is_inert    = !!is_inert;
+    self->is_abstract = !!is_abstract;
 
     if (!CFCClass_included(self) && CFCParcel_included(parcel)) {
         CFCUtil_die("Class %s from source dir found in parcel %s from"
@@ -766,6 +770,11 @@ CFCClass_final(CFCClass *self) {
 int
 CFCClass_inert(CFCClass *self) {
     return self->is_inert;
+}
+
+int
+CFCClass_abstract(CFCClass *self) {
+    return self->is_abstract;
 }
 
 const char*

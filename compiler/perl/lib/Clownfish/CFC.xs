@@ -155,7 +155,7 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Class
 
 SV*
-_create(parcel, exposure_sv, class_name_sv, class_nickname_sv, micro_sym_sv, docucomment, file_spec, parent_class_name_sv, is_final, is_inert)
+_create(parcel, exposure_sv, class_name_sv, class_nickname_sv, micro_sym_sv, docucomment, file_spec, parent_class_name_sv, is_final, is_inert, is_abstract)
     CFCParcel *parcel;
     SV *exposure_sv;
     SV *class_name_sv;
@@ -166,6 +166,7 @@ _create(parcel, exposure_sv, class_name_sv, class_nickname_sv, micro_sym_sv, doc
     SV *parent_class_name_sv;
     bool is_final;
     bool is_inert;
+    bool is_abstract;
 CODE:
     const char *exposure =
         SvOK(exposure_sv) ? SvPV_nolen(exposure_sv) : NULL;
@@ -180,7 +181,7 @@ CODE:
     CFCClass *self
         = CFCClass_create(parcel, exposure, class_name, class_nickname,
                           micro_sym, docucomment, file_spec, parent_class_name,
-                          is_final, is_inert);
+                          is_final, is_inert, is_abstract);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
