@@ -29,6 +29,7 @@
 #include "CFCSymbol.h"
 #include "CFCVariable.h"
 #include "CFCType.h"
+#include "CFCGoMethod.h"
 #include "CFCGoTypeMap.h"
 
 struct CFCGoClass {
@@ -36,6 +37,8 @@ struct CFCGoClass {
     CFCParcel *parcel;
     char *class_name;
     CFCClass *client;
+    CFCGoMethod **method_bindings;
+    size_t num_bound;
 };
 
 static CFCGoClass **registry = NULL;
@@ -44,6 +47,9 @@ static size_t registry_cap  = 0;
 
 static void
 S_CFCGoClass_destroy(CFCGoClass *self);
+
+static void
+S_lazy_init_method_bindings(CFCGoClass *self);
 
 static const CFCMeta CFCGOCLASS_META = {
     "Clownfish::CFC::Binding::Go::Class",
@@ -69,6 +75,10 @@ S_CFCGoClass_destroy(CFCGoClass *self) {
     CFCBase_decref((CFCBase*)self->parcel);
     CFCBase_decref((CFCBase*)self->client);
     FREEMEM(self->class_name);
+    for (int i = 0; self->method_bindings[i] != NULL; i++) {
+        CFCBase_decref((CFCBase*)self->method_bindings[i]);
+    }
+    FREEMEM(self->method_bindings);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -198,5 +208,45 @@ CFCGoClass_go_typing(CFCGoClass *self) {
         FREEMEM(parent_iface);
     }
     return content;
+}
+
+static void
+S_lazy_init_method_bindings(CFCGoClass *self) {
+    if (self->method_bindings) {
+        return;
+    }
+    CFCUTIL_NULL_CHECK(self->client);
+    CFCClass     *parent        = CFCClass_get_parent(self->client);
+    size_t        num_bound     = 0;
+    CFCMethod   **fresh_methods = CFCClass_fresh_methods(self->client);
+    CFCGoMethod **bound
+        = (CFCGoMethod**)CALLOCATE(1, sizeof(CFCGoMethod*));
+
+     // Iterate over the class's fresh methods.
+    for (size_t i = 0; fresh_methods[i] != NULL; i++) {
+        CFCMethod *method = fresh_methods[i];
+
+        // Skip methods which have been explicitly excluded.
+        if (CFCMethod_excluded_from_host(method)) {
+            continue;
+        }
+
+        // Skip methods that shouldn't be bound.
+        if (!CFCMethod_can_be_bound(method)) {
+            continue;
+        }
+
+        /* Create the binding, add it to the array.
+         */
+        CFCGoMethod *meth_binding = CFCGoMethod_new(method);
+        size_t size = (num_bound + 2) * sizeof(CFCGoMethod*);
+        bound = (CFCGoMethod**)REALLOCATE(bound, size);
+        bound[num_bound] = meth_binding;
+        num_bound++;
+        bound[num_bound] = NULL;
+    }
+
+    self->method_bindings = bound;
+    self->num_bound       = num_bound;
 }
 
