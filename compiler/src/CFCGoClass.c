@@ -284,3 +284,18 @@ S_lazy_init_method_bindings(CFCGoClass *self) {
     self->num_bound       = num_bound;
 }
 
+char*
+CFCGoClass_gen_meth_glue(CFCGoClass *self) {
+    S_lazy_init_method_bindings(self);
+    char *meth_defs = CFCUtil_strdup("");
+    if (!CFCClass_abstract(self->client)) {
+        for (size_t i = 0; self->method_bindings[i] != NULL; i++) {
+            CFCGoMethod *meth_binding = self->method_bindings[i];
+            char *method_def = CFCGoMethod_func_def(meth_binding);
+            meth_defs = CFCUtil_cat(meth_defs, method_def, "\n", NULL);
+            FREEMEM(method_def);
+        }
+    }
+    return meth_defs;
+}
+

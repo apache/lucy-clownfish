@@ -70,6 +70,9 @@ CFCGoClass_go_typing(CFCGoClass *self);
 char*
 CFCGoClass_boilerplate_funcs(CFCGoClass *self);
 
+char*
+CFCGoClass_gen_meth_glue(CFCGoClass *self);
+
 #ifdef __cplusplus
 }
 #endif
