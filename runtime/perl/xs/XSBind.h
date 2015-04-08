@@ -31,6 +31,7 @@
 
 /* Avoid conflicts with Clownfish bool type. */
 #define HAS_BOOL
+#define PERL_NO_GET_CONTEXT
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -46,13 +47,13 @@ extern "C" {
  * object suitable for supplying to a cfish_Foo_init() function.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_new_blank_obj(SV *either_sv);
+cfish_XSBind_new_blank_obj(pTHX_ SV *either_sv);
 
 /** Test whether an SV is defined.  Handles "get" magic, unlike SvOK on its
  * own.
  */
 static CFISH_INLINE bool
-cfish_XSBind_sv_defined(SV *sv) {
+cfish_XSBind_sv_defined(pTHX_ SV *sv) {
     if (!sv || !SvANY(sv)) { return false; }
     if (SvGMAGICAL(sv)) { mg_get(sv); }
     return !!SvOK(sv);
@@ -66,13 +67,14 @@ cfish_XSBind_sv_defined(SV *sv) {
  * instead.  If all else fails, throw an exception.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation);
+cfish_XSBind_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
+                             void *allocation);
 
 /** As XSBind_sv_to_cfish_obj above, but returns NULL instead of throwing an
  * exception.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_Class *klass,
+cfish_XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
                                    void *allocation);
 
 
@@ -83,20 +85,21 @@ cfish_XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_Class *klass,
  * responsibility.
  */
 static CFISH_INLINE SV*
-cfish_XSBind_cfish_obj_to_sv(cfish_Obj *obj) {
+cfish_XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj) {
     return obj ? (SV*)CFISH_Obj_To_Host(obj) : newSV(0);
 }
 
 /** XSBind_cfish_obj_to_sv, with a cast.
  */
-#define CFISH_OBJ_TO_SV(_obj) cfish_XSBind_cfish_obj_to_sv((cfish_Obj*)_obj)
+#define CFISH_OBJ_TO_SV(_obj) \
+    cfish_XSBind_cfish_obj_to_sv(aTHX_ (cfish_Obj*)_obj)
 
 /** As XSBind_cfish_obj_to_sv above, except decrements the object's refcount
  * after creating the SV. This is useful when the Clownfish expression creates a new
  * refcount, e.g.  a call to a constructor.
  */
 static CFISH_INLINE SV*
-cfish_XSBind_cfish_obj_to_sv_noinc(cfish_Obj *obj) {
+cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
     SV *retval;
     if (obj) {
         retval = (SV*)CFISH_Obj_To_Host(obj);
@@ -111,31 +114,31 @@ cfish_XSBind_cfish_obj_to_sv_noinc(cfish_Obj *obj) {
 /** XSBind_cfish_obj_to_sv_noinc, with a cast.
  */
 #define CFISH_OBJ_TO_SV_NOINC(_obj) \
-    cfish_XSBind_cfish_obj_to_sv_noinc((cfish_Obj*)_obj)
+    cfish_XSBind_cfish_obj_to_sv_noinc(aTHX_ (cfish_Obj*)_obj)
 
 /** Deep conversion of Clownfish objects to Perl objects -- Strings to UTF-8
  * SVs, ByteBufs to SVs, VArrays to Perl array refs, Hashes to Perl hashrefs,
  * and any other object to a Perl object wrapping the Clownfish Obj.
  */
 CFISH_VISIBLE SV*
-cfish_XSBind_cfish_to_perl(cfish_Obj *obj);
+cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
 
 /** Deep conversion of Perl data structures to Clownfish objects -- Perl hash
  * to Hash, Perl array to VArray, Clownfish objects stripped of their
  * wrappers, and everything else stringified and turned to a String.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_perl_to_cfish(SV *sv);
+cfish_XSBind_perl_to_cfish(pTHX_ SV *sv);
 
 /** Convert a ByteBuf into a new string SV.
  */
 CFISH_VISIBLE SV*
-cfish_XSBind_bb_to_sv(cfish_ByteBuf *bb);
+cfish_XSBind_bb_to_sv(pTHX_ cfish_ByteBuf *bb);
 
 /** Convert a String into a new UTF-8 string SV.
  */
 CFISH_VISIBLE SV*
-cfish_XSBind_str_to_sv(cfish_String *str);
+cfish_XSBind_str_to_sv(pTHX_ cfish_String *str);
 
 /** Perl-specific wrapper for Err#trap.  The "routine" must be either a
  * subroutine reference or the name of a subroutine.
@@ -146,7 +149,7 @@ cfish_XSBind_trap(SV *routine, SV *context);
 /** Turn on overloading for the supplied Perl object and its class.
  */
 CFISH_VISIBLE void
-cfish_XSBind_enable_overload(void *pobj);
+cfish_XSBind_enable_overload(pTHX_ void *pobj);
 
 /** Process hash-style params passed to an XS subroutine.  The varargs must be
  * a NULL-terminated series of ALLOT_ macros.
@@ -210,7 +213,7 @@ cfish_XSBind_enable_overload(void *pobj);
  * @return true on success, false on failure (sets the global error object).
  */
 CFISH_VISIBLE bool
-cfish_XSBind_allot_params(SV** stack, int32_t start,
+cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
                           int32_t num_stack_elems, ...);
 
 #define XSBIND_WANT_I8       0x1

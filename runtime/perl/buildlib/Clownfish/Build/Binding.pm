@@ -52,7 +52,7 @@ to_clownfish(sv)
     SV *sv;
 CODE:
 {
-    cfish_Obj *obj = XSBind_perl_to_cfish(sv);
+    cfish_Obj *obj = XSBind_perl_to_cfish(aTHX_ sv);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(obj);
 }
 OUTPUT: RETVAL
@@ -65,7 +65,7 @@ CODE:
     if (sv_isobject(sv) && sv_derived_from(sv, "Clownfish::Obj")) {
         IV tmp = SvIV(SvRV(sv));
         cfish_Obj* obj = INT2PTR(cfish_Obj*, tmp);
-        RETVAL = XSBind_cfish_to_perl(obj);
+        RETVAL = XSBind_cfish_to_perl(aTHX_ obj);
     }
     else {
         RETVAL = newSVsv(sv);
@@ -107,7 +107,7 @@ void
 invoke_to_string(sv)
     SV *sv;
 PPCODE:
-    cfish_Obj *obj = XSBind_sv_to_cfish_obj(sv, CFISH_OBJ, NULL);
+    cfish_Obj *obj = XSBind_sv_to_cfish_obj(aTHX_ sv, CFISH_OBJ, NULL);
     cfish_String *str = CFISH_Obj_To_String(obj);
     CFISH_DECREF(str);
 
@@ -152,7 +152,8 @@ CODE:
 {
     STRLEN size;
     char *ptr = SvPV(sv, size);
-    cfish_ByteBuf *self = (cfish_ByteBuf*)XSBind_new_blank_obj(either_sv);
+    cfish_ByteBuf *self
+        = (cfish_ByteBuf*)XSBind_new_blank_obj(aTHX_ either_sv);
     cfish_BB_init(self, size);
     CFISH_BB_Mimic_Bytes(self, ptr, size);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
@@ -182,7 +183,7 @@ CODE:
 {
     STRLEN size;
     char *ptr = SvPVutf8(sv, size);
-    cfish_String *self = (cfish_String*)XSBind_new_blank_obj(either_sv);
+    cfish_String *self = (cfish_String*)XSBind_new_blank_obj(aTHX_ either_sv);
     cfish_Str_init_from_trusted_utf8(self, ptr, size);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
@@ -199,7 +200,7 @@ SV*
 to_perl(self)
     cfish_String *self;
 CODE:
-    RETVAL = XSBind_str_to_sv(self);
+    RETVAL = XSBind_str_to_sv(aTHX_ self);
 OUTPUT: RETVAL
 END_XS_CODE
 
@@ -331,7 +332,8 @@ new(either_sv, value)
     float  value;
 CODE:
 {
-    cfish_Float32 *self = (cfish_Float32*)XSBind_new_blank_obj(either_sv);
+    cfish_Float32 *self
+        = (cfish_Float32*)XSBind_new_blank_obj(aTHX_ either_sv);
     cfish_Float32_init(self, value);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
@@ -358,7 +360,8 @@ new(either_sv, value)
     double  value;
 CODE:
 {
-    cfish_Float64 *self = (cfish_Float64*)XSBind_new_blank_obj(either_sv);
+    cfish_Float64 *self
+        = (cfish_Float64*)XSBind_new_blank_obj(aTHX_ either_sv);
     cfish_Float64_init(self, value);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
@@ -620,7 +623,7 @@ CODE:
     cfish_Class  *parent     = NULL;
     cfish_Class  *singleton  = NULL;
     bool args_ok
-        = XSBind_allot_params(&(ST(0)), 1, items,
+        = XSBind_allot_params(aTHX_ &(ST(0)), 1, items,
                               ALLOT_OBJ(&class_name, "class_name", 10, true,
                                         CFISH_STRING, alloca(cfish_SStr_size())),
                               ALLOT_OBJ(&parent, "parent", 6, false,

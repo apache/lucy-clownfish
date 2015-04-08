@@ -129,7 +129,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         "    %s\n"
         // Create "self" last, so that earlier exceptions while fetching
         // params don't trigger a bad invocation of DESTROY.
-        "    arg_self = (%s)XSBind_new_blank_obj(ST(0));%s\n"
+        "    arg_self = (%s)XSBind_new_blank_obj(aTHX_ ST(0));%s\n"
         "\n"
         "    retval = %s(%s);\n"
         "    if (retval) {\n"

@@ -38,24 +38,24 @@
 // Convert a Perl hash into a Clownfish Hash.  Caller takes responsibility for
 // a refcount.
 static cfish_Hash*
-S_perl_hash_to_cfish_hash(HV *phash);
+S_perl_hash_to_cfish_hash(pTHX_ HV *phash);
 
 // Convert a Perl array into a Clownfish VArray.  Caller takes responsibility
 // for a refcount.
 static cfish_VArray*
-S_perl_array_to_cfish_array(AV *parray);
+S_perl_array_to_cfish_array(pTHX_ AV *parray);
 
 // Convert a VArray to a Perl array.  Caller takes responsibility for a
 // refcount.
 static SV*
-S_cfish_array_to_perl_array(cfish_VArray *varray);
+S_cfish_array_to_perl_array(pTHX_ cfish_VArray *varray);
 
 // Convert a Hash to a Perl hash.  Caller takes responsibility for a refcount.
 static SV*
-S_cfish_hash_to_perl_hash(cfish_Hash *hash);
+S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash);
 
 cfish_Obj*
-XSBind_new_blank_obj(SV *either_sv) {
+XSBind_new_blank_obj(pTHX_ SV *either_sv) {
     cfish_Class *klass;
 
     // Get a Class.
@@ -80,8 +80,9 @@ XSBind_new_blank_obj(SV *either_sv) {
 }
 
 cfish_Obj*
-XSBind_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation) {
-    cfish_Obj *retval = XSBind_maybe_sv_to_cfish_obj(sv, klass, allocation);
+XSBind_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass, void *allocation) {
+    cfish_Obj *retval
+        = XSBind_maybe_sv_to_cfish_obj(aTHX_ sv, klass, allocation);
     if (!retval) {
         THROW(CFISH_ERR, "Not a %o", CFISH_Class_Get_Name(klass));
     }
@@ -89,9 +90,10 @@ XSBind_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation) {
 }
 
 cfish_Obj*
-XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation) {
+XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
+                             void *allocation) {
     cfish_Obj *retval = NULL;
-    if (XSBind_sv_defined(sv)) {
+    if (XSBind_sv_defined(aTHX_ sv)) {
         // Assume that the class name is always NULL-terminated. Somewhat
         // dangerous but should be safe.
         if (sv_isobject(sv)
@@ -117,10 +119,12 @@ XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation) {
             // analogues.
             SV *inner = SvRV(sv);
             if (SvTYPE(inner) == SVt_PVAV && klass == CFISH_VARRAY) {
-                retval = (cfish_Obj*)S_perl_array_to_cfish_array((AV*)inner);
+                retval = (cfish_Obj*)
+                         S_perl_array_to_cfish_array(aTHX_ (AV*)inner);
             }
             else if (SvTYPE(inner) == SVt_PVHV && klass == CFISH_HASH) {
-                retval = (cfish_Obj*)S_perl_hash_to_cfish_hash((HV*)inner);
+                retval = (cfish_Obj*)
+                         S_perl_hash_to_cfish_hash(aTHX_ (HV*)inner);
             }
 
             if (retval) {
@@ -138,21 +142,21 @@ XSBind_maybe_sv_to_cfish_obj(SV *sv, cfish_Class *klass, void *allocation) {
 }
 
 SV*
-XSBind_cfish_to_perl(cfish_Obj *obj) {
+XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     if (obj == NULL) {
         return newSV(0);
     }
     else if (CFISH_Obj_Is_A(obj, CFISH_STRING)) {
-        return XSBind_str_to_sv((cfish_String*)obj);
+        return XSBind_str_to_sv(aTHX_ (cfish_String*)obj);
     }
     else if (CFISH_Obj_Is_A(obj, CFISH_BYTEBUF)) {
-        return XSBind_bb_to_sv((cfish_ByteBuf*)obj);
+        return XSBind_bb_to_sv(aTHX_ (cfish_ByteBuf*)obj);
     }
     else if (CFISH_Obj_Is_A(obj, CFISH_VARRAY)) {
-        return S_cfish_array_to_perl_array((cfish_VArray*)obj);
+        return S_cfish_array_to_perl_array(aTHX_ (cfish_VArray*)obj);
     }
     else if (CFISH_Obj_Is_A(obj, CFISH_HASH)) {
-        return S_cfish_hash_to_perl_hash((cfish_Hash*)obj);
+        return S_cfish_hash_to_perl_hash(aTHX_ (cfish_Hash*)obj);
     }
     else if (CFISH_Obj_Is_A(obj, CFISH_FLOATNUM)) {
         return newSVnv(CFISH_Obj_To_F64(obj));
@@ -181,18 +185,20 @@ XSBind_cfish_to_perl(cfish_Obj *obj) {
 }
 
 cfish_Obj*
-XSBind_perl_to_cfish(SV *sv) {
+XSBind_perl_to_cfish(pTHX_ SV *sv) {
     cfish_Obj *retval = NULL;
 
-    if (XSBind_sv_defined(sv)) {
+    if (XSBind_sv_defined(aTHX_ sv)) {
         if (SvROK(sv)) {
             // Deep conversion of references.
             SV *inner = SvRV(sv);
             if (SvTYPE(inner) == SVt_PVAV) {
-                retval = (cfish_Obj*)S_perl_array_to_cfish_array((AV*)inner);
+                retval = (cfish_Obj*)
+                         S_perl_array_to_cfish_array(aTHX_ (AV*)inner);
             }
             else if (SvTYPE(inner) == SVt_PVHV) {
-                retval = (cfish_Obj*)S_perl_hash_to_cfish_hash((HV*)inner);
+                retval = (cfish_Obj*)
+                         S_perl_hash_to_cfish_hash(aTHX_ (HV*)inner);
             }
             else if (sv_isobject(sv)
                      && sv_derived_from(sv, "Clownfish::Obj")
@@ -214,10 +220,10 @@ XSBind_perl_to_cfish(SV *sv) {
     else if (sv) {
         // Deep conversion of raw AVs and HVs.
         if (SvTYPE(sv) == SVt_PVAV) {
-            retval = (cfish_Obj*)S_perl_array_to_cfish_array((AV*)sv);
+            retval = (cfish_Obj*)S_perl_array_to_cfish_array(aTHX_ (AV*)sv);
         }
         else if (SvTYPE(sv) == SVt_PVHV) {
-            retval = (cfish_Obj*)S_perl_hash_to_cfish_hash((HV*)sv);
+            retval = (cfish_Obj*)S_perl_hash_to_cfish_hash(aTHX_ (HV*)sv);
         }
     }
 
@@ -225,14 +231,14 @@ XSBind_perl_to_cfish(SV *sv) {
 }
 
 SV*
-XSBind_bb_to_sv(cfish_ByteBuf *bb) {
+XSBind_bb_to_sv(pTHX_ cfish_ByteBuf *bb) {
     return bb
            ? newSVpvn(CFISH_BB_Get_Buf(bb), CFISH_BB_Get_Size(bb))
            : newSV(0);
 }
 
 SV*
-XSBind_str_to_sv(cfish_String *str) {
+XSBind_str_to_sv(pTHX_ cfish_String *str) {
     if (!str) {
         return newSV(0);
     }
@@ -244,7 +250,7 @@ XSBind_str_to_sv(cfish_String *str) {
 }
 
 static cfish_Hash*
-S_perl_hash_to_cfish_hash(HV *phash) {
+S_perl_hash_to_cfish_hash(pTHX_ HV *phash) {
     uint32_t    num_keys = hv_iterinit(phash);
     cfish_Hash *retval   = cfish_Hash_new(num_keys);
 
@@ -252,7 +258,7 @@ S_perl_hash_to_cfish_hash(HV *phash) {
         HE        *entry    = hv_iternext(phash);
         STRLEN     key_len  = HeKLEN(entry);
         SV        *value_sv = HeVAL(entry);
-        cfish_Obj *value    = XSBind_perl_to_cfish(value_sv); // Recurse.
+        cfish_Obj *value    = XSBind_perl_to_cfish(aTHX_ value_sv); // Recurse.
 
         // Force key to UTF-8 if necessary.
         if (key_len == (STRLEN)HEf_SVKEY) {
@@ -286,7 +292,7 @@ S_perl_hash_to_cfish_hash(HV *phash) {
 }
 
 static cfish_VArray*
-S_perl_array_to_cfish_array(AV *parray) {
+S_perl_array_to_cfish_array(pTHX_ AV *parray) {
     const uint32_t  size   = av_len(parray) + 1;
     cfish_VArray   *retval = cfish_VA_new(size);
 
@@ -294,7 +300,7 @@ S_perl_array_to_cfish_array(AV *parray) {
     for (uint32_t i = 0; i < size; i++) {
         SV **elem_sv = av_fetch(parray, i, false);
         if (elem_sv) {
-            cfish_Obj *elem = XSBind_perl_to_cfish(*elem_sv);
+            cfish_Obj *elem = XSBind_perl_to_cfish(aTHX_ *elem_sv);
             if (elem) { CFISH_VA_Store(retval, i, elem); }
         }
     }
@@ -304,7 +310,7 @@ S_perl_array_to_cfish_array(AV *parray) {
 }
 
 static SV*
-S_cfish_array_to_perl_array(cfish_VArray *varray) {
+S_cfish_array_to_perl_array(pTHX_ cfish_VArray *varray) {
     AV *perl_array = newAV();
     uint32_t num_elems = CFISH_VA_Get_Size(varray);
 
@@ -318,7 +324,7 @@ S_cfish_array_to_perl_array(cfish_VArray *varray) {
             }
             else {
                 // Recurse for each value.
-                SV *const val_sv = XSBind_cfish_to_perl(val);
+                SV *const val_sv = XSBind_cfish_to_perl(aTHX_ val);
                 av_store(perl_array, i, val_sv);
             }
         }
@@ -328,7 +334,7 @@ S_cfish_array_to_perl_array(cfish_VArray *varray) {
 }
 
 static SV*
-S_cfish_hash_to_perl_hash(cfish_Hash *hash) {
+S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash) {
     HV *perl_hash = newHV();
     SV *key_sv    = newSV(1);
     cfish_String *key;
@@ -342,7 +348,7 @@ S_cfish_hash_to_perl_hash(cfish_Hash *hash) {
     CFISH_Hash_Iterate(hash);
     while (CFISH_Hash_Next(hash, (cfish_Obj**)&key, &val)) {
         // Recurse for each value.
-        SV *val_sv = XSBind_cfish_to_perl(val);
+        SV *val_sv = XSBind_cfish_to_perl(aTHX_ val);
         if (!CFISH_Obj_Is_A((cfish_Obj*)key, CFISH_STRING)) {
             CFISH_THROW(CFISH_ERR,
                         "Can't convert a key of class %o to a Perl hash key",
@@ -370,6 +376,7 @@ struct trap_context {
 static void
 S_attempt_perl_call(void *context) {
     struct trap_context *args = (struct trap_context*)context;
+    dTHX;
     dSP;
     ENTER;
     SAVETMPS;
@@ -390,7 +397,7 @@ XSBind_trap(SV *routine, SV *context) {
 }
 
 void
-XSBind_enable_overload(void *pobj) {
+XSBind_enable_overload(pTHX_ void *pobj) {
     SV *perl_obj = (SV*)pobj;
     HV *stash = SvSTASH(SvRV(perl_obj));
 #if (PERL_VERSION > 10)
@@ -402,12 +409,12 @@ XSBind_enable_overload(void *pobj) {
 }
 
 static bool
-S_extract_from_sv(SV *value, void *target, const char *label,
+S_extract_from_sv(pTHX_ SV *value, void *target, const char *label,
                   bool required, int type, cfish_Class *klass,
                   void *allocation) {
     bool valid_assignment = false;
 
-    if (XSBind_sv_defined(value)) {
+    if (XSBind_sv_defined(aTHX_ value)) {
         switch (type) {
             case XSBIND_WANT_I8:
                 *((int8_t*)target) = (int8_t)SvIV(value);
@@ -467,7 +474,7 @@ S_extract_from_sv(SV *value, void *target, const char *label,
                 break;
             case XSBIND_WANT_OBJ: {
                     cfish_Obj *object
-                        = XSBind_maybe_sv_to_cfish_obj(value, klass,
+                        = XSBind_maybe_sv_to_cfish_obj(aTHX_ value, klass,
                                                        allocation);
                     if (object) {
                         *((cfish_Obj**)target) = object;
@@ -510,7 +517,8 @@ S_extract_from_sv(SV *value, void *target, const char *label,
 }
 
 bool
-XSBind_allot_params(SV** stack, int32_t start, int32_t num_stack_elems, ...) {
+XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
+                    ...) {
     va_list args;
     size_t size = sizeof(int64_t) + num_stack_elems / 64;
     void *verified_labels = alloca(size);
@@ -564,9 +572,9 @@ XSBind_allot_params(SV** stack, int32_t start, int32_t num_stack_elems, ...) {
         else {
             // Found the arg.  Extract the value.
             SV *value = stack[found_arg + 1];
-            bool got_arg = S_extract_from_sv(value, target, label,
-                                                   required, type, klass,
-                                                   allocation);
+            bool got_arg = S_extract_from_sv(aTHX_ value, target, label,
+                                             required, type, klass,
+                                             allocation);
             if (!got_arg) {
                 CFISH_ERR_ADD_FRAME(cfish_Err_get_error());
                 return false;
@@ -626,7 +634,7 @@ SI_threadsafe_but_not_immortal(cfish_Class *klass) {
 }
 
 static void
-S_lazy_init_host_obj(cfish_Obj *self) {
+S_lazy_init_host_obj(pTHX_ cfish_Obj *self) {
     SV *inner_obj = newSV(0);
     SvOBJECT_on(inner_obj);
 #if (PERL_VERSION <= 16)
@@ -746,6 +754,7 @@ cfish_dec_refcount(void *vself) {
         }
     }
     else {
+        dTHX;
         modified_refcount = SvREFCNT((SV*)self->ref.host_obj) - 1;
         // If the SV's refcount falls to 0, DESTROY will be invoked from
         // Perl-space.
@@ -756,7 +765,10 @@ cfish_dec_refcount(void *vself) {
 
 void*
 CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
-    if (self->ref.count & XSBIND_REFCOUNT_FLAG) { S_lazy_init_host_obj(self); }
+    dTHX;
+    if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
+        S_lazy_init_host_obj(aTHX_ self);
+    }
     return newRV_inc((SV*)self->ref.host_obj);
 }
 
@@ -781,6 +793,7 @@ CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
 
 cfish_Obj*
 CFISH_Class_Foster_Obj_IMP(cfish_Class *self, void *host_obj) {
+    dTHX;
     cfish_Obj *obj
         = (cfish_Obj*)cfish_Memory_wrapped_calloc(self->obj_alloc_size, 1);
     SV *inner_obj = SvRV((SV*)host_obj);
@@ -792,6 +805,7 @@ CFISH_Class_Foster_Obj_IMP(cfish_Class *self, void *host_obj) {
 
 void
 cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
+    dTHX;
     dSP;
     ENTER;
     SAVETMPS;
@@ -807,16 +821,17 @@ cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
 
 cfish_VArray*
 cfish_Class_fresh_host_methods(cfish_String *class_name) {
+    dTHX;
     dSP;
     ENTER;
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs(XSBind_str_to_sv(class_name));
+    mPUSHs(XSBind_str_to_sv(aTHX_ class_name));
     PUTBACK;
     call_pv("Clownfish::Class::_fresh_host_methods", G_SCALAR);
     SPAGAIN;
-    cfish_VArray *methods = (cfish_VArray*)XSBind_perl_to_cfish(POPs);
+    cfish_VArray *methods = (cfish_VArray*)XSBind_perl_to_cfish(aTHX_ POPs);
     PUTBACK;
     FREETMPS;
     LEAVE;
@@ -825,19 +840,20 @@ cfish_Class_fresh_host_methods(cfish_String *class_name) {
 
 cfish_String*
 cfish_Class_find_parent_class(cfish_String *class_name) {
+    dTHX;
     dSP;
     ENTER;
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs(XSBind_str_to_sv(class_name));
+    mPUSHs(XSBind_str_to_sv(aTHX_ class_name));
     PUTBACK;
     call_pv("Clownfish::Class::_find_parent_class", G_SCALAR);
     SPAGAIN;
     SV *parent_class_sv = POPs;
     PUTBACK;
     cfish_String *parent_class
-        = (cfish_String*)XSBind_perl_to_cfish(parent_class_sv);
+        = (cfish_String*)XSBind_perl_to_cfish(aTHX_ parent_class_sv);
     FREETMPS;
     LEAVE;
     return parent_class;
@@ -895,12 +911,14 @@ XS(cfish_Err_attempt_via_xs) {
 
 void
 cfish_Err_init_class(void) {
+    dTHX;
     char *file = (char*)__FILE__;
     attempt_xsub = (SV*)newXS(NULL, cfish_Err_attempt_via_xs, file);
 }
 
 cfish_Err*
 cfish_Err_get_error() {
+    dTHX;
     dSP;
     ENTER;
     SAVETMPS;
@@ -908,7 +926,7 @@ cfish_Err_get_error() {
     PUTBACK;
     call_pv("Clownfish::Err::get_error", G_SCALAR);
     SPAGAIN;
-    cfish_Err *error = (cfish_Err*)XSBind_perl_to_cfish(POPs);
+    cfish_Err *error = (cfish_Err*)XSBind_perl_to_cfish(aTHX_ POPs);
     PUTBACK;
     FREETMPS;
     LEAVE;
@@ -917,6 +935,7 @@ cfish_Err_get_error() {
 
 void
 cfish_Err_set_error(cfish_Err *error) {
+    dTHX;
     dSP;
     ENTER;
     SAVETMPS;
@@ -937,6 +956,7 @@ cfish_Err_set_error(cfish_Err *error) {
 
 void
 cfish_Err_do_throw(cfish_Err *err) {
+    dTHX;
     dSP;
     SV *error_sv = (SV*)CFISH_Err_To_Host(err);
     CFISH_DECREF(err);
@@ -952,10 +972,11 @@ cfish_Err_do_throw(cfish_Err *err) {
 
 void*
 CFISH_Err_To_Host_IMP(cfish_Err *self) {
+    dTHX;
     CFISH_Err_To_Host_t super_to_host
         = CFISH_SUPER_METHOD_PTR(CFISH_ERR, CFISH_Err_To_Host);
     SV *perl_obj = (SV*)super_to_host(self);
-    XSBind_enable_overload(perl_obj);
+    XSBind_enable_overload(aTHX_ perl_obj);
     return perl_obj;
 }
 
@@ -968,7 +989,8 @@ cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
 
 void
 cfish_Err_warn_mess(cfish_String *message) {
-    SV *error_sv = XSBind_str_to_sv(message);
+    dTHX;
+    SV *error_sv = XSBind_str_to_sv(aTHX_ message);
     CFISH_DECREF(message);
     warn("%s", SvPV_nolen(error_sv));
     SvREFCNT_dec(error_sv);
@@ -976,6 +998,7 @@ cfish_Err_warn_mess(cfish_String *message) {
 
 cfish_Err*
 cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
+    dTHX;
     cfish_Err *error = NULL;
     SV *routine_sv = newSViv(PTR2IV(routine));
     SV *context_sv = newSViv(PTR2IV(context));

@@ -222,7 +222,8 @@ S_self_assign_statement(CFCPerlMethod *self, CFCType *type) {
         CFCUtil_die("Not an object type: %s", type_c);
     }
     const char *class_var = CFCType_get_class_var(type);
-    char pattern[] = "arg_self = (%s)XSBind_sv_to_cfish_obj(ST(0), %s, NULL);";
+    char pattern[] = "arg_self = (%s)XSBind_sv_to_cfish_obj("
+                     "aTHX_ ST(0), %s, NULL);";
     char *statement = CFCUtil_sprintf(pattern, type_c, class_var);
 
     return statement;
@@ -355,7 +356,8 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
         }
         if (val) {
             char pattern[] =
-                "\n    arg_%s = ( items >= %u && XSBind_sv_defined(ST(%u)) )"
+                "\n    arg_%s ="
+                " ( items >= %u"" && XSBind_sv_defined(aTHX_ ST(%u)) )"
                 " ? %s : %s;";
             char *statement = CFCUtil_sprintf(pattern, var_name, i, i,
                                               conversion, val);
@@ -468,6 +470,7 @@ static char*
 S_callback_start(CFCMethod *method) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     static const char pattern[] =
+        "    dTHX;\n"
         "    dSP;\n"
         "    EXTEND(SP, %d);\n"
         "    ENTER;\n"
@@ -499,12 +502,12 @@ S_callback_start(CFCMethod *method) {
         if (CFCType_is_string_type(type)) {
             // Convert Clownfish string type to UTF-8 Perl string scalars.
             params = CFCUtil_cat(params, "    mPUSHs(XSBind_str_to_sv(",
-                                 "(cfish_String*)", name, "));\n", NULL);
+                                 "aTHX_ (cfish_String*)", name, "));\n", NULL);
         }
         else if (CFCType_is_object(type)) {
             // Wrap other Clownfish object types in Perl objects.
             params = CFCUtil_cat(params, "    mPUSHs(XSBind_cfish_to_perl(",
-                                 "(cfish_Obj*)", name, "));\n", NULL);
+                                 "aTHX_ (cfish_Obj*)", name, "));\n", NULL);
         }
         else if (CFCType_is_integer(type)) {
             // Convert primitive integer types to IV Perl scalars.
@@ -617,7 +620,7 @@ S_void_callback_def(CFCMethod *method, const char *callback_start,
         "void\n"
         "%s(%s) {\n"
         "%s"
-        "    S_finish_callback_void(\"%s\");%s\n"
+        "    S_finish_callback_void(aTHX_ \"%s\");%s\n"
         "}\n";
     char *callback_def
         = CFCUtil_sprintf(pattern, override_sym, params, callback_start,
@@ -657,7 +660,7 @@ S_primitive_callback_def(CFCMethod *method, const char *callback_start,
         "%s\n"
         "%s(%s) {\n"
         "%s"
-        "    %s retval = (%s)%s(\"%s\");%s\n"
+        "    %s retval = (%s)%s(aTHX_ \"%s\");%s\n"
         "    return retval;\n"
         "}\n";
     char *callback_def
@@ -684,7 +687,7 @@ S_obj_callback_def(CFCMethod *method, const char *callback_start,
         "%s\n"
         "%s(%s) {\n"
         "%s"
-        "    %s retval = (%s)S_finish_callback_obj(self, \"%s\", %s);%s\n"
+        "    %s retval = (%s)S_finish_callback_obj(aTHX_ self, \"%s\", %s);%s\n"
         "    return retval;\n"
         "}\n";
     char *callback_def
