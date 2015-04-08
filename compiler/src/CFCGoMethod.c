@@ -104,22 +104,33 @@ CFCGoMethod_iface_sig(CFCGoMethod *self) {
     return sig;
 }
 
+#define GO_NAME_BUF_SIZE 128
+
 static char*
-S_prep_cfargs(CFCParamList *param_list) {
+S_prep_cfargs(CFCClass *invoker, CFCParamList *param_list) {
     CFCVariable **vars = CFCParamList_get_variables(param_list);
+    char go_name[GO_NAME_BUF_SIZE];
     char *cfargs = CFCUtil_strdup("");
+
     for (int i = 0; vars[i] != NULL; i++) {
         CFCVariable *var = vars[i];
         CFCType *type = CFCVariable_get_type(var);
-        const char *name = CFCVariable_micro_sym(var);
-        if (i > 0) {
-            cfargs = CFCUtil_cat(cfargs, ", ", NULL);
+        if (i == 0) {
+            CFCGoTypeMap_go_meth_receiever(CFCClass_get_struct_sym(invoker),
+                                           param_list, go_name,
+                                           GO_NAME_BUF_SIZE);
         }
+        else {
+            cfargs = CFCUtil_cat(cfargs, ", ", NULL);
+            CFCGoTypeMap_go_arg_name(param_list, i, go_name, GO_NAME_BUF_SIZE);
+        }
+
         if (CFCType_is_primitive(type)) {
             cfargs = CFCUtil_cat(cfargs, "C.", CFCType_get_specifier(type),
-                                 "(", name, ")", NULL);
+                                 "(", go_name, ")", NULL);
         }
         else if (CFCType_is_object(type)) {
+
             char *obj_pattern;
             if (CFCType_decremented(type)) {
                 obj_pattern = "(*C.%s)(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(%s.TOPTR()))))";
@@ -128,7 +139,7 @@ S_prep_cfargs(CFCParamList *param_list) {
                 obj_pattern = "(*C.%s)(unsafe.Pointer(%s.TOPTR()))";
             }
             char *temp = CFCUtil_sprintf(obj_pattern,
-                                         CFCType_get_specifier(type), name);
+                                         CFCType_get_specifier(type), go_name);
             cfargs = CFCUtil_cat(cfargs, temp, NULL);
             FREEMEM(temp);
         }
@@ -147,7 +158,7 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
                                             param_list, ret_type, true);
     char *full_meth_sym = CFCMethod_full_method_sym(novel_method, NULL);
 
-    char *cfargs = S_prep_cfargs(param_list);
+    char *cfargs = S_prep_cfargs(invoker, param_list);
 
     char *ret_type_str;
     char *maybe_retval;
