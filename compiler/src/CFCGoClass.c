@@ -33,6 +33,8 @@
 #include "CFCGoMethod.h"
 #include "CFCGoTypeMap.h"
 
+#define GO_NAME_BUF_SIZE 128
+
 struct CFCGoClass {
     CFCBase base;
     CFCParcel *parcel;
@@ -240,26 +242,33 @@ CFCGoClass_boilerplate_funcs(CFCGoClass *self) {
     } else {
         const char *short_struct = CFCClass_get_struct_sym(self->client);
         const char *full_struct  = CFCClass_full_struct_sym(self->client);
+        char obj_name[GO_NAME_BUF_SIZE];
+        CFCGoTypeMap_go_meth_receiever(short_struct, NULL, obj_name,
+                                       GO_NAME_BUF_SIZE);
+
         char pattern[] =
             "func WRAP%s(ptr unsafe.Pointer) %s {\n"
-            "\tobj := &impl%s{((*C.%s)(ptr))}\n"
-            "\truntime.SetFinalizer(obj, (*impl%s).finalize)\n"
-            "\treturn obj\n"
+            "\t%s := &impl%s{((*C.%s)(ptr))}\n"
+            "\truntime.SetFinalizer(%s, (*impl%s).finalize)\n"
+            "\treturn %s\n"
             "}\n"
             "\n"
-            "func (obj *impl%s) finalize() {\n"
-            "\tC.cfish_dec_refcount(unsafe.Pointer(obj.ref))\n"
-            "\tobj.ref = nil\n"
+            "func (%s *impl%s) finalize() {\n"
+            "\tC.cfish_dec_refcount(unsafe.Pointer(%s.ref))\n"
+            "\t%s.ref = nil\n"
             "}\n"
             "\n"
-            "func (obj *impl%s) TOPTR() uintptr {\n"
-            "\treturn uintptr(unsafe.Pointer(obj.ref))\n"
+            "func (%s *impl%s) TOPTR() uintptr {\n"
+            "\treturn uintptr(unsafe.Pointer(%s.ref))\n"
             "}\n"
             ;
 
         content = CFCUtil_sprintf(pattern, short_struct, short_struct,
-                                  short_struct, full_struct, short_struct,
-                                  short_struct, short_struct);
+                                  obj_name, short_struct, full_struct,
+                                  obj_name, short_struct, obj_name,
+                                  obj_name, short_struct, obj_name,
+                                  obj_name, obj_name, short_struct,
+                                  obj_name);
     }
     return content;
 }

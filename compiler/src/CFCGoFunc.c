@@ -33,6 +33,8 @@
     #define false 0
 #endif
 
+#define GO_NAME_BUF_SIZE 128
+
 char*
 CFCGoFunc_go_meth_name(const char *orig) {
     char *go_name = CFCUtil_strdup(orig);
@@ -50,9 +52,13 @@ CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
                      int is_method) {
     CFCVariable **param_vars = CFCParamList_get_variables(param_list);
     char *invocant;
+    char go_name[GO_NAME_BUF_SIZE];
+
     if (is_method) {
-        invocant = CFCUtil_sprintf("(self *impl%s) ",
-                                   CFCClass_get_struct_sym(invoker));
+        const char *struct_sym = CFCClass_get_struct_sym(invoker);
+        CFCGoTypeMap_go_meth_receiever(struct_sym, param_list, go_name,
+                                       GO_NAME_BUF_SIZE);
+        invocant = CFCUtil_sprintf("(%s *impl%s) ", go_name, struct_sym);
     }
     else {
         invocant = CFCUtil_strdup("");
@@ -64,11 +70,11 @@ CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
         CFCVariable *var = param_vars[i];
         CFCType *type = CFCVariable_get_type(var);
         char *go_type_name = CFCGoTypeMap_go_type_name(type, parcel);
+        CFCGoTypeMap_go_arg_name(param_list, i, go_name, GO_NAME_BUF_SIZE);
         if (i > start) {
             params = CFCUtil_cat(params, ", ", NULL);
         }
-        params = CFCUtil_cat(params, CFCVariable_micro_sym(var), " ",
-                             go_type_name, NULL);
+        params = CFCUtil_cat(params, go_name, " ", go_type_name, NULL);
         FREEMEM(go_type_name);
     }
 
