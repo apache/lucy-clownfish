@@ -46,7 +46,7 @@ static const char cfish_version[]       = "0.4.2";
 static const char cfish_major_version[] = "0.4";
 
 static void
-S_add_compiler_flags(struct chaz_CLIArgs *args) {
+S_add_compiler_flags(chaz_CLI *cli) {
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
 
     if (chaz_Probe_gcc_version_num()) {
@@ -57,7 +57,7 @@ S_add_compiler_flags(struct chaz_CLIArgs *args) {
         else if (getenv("LUCY_DEBUG")) {
             chaz_CFlags_append(extra_cflags,
                 "-DLUCY_DEBUG -pedantic -Wall -Wextra -Wno-variadic-macros");
-            if (args->charmony_pm) {
+            if (chaz_CLI_defined(cli, "enable-perl")) {
                 chaz_CFlags_append(extra_cflags, "-DPERL_GCC_PEDANTIC");
             }
         }
@@ -131,7 +131,7 @@ S_cfh_file_callback(const char *dir, char *file, void *context) {
 }
 
 static void
-S_write_makefile(struct chaz_CLIArgs *args) {
+S_write_makefile(chaz_CLI *cli) {
     SourceFileContext sfc;
 
     const char *base_dir = "..";
@@ -162,11 +162,11 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     chaz_CFlags *link_flags;
     chaz_CFlags *test_cflags;
 
-    chaz_SharedLib *lib;
-    const char     *math_library = chaz_Floats_math_library();
-    char           *lib_filename;
-    char           *test_command;
-    char           *scratch;
+    chaz_Lib   *lib;
+    const char *math_library = chaz_Floats_math_library();
+    char       *lib_filename;
+    char       *test_command;
+    char       *scratch;
 
     printf("Creating Makefile...\n");
 
@@ -186,7 +186,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     chaz_CFlags_enable_debugging(makefile_cflags);
     chaz_CFlags_disable_strict_aliasing(makefile_cflags);
     chaz_CFlags_compile_shared_library(makefile_cflags);
-    if (args->code_coverage) {
+    if (chaz_CLI_defined(cli, "enable-coverage")) {
         chaz_CFlags_enable_code_coverage(makefile_cflags);
     }
 
@@ -226,8 +226,9 @@ S_write_makefile(struct chaz_CLIArgs *args) {
 
     /* Rules */
 
-    lib = chaz_SharedLib_new("cfish", cfish_version, cfish_major_version);
-    lib_filename = chaz_SharedLib_filename(lib);
+    lib = chaz_Lib_new("cfish", chaz_Lib_SHARED, cfish_version,
+                       cfish_major_version);
+    lib_filename = chaz_Lib_filename(lib);
     chaz_MakeFile_add_rule(makefile, "all", lib_filename);
 
     rule = chaz_MakeFile_add_rule(makefile, cfc_exe, NULL);
@@ -256,7 +257,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     if (math_library) {
         chaz_CFlags_add_external_library(link_flags, math_library);
     }
-    if (args->code_coverage) {
+    if (chaz_CLI_defined(cli, "enable-coverage")) {
         chaz_CFlags_enable_code_coverage(link_flags);
     }
     chaz_MakeFile_add_shared_lib(makefile, lib, "$(CLOWNFISH_OBJS)",
@@ -284,7 +285,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     }
     chaz_MakeRule_add_command(rule, test_command);
 
-    if (args->code_coverage) {
+    if (chaz_CLI_defined(cli, "enable-coverage")) {
         rule = chaz_MakeFile_add_rule(makefile, "coverage", test_cfish_exe);
         chaz_MakeRule_add_command(rule,
                                   "lcov"
@@ -309,7 +310,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     chaz_MakeRule_add_rm_command(clean_rule, "$(CLOWNFISH_OBJS)");
     chaz_MakeRule_add_recursive_rm_command(clean_rule, "autogen");
 
-    if (args->code_coverage) {
+    if (chaz_CLI_defined(cli, "enable-coverage")) {
         chaz_MakeRule_add_rm_command(clean_rule, "clownfish.info");
         chaz_MakeRule_add_recursive_rm_command(clean_rule, "coverage");
     }
@@ -326,7 +327,7 @@ S_write_makefile(struct chaz_CLIArgs *args) {
     chaz_MakeFile_write(makefile);
 
     chaz_MakeFile_destroy(makefile);
-    chaz_SharedLib_destroy(lib);
+    chaz_Lib_destroy(lib);
     free(core_dir);
     free(cfc_dir);
     free(cfc_exe);
@@ -339,14 +340,18 @@ S_write_makefile(struct chaz_CLIArgs *args) {
 
 int main(int argc, const char **argv) {
     /* Initialize. */
-    struct chaz_CLIArgs args;
+    chaz_CLI *cli
+        = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
+    chaz_CLI_register(cli, "disable-threads", "whether to disable threads",
+                      CHAZ_CLI_NO_ARG);
+    chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
     {
-        int result = chaz_Probe_parse_cli_args(argc, argv, &args);
+        int result = chaz_Probe_parse_cli_args(argc, argv, cli);
         if (!result) {
             chaz_Probe_die_usage();
         }
-        chaz_Probe_init(&args);
-        S_add_compiler_flags(&args);
+        chaz_Probe_init(cli);
+        S_add_compiler_flags(cli);
     }
     {
         int i;
@@ -408,8 +413,8 @@ int main(int argc, const char **argv) {
         "#endif\n\n"
     );
 
-    if (args.write_makefile) {
-        S_write_makefile(&args);
+    if (chaz_CLI_defined(cli, "enable-makefile")) {
+        S_write_makefile(cli);
     }
 
     /* Clean up. */
