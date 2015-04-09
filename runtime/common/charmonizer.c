@@ -2654,7 +2654,7 @@ chaz_CC_init(const char *compiler_command, const char *compiler_flags) {
                                           chaz_OS_dev_null());
     chaz_Util_remove_and_verify(chaz_CC.try_exe_name);
     if (retval < 0) {
-        chaz_Util_die("Failed to execute test file (errno=%d)", errno);
+        chaz_Util_die("Failed to execute test file: %s", strerror(errno));
     }
     if (retval > 0) {
         chaz_Util_die("Unexpected exit code %d from test file", retval);
