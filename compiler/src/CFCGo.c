@@ -33,6 +33,11 @@
 #include "CFCGoMethod.h"
 #include "CFCGoTypeMap.h"
 
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
+
 static void
 S_CFCGo_destroy(CFCGo *self);
 
@@ -43,6 +48,7 @@ struct CFCGo {
     char *footer;
     char *c_header;
     char *c_footer;
+    int suppress_init;
 };
 
 static const CFCMeta CFCGO_META = {
@@ -60,6 +66,7 @@ CFCGo_new(CFCHierarchy *hierarchy) {
     self->footer     = CFCUtil_strdup("");
     self->c_header   = CFCUtil_strdup("");
     self->c_footer   = CFCUtil_strdup("");
+    self->suppress_init = false;
     return self;
 }
 
@@ -89,6 +96,11 @@ CFCGo_set_footer(CFCGo *self, const char *footer) {
     self->footer = CFCUtil_strdup(footer);
     free(self->c_footer);
     self->c_footer = CFCUtil_make_c_comment(footer);
+}
+
+void
+CFCGo_set_suppress_init(CFCGo *self, int suppress_init) {
+    self->suppress_init = !!suppress_init;
 }
 
 static void
@@ -171,12 +183,9 @@ S_gen_cgo_comment(CFCGo *self, CFCParcel *parcel, const char *h_includes) {
 }
 
 static char*
-S_gen_init_code(CFCParcel *parcel) {
+S_gen_init_code(CFCGo *self, CFCParcel *parcel) {
     const char *prefix = CFCParcel_get_prefix(parcel);
-
-    // Hack to allow custom init for Clownfish runtime.
-    // In the future we may want to facilitate customizable init.
-    if (strcmp(prefix, "cfish_") == 0) {
+    if (self->suppress_init) {
         return CFCUtil_strdup("");
     }
 
@@ -244,7 +253,7 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
     const char *PREFIX = CFCParcel_get_PREFIX(parcel);
     char *go_short_package = CFCGoTypeMap_go_short_package(parcel);
     char *cgo_comment   = S_gen_cgo_comment(self, parcel, h_includes);
-    char *init_code     = S_gen_init_code(parcel);
+    char *init_code     = S_gen_init_code(self, parcel);
     char *autogen_go    = S_gen_autogen_go(self, parcel);
     const char pattern[] =
         "%s"

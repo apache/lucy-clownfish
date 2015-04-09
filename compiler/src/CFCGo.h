@@ -50,6 +50,13 @@ CFCGo_set_header(CFCGo *self, const char *header);
 void
 CFCGo_set_footer(CFCGo *self, const char *footer);
 
+/** If true, suppress autogeneration of the init() function which invokes the
+ * Clownfish parcel bootstrapping.  The caller then becomes responsible for
+ * writing their own init() which performs the bootstrapping.
+ */
+void
+CFCGo_set_suppress_init(CFCGo *self, int suppress_init);
+
 /** Generate CGO bindings for the specified parcel.
  */
 void
