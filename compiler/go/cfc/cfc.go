@@ -208,6 +208,14 @@ func (obj *BindGo) SetFooter(header string) {
 	C.CFCGo_set_header(obj.ref, headerCString)
 }
 
+func (obj *BindGo) SetSuppressInit(suppressInit bool) {
+	if suppressInit {
+		C.CFCGo_set_suppress_init(obj.ref, C.int(1))
+	} else {
+		C.CFCGo_set_suppress_init(obj.ref, C.int(0))
+	}
+}
+
 func (obj *BindGo) WriteBindings(parcel *Parcel, dest string) {
 	destC := C.CString(dest)
 	defer C.free(unsafe.Pointer(destC))

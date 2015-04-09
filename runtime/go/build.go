@@ -125,6 +125,7 @@ func runCFC() {
 	if modified {
 		goBinding := cfc.NewBindGo(hierarchy)
 		goBinding.SetHeader(autogenHeader)
+		goBinding.SetSuppressInit(true)
 		parcel := cfc.FetchParcel("Clownfish")
 		packageDir := path.Join(buildDir, "clownfish")
 		goBinding.WriteBindings(parcel, packageDir)
