@@ -62,6 +62,12 @@ CFCGo_set_suppress_init(CFCGo *self, int suppress_init);
 void
 CFCGo_write_bindings(CFCGo *self, struct CFCParcel *parcel, const char *dest);
 
+/** Associate a Clownfish parcel with a Go package string suitable for use in
+ * a Go `import` statement.
+ */
+void
+CFCGo_register_parcel_package(const char *parcel, const char *package);
+
 #ifdef __cplusplus
 }
 #endif

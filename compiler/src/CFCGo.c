@@ -41,6 +41,14 @@
 static void
 S_CFCGo_destroy(CFCGo *self);
 
+struct mapping {
+    char *parcel;
+    char *package;
+};
+
+static int num_parcel_mappings;
+static struct mapping *parcel_mappings;
+
 struct CFCGo {
     CFCBase base;
     CFCHierarchy *hierarchy;
@@ -183,6 +191,29 @@ S_gen_cgo_comment(CFCGo *self, CFCParcel *parcel, const char *h_includes) {
 }
 
 static char*
+S_gen_prereq_imports(CFCParcel *parcel) {
+    char *imports = CFCUtil_strdup("");
+    CFCParcel **prereqs = CFCParcel_prereq_parcels(parcel);
+    for (int i = 0; prereqs[i] != NULL; i++) {
+        const char *dep_parcel = CFCParcel_get_name(prereqs[i]);
+        const char *dep_package = NULL;
+        for (int j = 0; j < num_parcel_mappings; j++) {
+            if (strcmp(dep_parcel, parcel_mappings[i].parcel) == 0) {
+                dep_package = parcel_mappings[i].package;
+            }
+        }
+        if (dep_package == NULL) {
+            CFCUtil_die("Can't find a Go package string to import for "
+                        "Clownfish parcel %s, a dependency of %s",
+                        dep_parcel, CFCParcel_get_name(parcel));
+        }
+        imports = CFCUtil_cat(imports, "import \"", dep_package, "\"\n",
+                              NULL);
+    }
+    return imports;
+}
+
+static char*
 S_gen_init_code(CFCGo *self, CFCParcel *parcel) {
     const char *prefix = CFCParcel_get_prefix(parcel);
     if (self->suppress_init) {
@@ -253,6 +284,7 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
     const char *PREFIX = CFCParcel_get_PREFIX(parcel);
     char *go_short_package = CFCGoTypeMap_go_short_package(parcel);
     char *cgo_comment   = S_gen_cgo_comment(self, parcel, h_includes);
+    char *prereqs       = S_gen_prereq_imports(parcel);
     char *init_code     = S_gen_init_code(self, parcel);
     char *autogen_go    = S_gen_autogen_go(self, parcel);
     const char pattern[] =
@@ -265,6 +297,7 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
         "*/\n"
         "import \"C\"\n"
         "import \"unsafe\"\n"
+        "%s"
         "\n"
         "%s\n"
         "\n"
@@ -277,7 +310,7 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
         "%s";
     char *content
         = CFCUtil_sprintf(pattern, self->c_header, go_short_package,
-                          cgo_comment, init_code, autogen_go,
+                          cgo_comment, prereqs, init_code, autogen_go,
                           PREFIX, PREFIX, self->c_footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "cfbind.go", dest);
@@ -287,6 +320,7 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
     FREEMEM(content);
     FREEMEM(autogen_go);
     FREEMEM(init_code);
+    FREEMEM(prereqs);
     FREEMEM(cgo_comment);
     FREEMEM(go_short_package);
 }
@@ -302,3 +336,11 @@ CFCGo_write_bindings(CFCGo *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(h_includes);
 }
 
+void
+CFCGo_register_parcel_package(const char *parcel, const char *package) {
+    size_t amount = sizeof(struct mapping) * (num_parcel_mappings + 1);
+    parcel_mappings = (struct mapping*)REALLOCATE(parcel_mappings, amount);
+    parcel_mappings[num_parcel_mappings].parcel  = CFCUtil_strdup(parcel);
+    parcel_mappings[num_parcel_mappings].package = CFCUtil_strdup(package);
+    num_parcel_mappings++;
+}

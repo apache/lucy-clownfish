@@ -222,3 +222,10 @@ func (obj *BindGo) WriteBindings(parcel *Parcel, dest string) {
 	C.CFCGo_write_bindings(obj.ref, parcel.ref, destC)
 }
 
+func RegisterParcelPackage(parcel, goPackage string) {
+	parcelC := C.CString(parcel)
+	defer C.free(unsafe.Pointer(parcelC))
+	goPackageC := C.CString(goPackage)
+	defer C.free(unsafe.Pointer(goPackageC))
+	C.CFCGo_register_parcel_package(parcelC, goPackageC)
+}
