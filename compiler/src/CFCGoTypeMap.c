@@ -15,6 +15,7 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -63,6 +64,36 @@ static struct {
 };
 
 static int num_conversions = sizeof(conversions) / sizeof(conversions[0]);
+
+static const char* go_keywords[] = {
+    "break",
+    "case",
+    "chan",
+    "const",
+    "continue",
+    "default",
+    "defer",
+    "else",
+    "fallthrough",
+    "for",
+    "func",
+    "go",
+    "goto",
+    "if",
+    "import",
+    "interface",
+    "map",
+    "package",
+    "range",
+    "return",
+    "select",
+    "struct",
+    "switch",
+    "type",
+    "var"
+};
+
+static int num_go_keywords = sizeof(go_keywords) / sizeof(go_keywords[0]);
 
 /* TODO: Optimize local conversions by creating a static wrapper function
  * which takes a buffer and allocates memory only if the buffer isn't big
@@ -204,6 +235,17 @@ CFCGoTypeMap_go_arg_name(CFCParamList *param_list, size_t tick, char *buf,
     if (buf_len < max_required || buf_len < 5) {
         CFCUtil_die("Buffer length too short: %d", buf_len);
     }
+
+    // If the argument name is a Go keyword, append an underscore.  This is
+    // ugly but bulletproof.
+    for (int i = 0; i < num_go_keywords; i++) {
+        if (strcmp(orig, go_keywords[i]) == 0) {
+            sprintf(buf, "%s_", orig);
+            return;
+        }
+    }
+
+    // Transform into lowerCamelCase.
     size_t dest_tick = 0;
     int last_was_underscore = 0;
     for (size_t i = 0; i <= strlen(orig); i++) {
