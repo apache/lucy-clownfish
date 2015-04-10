@@ -156,7 +156,13 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
     char *name = CFCGoFunc_go_meth_name(CFCMethod_get_macro_sym(novel_method));
     char *first_line = CFCGoFunc_func_start(parcel, name, invoker,
                                             param_list, ret_type, true);
-    char *full_meth_sym = CFCMethod_full_method_sym(novel_method, NULL);
+    char *cfunc;
+    if (CFCMethod_novel(self->method) && CFCMethod_final(self->method)) {
+        cfunc = CFCUtil_strdup(CFCMethod_imp_func(self->method));
+    }
+    else {
+        cfunc = CFCMethod_full_method_sym(novel_method, NULL);
+    }
 
     char *cfargs = S_prep_cfargs(invoker, param_list);
 
@@ -212,11 +218,12 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
         "}\n"
         ;
     char *content = CFCUtil_sprintf(pattern, first_line, maybe_retval,
-                                    full_meth_sym, cfargs, maybe_return);
+                                    cfunc, cfargs, maybe_return);
 
     FREEMEM(maybe_retval);
     FREEMEM(maybe_return);
     FREEMEM(ret_type_str);
+    FREEMEM(cfunc);
     FREEMEM(cfargs);
     FREEMEM(first_line);
     FREEMEM(name);
