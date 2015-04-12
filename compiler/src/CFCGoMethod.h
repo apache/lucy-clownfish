@@ -34,8 +34,17 @@ CFCGoMethod_new(struct CFCMethod *method);
 struct CFCMethod*
 CFCGoMethod_get_client(CFCGoMethod *self);
 
-char*
-CFCGoMethod_iface_sig(CFCGoMethod *self);
+/** Customize the a Go method binding.  Supply a method signature to be
+ * inserted into the Go interface and suppress the default method
+ * implementation.
+ */
+void
+CFCGoMethod_customize(CFCGoMethod *self, const char *sig);
+
+/** Retrieve the Go interface method signature.
+ */
+const char*
+CFCGoMethod_get_sig(CFCGoMethod *self);
 
 char*
 CFCGoMethod_func_def(CFCGoMethod *self, struct CFCClass *invoker);
