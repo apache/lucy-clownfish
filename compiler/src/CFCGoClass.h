@@ -73,6 +73,9 @@ CFCGoClass_boilerplate_funcs(CFCGoClass *self);
 char*
 CFCGoClass_gen_meth_glue(CFCGoClass *self);
 
+void
+CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig);
+
 #ifdef __cplusplus
 }
 #endif

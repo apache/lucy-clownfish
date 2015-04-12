@@ -42,6 +42,7 @@
 struct CFCGoMethod {
     CFCBase     base;
     CFCMethod  *method;
+    char       *sig;
 };
 
 static void
@@ -58,12 +59,14 @@ CFCGoMethod_new(CFCMethod *method) {
     CFCGoMethod *self
         = (CFCGoMethod*)CFCBase_allocate(&CFCGOMETHOD_META);
     self->method = (CFCMethod*)CFCBase_incref((CFCBase*)method);
+    self->sig    = NULL;
     return self;
 }
 
 static void
 S_CFCGoMethod_destroy(CFCGoMethod *self) {
     CFCBase_decref((CFCBase*)self->method);
+    FREEMEM(self->sig);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -72,8 +75,21 @@ CFCGoMethod_get_client(CFCGoMethod *self) {
     return self->method;
 }
 
-char*
-CFCGoMethod_iface_sig(CFCGoMethod *self) {
+void
+CFCGoMethod_customize(CFCGoMethod *self, const char *sig) {
+    FREEMEM(self->sig);
+    self->sig = CFCUtil_strdup(sig);
+    if (self->method) {
+        CFCMethod_exclude_from_host(self->method);
+    }
+}
+
+static void
+S_lazy_init_sig(CFCGoMethod *self) {
+    if (self->sig || !self->method) {
+        return;
+    }
+
     CFCMethod *method = self->method;
     CFCParcel *parcel = CFCMethod_get_parcel(method);
     CFCType *return_type = CFCMethod_get_return_type(method);
@@ -96,12 +112,25 @@ CFCGoMethod_iface_sig(CFCGoMethod *self) {
         FREEMEM(go_type);
     }
 
-    char *sig = CFCUtil_sprintf("%s(%s) %s", name, args, go_ret_type);
+    self->sig = CFCUtil_sprintf("%s(%s) %s", name, args, go_ret_type);
 
     FREEMEM(args);
     FREEMEM(go_ret_type);
     FREEMEM(name);
-    return sig;
+}
+
+const char*
+CFCGoMethod_get_sig(CFCGoMethod *self) {
+    if (self->sig) {
+        return self->sig;
+    }
+    else if (!self->method) {
+        return "";
+    }
+    else {
+        S_lazy_init_sig(self);
+        return self->sig;
+    }
 }
 
 #define GO_NAME_BUF_SIZE 128
@@ -149,6 +178,10 @@ S_prep_cfargs(CFCClass *invoker, CFCParamList *param_list) {
 
 char*
 CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
+    if (!self->method || CFCMethod_excluded_from_host(self->method)) {
+        return CFCUtil_strdup("");
+    }
+
     CFCMethod    *novel_method = CFCMethod_find_novel_method(self->method);
     CFCParcel    *parcel     = CFCClass_get_parcel(invoker);
     CFCParamList *param_list = CFCMethod_get_param_list(novel_method);

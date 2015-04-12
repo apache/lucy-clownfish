@@ -127,10 +127,21 @@ func runCFC() {
 		goBinding.SetHeader(autogenHeader)
 		goBinding.SetSuppressInit(true)
 		parcel := cfc.FetchParcel("Clownfish")
+		specMethods(parcel)
 		packageDir := path.Join(buildDir, "clownfish")
 		goBinding.WriteBindings(parcel, packageDir)
 		hierarchy.WriteLog()
 	}
+}
+
+func specMethods(parcel *cfc.Parcel) {
+	objBinding := cfc.NewGoClass(parcel, "Clownfish::Obj")
+	objBinding.SpecMethod("", "TOPTR() uintptr")
+	objBinding.Register()
+
+	errBinding := cfc.NewGoClass(parcel, "Clownfish::Err")
+	errBinding.SpecMethod("", "Error() string")
+	errBinding.Register()
 }
 
 func prep() {
