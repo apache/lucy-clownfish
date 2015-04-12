@@ -124,6 +124,10 @@ CFCGoClass_singleton(const char *class_name) {
 
 CFCClass*
 CFCGoClass_get_client(CFCGoClass *self) {
+    if (!self->client) {
+        CFCClass *client = CFCClass_fetch_singleton(self->parcel, self->class_name);
+        self->client = (CFCClass*)CFCBase_incref((CFCBase*)client);
+    }
     return self->client;
 }
 
