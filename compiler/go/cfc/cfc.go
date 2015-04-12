@@ -87,6 +87,10 @@ type BindGo struct {
 	ref *C.CFCGo
 }
 
+type BindGoClass struct {
+	ref *C.CFCGoClass
+}
+
 func FetchParcel(name string) *Parcel {
 	nameC := C.CString(name)
 	defer C.free(unsafe.Pointer(nameC))
@@ -228,4 +232,37 @@ func RegisterParcelPackage(parcel, goPackage string) {
 	goPackageC := C.CString(goPackage)
 	defer C.free(unsafe.Pointer(goPackageC))
 	C.CFCGo_register_parcel_package(parcelC, goPackageC)
+}
+
+func NewGoClass(parcel *Parcel, className string) *BindGoClass {
+	classNameC := C.CString(className)
+	defer C.free(unsafe.Pointer(classNameC))
+	obj := C.CFCGoClass_new(parcel.ref, classNameC)
+	return wrapBindGoClass(unsafe.Pointer(obj))
+}
+
+func GoClassSingleton(className string) *BindGoClass {
+	classNameC := C.CString(className)
+	defer C.free(unsafe.Pointer(classNameC))
+	singletonC := C.CFCGoClass_singleton(classNameC)
+	if singletonC == nil {
+		return nil
+	}
+	C.CFCBase_incref((*C.CFCBase)(unsafe.Pointer(singletonC)))
+	return wrapBindGoClass(unsafe.Pointer(singletonC))
+}
+
+func wrapBindGoClass(ptr unsafe.Pointer) *BindGoClass {
+	obj := &BindGoClass{(*C.CFCGoClass)(ptr)}
+	runtime.SetFinalizer(obj, (*BindGoClass).finalize)
+	return obj
+}
+
+
+func (obj *BindGoClass) finalize() {
+	C.CFCBase_decref((*C.CFCBase)(unsafe.Pointer(obj.ref)))
+}
+
+func (obj *BindGoClass) Register() {
+	C.CFCGoClass_register(obj.ref)
 }
