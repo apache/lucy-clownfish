@@ -44,6 +44,7 @@
 #include "CFCBindMethod.h"
 
 #include "CFCGo.h"
+#include "CFCGoClass.h"
 
 #include "CFCPerl.h"
 #include "CFCPerlSub.h"
