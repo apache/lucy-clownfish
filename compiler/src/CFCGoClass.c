@@ -190,40 +190,27 @@ CFCGoClass_go_typing(CFCGoClass *self) {
             go_struct_def = CFCUtil_strdup("");
         }
 
-        // Temporary hack until it's possible to customize interfaces.
-        char *temp_hack_iface_methods;
-        if (strcmp(self->class_name, "Clownfish::Obj") == 0) {
-            temp_hack_iface_methods = CFCUtil_strdup("\tTOPTR() uintptr\n");
-        }
-        else if (strcmp(self->class_name, "Clownfish::Err") == 0) {
-            temp_hack_iface_methods = CFCUtil_strdup("\tError() string\n");
-        }
-        else {
-            temp_hack_iface_methods = CFCUtil_strdup("");
-        }
-
         char *novel_iface = CFCUtil_strdup("");
         S_lazy_init_method_bindings(self);
         for (int i = 0; self->method_bindings[i] != NULL; i++) {
             CFCGoMethod *meth_binding = self->method_bindings[i];
             CFCMethod *method = CFCGoMethod_get_client(meth_binding);
-            if (!CFCMethod_novel(method)) {
-                continue;
-            }
-            const char *sym = CFCMethod_get_macro_sym(method);
-            if (!CFCClass_fresh_method(self->client, sym)) {
-                continue;
+            if (method) {
+                if (!CFCMethod_novel(method)) {
+                    continue;
+                }
+                const char *sym = CFCMethod_get_macro_sym(method);
+                if (!CFCClass_fresh_method(self->client, sym)) {
+                    continue;
+                }
             }
 
-            char *iface_sig = CFCGoMethod_iface_sig(meth_binding);
-            novel_iface
-                = CFCUtil_cat(novel_iface, "\t", iface_sig, "\n", NULL);
-            FREEMEM(iface_sig);
+            const char *sig = CFCGoMethod_get_sig(meth_binding);
+            novel_iface = CFCUtil_cat(novel_iface, "\t", sig, "\n", NULL);
         }
 
         char pattern[] =
             "type %s interface {\n"
-            "%s"
             "%s"
             "%s"
             "}\n"
@@ -231,9 +218,7 @@ CFCGoClass_go_typing(CFCGoClass *self) {
             "%s"
             ;
         content = CFCUtil_sprintf(pattern, short_struct, parent_iface,
-                                  temp_hack_iface_methods, novel_iface,
-                                  go_struct_def);
-        FREEMEM(temp_hack_iface_methods);
+                                  novel_iface, go_struct_def);
         FREEMEM(go_struct_def);
         FREEMEM(parent_iface);
     }
@@ -326,5 +311,37 @@ CFCGoClass_gen_meth_glue(CFCGoClass *self) {
         FREEMEM(method_def);
     }
     return meth_defs;
+}
+
+void
+CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig) {
+    CFCUTIL_NULL_CHECK(sig);
+    S_lazy_init_method_bindings(self);
+    if (!name) {
+        CFCGoMethod *meth_binding = CFCGoMethod_new(NULL);
+        CFCGoMethod_customize(meth_binding, sig);
+
+        size_t size = (self->num_bound + 2) * sizeof(CFCGoMethod*);
+        self->method_bindings
+            = (CFCGoMethod**)REALLOCATE(self->method_bindings, size);
+        self->method_bindings[self->num_bound] = meth_binding;
+        self->num_bound++;
+        self->method_bindings[self->num_bound] = NULL;
+    }
+    else {
+        CFCGoMethod *binding = NULL;
+        for (int i = 0; self->method_bindings[i] != NULL; i++) {
+            CFCGoMethod *candidate = self->method_bindings[i];
+            CFCMethod *meth = CFCGoMethod_get_client(candidate);
+            if (meth && strcmp(name, CFCMethod_get_macro_sym(meth)) == 0) {
+                binding = candidate;
+                break;
+            }
+        }
+        if (!binding) {
+            CFCUtil_die("Can't find a method named '%s'", name);
+        }
+        CFCGoMethod_customize(binding, sig);
+    }
 }
 

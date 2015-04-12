@@ -266,3 +266,17 @@ func (obj *BindGoClass) finalize() {
 func (obj *BindGoClass) Register() {
 	C.CFCGoClass_register(obj.ref)
 }
+
+func (obj *BindGoClass) SpecMethod(name, sig string) {
+	var nameC *C.char
+	if name != "" {
+		nameC = C.CString(name)
+		defer C.free(unsafe.Pointer(nameC))
+	}
+	var sigC *C.char
+	if sig != "" {
+		sigC = C.CString(sig)
+		defer C.free(unsafe.Pointer(sigC))
+	}
+	C.CFCGoClass_spec_method(obj.ref, nameC, sigC)
+}
