@@ -346,22 +346,16 @@ S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash) {
 
     // Iterate over key-value pairs.
     CFISH_Hash_Iterate(hash);
-    while (CFISH_Hash_Next(hash, (cfish_Obj**)&key, &val)) {
+    while (CFISH_Hash_Next(hash, &key, &val)) {
         // Recurse for each value.
         SV *val_sv = XSBind_cfish_to_perl(aTHX_ val);
-        if (!CFISH_Obj_Is_A((cfish_Obj*)key, CFISH_STRING)) {
-            CFISH_THROW(CFISH_ERR,
-                        "Can't convert a key of class %o to a Perl hash key",
-                        CFISH_Obj_Get_Class_Name((cfish_Obj*)key));
-        }
-        else {
-            STRLEN key_size = CFISH_Str_Get_Size(key);
-            char *key_sv_ptr = SvGROW(key_sv, key_size + 1);
-            memcpy(key_sv_ptr, CFISH_Str_Get_Ptr8(key), key_size);
-            SvCUR_set(key_sv, key_size);
-            *SvEND(key_sv) = '\0';
-            (void)hv_store_ent(perl_hash, key_sv, val_sv, 0);
-        }
+
+        STRLEN key_size = CFISH_Str_Get_Size(key);
+        char *key_sv_ptr = SvGROW(key_sv, key_size + 1);
+        memcpy(key_sv_ptr, CFISH_Str_Get_Ptr8(key), key_size);
+        SvCUR_set(key_sv, key_size);
+        *SvEND(key_sv) = '\0';
+        (void)hv_store_ent(perl_hash, key_sv, val_sv, 0);
     }
     SvREFCNT_dec(key_sv);
 
@@ -610,7 +604,6 @@ SI_immortal(cfish_Class *klass) {
     if (klass == CFISH_CLASS
         || klass == CFISH_METHOD
         || klass == CFISH_BOOLNUM
-        || klass == CFISH_HASHTOMBSTONE
        ){
         return true;
     }

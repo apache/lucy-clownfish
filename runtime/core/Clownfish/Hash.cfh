@@ -19,10 +19,7 @@ parcel Clownfish;
 /**
  * Hashtable.
  *
- * Values are stored by reference and may be any kind of Obj. By default, keys
- * are cloned and so must belong to a class that implements [](cfish:Obj.Clone); however,
- * this behavior can be changed by overridding [](cfish:.Make_Key), e.g. to implement
- * efficient hash sets.
+ * Values are stored by reference and may be any kind of Obj.
  */
 class Clownfish::Hash inherits Clownfish::Obj {
 
@@ -45,7 +42,7 @@ class Clownfish::Hash inherits Clownfish::Obj {
     inert Hash*
     init(Hash *self, uint32_t capacity = 0);
 
-    inert HashTombStone*
+    inert String*
     get_tombstone();
 
     /** Empty the hash of all key-value pairs.
@@ -53,11 +50,10 @@ class Clownfish::Hash inherits Clownfish::Obj {
     void
     Clear(Hash *self);
 
-    /** Store a key-value pair.  If `key` is not already present,
-     * [](cfish:.Make_Key) will be called to manufacture the internally used key.
+    /** Store a key-value pair.
      */
     void
-    Store(Hash *self, Obj *key, decremented Obj *value);
+    Store(Hash *self, String *key, decremented Obj *value);
 
     void
     Store_Utf8(Hash *self, const char *str, size_t len,
@@ -68,7 +64,7 @@ class Clownfish::Hash inherits Clownfish::Obj {
      * @return the value, or NULL if `key` is not present.
      */
     nullable Obj*
-    Fetch(Hash *self, Obj *key);
+    Fetch(Hash *self, String *key);
 
     nullable Obj*
     Fetch_Utf8(Hash *self, const char *key, size_t key_len);
@@ -79,7 +75,7 @@ class Clownfish::Hash inherits Clownfish::Obj {
      * succeeds; otherwise NULL.
      */
     incremented nullable Obj*
-    Delete(Hash *self, Obj *key);
+    Delete(Hash *self, String *key);
 
     incremented nullable Obj*
     Delete_Utf8(Hash *self, const char *key, size_t key_ley);
@@ -98,13 +94,13 @@ class Clownfish::Hash inherits Clownfish::Obj {
      * exhausted.
      */
     bool
-    Next(Hash *self, Obj **key, Obj **value);
+    Next(Hash *self, String **key, Obj **value);
 
     /** Search for a key which Equals the key supplied, and return the key
      * rather than its value.
      */
-    nullable Obj*
-    Find_Key(Hash *self, Obj *key, int32_t hash_sum);
+    nullable String*
+    Find_Key(Hash *self, String *key, int32_t hash_sum);
 
     /** Return an VArray of pointers to the hash's keys.
      */
@@ -120,8 +116,8 @@ class Clownfish::Hash inherits Clownfish::Obj {
      * supply an object which produces the same [](cfish:Obj.Hash_Sum) value and tests
      * true for [](cfish:Obj.Equals).  By default, calls [](cfish:Obj.Clone).
      */
-    public incremented Obj*
-    Make_Key(Hash *self, Obj *key, int32_t hash_sum);
+    public incremented String*
+    Make_Key(Hash *self, String *key, int32_t hash_sum);
 
     uint32_t
     Get_Capacity(Hash *self);
@@ -138,10 +134,6 @@ class Clownfish::Hash inherits Clownfish::Obj {
 
     public void
     Destroy(Hash *self);
-}
-
-class Clownfish::Hash::HashTombStone
-    inherits Clownfish::Obj {
 }
 
 

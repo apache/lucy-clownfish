@@ -46,7 +46,7 @@ test_Next(TestBatchRunner *runner) {
 
     for (uint32_t i = 0; i < 500; i++) {
         String *str = Str_newf("%u32", i);
-        Hash_Store(hash, (Obj*)str, (Obj*)str);
+        Hash_Store(hash, str, (Obj*)str);
         VA_Push(expected, INCREF(str));
     }
 
@@ -55,7 +55,7 @@ test_Next(TestBatchRunner *runner) {
     {
         HashIterator *iter = HashIter_new(hash);
         while (HashIter_Next(iter)) {
-            Obj *key = HashIter_Get_Key(iter);
+            String *key = HashIter_Get_Key(iter);
             Obj *value = HashIter_Get_Value(iter);
             VA_Push(keys, INCREF(key));
             VA_Push(values, INCREF(value));
@@ -121,7 +121,7 @@ static void
 test_Get_Key_and_Get_Value(TestBatchRunner *runner) {
     Hash   *hash = Hash_new(0);
     String *str  = Str_newf("foo");
-    Hash_Store(hash, (Obj*)str, (Obj*)str);
+    Hash_Store(hash, str, (Obj*)str);
 
     HashIterator *iter = HashIter_new(hash);
     DECREF(hash);
@@ -159,7 +159,7 @@ test_illegal_modification(TestBatchRunner *runner) {
 
     for (uint32_t i = 0; i < 3; i++) {
         String *str = Str_newf("%u32", i);
-        Hash_Store(hash, (Obj*)str, (Obj*)str);
+        Hash_Store(hash, str, (Obj*)str);
     }
 
     HashIterator *iter = HashIter_new(hash);
@@ -167,7 +167,7 @@ test_illegal_modification(TestBatchRunner *runner) {
 
     for (uint32_t i = 0; i < 100; i++) {
         String *str = Str_newf("foo %u32", i);
-        Hash_Store(hash, (Obj*)str, (Obj*)str);
+        Hash_Store(hash, str, (Obj*)str);
     }
 
     Err *next_error = Err_trap(S_invoke_Next, iter);
@@ -194,8 +194,8 @@ test_tombstone(TestBatchRunner *runner) {
     {
         Hash   *hash = Hash_new(0);
         String *str  = Str_newf("foo");
-        Hash_Store(hash, (Obj*)str, INCREF(str));
-        DECREF(Hash_Delete(hash, (Obj*)str));
+        Hash_Store(hash, str, INCREF(str));
+        DECREF(Hash_Delete(hash, str));
         DECREF(str);
 
         HashIterator *iter = HashIter_new(hash);
@@ -207,11 +207,11 @@ test_tombstone(TestBatchRunner *runner) {
     {
         Hash   *hash = Hash_new(0);
         String *str  = Str_newf("foo");
-        Hash_Store(hash, (Obj*)str, INCREF(str));
+        Hash_Store(hash, str, INCREF(str));
 
         HashIterator *iter = HashIter_new(hash);
         HashIter_Next(iter);
-        DECREF(Hash_Delete(hash, (Obj*)str));
+        DECREF(Hash_Delete(hash, str));
 
 
         Err *get_key_error = Err_trap(S_invoke_Get_Key, iter);

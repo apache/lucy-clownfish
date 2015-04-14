@@ -47,7 +47,6 @@ SI_immortal(cfish_Class *klass) {
     if (klass == CFISH_CLASS
         || klass == CFISH_METHOD
         || klass == CFISH_BOOLNUM
-        || klass == CFISH_HASHTOMBSTONE
        ){
         return true;
     }

@@ -15,7 +15,6 @@
  */
 
 #define C_CFISH_HASH
-#define C_CFISH_HASHTOMBSTONE
 #define CFISH_USE_SHORT_NAMES
 
 #include <string.h>
@@ -29,12 +28,14 @@
 #include "Clownfish/VArray.h"
 #include "Clownfish/Util/Memory.h"
 
-static HashTombStone *TOMBSTONE;
+// TOMBSTONE is shared across threads, so it must never be incref'd or
+// decref'd.
+static String *TOMBSTONE;
 
 #define HashEntry cfish_HashEntry
 
 typedef struct HashEntry {
-    Obj     *key;
+    String  *key;
     Obj     *value;
     int32_t  hash_sum;
 } HashEntry;
@@ -45,7 +46,7 @@ SI_kill_iter(Hash *self);
 
 // Return the entry associated with the key, if any.
 static CFISH_INLINE HashEntry*
-SI_fetch_entry(Hash *self, Obj *key, int32_t hash_sum);
+SI_fetch_entry(Hash *self, String *key, int32_t hash_sum);
 
 // Double the number of buckets and redistribute all entries.
 static CFISH_INLINE HashEntry*
@@ -53,7 +54,7 @@ SI_rebuild_hash(Hash *self);
 
 void
 Hash_init_class() {
-    TOMBSTONE = (HashTombStone*)Class_Make_Obj(HASHTOMBSTONE);
+    TOMBSTONE = Str_newf("[HASHTOMBSTONE]");
 }
 
 Hash*
@@ -104,6 +105,10 @@ Hash_Clear_IMP(Hash *self) {
     // Iterate through all entries.
     for (; entry < limit; entry++) {
         if (!entry->key) { continue; }
+        if (entry->key == TOMBSTONE) {
+            entry->key = NULL;
+            continue;
+        }
         DECREF(entry->key);
         DECREF(entry->value);
         entry->key       = NULL;
@@ -117,7 +122,7 @@ Hash_Clear_IMP(Hash *self) {
 }
 
 void
-Hash_do_store(Hash *self, Obj *key, Obj *value,
+Hash_do_store(Hash *self, String *key, Obj *value,
               int32_t hash_sum, bool use_this_key) {
     HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
     if (entry) {
@@ -135,8 +140,8 @@ Hash_do_store(Hash *self, Obj *key, Obj *value,
     while (1) {
         tick &= mask;
         HashEntry *entry = entries + tick;
-        if (entry->key == (Obj*)TOMBSTONE || !entry->key) {
-            if (entry->key == (Obj*)TOMBSTONE) {
+        if (entry->key == TOMBSTONE || !entry->key) {
+            if (entry->key == TOMBSTONE) {
                 // Take note of diminished tombstone clutter.
                 self->threshold++;
             }
@@ -153,32 +158,32 @@ Hash_do_store(Hash *self, Obj *key, Obj *value,
 }
 
 void
-Hash_Store_IMP(Hash *self, Obj *key, Obj *value) {
-    Hash_do_store(self, key, value, Obj_Hash_Sum(key), false);
+Hash_Store_IMP(Hash *self, String *key, Obj *value) {
+    Hash_do_store(self, key, value, Str_Hash_Sum(key), false);
 }
 
 void
 Hash_Store_Utf8_IMP(Hash *self, const char *key, size_t key_len, Obj *value) {
     StackString *key_buf = SSTR_WRAP_UTF8((char*)key, key_len);
-    Hash_do_store(self, (Obj*)key_buf, value,
+    Hash_do_store(self, (String*)key_buf, value,
                   SStr_Hash_Sum(key_buf), false);
 }
 
-Obj*
-Hash_Make_Key_IMP(Hash *self, Obj *key, int32_t hash_sum) {
+String*
+Hash_Make_Key_IMP(Hash *self, String *key, int32_t hash_sum) {
     UNUSED_VAR(self);
     UNUSED_VAR(hash_sum);
-    return Obj_Clone(key);
+    return Str_Clone(key);
 }
 
 Obj*
 Hash_Fetch_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
     StackString *key_buf = SSTR_WRAP_UTF8(key, key_len);
-    return Hash_Fetch_IMP(self, (Obj*)key_buf);
+    return Hash_Fetch_IMP(self, (String*)key_buf);
 }
 
 static CFISH_INLINE HashEntry*
-SI_fetch_entry(Hash *self, Obj *key, int32_t hash_sum) {
+SI_fetch_entry(Hash *self, String *key, int32_t hash_sum) {
     uint32_t tick = hash_sum;
     HashEntry *const entries = (HashEntry*)self->entries;
     HashEntry *entry;
@@ -191,7 +196,8 @@ SI_fetch_entry(Hash *self, Obj *key, int32_t hash_sum) {
             return NULL;
         }
         else if (entry->hash_sum == hash_sum
-                 && Obj_Equals(key, entry->key)
+                 && entry->key != TOMBSTONE
+                 && Str_Equals(key, (Obj*)entry->key)
                 ) {
             return entry;
         }
@@ -200,18 +206,18 @@ SI_fetch_entry(Hash *self, Obj *key, int32_t hash_sum) {
 }
 
 Obj*
-Hash_Fetch_IMP(Hash *self, Obj *key) {
-    HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Sum(key));
+Hash_Fetch_IMP(Hash *self, String *key) {
+    HashEntry *entry = SI_fetch_entry(self, key, Str_Hash_Sum(key));
     return entry ? entry->value : NULL;
 }
 
 Obj*
-Hash_Delete_IMP(Hash *self, Obj *key) {
-    HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Sum(key));
+Hash_Delete_IMP(Hash *self, String *key) {
+    HashEntry *entry = SI_fetch_entry(self, key, Str_Hash_Sum(key));
     if (entry) {
         Obj *value = entry->value;
         DECREF(entry->key);
-        entry->key       = (Obj*)TOMBSTONE;
+        entry->key       = TOMBSTONE;
         entry->value     = NULL;
         entry->hash_sum  = 0;
         self->size--;
@@ -226,7 +232,7 @@ Hash_Delete_IMP(Hash *self, Obj *key) {
 Obj*
 Hash_Delete_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
     StackString *key_buf = SSTR_WRAP_UTF8(key, key_len);
-    return Hash_Delete_IMP(self, (Obj*)key_buf);
+    return Hash_Delete_IMP(self, (String*)key_buf);
 }
 
 uint32_t
@@ -241,7 +247,7 @@ SI_kill_iter(Hash *self) {
 }
 
 bool
-Hash_Next_IMP(Hash *self, Obj **key, Obj **value) {
+Hash_Next_IMP(Hash *self, String **key, Obj **value) {
     while (1) {
         if (++self->iter_tick >= (int32_t)self->capacity) {
             // Bail since we've completed the iteration.
@@ -253,7 +259,7 @@ Hash_Next_IMP(Hash *self, Obj **key, Obj **value) {
         else {
             HashEntry *const entry
                 = (HashEntry*)self->entries + self->iter_tick;
-            if (entry->key && entry->key != (Obj*)TOMBSTONE) {
+            if (entry->key && entry->key != TOMBSTONE) {
                 // Success!
                 *key   = entry->key;
                 *value = entry->value;
@@ -263,16 +269,16 @@ Hash_Next_IMP(Hash *self, Obj **key, Obj **value) {
     }
 }
 
-Obj*
-Hash_Find_Key_IMP(Hash *self, Obj *key, int32_t hash_sum) {
+String*
+Hash_Find_Key_IMP(Hash *self, String *key, int32_t hash_sum) {
     HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
     return entry ? entry->key : NULL;
 }
 
 VArray*
 Hash_Keys_IMP(Hash *self) {
-    Obj *key;
-    Obj *val;
+    String *key;
+    Obj    *val;
     VArray *keys = VA_new(self->size);
     Hash_Iterate(self);
     while (Hash_Next(self, &key, &val)) {
@@ -283,8 +289,8 @@ Hash_Keys_IMP(Hash *self) {
 
 VArray*
 Hash_Values_IMP(Hash *self) {
-    Obj *key;
-    Obj *val;
+    String *key;
+    Obj    *val;
     VArray *values = VA_new(self->size);
     Hash_Iterate(self);
     while (Hash_Next(self, &key, &val)) { VA_Push(values, INCREF(val)); }
@@ -294,7 +300,7 @@ Hash_Values_IMP(Hash *self) {
 bool
 Hash_Equals_IMP(Hash *self, Obj *other) {
     Hash    *twin = (Hash*)other;
-    Obj     *key;
+    String  *key;
     Obj     *val;
 
     if (twin == self)             { return true; }
@@ -338,7 +344,7 @@ SI_rebuild_hash(Hash *self) {
     self->size      = 0;
 
     for (; entry < limit; entry++) {
-        if (!entry->key || entry->key == (Obj*)TOMBSTONE) {
+        if (!entry->key || entry->key == TOMBSTONE) {
             continue;
         }
         Hash_do_store(self, entry->key, entry->value,
@@ -350,7 +356,7 @@ SI_rebuild_hash(Hash *self) {
     return (HashEntry*)self->entries;
 }
 
-HashTombStone*
+String*
 Hash_get_tombstone() {
     return TOMBSTONE;
 }

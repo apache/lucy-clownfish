@@ -276,7 +276,7 @@ _fetch(self, key)
     cfish_Hash *self;
     cfish_String *key;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV(CFISH_Hash_Fetch_IMP(self, (cfish_Obj*)key));
+    RETVAL = CFISH_OBJ_TO_SV(CFISH_Hash_Fetch_IMP(self, key));
 OUTPUT: RETVAL
 
 void
@@ -287,7 +287,7 @@ store(self, key, value);
 PPCODE:
 {
     if (value) { CFISH_INCREF(value); }
-    CFISH_Hash_Store_IMP(self, (cfish_Obj*)key, value);
+    CFISH_Hash_Store_IMP(self, key, value);
 }
 
 void
@@ -295,11 +295,11 @@ next(self)
     cfish_Hash *self;
 PPCODE:
 {
-    cfish_Obj *key;
-    cfish_Obj *val;
+    cfish_String *key;
+    cfish_Obj    *val;
 
     if (CFISH_Hash_Next(self, &key, &val)) {
-        SV *key_sv = (SV*)CFISH_Obj_To_Host(key);
+        SV *key_sv = (SV*)CFISH_Str_To_Host(key);
         SV *val_sv = (SV*)CFISH_Obj_To_Host(val);
 
         XPUSHs(sv_2mortal(key_sv));

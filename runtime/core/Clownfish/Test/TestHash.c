@@ -74,8 +74,8 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
 
     for (int32_t i = 0; i < 100; i++) {
         String *str = Str_newf("%i32", i);
-        Hash_Store(hash, (Obj*)str, (Obj*)str);
-        Hash_Store(dupe, (Obj*)str, INCREF(str));
+        Hash_Store(hash, str, (Obj*)str);
+        Hash_Store(dupe, str, INCREF(str));
         VA_Push(expected, INCREF(str));
     }
     TEST_TRUE(runner, Hash_Equals(hash, (Obj*)dupe), "Equals");
@@ -84,8 +84,8 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
                 "Initial capacity sufficient (no rebuilds)");
 
     for (int32_t i = 0; i < 100; i++) {
-        Obj *key  = VA_Fetch(expected, i);
-        Obj *elem = Hash_Fetch(hash, key);
+        String *key  = (String*)VA_Fetch(expected, i);
+        Obj    *elem = Hash_Fetch(hash, key);
         VA_Push(got, (Obj*)INCREF(elem));
     }
 
@@ -94,32 +94,32 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
                 "size incremented properly by Hash_Store");
 
-    TEST_TRUE(runner, Hash_Fetch(hash, (Obj*)foo) == NULL,
+    TEST_TRUE(runner, Hash_Fetch(hash, (String*)foo) == NULL,
               "Fetch against non-existent key returns NULL");
 
     Obj *stored_foo = INCREF(foo);
-    Hash_Store(hash, (Obj*)forty, stored_foo);
-    TEST_TRUE(runner, SStr_Equals(foo, Hash_Fetch(hash, (Obj*)forty)),
+    Hash_Store(hash, (String*)forty, stored_foo);
+    TEST_TRUE(runner, SStr_Equals(foo, Hash_Fetch(hash, (String*)forty)),
               "Hash_Store replaces existing value");
     TEST_FALSE(runner, Hash_Equals(hash, (Obj*)dupe),
                "replacement value spoils equals");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
                 "size unaffected after value replaced");
 
-    TEST_TRUE(runner, Hash_Delete(hash, (Obj*)forty) == stored_foo,
+    TEST_TRUE(runner, Hash_Delete(hash, (String*)forty) == stored_foo,
               "Delete returns value");
     DECREF(stored_foo);
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
                 "size decremented by successful Delete");
-    TEST_TRUE(runner, Hash_Delete(hash, (Obj*)forty) == NULL,
+    TEST_TRUE(runner, Hash_Delete(hash, (String*)forty) == NULL,
               "Delete returns NULL when key not found");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
                 "size not decremented by unsuccessful Delete");
-    DECREF(Hash_Delete(dupe, (Obj*)forty));
+    DECREF(Hash_Delete(dupe, (String*)forty));
     TEST_TRUE(runner, VA_Equals(got, (Obj*)expected), "Equals after Delete");
 
     Hash_Clear(hash);
-    TEST_TRUE(runner, Hash_Fetch(hash, (Obj*)twenty) == NULL, "Clear");
+    TEST_TRUE(runner, Hash_Fetch(hash, (String*)twenty) == NULL, "Clear");
     TEST_TRUE(runner, Hash_Get_Size(hash) == 0, "size is 0 after Clear");
 
     DECREF(hash);
@@ -137,7 +137,7 @@ test_Keys_Values_Iter(TestBatchRunner *runner) {
 
     for (uint32_t i = 0; i < 500; i++) {
         String *str = Str_newf("%u32", i);
-        Hash_Store(hash, (Obj*)str, (Obj*)str);
+        Hash_Store(hash, str, (Obj*)str);
         VA_Push(expected, INCREF(str));
     }
 
@@ -153,8 +153,8 @@ test_Keys_Values_Iter(TestBatchRunner *runner) {
     VA_Clear(values);
 
     {
-        Obj *key;
-        Obj *value;
+        String *key;
+        Obj    *value;
         Hash_Iterate(hash);
         while (Hash_Next(hash, &key, &value)) {
             VA_Push(keys, INCREF(key));
@@ -170,9 +170,9 @@ test_Keys_Values_Iter(TestBatchRunner *runner) {
     {
         StackString *forty = SSTR_WRAP_UTF8("40", 2);
         StackString *nope  = SSTR_WRAP_UTF8("nope", 4);
-        Obj *key = Hash_Find_Key(hash, (Obj*)forty, SStr_Hash_Sum(forty));
-        TEST_TRUE(runner, Obj_Equals(key, (Obj*)forty), "Find_Key");
-        key = Hash_Find_Key(hash, (Obj*)nope, SStr_Hash_Sum(nope)),
+        String *key = Hash_Find_Key(hash, (String*)forty, SStr_Hash_Sum(forty));
+        TEST_TRUE(runner, Str_Equals(key, (Obj*)forty), "Find_Key");
+        key = Hash_Find_Key(hash, (String*)nope, SStr_Hash_Sum(nope)),
         TEST_TRUE(runner, key == NULL,
                   "Find_Key returns NULL for non-existent key");
     }
@@ -192,11 +192,11 @@ test_stress(TestBatchRunner *runner) {
 
     for (uint32_t i = 0; i < 1000; i++) {
         String *str = TestUtils_random_string(rand() % 1200);
-        while (Hash_Fetch(hash, (Obj*)str)) {
+        while (Hash_Fetch(hash, str)) {
             DECREF(str);
             str = TestUtils_random_string(rand() % 1200);
         }
-        Hash_Store(hash, (Obj*)str, (Obj*)str);
+        Hash_Store(hash, str, (Obj*)str);
         VA_Push(expected, INCREF(str));
     }
 
@@ -205,7 +205,7 @@ test_stress(TestBatchRunner *runner) {
     // Overwrite for good measure.
     for (uint32_t i = 0; i < 1000; i++) {
         String *str = (String*)VA_Fetch(expected, i);
-        Hash_Store(hash, (Obj*)str, INCREF(str));
+        Hash_Store(hash, str, INCREF(str));
     }
 
     keys   = Hash_Keys(hash);
@@ -240,10 +240,10 @@ test_store_skips_tombstone(TestBatchRunner *runner) {
         two = NULL;
     }
 
-    Hash_Store(hash, (Obj*)one, (Obj*)CFISH_TRUE);
-    Hash_Store(hash, (Obj*)two, (Obj*)CFISH_TRUE);
-    Hash_Delete(hash, (Obj*)one);
-    Hash_Store(hash, (Obj*)two, (Obj*)CFISH_TRUE);
+    Hash_Store(hash, one, (Obj*)CFISH_TRUE);
+    Hash_Store(hash, two, (Obj*)CFISH_TRUE);
+    Hash_Delete(hash, one);
+    Hash_Store(hash, two, (Obj*)CFISH_TRUE);
 
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 1, "Store skips tombstone");
 

@@ -20,14 +20,15 @@
 
 #include "Clownfish/Class.h"
 #include "Clownfish/Err.h"
+#include "Clownfish/String.h"
 
 #include "Clownfish/Hash.h"
 #include "Clownfish/HashIterator.h"
 
-static HashTombStone *TOMBSTONE;
+static String *TOMBSTONE;
 
 typedef struct HashEntry {
-    Obj     *key;
+    String  *key;
     Obj     *value;
     int32_t  hash_sum;
 } HashEntry;
@@ -68,7 +69,7 @@ HashIter_Next_IMP(HashIterator *self) {
         else {
             HashEntry *const entry
                 = (HashEntry*)self->hash->entries + self->tick;
-            if (entry->key && entry->key != (Obj*)TOMBSTONE) {
+            if (entry->key && entry->key != TOMBSTONE) {
                 // Success.
                 return true;
             }
@@ -76,7 +77,7 @@ HashIter_Next_IMP(HashIterator *self) {
     }
 }
 
-Obj*
+String*
 HashIter_Get_Key_IMP(HashIterator *self) {
     if (self->capacity != self->hash->capacity) {
         THROW(ERR, "Hash modified during iteration.");
@@ -90,7 +91,7 @@ HashIter_Get_Key_IMP(HashIterator *self) {
 
     HashEntry *const entry
         = (HashEntry*)self->hash->entries + self->tick;
-    if (entry->key == (Obj*)TOMBSTONE) {
+    if (entry->key == TOMBSTONE) {
         THROW(ERR, "Hash modified during iteration.");
     }
     return entry->key;

@@ -100,7 +100,6 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
         if (spec->klass == &CLASS
             || spec->klass == &METHOD
             || spec->klass == &BOOLNUM
-            || spec->klass == &HASHTOMBSTONE
             || spec->klass == &STRING
             || spec->klass == &STACKSTRING
             || spec->klass == &LOCKFREEREGISTRY
@@ -284,14 +283,14 @@ Class_singleton(String *class_name, Class *parent) {
             Hash *meths = Hash_new(num_fresh);
             for (uint32_t i = 0; i < num_fresh; i++) {
                 String *meth = (String*)VA_Fetch(fresh_host_methods, i);
-                Hash_Store(meths, (Obj*)meth, (Obj*)CFISH_TRUE);
+                Hash_Store(meths, meth, (Obj*)CFISH_TRUE);
             }
             for (Class *klass = parent; klass; klass = klass->parent) {
                 for (size_t i = 0; klass->methods[i]; i++) {
                     Method *method = klass->methods[i];
                     if (method->callback_func) {
                         String *name = Method_Host_Name(method);
-                        if (Hash_Fetch(meths, (Obj*)name)) {
+                        if (Hash_Fetch(meths, name)) {
                             Class_Override(singleton, method->callback_func,
                                             method->offset);
                         }

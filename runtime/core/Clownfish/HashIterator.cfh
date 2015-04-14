@@ -37,7 +37,7 @@ class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
     public bool
     Next(HashIterator *self);
 
-    public Obj*
+    public String*
     Get_Key(HashIterator *self);
 
     public nullable Obj*
