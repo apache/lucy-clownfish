@@ -112,6 +112,8 @@ Hash_Clear_IMP(Hash *self) {
     }
 
     self->size = 0;
+    // All tombstones were removed, reset threshold.
+    self->threshold = (self->capacity / 3) * 2;
 }
 
 void
