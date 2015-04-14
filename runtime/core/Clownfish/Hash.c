@@ -121,9 +121,9 @@ Hash_Clear_IMP(Hash *self) {
     self->threshold = (self->capacity / 3) * 2;
 }
 
-void
-Hash_do_store(Hash *self, String *key, Obj *value,
-              int32_t hash_sum, bool use_this_key) {
+static void
+S_do_store(Hash *self, String *key, Obj *value, int32_t hash_sum,
+           bool incref_key) {
     HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
     if (entry) {
         DECREF(entry->value);
@@ -145,9 +145,9 @@ Hash_do_store(Hash *self, String *key, Obj *value,
                 // Take note of diminished tombstone clutter.
                 self->threshold++;
             }
-            entry->key       = use_this_key
-                               ? key
-                               : Hash_Make_Key(self, key, hash_sum);
+            entry->key       = incref_key
+                               ? (String*)INCREF(key)
+                               : key;
             entry->value     = value;
             entry->hash_sum  = hash_sum;
             self->size++;
@@ -159,21 +159,13 @@ Hash_do_store(Hash *self, String *key, Obj *value,
 
 void
 Hash_Store_IMP(Hash *self, String *key, Obj *value) {
-    Hash_do_store(self, key, value, Str_Hash_Sum(key), false);
+    S_do_store(self, key, value, Str_Hash_Sum(key), true);
 }
 
 void
 Hash_Store_Utf8_IMP(Hash *self, const char *key, size_t key_len, Obj *value) {
     StackString *key_buf = SSTR_WRAP_UTF8((char*)key, key_len);
-    Hash_do_store(self, (String*)key_buf, value,
-                  SStr_Hash_Sum(key_buf), false);
-}
-
-String*
-Hash_Make_Key_IMP(Hash *self, String *key, int32_t hash_sum) {
-    UNUSED_VAR(self);
-    UNUSED_VAR(hash_sum);
-    return Str_Clone(key);
+    S_do_store(self, (String*)key_buf, value, SStr_Hash_Sum(key_buf), true);
 }
 
 Obj*
@@ -347,8 +339,7 @@ SI_rebuild_hash(Hash *self) {
         if (!entry->key || entry->key == TOMBSTONE) {
             continue;
         }
-        Hash_do_store(self, entry->key, entry->value,
-                      entry->hash_sum, true);
+        S_do_store(self, entry->key, entry->value, entry->hash_sum, false);
     }
 
     FREEMEM(old_entries);

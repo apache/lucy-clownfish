@@ -112,13 +112,6 @@ class Clownfish::Hash inherits Clownfish::Obj {
     incremented VArray*
     Values(Hash *self);
 
-    /** Create a key to be stored within the hash entry.  Implementations must
-     * supply an object which produces the same [](cfish:Obj.Hash_Sum) value and tests
-     * true for [](cfish:Obj.Equals).  By default, calls [](cfish:Obj.Clone).
-     */
-    public incremented String*
-    Make_Key(Hash *self, String *key, int32_t hash_sum);
-
     uint32_t
     Get_Capacity(Hash *self);
 
