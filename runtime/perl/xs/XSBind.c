@@ -336,13 +336,8 @@ S_cfish_array_to_perl_array(pTHX_ cfish_VArray *varray) {
 static SV*
 S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash) {
     HV *perl_hash = newHV();
-    SV *key_sv    = newSV(1);
     cfish_String *key;
-    cfish_Obj     *val;
-
-    // Prepare the SV key.
-    SvPOK_on(key_sv);
-    SvUTF8_on(key_sv);
+    cfish_Obj    *val;
 
     // Iterate over key-value pairs.
     CFISH_Hash_Iterate(hash);
@@ -350,14 +345,12 @@ S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash) {
         // Recurse for each value.
         SV *val_sv = XSBind_cfish_to_perl(aTHX_ val);
 
-        STRLEN key_size = CFISH_Str_Get_Size(key);
-        char *key_sv_ptr = SvGROW(key_sv, key_size + 1);
-        memcpy(key_sv_ptr, CFISH_Str_Get_Ptr8(key), key_size);
-        SvCUR_set(key_sv, key_size);
-        *SvEND(key_sv) = '\0';
-        (void)hv_store_ent(perl_hash, key_sv, val_sv, 0);
+        const char *key_ptr  = CFISH_Str_Get_Ptr8(key);
+        I32         key_size = CFISH_Str_Get_Size(key);
+        // Using a negative `klen` argument to signal UTF-8 is undocumented
+        // in older Perl versions but works since 5.8.0.
+        hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
     }
-    SvREFCNT_dec(key_sv);
 
     return newRV_noinc((SV*)perl_hash);
 }
