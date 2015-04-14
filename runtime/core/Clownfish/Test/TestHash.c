@@ -221,14 +221,46 @@ test_stress(TestBatchRunner *runner) {
     DECREF(hash);
 }
 
+static void
+test_store_skips_tombstone(TestBatchRunner *runner) {
+    Hash *hash = Hash_new(0);
+    uint32_t mask = Hash_Get_Capacity(hash) - 1;
+
+    String *one = Str_newf("one");
+    uint32_t slot = Str_Hash_Sum(one) & mask;
+
+    // Find a colliding key.
+    String *two = NULL;
+    for (int i = 0; i < 100000; i++) {
+        two = Str_newf("%i32", i);
+        if (slot == (Str_Hash_Sum(two) & mask)) {
+            break;
+        }
+        DECREF(two);
+        two = NULL;
+    }
+
+    Hash_Store(hash, (Obj*)one, (Obj*)CFISH_TRUE);
+    Hash_Store(hash, (Obj*)two, (Obj*)CFISH_TRUE);
+    Hash_Delete(hash, (Obj*)one);
+    Hash_Store(hash, (Obj*)two, (Obj*)CFISH_TRUE);
+
+    TEST_INT_EQ(runner, Hash_Get_Size(hash), 1, "Store skips tombstone");
+
+    DECREF(one);
+    DECREF(two);
+    DECREF(hash);
+}
+
 void
 TestHash_Run_IMP(TestHash *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 27);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 28);
     srand((unsigned int)time((time_t*)NULL));
     test_Equals(runner);
     test_Store_and_Fetch(runner);
     test_Keys_Values_Iter(runner);
     test_stress(runner);
+    test_store_skips_tombstone(runner);
 }
 
 

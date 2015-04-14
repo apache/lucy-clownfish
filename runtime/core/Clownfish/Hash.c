@@ -117,6 +117,13 @@ Hash_Clear_IMP(Hash *self) {
 void
 Hash_do_store(Hash *self, Obj *key, Obj *value,
               int32_t hash_sum, bool use_this_key) {
+    HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
+    if (entry) {
+        DECREF(entry->value);
+        entry->value = value;
+        return;
+    }
+
     HashEntry *entries = self->size >= self->threshold
                          ? SI_rebuild_hash(self)
                          : (HashEntry*)self->entries;
@@ -137,13 +144,6 @@ Hash_do_store(Hash *self, Obj *key, Obj *value,
             entry->value     = value;
             entry->hash_sum  = hash_sum;
             self->size++;
-            break;
-        }
-        else if (entry->hash_sum == hash_sum
-                 && Obj_Equals(key, entry->key)
-                ) {
-            DECREF(entry->value);
-            entry->value = value;
             break;
         }
         tick++; // linear scan
