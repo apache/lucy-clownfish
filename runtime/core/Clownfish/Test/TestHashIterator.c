@@ -129,10 +129,12 @@ test_Get_Key_and_Get_Value(TestBatchRunner *runner) {
     Err *get_key_error = Err_trap(S_invoke_Get_Key, iter);
     TEST_TRUE(runner, get_key_error != NULL,
               "Get_Key throws exception before first call to Next.");
+    DECREF(get_key_error);
 
     Err *get_value_error = Err_trap(S_invoke_Get_Value, iter);
     TEST_TRUE(runner, get_value_error != NULL,
               "Get_Value throws exception before first call to Next.");
+    DECREF(get_value_error);
 
     HashIter_Next(iter);
     TEST_TRUE(runner, HashIter_Get_Key(iter), "Get_Key during iteration.");
@@ -202,6 +204,7 @@ test_tombstone(TestBatchRunner *runner) {
         TEST_TRUE(runner, !HashIter_Next(iter), "Next advances past tombstones.");
 
         DECREF(iter);
+        DECREF(hash);
     }
 
     {
@@ -221,6 +224,7 @@ test_tombstone(TestBatchRunner *runner) {
 
         DECREF(str);
         DECREF(iter);
+        DECREF(hash);
     }
 }
 
