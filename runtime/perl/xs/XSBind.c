@@ -23,6 +23,7 @@
 #include "charmony.h"
 #include "XSBind.h"
 #include "Clownfish/CharBuf.h"
+#include "Clownfish/HashIterator.h"
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Method.h"
 #include "Clownfish/Test/TestThreads.h"
@@ -336,22 +337,24 @@ S_cfish_array_to_perl_array(pTHX_ cfish_VArray *varray) {
 static SV*
 S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash) {
     HV *perl_hash = newHV();
-    cfish_String *key;
-    cfish_Obj    *val;
+    cfish_HashIterator *iter = cfish_HashIter_new(hash);
 
     // Iterate over key-value pairs.
-    CFISH_Hash_Iterate(hash);
-    while (CFISH_Hash_Next(hash, &key, &val)) {
-        // Recurse for each value.
-        SV *val_sv = XSBind_cfish_to_perl(aTHX_ val);
+    while (CFISH_HashIter_Next(iter)) {
+        cfish_String *key      = CFISH_HashIter_Get_Key(iter);
+        const char   *key_ptr  = CFISH_Str_Get_Ptr8(key);
+        I32           key_size = CFISH_Str_Get_Size(key);
 
-        const char *key_ptr  = CFISH_Str_Get_Ptr8(key);
-        I32         key_size = CFISH_Str_Get_Size(key);
+        // Recurse for each value.
+        cfish_Obj *val    = CFISH_HashIter_Get_Value(iter);
+        SV        *val_sv = XSBind_cfish_to_perl(aTHX_ val);
+
         // Using a negative `klen` argument to signal UTF-8 is undocumented
         // in older Perl versions but works since 5.8.0.
         hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
     }
 
+    CFISH_DECREF(iter);
     return newRV_noinc((SV*)perl_hash);
 }
 
