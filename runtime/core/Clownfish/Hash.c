@@ -269,40 +269,52 @@ Hash_Find_Key_IMP(Hash *self, String *key, int32_t hash_sum) {
 
 VArray*
 Hash_Keys_IMP(Hash *self) {
-    String *key;
-    Obj    *val;
-    VArray *keys = VA_new(self->size);
-    Hash_Iterate(self);
-    while (Hash_Next(self, &key, &val)) {
-        VA_Push(keys, INCREF(key));
+    VArray    *keys        = VA_new(self->size);
+    HashEntry *entry       = (HashEntry*)self->entries;
+    HashEntry *const limit = entry + self->capacity;
+
+    for (; entry < limit; entry++) {
+        if (entry->key && entry->key != TOMBSTONE) {
+            VA_Push(keys, INCREF(entry->key));
+        }
     }
+
     return keys;
 }
 
 VArray*
 Hash_Values_IMP(Hash *self) {
-    String *key;
-    Obj    *val;
-    VArray *values = VA_new(self->size);
-    Hash_Iterate(self);
-    while (Hash_Next(self, &key, &val)) { VA_Push(values, INCREF(val)); }
+    VArray    *values      = VA_new(self->size);
+    HashEntry *entry       = (HashEntry*)self->entries;
+    HashEntry *const limit = entry + self->capacity;
+
+    for (; entry < limit; entry++) {
+        if (entry->key && entry->key != TOMBSTONE) {
+            VA_Push(values, INCREF(entry->value));
+        }
+    }
+
     return values;
 }
 
 bool
 Hash_Equals_IMP(Hash *self, Obj *other) {
     Hash    *twin = (Hash*)other;
-    String  *key;
-    Obj     *val;
 
     if (twin == self)             { return true; }
     if (!Obj_Is_A(other, HASH))   { return false; }
     if (self->size != twin->size) { return false; }
 
-    Hash_Iterate(self);
-    while (Hash_Next(self, &key, &val)) {
-        Obj *other_val = Hash_Fetch(twin, key);
-        if (!other_val || !Obj_Equals(other_val, val)) { return false; }
+    HashEntry *entry       = (HashEntry*)self->entries;
+    HashEntry *const limit = entry + self->capacity;
+
+    for (; entry < limit; entry++) {
+        if (entry->key && entry->key != TOMBSTONE) {
+            Obj *other_val = Hash_Fetch(twin, entry->key);
+            if (!other_val || !Obj_Equals(other_val, entry->value)) {
+                return false;
+            }
+        }
     }
 
     return true;
