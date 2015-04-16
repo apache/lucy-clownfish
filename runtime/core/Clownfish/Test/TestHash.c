@@ -129,7 +129,7 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
 }
 
 static void
-test_Keys_Values_Iter(TestBatchRunner *runner) {
+test_Keys_Values(TestBatchRunner *runner) {
     Hash     *hash     = Hash_new(0); // trigger multiple rebuilds.
     VArray   *expected = VA_new(100);
     VArray   *keys;
@@ -151,21 +151,6 @@ test_Keys_Values_Iter(TestBatchRunner *runner) {
     TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values");
     VA_Clear(keys);
     VA_Clear(values);
-
-    {
-        String *key;
-        Obj    *value;
-        Hash_Iterate(hash);
-        while (Hash_Next(hash, &key, &value)) {
-            VA_Push(keys, INCREF(key));
-            VA_Push(values, INCREF(value));
-        }
-    }
-
-    VA_Sort(keys, NULL, NULL);
-    VA_Sort(values, NULL, NULL);
-    TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "Keys from Iter");
-    TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values from Iter");
 
     {
         StackString *forty = SSTR_WRAP_UTF8("40", 2);
@@ -254,11 +239,11 @@ test_store_skips_tombstone(TestBatchRunner *runner) {
 
 void
 TestHash_Run_IMP(TestHash *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 28);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 26);
     srand((unsigned int)time((time_t*)NULL));
     test_Equals(runner);
     test_Store_and_Fetch(runner);
-    test_Keys_Values_Iter(runner);
+    test_Keys_Values(runner);
     test_stress(runner);
     test_store_skips_tombstone(runner);
 }

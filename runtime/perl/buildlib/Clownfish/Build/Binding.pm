@@ -266,7 +266,6 @@ END_XS_CODE
 sub bind_hash {
     my @hand_rolled = qw(
         Store
-        Next
     );
 
     my $xs_code = <<'END_XS_CODE';
@@ -288,27 +287,6 @@ PPCODE:
 {
     if (value) { CFISH_INCREF(value); }
     CFISH_Hash_Store_IMP(self, key, value);
-}
-
-void
-next(self)
-    cfish_Hash *self;
-PPCODE:
-{
-    cfish_String *key;
-    cfish_Obj    *val;
-
-    if (CFISH_Hash_Next(self, &key, &val)) {
-        SV *key_sv = (SV*)CFISH_Str_To_Host(key);
-        SV *val_sv = (SV*)CFISH_Obj_To_Host(val);
-
-        XPUSHs(sv_2mortal(key_sv));
-        XPUSHs(sv_2mortal(val_sv));
-        XSRETURN(2);
-    }
-    else {
-        XSRETURN_EMPTY;
-    }
 }
 END_XS_CODE
 

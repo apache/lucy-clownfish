@@ -40,10 +40,6 @@ typedef struct HashEntry {
     int32_t  hash_sum;
 } HashEntry;
 
-// Reset the iterator.  Hash_Iterate must be called to restart iteration.
-static CFISH_INLINE void
-SI_kill_iter(Hash *self);
-
 // Return the entry associated with the key, if any.
 static CFISH_INLINE HashEntry*
 SI_fetch_entry(Hash *self, String *key, int32_t hash_sum);
@@ -78,7 +74,6 @@ Hash_init(Hash *self, uint32_t capacity) {
 
     // Init.
     self->size         = 0;
-    self->iter_tick    = -1;
 
     // Derive.
     self->capacity     = capacity;
@@ -227,40 +222,6 @@ Hash_Delete_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
     return Hash_Delete_IMP(self, (String*)key_buf);
 }
 
-uint32_t
-Hash_Iterate_IMP(Hash *self) {
-    SI_kill_iter(self);
-    return self->size;
-}
-
-static CFISH_INLINE void
-SI_kill_iter(Hash *self) {
-    self->iter_tick = -1;
-}
-
-bool
-Hash_Next_IMP(Hash *self, String **key, Obj **value) {
-    while (1) {
-        if (++self->iter_tick >= (int32_t)self->capacity) {
-            // Bail since we've completed the iteration.
-            --self->iter_tick;
-            *key   = NULL;
-            *value = NULL;
-            return false;
-        }
-        else {
-            HashEntry *const entry
-                = (HashEntry*)self->entries + self->iter_tick;
-            if (entry->key && entry->key != TOMBSTONE) {
-                // Success!
-                *key   = entry->key;
-                *value = entry->value;
-                return true;
-            }
-        }
-    }
-}
-
 String*
 Hash_Find_Key_IMP(Hash *self, String *key, int32_t hash_sum) {
     HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
@@ -341,7 +302,6 @@ SI_rebuild_hash(Hash *self) {
     HashEntry *entry       = old_entries;
     HashEntry *limit       = old_entries + self->capacity;
 
-    SI_kill_iter(self);
     self->capacity *= 2;
     self->threshold = (self->capacity / 3) * 2;
     self->entries   = (HashEntry*)CALLOCATE(self->capacity, sizeof(HashEntry));

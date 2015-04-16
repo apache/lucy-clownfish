@@ -27,7 +27,6 @@ class Clownfish::Hash inherits Clownfish::Obj {
     uint32_t       capacity;
     uint32_t       size;
     uint32_t       threshold;    /* rehashing trigger point */
-    int32_t        iter_tick;    /* used when iterating */
 
     inert void
     init_class();
@@ -79,22 +78,6 @@ class Clownfish::Hash inherits Clownfish::Obj {
 
     incremented nullable Obj*
     Delete_Utf8(Hash *self, const char *key, size_t key_ley);
-
-    /** Prepare to iterate over all the key-value pairs in the hash.
-     *
-     * @return the number of pairs which will be iterated over.
-     */
-    uint32_t
-    Iterate(Hash *self);
-
-    /** Retrieve the next key-value pair from the hash, setting the supplied
-     * pointers to point at them.
-     *
-     * @return true while iterating, false when the iterator has been
-     * exhausted.
-     */
-    bool
-    Next(Hash *self, String **key, Obj **value);
 
     /** Search for a key which Equals the key supplied, and return the key
      * rather than its value.
