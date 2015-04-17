@@ -21,7 +21,7 @@ parcel Clownfish;
  *
  * Values are stored by reference and may be any kind of Obj.
  */
-class Clownfish::Hash inherits Clownfish::Obj {
+public class Clownfish::Hash inherits Clownfish::Obj {
 
     void          *entries;
     uint32_t       capacity;
@@ -31,14 +31,14 @@ class Clownfish::Hash inherits Clownfish::Obj {
     inert void
     init_class();
 
-    inert incremented Hash*
+    public inert incremented Hash*
     new(uint32_t capacity = 0);
 
     /**
      * @param capacity The number of elements that the hash will be asked to
      * hold initially.
      */
-    inert Hash*
+    public inert Hash*
     init(Hash *self, uint32_t capacity = 0);
 
     inert String*
@@ -46,15 +46,15 @@ class Clownfish::Hash inherits Clownfish::Obj {
 
     /** Empty the hash of all key-value pairs.
      */
-    void
+    public void
     Clear(Hash *self);
 
     /** Store a key-value pair.
      */
-    void
+    public void
     Store(Hash *self, String *key, decremented Obj *value);
 
-    void
+    public void
     Store_Utf8(Hash *self, const char *str, size_t len,
                decremented Obj *value);
 
@@ -62,10 +62,10 @@ class Clownfish::Hash inherits Clownfish::Obj {
      *
      * @return the value, or NULL if `key` is not present.
      */
-    nullable Obj*
+    public nullable Obj*
     Fetch(Hash *self, String *key);
 
-    nullable Obj*
+    public nullable Obj*
     Fetch_Utf8(Hash *self, const char *key, size_t key_len);
 
     /** Attempt to delete a key-value pair from the hash.
@@ -73,11 +73,11 @@ class Clownfish::Hash inherits Clownfish::Obj {
      * @return the value if `key` exists and thus deletion
      * succeeds; otherwise NULL.
      */
-    incremented nullable Obj*
+    public incremented nullable Obj*
     Delete(Hash *self, String *key);
 
-    incremented nullable Obj*
-    Delete_Utf8(Hash *self, const char *key, size_t key_ley);
+    public incremented nullable Obj*
+    Delete_Utf8(Hash *self, const char *key, size_t key_len);
 
     /** Search for a key which Equals the key supplied, and return the key
      * rather than its value.
@@ -87,12 +87,12 @@ class Clownfish::Hash inherits Clownfish::Obj {
 
     /** Return an VArray of pointers to the hash's keys.
      */
-    incremented VArray*
+    public incremented VArray*
     Keys(Hash *self);
 
     /** Return an VArray of pointers to the hash's values.
      */
-    incremented VArray*
+    public incremented VArray*
     Values(Hash *self);
 
     uint32_t
