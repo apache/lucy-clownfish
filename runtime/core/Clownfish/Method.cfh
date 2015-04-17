@@ -26,15 +26,15 @@ final class Clownfish::Method inherits Clownfish::Obj {
     String         *host_alias;
     String         *host_alias_internal;
     cfish_method_t  callback_func;
-    size_t          offset;
+    uint32_t        offset;
     bool            is_excluded;
 
     inert Method*
-    new(String *name, cfish_method_t callback_func, size_t offset);
+    new(String *name, cfish_method_t callback_func, uint32_t offset);
 
     inert Method*
     init(Method *self, String *name, cfish_method_t callback_func,
-         size_t offset);
+         uint32_t offset);
 
     String*
     Get_Name(Method *self);

@@ -70,12 +70,12 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         const ClassSpec *spec = &specs[i];
         Class *parent = spec->parent ? *spec->parent : NULL;
 
-        size_t novel_offset = parent
-                              ? parent->class_alloc_size
-                              : offsetof(Class, vtable);
-        size_t class_alloc_size = novel_offset
-                                  + spec->num_novel_meths
-                                    * sizeof(cfish_method_t);
+        uint32_t novel_offset = parent
+                                ? parent->class_alloc_size
+                                : offsetof(Class, vtable);
+        uint32_t class_alloc_size = novel_offset
+                                    + spec->num_novel_meths
+                                      * sizeof(cfish_method_t);
 
         Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
 
@@ -128,12 +128,12 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         // recalculated.
         Class_Init_Obj_IMP(CLASS, klass);
 
-        size_t novel_offset = parent
-                              ? parent->class_alloc_size
-                              : offsetof(Class, vtable);
-        size_t class_alloc_size = novel_offset
-                                  + spec->num_novel_meths
-                                    * sizeof(cfish_method_t);
+        uint32_t novel_offset = parent
+                                ? parent->class_alloc_size
+                                : offsetof(Class, vtable);
+        uint32_t class_alloc_size = novel_offset
+                                    + spec->num_novel_meths
+                                      * sizeof(cfish_method_t);
 
         klass->parent           = parent;
         klass->parcel_id        = parcel_id;
@@ -161,8 +161,8 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
 
         if (parent) {
             // Copy parent vtable.
-            size_t parent_vt_size = parent->class_alloc_size
-                                    - offsetof(Class, vtable);
+            uint32_t parent_vt_size = parent->class_alloc_size
+                                      - offsetof(Class, vtable);
             memcpy(klass->vtable, parent->vtable, parent_vt_size);
         }
 
@@ -224,7 +224,7 @@ Class_Destroy_IMP(Class *self) {
 }
 
 void
-Class_Override_IMP(Class *self, cfish_method_t method, size_t offset) {
+Class_Override_IMP(Class *self, cfish_method_t method, uint32_t offset) {
     union { char *char_ptr; cfish_method_t *func_ptr; } pointer;
     pointer.char_ptr = ((char*)self) + offset;
     pointer.func_ptr[0] = method;

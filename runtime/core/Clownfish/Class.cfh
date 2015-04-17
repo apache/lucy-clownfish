@@ -31,7 +31,7 @@ final class Clownfish::Class inherits Clownfish::Obj {
     uint32_t            flags;
     int32_t             parcel_id;
     size_t              obj_alloc_size;
-    size_t              class_alloc_size;
+    uint32_t            class_alloc_size;
     Method            **methods;
     cfish_method_t[1]   vtable; /* flexible array */
 
@@ -97,7 +97,7 @@ final class Clownfish::Class inherits Clownfish::Obj {
     /** Replace a function pointer in the Class's vtable.
      */
     void
-    Override(Class *self, cfish_method_t method_ptr, size_t offset);
+    Override(Class *self, cfish_method_t method_ptr, uint32_t offset);
 
     /** Create an empty object of the type defined by the Class: allocate,
      * assign its class and give it an initial refcount of 1.  The caller is

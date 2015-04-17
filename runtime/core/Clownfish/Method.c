@@ -23,14 +23,14 @@
 #include "Clownfish/Class.h"
 
 Method*
-Method_new(String *name, cfish_method_t callback_func, size_t offset) {
+Method_new(String *name, cfish_method_t callback_func, uint32_t offset) {
     Method *self = (Method*)Class_Make_Obj(METHOD);
     return Method_init(self, name, callback_func, offset);
 }
 
 Method*
 Method_init(Method *self, String *name, cfish_method_t callback_func,
-            size_t offset) {
+            uint32_t offset) {
     /* The `name` member which Method exposes via the `Get_Name` accessor uses
      * a "wrapped" string because that is effectively threadsafe: an INCREF
      * results in a copy and the only reference is owned by an immortal

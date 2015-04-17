@@ -127,7 +127,7 @@ S_method_def(CFCMethod *method, CFCClass *klass, int optimized_final_meth) {
     }
 
     const char pattern[] =
-        "extern %sVISIBLE size_t %s;\n"
+        "extern %sVISIBLE uint32_t %s;\n"
         "static CFISH_INLINE %s\n"
         "%s(%s%s) {\n"
         "%s"

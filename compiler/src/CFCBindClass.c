@@ -293,7 +293,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
 
         // Define method offset variable.
         char *full_offset_sym = CFCMethod_full_offset_sym(method, client);
-        offsets = CFCUtil_cat(offsets, "size_t ", full_offset_sym, ";\n",
+        offsets = CFCUtil_cat(offsets, "uint32_t ", full_offset_sym, ";\n",
                               NULL);
         FREEMEM(full_offset_sym);
 
