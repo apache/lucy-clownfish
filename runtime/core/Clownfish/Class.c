@@ -42,7 +42,7 @@
 #define InheritedMethSpec        cfish_InheritedMethSpec
 #define ClassSpec                cfish_ClassSpec
 
-size_t Class_offset_of_parent = offsetof(Class, parent);
+uint32_t Class_offset_of_parent = offsetof(Class, parent);
 
 static void
 S_set_name(Class *self, const char *utf8, size_t size);
@@ -109,7 +109,7 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         Class *klass  = *spec->klass;
         Class *parent = spec->parent ? *spec->parent : NULL;
 
-        size_t ivars_offset = 0;
+        uint32_t ivars_offset = 0;
         if (spec->ivars_offset_ptr != NULL) {
             if (parent) {
                 Class *ancestor = parent;
@@ -240,7 +240,7 @@ Class_Get_Parent_IMP(Class *self) {
     return self->parent;
 }
 
-size_t
+uint32_t
 Class_Get_Obj_Alloc_Size_IMP(Class *self) {
     return self->obj_alloc_size;
 }

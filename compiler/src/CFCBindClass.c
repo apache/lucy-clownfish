@@ -164,7 +164,7 @@ S_ivars_func(CFCBindClass *self) {
     const char *full_offset  = CFCClass_full_ivars_offset(client);
     const char *PREFIX       = CFCClass_get_PREFIX(client);
     char pattern[] =
-        "extern size_t %s;\n"
+        "extern uint32_t %s;\n"
         "typedef struct %s %s;\n"
         "static CFISH_INLINE %s*\n"
         "%s(%s *self) {\n"
@@ -312,7 +312,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
         " * can be found.\n"
         " */\n"
         "\n"
-        "size_t %s;\n"
+        "uint32_t %s;\n"
         "\n"
         "/* Offsets for method pointers, measured in bytes, from the top\n"
         " * of this class's singleton object.\n"

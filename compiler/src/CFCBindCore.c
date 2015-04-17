@@ -226,7 +226,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "     ((_full_meth ## _t)cfish_super_method(_class, \\\n"
         "                                           _full_meth ## _OFFSET))\n"
         "\n"
-        "extern CFISH_VISIBLE size_t cfish_Class_offset_of_parent;\n"
+        "extern CFISH_VISIBLE uint32_t cfish_Class_offset_of_parent;\n"
         "static CFISH_INLINE cfish_method_t\n"
         "cfish_super_method(const void *klass, uint32_t offset) {\n"
         "    char *class_as_char = (char*)klass;\n"
