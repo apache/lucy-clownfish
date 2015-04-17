@@ -33,7 +33,10 @@ TestLFReg_new() {
 
 StupidHashString*
 StupidHashString_new(const char *text) {
-    return (StupidHashString*)Str_new_from_utf8(text, strlen(text));
+    StupidHashString *self
+        = (StupidHashString*)Class_Make_Obj(STUPIDHASHSTRING);
+    return (StupidHashString*)Str_init_from_trusted_utf8((String*)self, text,
+                                                         strlen(text));
 }
 
 int32_t
