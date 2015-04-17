@@ -31,13 +31,13 @@ TestLFReg_new() {
     return (TestLockFreeRegistry*)Class_Make_Obj(TESTLOCKFREEREGISTRY);
 }
 
-StupidHashCharBuf*
-StupidHashCharBuf_new(const char *text) {
-    return (StupidHashCharBuf*)Str_new_from_utf8(text, strlen(text));
+StupidHashString*
+StupidHashString_new(const char *text) {
+    return (StupidHashString*)Str_new_from_utf8(text, strlen(text));
 }
 
 int32_t
-StupidHashCharBuf_Hash_Sum_IMP(StupidHashCharBuf *self) {
+StupidHashString_Hash_Sum_IMP(StupidHashString *self) {
     UNUSED_VAR(self);
     return 1;
 }
@@ -45,10 +45,10 @@ StupidHashCharBuf_Hash_Sum_IMP(StupidHashCharBuf *self) {
 static void
 test_all(TestBatchRunner *runner) {
     LockFreeRegistry *registry = LFReg_new(10);
-    StupidHashCharBuf *foo = StupidHashCharBuf_new("foo");
-    StupidHashCharBuf *bar = StupidHashCharBuf_new("bar");
-    StupidHashCharBuf *baz = StupidHashCharBuf_new("baz");
-    StupidHashCharBuf *foo_dupe = StupidHashCharBuf_new("foo");
+    StupidHashString *foo = StupidHashString_new("foo");
+    StupidHashString *bar = StupidHashString_new("bar");
+    StupidHashString *baz = StupidHashString_new("baz");
+    StupidHashString *foo_dupe = StupidHashString_new("foo");
 
     TEST_TRUE(runner, LFReg_Register(registry, (String*)foo, (Obj*)foo),
               "Register() returns true on success");

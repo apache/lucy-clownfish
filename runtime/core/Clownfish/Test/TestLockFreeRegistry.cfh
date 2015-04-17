@@ -28,13 +28,13 @@ class Clownfish::Test::TestLockFreeRegistry nickname TestLFReg
 
 /** Private test-only class for stressing LockFreeRegistry.
  */
-class Clownfish::Test::StupidHashCharBuf inherits Clownfish::String {
-    inert incremented StupidHashCharBuf*
+class Clownfish::Test::StupidHashString inherits Clownfish::String {
+    inert incremented StupidHashString*
     new(const char *text);
 
     /** Always returns 1, guaranteeing collisions. */
     public int32_t
-    Hash_Sum(StupidHashCharBuf *self);
+    Hash_Sum(StupidHashString *self);
 }
 
 
