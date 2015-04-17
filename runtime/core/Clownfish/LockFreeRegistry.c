@@ -20,11 +20,12 @@
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Class.h"
+#include "Clownfish/String.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 
 typedef struct cfish_LFRegEntry {
-    Obj *key;
+    String *key;
     Obj *value;
     int32_t hash_sum;
     struct cfish_LFRegEntry *volatile next;
@@ -46,9 +47,9 @@ LFReg_init(LockFreeRegistry *self, size_t capacity) {
 }
 
 bool
-LFReg_Register_IMP(LockFreeRegistry *self, Obj *key, Obj *value) {
+LFReg_Register_IMP(LockFreeRegistry *self, String *key, Obj *value) {
     LFRegEntry  *new_entry = NULL;
-    int32_t      hash_sum  = Obj_Hash_Sum(key);
+    int32_t      hash_sum  = Str_Hash_Sum(key);
     size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
     LFRegEntry  *volatile *entries = (LFRegEntry*volatile*)self->entries;
     LFRegEntry  *volatile *slot    = &(entries[bucket]);
@@ -59,7 +60,7 @@ FIND_END_OF_LINKED_LIST:
     while (*slot) {
         LFRegEntry *entry = *slot;
         if (entry->hash_sum == hash_sum) {
-            if (Obj_Equals(key, entry->key)) {
+            if (Str_Equals(key, (Obj*)entry->key)) {
                 return false;
             }
         }
@@ -70,7 +71,7 @@ FIND_END_OF_LINKED_LIST:
     if (!new_entry) {
         new_entry = (LFRegEntry*)MALLOCATE(sizeof(LFRegEntry));
         new_entry->hash_sum  = hash_sum;
-        new_entry->key       = INCREF(key);
+        new_entry->key       = (String*)INCREF(key);
         new_entry->value     = INCREF(value);
         new_entry->next      = NULL;
     }
@@ -88,15 +89,15 @@ FIND_END_OF_LINKED_LIST:
 }
 
 Obj*
-LFReg_Fetch_IMP(LockFreeRegistry *self, Obj *key) {
-    int32_t      hash_sum  = Obj_Hash_Sum(key);
+LFReg_Fetch_IMP(LockFreeRegistry *self, String *key) {
+    int32_t      hash_sum  = Str_Hash_Sum(key);
     size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
     LFRegEntry **entries   = (LFRegEntry**)self->entries;
     LFRegEntry  *entry     = entries[bucket];
 
     while (entry) {
         if (entry->hash_sum  == hash_sum) {
-            if (Obj_Equals(key, entry->key)) {
+            if (Str_Equals(key, (Obj*)entry->key)) {
                 return entry->value;
             }
         }

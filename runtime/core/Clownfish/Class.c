@@ -250,7 +250,7 @@ Class_singleton(String *class_name, Class *parent) {
         Class_init_registry();
     }
 
-    Class *singleton = (Class*)LFReg_Fetch(Class_registry, (Obj*)class_name);
+    Class *singleton = (Class*)LFReg_Fetch(Class_registry, class_name);
     if (singleton == NULL) {
         VArray *fresh_host_methods;
         uint32_t num_fresh;
@@ -309,7 +309,7 @@ Class_singleton(String *class_name, Class *parent) {
         }
         else {
             DECREF(singleton);
-            singleton = (Class*)LFReg_Fetch(Class_registry, (Obj*)class_name);
+            singleton = (Class*)LFReg_Fetch(Class_registry, class_name);
             if (!singleton) {
                 THROW(ERR, "Failed to either insert or fetch Class for '%o'",
                       class_name);
@@ -325,13 +325,12 @@ Class_add_to_registry(Class *klass) {
     if (Class_registry == NULL) {
         Class_init_registry();
     }
-    if (LFReg_Fetch(Class_registry, (Obj*)klass->name)) {
+    if (LFReg_Fetch(Class_registry, klass->name)) {
         return false;
     }
     else {
         String *class_name = Str_Clone(klass->name);
-        bool retval
-            = LFReg_Register(Class_registry, (Obj*)class_name, (Obj*)klass);
+        bool retval = LFReg_Register(Class_registry, class_name, (Obj*)klass);
         DECREF(class_name);
         return retval;
     }
@@ -344,13 +343,12 @@ Class_add_alias_to_registry(Class *klass, const char *alias_ptr,
         Class_init_registry();
     }
     StackString *alias = SSTR_WRAP_UTF8(alias_ptr, alias_len);
-    if (LFReg_Fetch(Class_registry, (Obj*)alias)) {
+    if (LFReg_Fetch(Class_registry, (String*)alias)) {
         return false;
     }
     else {
         String *class_name = SStr_Clone(alias);
-        bool retval
-            = LFReg_Register(Class_registry, (Obj*)class_name, (Obj*)klass);
+        bool retval = LFReg_Register(Class_registry, class_name, (Obj*)klass);
         DECREF(class_name);
         return retval;
     }
@@ -360,7 +358,7 @@ Class*
 Class_fetch_class(String *class_name) {
     Class *klass = NULL;
     if (Class_registry != NULL) {
-        klass = (Class*)LFReg_Fetch(Class_registry, (Obj*)class_name);
+        klass = (Class*)LFReg_Fetch(Class_registry, class_name);
     }
     return klass;
 }
