@@ -42,12 +42,6 @@ Obj_Destroy_IMP(Obj *self) {
     FREEMEM(self);
 }
 
-int32_t
-Obj_Hash_Sum_IMP(Obj *self) {
-    int64_t hash_sum = CHY_PTR_TO_I64(self);
-    return (int32_t)hash_sum;
-}
-
 bool
 Obj_Is_A_IMP(Obj *self, Class *ancestor) {
     Class *klass = self ? self->klass : NULL;

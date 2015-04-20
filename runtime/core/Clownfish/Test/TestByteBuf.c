@@ -38,7 +38,6 @@ test_Equals(TestBatchRunner *runner) {
     ByteBuf *got    = BB_new_bytes("foo", 4);
 
     TEST_TRUE(runner, BB_Equals(wanted, (Obj*)got), "Equals");
-    TEST_INT_EQ(runner, BB_Hash_Sum(got), BB_Hash_Sum(wanted), "Hash_Sum");
 
     TEST_TRUE(runner, BB_Equals_Bytes(got, "foo", 4), "Equals_Bytes");
     TEST_FALSE(runner, BB_Equals_Bytes(got, "foo", 3),
@@ -49,8 +48,6 @@ test_Equals(TestBatchRunner *runner) {
     BB_Set_Size(got, 3);
     TEST_FALSE(runner, BB_Equals(wanted, (Obj*)got),
                "Different size spoils Equals");
-    TEST_FALSE(runner, BB_Hash_Sum(got) == BB_Hash_Sum(wanted),
-               "Different size spoils Hash_Sum (probably -- at least this one)");
 
     BB_Mimic_Bytes(got, "bar", 4);
     TEST_INT_EQ(runner, BB_Get_Size(wanted), BB_Get_Size(got),
@@ -144,7 +141,7 @@ test_Cat(TestBatchRunner *runner) {
 
 void
 TestBB_Run_IMP(TestByteBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 21);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 19);
     test_Equals(runner);
     test_Grow(runner);
     test_Clone(runner);

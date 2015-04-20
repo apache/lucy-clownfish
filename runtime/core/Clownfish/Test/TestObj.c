@@ -86,16 +86,6 @@ test_Equals(TestBatchRunner *runner) {
 }
 
 static void
-test_Hash_Sum(TestBatchRunner *runner) {
-    Obj *testobj = S_new_testobj();
-    int64_t address64 = CHY_PTR_TO_I64(testobj);
-    int32_t address32 = (int32_t)address64;
-    TEST_TRUE(runner, (Obj_Hash_Sum(testobj) == address32),
-              "Hash_Sum uses memory address");
-    DECREF(testobj);
-}
-
-static void
 test_Is_A(TestBatchRunner *runner) {
     String *string     = Str_new_from_trusted_utf8("", 0);
     Class  *str_class  = Str_Get_Class(string);
@@ -169,11 +159,10 @@ test_abstract_routines(TestBatchRunner *runner) {
 
 void
 TestObj_Run_IMP(TestObj *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 17);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 16);
     test_refcounts(runner);
     test_To_String(runner);
     test_Equals(runner);
-    test_Hash_Sum(runner);
     test_Is_A(runner);
     test_abstract_routines(runner);
 }

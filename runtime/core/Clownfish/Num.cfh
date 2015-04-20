@@ -83,9 +83,6 @@ class Clownfish::Float32 inherits Clownfish::FloatNum {
     public double
     To_F64(Float32 *self);
 
-    public int32_t
-    Hash_Sum(Float32 *self);
-
     public incremented Float32*
     Clone(Float32 *self);
 
@@ -119,9 +116,6 @@ class Clownfish::Float64 inherits Clownfish::FloatNum {
 
     public double
     To_F64(Float64 *self);
-
-    public int32_t
-    Hash_Sum(Float64 *self);
 
     public incremented Float64*
     Clone(Float64 *self);
@@ -158,9 +152,6 @@ class Clownfish::Integer32 nickname Int32
     public double
     To_F64(Integer32 *self);
 
-    public int32_t
-    Hash_Sum(Integer32 *self);
-
     public incremented Integer32*
     Clone(Integer32 *self);
 
@@ -196,9 +187,6 @@ class Clownfish::Integer64 nickname Int64
 
     public double
     To_F64(Integer64 *self);
-
-    public int32_t
-    Hash_Sum(Integer64 *self);
 
     public bool
     Equals(Integer64 *self, Obj *other);
@@ -247,9 +235,6 @@ class Clownfish::BoolNum nickname Bool inherits Clownfish::IntNum {
 
     public bool
     To_Bool(BoolNum *self);
-
-    public int32_t
-    Hash_Sum(BoolNum *self);
 
     /* Returns self. */
     public incremented BoolNum*

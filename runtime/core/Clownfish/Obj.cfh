@@ -63,11 +63,6 @@ public abstract class Clownfish::Obj {
     public abstract int32_t
     Compare_To(Obj *self, Obj *other);
 
-    /** Return a hash code for the object -- by default, the memory address.
-     */
-    public int32_t
-    Hash_Sum(Obj *self);
-
     /** Return the object's Class.
      */
     public Class*

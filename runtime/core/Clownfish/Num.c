@@ -128,11 +128,6 @@ Float32_To_I64_IMP(Float32 *self) {
     return (int64_t)self->value;
 }
 
-int32_t
-Float32_Hash_Sum_IMP(Float32 *self) {
-    return *(int32_t*)&self->value;
-}
-
 Float32*
 Float32_Clone_IMP(Float32 *self) {
     return Float32_new(self->value);
@@ -189,12 +184,6 @@ Float64_Mimic_IMP(Float64 *self, Obj *other) {
     self->value = twin->value;
 }
 
-int32_t
-Float64_Hash_Sum_IMP(Float64 *self) {
-    int32_t *ints = (int32_t*)&self->value;
-    return ints[0] ^ ints[1];
-}
-
 /***************************************************************************/
 
 Integer32*
@@ -240,11 +229,6 @@ Int32_Mimic_IMP(Integer32 *self, Obj *other) {
     self->value = twin->value;
 }
 
-int32_t
-Int32_Hash_Sum_IMP(Integer32 *self) {
-    return self->value;
-}
-
 /***************************************************************************/
 
 Integer64*
@@ -288,12 +272,6 @@ void
 Int64_Mimic_IMP(Integer64 *self, Obj *other) {
     Integer64 *twin = (Integer64*)CERTIFY(other, INTEGER64);
     self->value = twin->value;
-}
-
-int32_t
-Int64_Hash_Sum_IMP(Integer64 *self) {
-    int32_t *ints = (int32_t*)&self->value;
-    return ints[0] ^ ints[1];
 }
 
 bool
@@ -364,12 +342,6 @@ Bool_To_Bool_IMP(BoolNum *self) {
 BoolNum*
 Bool_Clone_IMP(BoolNum *self) {
     return self;
-}
-
-int32_t
-Bool_Hash_Sum_IMP(BoolNum *self) {
-    int64_t hash_sum = CHY_PTR_TO_I64(self) + self->value;
-    return (int32_t)hash_sum;
 }
 
 String*

@@ -125,18 +125,6 @@ BB_Equals_Bytes_IMP(ByteBuf *self, const void *bytes, size_t size) {
     return SI_equals_bytes(self, bytes, size);
 }
 
-int32_t
-BB_Hash_Sum_IMP(ByteBuf *self) {
-    uint32_t       sum = 5381;
-    uint8_t *const buf = (uint8_t*)self->buf;
-
-    for (size_t i = 0, max = self->size; i < max; i++) {
-        sum = ((sum << 5) + sum) ^ buf[i];
-    }
-
-    return (int32_t)sum;
-}
-
 static CFISH_INLINE void
 SI_mimic_bytes(ByteBuf *self, const void *bytes, size_t size) {
     if (size > self->cap) { S_grow(self, size); }

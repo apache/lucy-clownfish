@@ -122,9 +122,6 @@ class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
 
     public bool
     Equals(ByteBuf *self, Obj *other);
-
-    public int32_t
-    Hash_Sum(ByteBuf *self);
 }
 
 /**
