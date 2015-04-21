@@ -564,7 +564,6 @@ static char*
 S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
     CFCMethod  **fresh_methods = CFCClass_fresh_methods(klass);
     const char  *prefix        = CFCClass_get_prefix(klass);
-    const char  *ancestor_name = CFCClass_get_name(ancestor);
     char        *result        = CFCUtil_strdup("");
 
     for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
@@ -573,8 +572,7 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
             continue;
         }
 
-        const char *class_name = CFCMethod_get_class_name(method);
-        if (strcmp(class_name, ancestor_name) != 0) {
+        if (!CFCMethod_is_fresh(method, ancestor)) {
             // The method is implementated in a subclass and already
             // documented.
             continue;

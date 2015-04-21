@@ -268,7 +268,6 @@ S_to_c_header_dynamic(CFCBindClass *self) {
 char*
 CFCBindClass_to_c_data(CFCBindClass *self) {
     CFCClass *client = self->client;
-    const char *class_name = CFCClass_get_name(client);
 
     if (CFCClass_inert(client)) {
         return CFCUtil_strdup("");
@@ -295,8 +294,7 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
                               NULL);
         FREEMEM(full_offset_sym);
 
-        const char *meth_class_name = CFCMethod_get_class_name(method);
-        int is_fresh = strcmp(class_name, meth_class_name) == 0;
+        int is_fresh = CFCMethod_is_fresh(method, client);
 
         // Create a default implementation for abstract methods.
         if (is_fresh && CFCMethod_abstract(method)) {
@@ -498,9 +496,8 @@ CFCBindClass_spec_def(CFCBindClass *self) {
 
     for (int meth_num = 0; methods[meth_num] != NULL; meth_num++) {
         CFCMethod *method = methods[meth_num];
-        const char *meth_class_name = CFCMethod_get_class_name(method);
 
-        if (strcmp(class_name, meth_class_name) == 0) {
+        if (CFCMethod_is_fresh(method, client)) {
             if (CFCMethod_novel(method)) {
                 ++num_novel;
             }

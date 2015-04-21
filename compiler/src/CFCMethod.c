@@ -385,6 +385,12 @@ CFCMethod_get_class_name(CFCMethod *self) {
 }
 
 int
+CFCMethod_is_fresh(CFCMethod *self, CFCClass *klass) {
+    const char *class_name = CFCClass_get_name(klass);
+    return strcmp(CFCMethod_get_class_name(self), class_name) == 0;
+}
+
+int
 CFCMethod_public(CFCMethod *self) {
     return CFCSymbol_public((CFCSymbol*)self);
 }

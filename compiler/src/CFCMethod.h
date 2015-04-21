@@ -208,6 +208,11 @@ CFCMethod_get_exposure(CFCMethod *self);
 const char*
 CFCMethod_get_class_name(CFCMethod *self);
 
+/** Return true if the method is fresh in `klass`.
+ */
+int
+CFCMethod_is_fresh(CFCMethod *self, struct CFCClass *klass);
+
 int
 CFCMethod_public(CFCMethod *self);
 

@@ -181,7 +181,7 @@ CFCPerlClass_bind_method(CFCPerlClass *self, const char *alias,
         CFCUtil_die("Can't bind_method %s -- can't find method %s in %s",
                     alias, meth_name, self->class_name);
     }
-    if (strcmp(CFCMethod_get_class_name(method), self->class_name) != 0) {
+    if (!CFCMethod_is_fresh(method, self->client)) {
         CFCUtil_die("Can't bind_method %s -- method %s not fresh in %s",
                     alias, meth_name, self->class_name);
     }
@@ -199,7 +199,7 @@ CFCPerlClass_exclude_method(CFCPerlClass *self, const char *meth_name) {
         CFCUtil_die("Can't exclude_method %s -- method not found in %s",
                     meth_name, self->class_name);
     }
-    if (strcmp(CFCMethod_get_class_name(method), self->class_name) != 0) {
+    if (!CFCMethod_is_fresh(method, self->client)) {
         CFCUtil_die("Can't exclude_method %s -- method not fresh in %s",
                     meth_name, self->class_name);
     }
