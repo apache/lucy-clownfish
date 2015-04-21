@@ -257,7 +257,7 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
          * this way allows SUPER:: invocations from Perl-space to work
          * properly.
          */
-        CFCPerlMethod *meth_binding = CFCPerlMethod_new(method);
+        CFCPerlMethod *meth_binding = CFCPerlMethod_new(klass, method);
         size_t size = (num_bound + 2) * sizeof(CFCPerlMethod*);
         bound = (CFCPerlMethod**)REALLOCATE(bound, size);
         bound[num_bound] = meth_binding;

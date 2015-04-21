@@ -94,16 +94,16 @@ static const CFCMeta CFCPERLMETHOD_META = {
 };
 
 CFCPerlMethod*
-CFCPerlMethod_new(CFCMethod *method) {
+CFCPerlMethod_new(CFCClass *klass, CFCMethod *method) {
     CFCPerlMethod *self
         = (CFCPerlMethod*)CFCBase_allocate(&CFCPERLMETHOD_META);
-    return CFCPerlMethod_init(self, method);
+    return CFCPerlMethod_init(self, klass, method);
 }
 
 CFCPerlMethod*
-CFCPerlMethod_init(CFCPerlMethod *self, CFCMethod *method) {
+CFCPerlMethod_init(CFCPerlMethod *self, CFCClass *klass, CFCMethod *method) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
-    const char *class_name = CFCMethod_get_class_name(method);
+    const char *class_name = CFCClass_get_name(klass);
     int use_labeled_params = CFCParamList_num_vars(param_list) > 2
                              ? 1 : 0;
 

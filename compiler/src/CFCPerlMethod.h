@@ -36,13 +36,14 @@ struct CFCClass;
 struct CFCMethod;
 
 CFCPerlMethod*
-CFCPerlMethod_new(struct CFCMethod *method);
+CFCPerlMethod_new(struct CFCClass *klass, struct CFCMethod *method);
 
 /**
  * @param method A Clownfish::CFC::Model::Method.
  */
 CFCPerlMethod*
-CFCPerlMethod_init(CFCPerlMethod *self, struct CFCMethod *method);
+CFCPerlMethod_init(CFCPerlMethod *self, struct CFCClass *klass,
+                   struct CFCMethod *method);
 
 void
 CFCPerlMethod_destroy(CFCPerlMethod *self);
