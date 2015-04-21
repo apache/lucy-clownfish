@@ -31,18 +31,6 @@ struct CFCDocuComment;
 struct CFCParamList;
 struct CFCClass;
 
-#ifdef CFC_NEED_FUNCTION_STRUCT_DEF
-#define CFC_NEED_SYMBOL_STRUCT_DEF
-#include "CFCSymbol.h"
-struct CFCFunction {
-    CFCSymbol symbol;
-    struct CFCType *return_type;
-    struct CFCParamList *param_list;
-    struct CFCDocuComment *docucomment;
-    int is_inline;
-};
-#endif
-
 /**
  * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param exposure The function's exposure (see

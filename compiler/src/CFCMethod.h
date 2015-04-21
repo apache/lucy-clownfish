@@ -41,7 +41,7 @@ struct CFCDocuComment;
 
 /**
  * @param parcel See Clownfish::CFC::Model::Function.
- * @param exposure See Clownfish::CFC::Model::Function.  Defaults to "parcel"
+ * @param exposure See Clownfish::CFC::Model::Symbol.  Defaults to "parcel"
  * if not supplied.
  * @param class_name See Clownfish::CFC::Model::Function.
  * @param class_nickname See Clownfish::CFC::Model::Function.

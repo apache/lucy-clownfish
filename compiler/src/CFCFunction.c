@@ -22,7 +22,8 @@
     #define false 0
 #endif
 
-#define CFC_NEED_FUNCTION_STRUCT_DEF
+#define CFC_NEED_CALLABLE_STRUCT_DEF
+#include "CFCCallable.h"
 #include "CFCFunction.h"
 #include "CFCParcel.h"
 #include "CFCType.h"
@@ -30,6 +31,11 @@
 #include "CFCVariable.h"
 #include "CFCDocuComment.h"
 #include "CFCUtil.h"
+
+struct CFCFunction {
+    CFCCallable callable;
+    int is_inline;
+};
 
 static const CFCMeta CFCFUNCTION_META = {
     "Clownfish::CFC::Model::Function",
@@ -67,72 +73,45 @@ CFCFunction_init(CFCFunction *self, CFCParcel *parcel, const char *exposure,
                  CFCParamList *param_list, CFCDocuComment *docucomment,
                  int is_inline) {
 
-    exposure = exposure ? exposure : "parcel";
-    CFCUTIL_NULL_CHECK(class_name);
-    CFCUTIL_NULL_CHECK(return_type);
-    CFCUTIL_NULL_CHECK(param_list);
     if (!S_validate_micro_sym(micro_sym)) {
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid micro_sym: '%s'", micro_sym);
     }
-    CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name,
-                   class_nickname, micro_sym);
-    self->return_type = (CFCType*)CFCBase_incref((CFCBase*)return_type);
-    self->param_list  = (CFCParamList*)CFCBase_incref((CFCBase*)param_list);
-    self->docucomment = (CFCDocuComment*)CFCBase_incref((CFCBase*)docucomment);
-    self->is_inline   = is_inline;
+    CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name,
+                     class_nickname, micro_sym, return_type, param_list,
+                     docucomment);
+    self->is_inline = is_inline;
     return self;
 }
 
 void
 CFCFunction_resolve_types(CFCFunction *self) {
-    CFCType_resolve(self->return_type);
-    CFCParamList_resolve_types(self->param_list);
+    CFCCallable_resolve_types(&self->callable);
 }
 
 void
 CFCFunction_destroy(CFCFunction *self) {
-    CFCBase_decref((CFCBase*)self->return_type);
-    CFCBase_decref((CFCBase*)self->param_list);
-    CFCBase_decref((CFCBase*)self->docucomment);
-    CFCSymbol_destroy((CFCSymbol*)self);
+    CFCCallable_destroy((CFCCallable*)self);
 }
 
 int
 CFCFunction_can_be_bound(CFCFunction *self) {
-    // Test whether parameters can be mapped automatically.
-    CFCVariable **arg_vars = CFCParamList_get_variables(self->param_list);
-    for (size_t i = 0; arg_vars[i] != NULL; i++) {
-        CFCType *type = CFCVariable_get_type(arg_vars[i]);
-        if (!CFCType_is_object(type) && !CFCType_is_primitive(type)) {
-            return false;
-        }
-    }
-
-    // Test whether return type can be mapped automatically.
-    if (!CFCType_is_void(self->return_type)
-        && !CFCType_is_object(self->return_type)
-        && !CFCType_is_primitive(self->return_type)
-    ) {
-        return false;
-    }
-
-    return true;
+    return CFCCallable_can_be_bound((CFCCallable*)self);
 }
 
 CFCType*
 CFCFunction_get_return_type(CFCFunction *self) {
-    return self->return_type;
+    return self->callable.return_type;
 }
 
 CFCParamList*
 CFCFunction_get_param_list(CFCFunction *self) {
-    return self->param_list;
+    return self->callable.param_list;
 }
 
 CFCDocuComment*
 CFCFunction_get_docucomment(CFCFunction *self) {
-    return self->docucomment;
+    return self->callable.docucomment;
 }
 
 int
@@ -142,7 +121,7 @@ CFCFunction_inline(CFCFunction *self) {
 
 int
 CFCFunction_void(CFCFunction *self) {
-    return CFCType_is_void(self->return_type);
+    return CFCType_is_void(self->callable.return_type);
 }
 
 const char*

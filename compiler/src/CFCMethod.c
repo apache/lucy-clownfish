@@ -18,8 +18,8 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#define CFC_NEED_FUNCTION_STRUCT_DEF
-#include "CFCFunction.h"
+#define CFC_NEED_CALLABLE_STRUCT_DEF
+#include "CFCCallable.h"
 #include "CFCMethod.h"
 #include "CFCType.h"
 #include "CFCClass.h"
@@ -35,7 +35,7 @@
 #endif
 
 struct CFCMethod {
-    CFCFunction function;
+    CFCCallable callable;
     CFCMethod *novel_method;
     char *macro_sym;
     char *full_override_sym;
@@ -105,9 +105,9 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
     }
 
     // Super-init and clean up derived micro_sym.
-    CFCFunction_init((CFCFunction*)self, parcel, exposure, class_name,
+    CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name,
                      class_nickname, micro_sym, return_type, param_list,
-                     docucomment, false);
+                     docucomment);
     FREEMEM(micro_sym);
 
     // Verify that the first element in the arg list is a self.
@@ -152,7 +152,7 @@ CFCMethod_init(CFCMethod *self, CFCParcel *parcel, const char *exposure,
 
 void
 CFCMethod_resolve_types(CFCMethod *self) {
-    CFCFunction_resolve_types((CFCFunction*)self);
+    CFCCallable_resolve_types((CFCCallable*)self);
 }
 
 void
@@ -163,7 +163,7 @@ CFCMethod_destroy(CFCMethod *self) {
     FREEMEM(self->host_alias);
     FREEMEM(self->short_imp_func);
     FREEMEM(self->imp_func);
-    CFCFunction_destroy((CFCFunction*)self);
+    CFCCallable_destroy((CFCCallable*)self);
 }
 
 int
@@ -175,8 +175,8 @@ CFCMethod_compatible(CFCMethod *self, CFCMethod *other) {
     if (!!my_public != !!other_public) { return false; }
 
     // Check arguments and initial values.
-    CFCParamList *my_param_list    = self->function.param_list;
-    CFCParamList *other_param_list = other->function.param_list;
+    CFCParamList *my_param_list    = self->callable.param_list;
+    CFCParamList *other_param_list = other->callable.param_list;
     CFCVariable **my_args    = CFCParamList_get_variables(my_param_list);
     CFCVariable **other_args = CFCParamList_get_variables(other_param_list);
     const char  **my_vals    = CFCParamList_get_initial_values(my_param_list);
@@ -251,9 +251,9 @@ CFCMethod_finalize(CFCMethod *self) {
     const char *class_nickname = CFCMethod_get_class_nickname(self);
     CFCMethod  *finalized
         = CFCMethod_new(parcel, exposure, class_name, class_nickname,
-                        self->macro_sym, self->function.return_type,
-                        self->function.param_list,
-                        self->function.docucomment, true,
+                        self->macro_sym, self->callable.return_type,
+                        self->callable.param_list,
+                        self->callable.docucomment, true,
                         self->is_abstract);
     finalized->novel_method
         = (CFCMethod*)CFCBase_incref((CFCBase*)self->novel_method);
@@ -269,7 +269,7 @@ CFCMethod_can_be_bound(CFCMethod *method) {
      * - methods with types which cannot be mapped automatically
      */
     return !CFCSymbol_private((CFCSymbol*)method)
-           && CFCFunction_can_be_bound((CFCFunction*)method);
+           && CFCCallable_can_be_bound((CFCCallable*)method);
 }
 
 void
@@ -408,7 +408,7 @@ CFCMethod_novel(CFCMethod *self) {
 
 CFCType*
 CFCMethod_self_type(CFCMethod *self) {
-    CFCVariable **vars = CFCParamList_get_variables(self->function.param_list);
+    CFCVariable **vars = CFCParamList_get_variables(self->callable.param_list);
     return CFCVariable_get_type(vars[0]);
 }
 
@@ -454,12 +454,12 @@ CFCMethod_public(CFCMethod *self) {
 
 CFCType*
 CFCMethod_get_return_type(CFCMethod *self) {
-    return CFCFunction_get_return_type((CFCFunction*)self);
+    return self->callable.return_type;
 }
 
 CFCParamList*
 CFCMethod_get_param_list(CFCMethod *self) {
-    return CFCFunction_get_param_list((CFCFunction*)self);
+    return self->callable.param_list;
 }
 
 const char*

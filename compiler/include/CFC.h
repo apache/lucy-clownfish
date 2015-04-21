@@ -16,6 +16,7 @@
 
 #include "CFCBase.h"
 #include "CFCCBlock.h"
+#include "CFCCallable.h"
 #include "CFCClass.h"
 #include "CFCDocuComment.h"
 #include "CFCFile.h"
