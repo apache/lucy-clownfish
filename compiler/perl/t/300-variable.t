@@ -68,9 +68,8 @@ my $lobclaw_class = $parser->parse(
     "class Crustacean::Lobster::LobsterClaw nickname LobClaw {}",
 );
 $var = Clownfish::CFC::Model::Variable->new(
-    name       => 'foo',
-    type       => new_type("Foo*"),
-    class_name => 'Crustacean::Lobster::LobsterClaw',
+    name => 'foo',
+    type => new_type("Foo*"),
 );
 $var->resolve_type;
 is( $var->global_c($lobclaw_class), 'neato_Foo* neato_LobClaw_foo',

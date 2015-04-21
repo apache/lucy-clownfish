@@ -16,18 +16,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 34;
+use Test::More tests => 24;
 use Clownfish::CFC;
 
 my $parcel = Clownfish::CFC::Model::Parcel->new( name => 'Eep' );
-
-for (qw( foo 1Foo Foo_Bar 1FOOBAR )) {
-    eval { my $thing = new_symbol( class_name => $_ ) };
-    like( $@, qr/class_name/, "Reject invalid class name $_" );
-    my $bogus_middle = "Foo::" . $_ . "::Bar";
-    eval { my $thing = new_symbol( class_name => $bogus_middle ) };
-    like( $@, qr/class_name/, "Reject invalid class name $bogus_middle" );
-}
 
 my @exposures = qw( public private parcel local );
 for my $exposure (@exposures) {
@@ -36,11 +28,6 @@ for my $exposure (@exposures) {
     my @not_exposures = grep { $_ ne $exposure } @exposures;
     ok( !$thing->$_, "$exposure means not $_" ) for @not_exposures;
 }
-
-my $foo    = new_symbol( class_name => 'Foo' );
-my $foo_jr = new_symbol( class_name => 'Foo::FooJr' );
-ok( !$foo->equals($foo_jr), "different class_name spoils equals" );
-is( $foo_jr->get_class_name, "Foo::FooJr", "get_class_name" );
 
 my $public_exposure = new_symbol( exposure => 'public' );
 my $parcel_exposure = new_symbol( exposure => 'parcel' );
@@ -57,10 +44,7 @@ my $ooga  = new_symbol( name => 'ooga' );
 my $booga = new_symbol( name => 'booga' );
 ok( !$ooga->equals($booga), "Different name spoils equals()" );
 
-my $eep = new_symbol(
-    class_name => "Op::Ork",
-    name       => 'ah_ah',
-);
+my $eep = new_symbol( name => 'ah_ah' );
 my $ork = Clownfish::CFC::Model::Class->create(
     parcel     => $parcel,
     class_name => 'Op::Ork',

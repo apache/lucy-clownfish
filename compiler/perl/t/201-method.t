@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 30;
+use Test::More tests => 38;
 
 BEGIN { use_ok('Clownfish::CFC::Model::Method') }
 use Clownfish::CFC::Parser;
@@ -47,6 +47,24 @@ eval {
     Clownfish::CFC::Model::Method->new( %args, name => 'return_an_obj' );
 };
 like( $@, qr/name/, "Invalid name kills constructor" );
+
+for (qw( foo 1Foo Foo_Bar 1FOOBAR )) {
+    eval {
+        Clownfish::CFC::Model::Method->new(
+            %args,
+            class_name => $_,
+        );
+    };
+    like( $@, qr/class_name/, "Reject invalid class name $_" );
+    my $bogus_middle = "Foo::" . $_ . "::Bar";
+    eval {
+        Clownfish::CFC::Model::Method->new(
+            %args,
+            class_name => $bogus_middle,
+        );
+    };
+    like( $@, qr/class_name/, "Reject invalid class name $bogus_middle" );
+}
 
 my $dupe = Clownfish::CFC::Model::Method->new(%args);
 ok( $method->compatible($dupe), "compatible()" );

@@ -38,7 +38,6 @@ struct CFCParcel;
 struct CFCSymbol {
     CFCBase base;
     char *exposure;
-    char *class_name;
     char *name;
 };
 #endif
@@ -46,18 +45,13 @@ struct CFCSymbol {
 /**
  * @param exposure The scope in which the symbol is exposed.  Must be
  * 'public', 'parcel', 'private', or 'local'.
- * @param class_name A optional class name, consisting of one or more
- * components separated by "::".  Each component must start with a capital
- * letter, contain at least one lower-case letter, and consist entirely of the
- * characters [A-Za-z0-9].
  * @param name The local identifier for the symbol.
  */
 CFCSymbol*
-CFCSymbol_new(const char *exposure, const char *class_name, const char *name);
+CFCSymbol_new(const char *exposure, const char *name);
 
 CFCSymbol*
-CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *class_name,
-               const char *name);
+CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *name);
 
 void
 CFCSymbol_destroy(CFCSymbol *self);
@@ -66,10 +60,6 @@ CFCSymbol_destroy(CFCSymbol *self);
  */
 int
 CFCSymbol_equals(CFCSymbol *self, CFCSymbol *other);
-
-// May be NULL.
-const char*
-CFCSymbol_get_class_name(CFCSymbol *self);
 
 const char*
 CFCSymbol_get_exposure(CFCSymbol *self);

@@ -35,9 +35,9 @@ static const CFCMeta CFCSYMBOL_META = {
 };
 
 CFCSymbol*
-CFCSymbol_new(const char *exposure, const char *class_name, const char *name) {
+CFCSymbol_new(const char *exposure, const char *name) {
     CFCSymbol *self = (CFCSymbol*)CFCBase_allocate(&CFCSYMBOL_META);
-    return CFCSymbol_init(self, exposure, class_name, name);
+    return CFCSymbol_init(self, exposure, name);
 }
 
 static int
@@ -64,16 +64,11 @@ S_validate_identifier(const char *identifier) {
 }
 
 CFCSymbol*
-CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *class_name,
-               const char *name) {
+CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *name) {
     // Validate.
     if (!S_validate_exposure(exposure)) {
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid exposure: '%s'", exposure ? exposure : "[NULL]");
-    }
-    if (class_name && !CFCClass_validate_class_name(class_name)) {
-        CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Invalid class_name: '%s'", class_name);
     }
     if (!name || !S_validate_identifier(name)) {
         CFCBase_decref((CFCBase*)self);
@@ -82,7 +77,6 @@ CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *class_name,
 
     // Assign.
     self->exposure       = CFCUtil_strdup(exposure);
-    self->class_name     = CFCUtil_strdup(class_name);
     self->name           = CFCUtil_strdup(name);
 
     return self;
@@ -91,7 +85,6 @@ CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *class_name,
 void
 CFCSymbol_destroy(CFCSymbol *self) {
     FREEMEM(self->exposure);
-    FREEMEM(self->class_name);
     FREEMEM(self->name);
     CFCBase_destroy((CFCBase*)self);
 }
@@ -100,15 +93,6 @@ int
 CFCSymbol_equals(CFCSymbol *self, CFCSymbol *other) {
     if (strcmp(self->name, other->name) != 0) { return false; }
     if (strcmp(self->exposure, other->exposure) != 0) { return false; }
-    if (self->class_name) {
-        if (!other->class_name) { return false; }
-        if (strcmp(self->class_name, other->class_name) != 0) {
-            return false;
-        }
-    }
-    else if (other->class_name) {
-        return false;
-    }
     return true;
 }
 
@@ -145,11 +129,6 @@ CFCSymbol_short_sym(CFCSymbol *self, CFCClass *klass) {
     const char *nickname = CFCClass_get_nickname(klass);
     char *short_sym = CFCUtil_sprintf("%s_%s", nickname, self->name);
     return short_sym;
-}
-
-const char*
-CFCSymbol_get_class_name(CFCSymbol *self) {
-    return self->class_name;
 }
 
 const char*

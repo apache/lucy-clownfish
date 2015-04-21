@@ -44,8 +44,6 @@ struct CFCCallable {
 /**
  * @param exposure The callable's exposure (see
  * L<Clownfish::CFC::Model::Symbol>).
- * @param class_name The full name of the class in whose namespace the
- * function resides.
  * @param name The name of the callable, without any namespacing prefixes.
  * @param return_type A Clownfish::CFC::Model::Type representing the
  * callable's return type.
@@ -55,8 +53,7 @@ struct CFCCallable {
  * callable.
  */
 CFCCallable*
-CFCCallable_init(CFCCallable *self, const char *exposure,
-                 const char *class_name, const char *name,
+CFCCallable_init(CFCCallable *self, const char *exposure, const char *name,
                  struct CFCType *return_type, struct CFCParamList *param_list,
                  struct CFCDocuComment *docucomment);
 

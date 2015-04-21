@@ -42,9 +42,8 @@ S_run_tests(CFCTest *test) {
         CFCType *return_type = CFCTest_parse_type(test, parser, "Obj*");
         CFCParamList *param_list
             = CFCTest_parse_param_list(test, parser, "(int32_t some_num)");
-        CFCFunction *func
-            = CFCFunction_new(NULL, "Neato::Foo", "return_an_obj", return_type,
-                              param_list, NULL, 0);
+        CFCFunction *func = CFCFunction_new(NULL, "return_an_obj", return_type,
+                                            param_list, NULL, 0);
         OK(test, func != NULL, "new");
 
         CFCBase_decref((CFCBase*)return_type);

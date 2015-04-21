@@ -70,12 +70,7 @@ S_new_var(CFCParser *state, char *exposure, char *modifiers, CFCType *type,
         inert = true;
     }
 
-    const char *class_name = NULL;
-    if (exposure && strcmp(exposure, "local") != 0) {
-        class_name     = CFCParser_get_class_name(state);
-    }
-    CFCVariable *var = CFCVariable_new(exposure, class_name, name, type,
-                                       inert);
+    CFCVariable *var = CFCVariable_new(exposure, name, type, inert);
 
     /* Consume tokens. */
     CFCBase_decref((CFCBase*)type);
@@ -87,8 +82,6 @@ static CFCBase*
 S_new_sub(CFCParser *state, CFCDocuComment *docucomment, 
           char *exposure, char *modifiers, CFCType *type, char *name,
           CFCParamList *param_list) {
-    const char *class_name = CFCParser_get_class_name(state);
-
     /* Find modifiers by scanning the list. */
     int is_abstract = false;
     int is_final    = false;
@@ -113,16 +106,16 @@ S_new_sub(CFCParser *state, CFCDocuComment *docucomment,
         if (is_final) {
             CFCUtil_die("Inert functions must not be final");
         }
-        sub = (CFCBase*)CFCFunction_new(exposure, class_name, name, type,
-                                        param_list, docucomment,
-                                        is_inline);
+        sub = (CFCBase*)CFCFunction_new(exposure, name, type, param_list,
+                                        docucomment, is_inline);
     }
     else {
         if (is_inline) {
             CFCUtil_die("Methods must not be inline");
         }
-        sub = (CFCBase*)CFCMethod_new(exposure, class_name, name, type,
-                                      param_list, docucomment, is_final,
+        const char *class_name = CFCParser_get_class_name(state);
+        sub = (CFCBase*)CFCMethod_new(exposure, name, type, param_list,
+                                      docucomment, class_name, is_final,
                                       is_abstract);
     }
 

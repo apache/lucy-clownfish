@@ -28,7 +28,6 @@ $parser->parse('parcel Neato;')
 
 my %args = (
     return_type => $parser->parse('Obj*'),
-    class_name  => 'Neato::Foo',
     param_list  => $parser->parse('(int32_t some_num)'),
     name        => 'return_an_obj',
 );

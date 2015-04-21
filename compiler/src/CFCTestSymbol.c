@@ -32,7 +32,7 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_SYMBOL = {
     "Clownfish::CFC::Model::Symbol",
-    22,
+    20,
     S_run_tests
 };
 
@@ -51,7 +51,7 @@ S_run_tests(CFCTest *test) {
             CFCSymbol_local
         };
         for (int i = 0; i < 4; ++i) {
-            CFCSymbol *symbol = CFCSymbol_new(exposures[i], NULL, "sym");
+            CFCSymbol *symbol = CFCSymbol_new(exposures[i], "sym");
             for (int j = 0; j < 4; ++j) {
                 int has_exposure = accessors[j](symbol);
                 if (i == j) {
@@ -67,21 +67,8 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCSymbol *foo    = CFCSymbol_new("parcel", "Foo", "sym");
-        CFCSymbol *foo_jr = CFCSymbol_new("parcel", "Foo::FooJr", "sym");
-
-        int equal = CFCSymbol_equals(foo, foo_jr);
-        OK(test, !equal, "different class_name spoils equals");
-        const char *foo_jr_name = CFCSymbol_get_class_name(foo_jr);
-        STR_EQ(test, foo_jr_name, "Foo::FooJr", "get_class_name");
-
-        CFCBase_decref((CFCBase*)foo);
-        CFCBase_decref((CFCBase*)foo_jr);
-    }
-
-    {
-        CFCSymbol *public_exposure = CFCSymbol_new("public", NULL, "sym");
-        CFCSymbol *parcel_exposure = CFCSymbol_new("parcel", NULL, "sym");
+        CFCSymbol *public_exposure = CFCSymbol_new("public", "sym");
+        CFCSymbol *parcel_exposure = CFCSymbol_new("parcel", "sym");
         int equal = CFCSymbol_equals(public_exposure, parcel_exposure);
         OK(test, !equal, "different exposure spoils equals");
         CFCBase_decref((CFCBase*)public_exposure);
@@ -89,8 +76,8 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCSymbol *ooga  = CFCSymbol_new("parcel", NULL, "ooga");
-        CFCSymbol *booga = CFCSymbol_new("parcel", NULL, "booga");
+        CFCSymbol *ooga  = CFCSymbol_new("parcel", "ooga");
+        CFCSymbol *booga = CFCSymbol_new("parcel", "booga");
         int equal = CFCSymbol_equals(ooga, booga);
         OK(test, !equal, "different name spoils equals");
         CFCBase_decref((CFCBase*)ooga);
@@ -103,7 +90,7 @@ S_run_tests(CFCTest *test) {
         CFCClass *ork
             = CFCClass_create(eep_parcel, NULL, "Op::Ork", NULL, NULL, NULL,
                               NULL, false, false, false);
-        CFCSymbol *eep = CFCSymbol_new("parcel", "Op::Ork", "ah_ah");
+        CFCSymbol *eep = CFCSymbol_new("parcel", "ah_ah");
         char *short_sym = CFCSymbol_short_sym(eep, ork);
         STR_EQ(test, short_sym, "Ork_ah_ah", "short_sym");
         FREEMEM(short_sym);

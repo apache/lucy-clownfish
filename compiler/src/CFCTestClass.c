@@ -65,17 +65,16 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCType *thing_type = CFCTest_parse_type(test, parser, "Thing*");
-        thing = CFCVariable_new(NULL, "Foo", "thing", thing_type, 0);
+        thing = CFCVariable_new(NULL, "thing", thing_type, 0);
 
         CFCType *widget_type = CFCTest_parse_type(test, parser, "Widget*");
-        widget = CFCVariable_new(NULL, "Widget", "widget", widget_type, 0);
+        widget = CFCVariable_new(NULL, "widget", widget_type, 0);
 
         CFCType *return_type = CFCTest_parse_type(test, parser, "void");
         CFCParamList *param_list
             = CFCTest_parse_param_list(test, parser, "()");
-        tread_water
-            = CFCFunction_new(NULL, "Foo", "tread_water", return_type,
-                              param_list, NULL, 0);
+        tread_water = CFCFunction_new(NULL, "tread_water", return_type,
+                                      param_list, NULL, 0);
 
         CFCBase_decref((CFCBase*)thing_type);
         CFCBase_decref((CFCBase*)widget_type);

@@ -41,28 +41,28 @@ struct CFCDocuComment;
 /**
  * @param exposure See Clownfish::CFC::Model::Symbol.  Defaults to "parcel"
  * if not supplied.
- * @param class_name See Clownfish::CFC::Model::Function.
  * @param name - The mixed case name which will be used when invoking the
  * method.
  * @param return_type See Clownfish::CFC::Model::Function.
  * @param param_list - A Clownfish::CFC::Model::ParamList.  The first element
  * must be an object of the class identified by C<class_name>.
  * @param docucomment see Clownfish::CFC::Model::Function.  May be NULL.
+ * @param class_name The full name of the class in whose namespace the
+ * method is fresh.
  * @param is_final - Indicate whether the method is final.
  * @param is_abstract - Indicate whether the method is abstract.
  */
 CFCMethod*
-CFCMethod_new(const char *exposure, const char *class_name, const char *name,
+CFCMethod_new(const char *exposure, const char *name,
               struct CFCType *return_type, struct CFCParamList *param_list,
-              struct CFCDocuComment *docucomment, int is_final,
-              int is_abstract);
+              struct CFCDocuComment *docucomment, const char *class_name,
+              int is_final, int is_abstract);
 
 CFCMethod*
-CFCMethod_init(CFCMethod *self, const char *exposure, const char *class_name,
-               const char *name, struct CFCType *return_type,
-               struct CFCParamList *param_list,
-               struct CFCDocuComment *docucomment, int is_final,
-               int is_abstract);
+CFCMethod_init(CFCMethod *self, const char *exposure, const char *name,
+               struct CFCType *return_type, struct CFCParamList *param_list,
+               struct CFCDocuComment *docucomment, const char *class_name,
+               int is_final, int is_abstract);
 
 void
 CFCMethod_resolve_types(CFCMethod *self);
@@ -204,9 +204,6 @@ CFCMethod_excluded_from_host(CFCMethod *self);
 
 const char*
 CFCMethod_get_exposure(CFCMethod *self);
-
-const char*
-CFCMethod_get_class_name(CFCMethod *self);
 
 /** Return true if the method is fresh in `klass`.
  */

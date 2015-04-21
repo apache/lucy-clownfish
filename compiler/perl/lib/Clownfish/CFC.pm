@@ -215,7 +215,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
 
     my %new_PARAMS = (
         return_type => undef,
-        class_name  => undef,
         param_list  => undef,
         name        => undef,
         docucomment => undef,
@@ -230,8 +229,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         $args{inline} ||= 0;
         return _new(
             @args{
-                qw( exposure class_name name return_type param_list docucomment
-                    inline )
+                qw( exposure name return_type param_list docucomment inline )
                 }
         );
     }
@@ -296,10 +294,10 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
 
     my %new_PARAMS = (
         return_type => undef,
-        class_name  => undef,
         param_list  => undef,
         name        => undef,
         docucomment => undef,
+        class_name  => undef,
         abstract    => undef,
         final       => undef,
         exposure    => 'parcel',
@@ -313,7 +311,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         $args{final}    ||= 0;
         return _new(
             @args{
-                qw( exposure class_name name return_type param_list docucomment
+                qw( exposure name return_type param_list docucomment class_name
                     final abstract )
                 }
         );
@@ -446,9 +444,8 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
     use Carp;
 
     my %new_PARAMS = (
-        exposure   => undef,
-        class_name => undef,
-        name       => undef,
+        exposure => undef,
+        name     => undef,
     );
 
     sub new {
@@ -456,7 +453,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         verify_args( \%new_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
         return _new(
-            @args{qw( exposure class_name name )} );
+            @args{qw( exposure name )} );
     }
 }
 
@@ -624,11 +621,10 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
     use Carp;
 
     our %new_PARAMS = (
-        type       => undef,
-        name       => undef,
-        exposure   => 'local',
-        class_name => undef,
-        inert      => undef,
+        type     => undef,
+        name     => undef,
+        exposure => 'local',
+        inert    => undef,
     );
 
     sub new {
@@ -638,7 +634,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         $args{exposure} ||= 'local';
         return _new(
             @args{
-                qw( exposure class_name name type inert )
+                qw( exposure name type inert )
                 }
         );
     }

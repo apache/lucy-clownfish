@@ -40,17 +40,15 @@ struct CFCType;
 
 /**
  * @param exposure See Clownfish::CFC::Model::Symbol.
- * @param class_name See Clownfish::CFC::Model::Symbol.
  * @param name The variable's name, without any namespacing prefixes.
  * @param type A Clownfish::CFC::Model::Type.
  */
 CFCVariable*
-CFCVariable_new(const char *exposure, const char *class_name, const char *name,
-                struct CFCType *type, int inert);
+CFCVariable_new(const char *exposure, const char *name, struct CFCType *type,
+                int inert);
 
 CFCVariable*
-CFCVariable_init(CFCVariable *self, const char *exposure,
-                 const char *class_name, const char *name,
+CFCVariable_init(CFCVariable *self, const char *exposure, const char *name,
                  struct CFCType *type, int inert);
 
 void

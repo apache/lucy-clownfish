@@ -33,8 +33,6 @@ struct CFCClass;
 /**
  * @param exposure The function's exposure (see
  * L<Clownfish::CFC::Model::Symbol>).
- * @param class_name The full name of the class in whose namespace the
- * function resides.
  * @param name The name of the function, without any namespacing prefixes.
  * @param return_type A Clownfish::CFC::Model::Type representing the
  * function's return type.
@@ -46,13 +44,12 @@ struct CFCClass;
  * compiler.
  */
 CFCFunction*
-CFCFunction_new(const char *exposure, const char *class_name, const char *name,
+CFCFunction_new(const char *exposure, const char *name,
                 struct CFCType *return_type, struct CFCParamList *param_list,
                 struct CFCDocuComment *docucomment, int is_inline);
 
 CFCFunction*
-CFCFunction_init(CFCFunction *self, const char *exposure,
-                 const char *class_name, const char *name,
+CFCFunction_init(CFCFunction *self, const char *exposure, const char *name,
                  struct CFCType *return_type, struct CFCParamList *param_list,
                  struct CFCDocuComment *docucomment, int is_inline);
 
