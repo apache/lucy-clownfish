@@ -183,7 +183,9 @@ func installHeaders() {
 	coreDir := "../core"
 	incDir := cfc.MainIncludeDir()
 	doInstall := func(source string, info os.FileInfo, err error) error {
-		if strings.HasSuffix(source, ".cfp") || strings.HasSuffix(source, ".cfh") {
+		if strings.HasSuffix(source, ".cfp") ||
+			strings.HasSuffix(source, ".cfh") ||
+			strings.HasSuffix(source, ".h") {
 			dest := path.Join(incDir, strings.TrimPrefix(source, coreDir))
 			destDir := path.Dir(dest)
 			if _, err := os.Stat(destDir); os.IsNotExist(err) {
