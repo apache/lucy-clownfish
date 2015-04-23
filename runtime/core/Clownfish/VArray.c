@@ -27,17 +27,17 @@
 #include "Clownfish/Util/SortUtils.h"
 
 static CFISH_INLINE void
-SI_grow_by(VArray *self, uint32_t add_size);
+SI_grow_by(VArray *self, size_t add_size);
 
 VArray*
-VA_new(uint32_t capacity) {
+VA_new(size_t capacity) {
     VArray *self = (VArray*)Class_Make_Obj(VARRAY);
     VA_init(self, capacity);
     return self;
 }
 
 VArray*
-VA_init(VArray *self, uint32_t capacity) {
+VA_init(VArray *self, size_t capacity) {
     // Init.
     self->size = 0;
 
@@ -68,7 +68,7 @@ VA_Clone_IMP(VArray *self) {
     VArray *twin = VA_new(self->size);
 
     // Clone each element.
-    for (uint32_t i = 0; i < self->size; i++) {
+    for (size_t i = 0; i < self->size; i++) {
         Obj *elem = self->elems[i];
         if (elem) {
             twin->elems[i] = Obj_Clone(elem);
@@ -88,7 +88,7 @@ VA_Shallow_Copy_IMP(VArray *self) {
     Obj **elems = twin->elems;
     memcpy(elems, self->elems, self->size * sizeof(Obj*));
     twin->size = self->size;
-    for (uint32_t i = 0; i < self->size; i++) {
+    for (size_t i = 0; i < self->size; i++) {
         if (elems[i] != NULL) {
             (void)INCREF(elems[i]);
         }
@@ -111,7 +111,7 @@ VA_Push_VArray_IMP(VArray *self, VArray *other) {
     if (other->size > self->cap - self->size) {
         SI_grow_by(self, other->size);
     }
-    for (uint32_t i = 0, tick = self->size; i < other->size; i++, tick++) {
+    for (size_t i = 0, tick = self->size; i < other->size; i++, tick++) {
         Obj *elem = VA_Fetch(other, i);
         if (elem != NULL) {
             self->elems[tick] = INCREF(elem);
@@ -156,7 +156,7 @@ VA_Shift_IMP(VArray *self) {
 }
 
 Obj*
-VA_Fetch_IMP(VArray *self, uint32_t num) {
+VA_Fetch_IMP(VArray *self, size_t num) {
     if (num >= self->size) {
         return NULL;
     }
@@ -165,9 +165,9 @@ VA_Fetch_IMP(VArray *self, uint32_t num) {
 }
 
 void
-VA_Store_IMP(VArray *self, uint32_t tick, Obj *elem) {
+VA_Store_IMP(VArray *self, size_t tick, Obj *elem) {
     if (tick >= self->cap) {
-        if (tick == UINT32_MAX) {
+        if (tick == SIZE_MAX) {
             THROW(ERR, "Invalid tick");
         }
         SI_grow_by(self, tick + 1 - self->size);
@@ -178,7 +178,7 @@ VA_Store_IMP(VArray *self, uint32_t tick, Obj *elem) {
 }
 
 void
-VA_Grow_IMP(VArray *self, uint32_t capacity) {
+VA_Grow_IMP(VArray *self, size_t capacity) {
     if (capacity > self->cap) {
         self->elems = (Obj**)REALLOCATE(self->elems, capacity * sizeof(Obj*));
         self->cap   = capacity;
@@ -188,7 +188,7 @@ VA_Grow_IMP(VArray *self, uint32_t capacity) {
 }
 
 Obj*
-VA_Delete_IMP(VArray *self, uint32_t num) {
+VA_Delete_IMP(VArray *self, size_t num) {
     Obj *elem = NULL;
     if (num < self->size) {
         elem = self->elems[num];
@@ -198,15 +198,15 @@ VA_Delete_IMP(VArray *self, uint32_t num) {
 }
 
 void
-VA_Excise_IMP(VArray *self, uint32_t offset, uint32_t length) {
+VA_Excise_IMP(VArray *self, size_t offset, size_t length) {
     if (self->size <= offset)              { return; }
     else if (self->size < offset + length) { length = self->size - offset; }
 
-    for (uint32_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         DECREF(self->elems[offset + i]);
     }
 
-    uint32_t num_to_move = self->size - (offset + length);
+    size_t num_to_move = self->size - (offset + length);
     memmove(self->elems + offset, self->elems + offset + length,
             num_to_move * sizeof(Obj*));
     self->size -= length;
@@ -218,7 +218,7 @@ VA_Clear_IMP(VArray *self) {
 }
 
 void
-VA_Resize_IMP(VArray *self, uint32_t size) {
+VA_Resize_IMP(VArray *self, size_t size) {
     if (size < self->size) {
         VA_Excise(self, size, self->size - size);
     }
@@ -228,12 +228,12 @@ VA_Resize_IMP(VArray *self, uint32_t size) {
     self->size = size;
 }
 
-uint32_t
+size_t
 VA_Get_Size_IMP(VArray *self) {
     return self->size;
 }
 
-uint32_t
+size_t
 VA_Get_Capacity_IMP(VArray *self) {
     return self->cap;
 }
@@ -264,7 +264,7 @@ VA_Equals_IMP(VArray *self, Obj *other) {
         return false;
     }
     else {
-        for (uint32_t i = 0, max = self->size; i < max; i++) {
+        for (size_t i = 0, max = self->size; i < max; i++) {
             Obj *val       = self->elems[i];
             Obj *other_val = twin->elems[i];
             if ((val && !other_val) || (other_val && !val)) { return false; }
@@ -277,7 +277,7 @@ VA_Equals_IMP(VArray *self, Obj *other) {
 VArray*
 VA_Gather_IMP(VArray *self, VA_Gather_Test_t test, void *data) {
     VArray *gathered = VA_new(self->size);
-    for (uint32_t i = 0, max = self->size; i < max; i++) {
+    for (size_t i = 0, max = self->size; i < max; i++) {
         if (test(self, i, data)) {
             Obj *elem = self->elems[i];
             VA_Push(gathered, elem ? INCREF(elem) : NULL);
@@ -287,13 +287,13 @@ VA_Gather_IMP(VArray *self, VA_Gather_Test_t test, void *data) {
 }
 
 VArray*
-VA_Slice_IMP(VArray *self, uint32_t offset, uint32_t length) {
+VA_Slice_IMP(VArray *self, size_t offset, size_t length) {
     // Adjust ranges if necessary.
     if (offset >= self->size) {
         offset = 0;
         length = 0;
     }
-    else if (length > UINT32_MAX - offset
+    else if (length > SIZE_MAX - offset
              || offset + length > self->size
             ) {
         length = self->size - offset;
@@ -304,7 +304,7 @@ VA_Slice_IMP(VArray *self, uint32_t offset, uint32_t length) {
     slice->size = length;
     Obj **slice_elems = slice->elems;
     Obj **my_elems    = self->elems;
-    for (uint32_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         slice_elems[i] = INCREF(my_elems[offset + i]);
     }
 
@@ -312,14 +312,13 @@ VA_Slice_IMP(VArray *self, uint32_t offset, uint32_t length) {
 }
 
 static void
-SI_grow_by(VArray *self, uint32_t add_size) {
+SI_grow_by(VArray *self, size_t add_size) {
     size_t min_size = self->size + add_size;
     // Check for overflow.
-    if ((uint32_t)min_size < add_size) {
+    if (min_size < add_size) {
         THROW(ERR, "Array grew too large");
     }
     size_t new_size = Memory_oversize(min_size, sizeof(Obj*));
-    if (new_size > UINT32_MAX) { new_size = UINT32_MAX; }
-    VA_Grow(self, (uint32_t)new_size);
+    VA_Grow(self, new_size);
 }
 

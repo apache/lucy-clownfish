@@ -20,7 +20,7 @@ __C__
 #include "Clownfish/Util/SortUtils.h"
 
 typedef bool
-(*CFISH_VA_Gather_Test_t)(cfish_VArray *self, uint32_t tick, void *data);
+(*CFISH_VA_Gather_Test_t)(cfish_VArray *self, size_t tick, void *data);
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define VA_Gather_Test_t CFISH_VA_Gather_Test_t
@@ -32,18 +32,18 @@ __END_C__
 class Clownfish::VArray nickname VA inherits Clownfish::Obj {
 
     Obj      **elems;
-    uint32_t   size;
-    uint32_t   cap;
+    size_t     size;
+    size_t     cap;
 
     inert incremented VArray*
-    new(uint32_t capacity = 0);
+    new(size_t capacity = 0);
 
     /**
      * @param capacity Initial number of elements that the object will be able
      * to hold before reallocation.
      */
     inert VArray*
-    init(VArray *self, uint32_t capacity = 0);
+    init(VArray *self, size_t capacity = 0);
 
     /** Push an item onto the end of a VArray.
      */
@@ -74,31 +74,31 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
      * elements.
      */
     void
-    Grow(VArray *self, uint32_t capacity);
+    Grow(VArray *self, size_t capacity);
 
     /** Fetch the element at <code>tick</tick>.
      */
     nullable Obj*
-    Fetch(VArray *self, uint32_t tick);
+    Fetch(VArray *self, size_t tick);
 
     /** Store an element at index `tick`, possibly displacing an
      * existing element.
      */
     void
-    Store(VArray *self, uint32_t tick, decremented Obj *elem = NULL);
+    Store(VArray *self, size_t tick, decremented Obj *elem = NULL);
 
     /** Replace an element in the VArray with NULL and return it.
      *
      * @return whatever was stored at `tick`.
      */
     incremented nullable Obj*
-    Delete(VArray *self, uint32_t tick);
+    Delete(VArray *self, size_t tick);
 
     /** Remove `length` elements from the array, starting at
      * `offset`. Move elements over to fill in the gap.
      */
     void
-    Excise(VArray *self, uint32_t offset, uint32_t length);
+    Excise(VArray *self, size_t offset, size_t length);
 
     /** Clone the VArray but merely increment the refcounts of its elements
      * rather than clone them.
@@ -127,7 +127,7 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
      * than the current size, decrement and discard truncated elements.
      */
     void
-    Resize(VArray *self, uint32_t size);
+    Resize(VArray *self, size_t size);
 
     /** Empty the VArray.
      */
@@ -136,12 +136,12 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
 
     /** Accessor for `size` member.
      */
-    public uint32_t
+    public size_t
     Get_Size(VArray *self);
 
     /** Accessor for `capacity` member.
      */
-    uint32_t
+    size_t
     Get_Capacity(VArray *self);
 
     /** Return all elements for which `test` returns true.
@@ -157,7 +157,7 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
      * @param length The maximum number of elements to slice.
      */
     public incremented VArray*
-    Slice(VArray *self, uint32_t offset, uint32_t length);
+    Slice(VArray *self, size_t offset, size_t length);
 
     public bool
     Equals(VArray *self, Obj *other);

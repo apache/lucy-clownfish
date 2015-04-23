@@ -263,7 +263,7 @@ test_Slice(TestBatchRunner *runner) {
     {
         VArray *wanted = VA_new(0);
         VA_Push(wanted, (Obj*)Str_newf("9"));
-        VArray *slice = VA_Slice(array, 9, UINT32_MAX - 1);
+        VArray *slice = VA_Slice(array, 9, SIZE_MAX - 1);
         TEST_TRUE(runner, VA_Get_Size(slice) == 1, "guard against overflow");
         DECREF(slice);
         DECREF(wanted);
@@ -299,7 +299,7 @@ static void
 S_overflow_Push(void *context) {
     UNUSED_VAR(context);
     VArray *array = VA_new(0);
-    array->cap  = UINT32_MAX;
+    array->cap  = SIZE_MAX;
     array->size = array->cap;
     VA_Push(array, (Obj*)CFISH_TRUE);
 }
@@ -308,7 +308,7 @@ static void
 S_overflow_Unshift(void *context) {
     UNUSED_VAR(context);
     VArray *array = VA_new(0);
-    array->cap  = UINT32_MAX;
+    array->cap  = SIZE_MAX;
     array->size = array->cap;
     VA_Unshift(array, (Obj*)CFISH_TRUE);
 }
@@ -320,7 +320,7 @@ S_overflow_Push_VArray(void *context) {
     array->cap  = 1000000000;
     array->size = array->cap;
     VArray *other = VA_new(0);
-    other->cap  = UINT32_MAX - array->cap + 1;
+    other->cap  = SIZE_MAX - array->cap + 1;
     other->size = other->cap;
     VA_Push_VArray(array, other);
 }
@@ -329,7 +329,7 @@ static void
 S_overflow_Store(void *context) {
     UNUSED_VAR(context);
     VArray *array = VA_new(0);
-    VA_Store(array, UINT32_MAX, (Obj*)CFISH_TRUE);
+    VA_Store(array, SIZE_MAX, (Obj*)CFISH_TRUE);
 }
 
 static void
