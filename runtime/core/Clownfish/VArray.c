@@ -199,8 +199,8 @@ VA_Delete_IMP(VArray *self, size_t num) {
 
 void
 VA_Excise_IMP(VArray *self, size_t offset, size_t length) {
-    if (self->size <= offset)              { return; }
-    else if (self->size < offset + length) { length = self->size - offset; }
+    if (offset >= self->size)         { return; }
+    if (length > self->size - offset) { length = self->size - offset; }
 
     for (size_t i = 0; i < length; i++) {
         DECREF(self->elems[offset + i]);
