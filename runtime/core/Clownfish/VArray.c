@@ -180,6 +180,9 @@ VA_Store_IMP(VArray *self, size_t tick, Obj *elem) {
 void
 VA_Grow_IMP(VArray *self, size_t capacity) {
     if (capacity > self->cap) {
+        if (capacity > SIZE_MAX / sizeof(Obj*)) {
+            THROW(ERR, "Array grew too large");
+        }
         self->elems = (Obj**)REALLOCATE(self->elems, capacity * sizeof(Obj*));
         self->cap   = capacity;
         memset(self->elems + self->size, 0,
