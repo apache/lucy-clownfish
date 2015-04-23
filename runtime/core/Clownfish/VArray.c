@@ -293,9 +293,7 @@ VA_Slice_IMP(VArray *self, size_t offset, size_t length) {
         offset = 0;
         length = 0;
     }
-    else if (length > SIZE_MAX - offset
-             || offset + length > self->size
-            ) {
+    else if (length > self->size - offset) {
         length = self->size - offset;
     }
 
