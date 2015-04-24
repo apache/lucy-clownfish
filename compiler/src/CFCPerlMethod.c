@@ -596,7 +596,8 @@ S_invalid_callback_body(CFCMethod *method) {
     char *maybe_ret
         = CFCType_is_void(return_type)
           ? CFCUtil_sprintf("")
-          : CFCUtil_sprintf("CFISH_UNREACHABLE_RETURN(%s);\n", ret_type_str);
+          : CFCUtil_sprintf("    CFISH_UNREACHABLE_RETURN(%s);\n",
+                            ret_type_str);
 
     char *perl_name = CFCPerlMethod_perl_name(method);
 
