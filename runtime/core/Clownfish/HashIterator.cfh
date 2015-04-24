@@ -21,9 +21,9 @@ parcel Clownfish;
  */
 
 class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
-    Hash    *hash;
-    int32_t  tick;
-    uint32_t capacity;
+    Hash   *hash;
+    size_t  tick;
+    size_t  capacity;
 
     inert void
     init_class();
