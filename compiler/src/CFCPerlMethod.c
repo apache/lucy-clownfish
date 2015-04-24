@@ -69,23 +69,23 @@ S_callback_refcount_mods(CFCMethod *method);
  * compile-time.
  */
 static char*
-S_invalid_callback_def(CFCMethod *method);
+S_invalid_callback_body(CFCMethod *method);
 
 // Create a callback for a method which operates in a void context.
 static char*
-S_void_callback_def(CFCMethod *method, const char *callback_start,
-                    const char *refcount_mods);
+S_void_callback_body(CFCMethod *method, const char *callback_start,
+                     const char *refcount_mods);
 
 // Create a callback which returns a primitive type.
 static char*
-S_primitive_callback_def(CFCMethod *method, const char *callback_start,
-                         const char *refcount_mods);
+S_primitive_callback_body(CFCMethod *method, const char *callback_start,
+                          const char *refcount_mods);
 
 /* Create a callback which returns an object type -- either a generic object or
  * a string. */
 static char*
-S_obj_callback_def(CFCMethod *method, const char *callback_start,
-                   const char *refcount_mods);
+S_obj_callback_body(CFCMethod *method, const char *callback_start,
+                    const char *refcount_mods);
 
 static const CFCMeta CFCPERLMETHOD_META = {
     "Clownfish::CFC::Binding::Perl::Method",
@@ -419,35 +419,56 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
 
 char*
 CFCPerlMethod_callback_def(CFCMethod *method) {
+    CFCType *return_type = CFCMethod_get_return_type(method);
+    char *callback_body = NULL;
+
     // Return a callback wrapper that throws an error if there are no
     // bindings for a method.
     if (!CFCMethod_can_be_bound(method)) {
-        return S_invalid_callback_def(method);
-    }
-
-    CFCType *return_type = CFCMethod_get_return_type(method);
-    char *start = S_callback_start(method);
-    char *callback_def = NULL;
-    char *refcount_mods = S_callback_refcount_mods(method);
-
-    if (CFCType_is_void(return_type)) {
-        callback_def = S_void_callback_def(method, start, refcount_mods);
-    }
-    else if (CFCType_is_object(return_type)) {
-        callback_def = S_obj_callback_def(method, start, refcount_mods);
-    }
-    else if (CFCType_is_integer(return_type)
-             || CFCType_is_floating(return_type)
-        ) {
-        callback_def = S_primitive_callback_def(method, start, refcount_mods);
+        callback_body = S_invalid_callback_body(method);
     }
     else {
-        // Can't map return type.
-        callback_def = S_invalid_callback_def(method);
+        char *start = S_callback_start(method);
+        char *refcount_mods = S_callback_refcount_mods(method);
+
+        if (CFCType_is_void(return_type)) {
+            callback_body = S_void_callback_body(method, start, refcount_mods);
+        }
+        else if (CFCType_is_object(return_type)) {
+            callback_body = S_obj_callback_body(method, start, refcount_mods);
+        }
+        else if (CFCType_is_integer(return_type)
+                 || CFCType_is_floating(return_type)
+            ) {
+            callback_body = S_primitive_callback_body(method, start,
+                                                      refcount_mods);
+        }
+        else {
+            // Can't map return type.
+            callback_body = S_invalid_callback_body(method);
+        }
+
+        FREEMEM(start);
+        FREEMEM(refcount_mods);
     }
 
-    FREEMEM(start);
-    FREEMEM(refcount_mods);
+    const char *override_sym = CFCMethod_full_override_sym(method);
+
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+    const char *params = CFCParamList_to_c(param_list);
+
+    const char *ret_type_str = CFCType_to_c(return_type);
+
+    char pattern[] =
+        "%s\n"
+        "%s(%s) {\n"
+        "%s"
+        "}\n";
+    char *callback_def
+        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params,
+                          callback_body);
+
+    FREEMEM(callback_body);
     return callback_def;
 }
 
@@ -543,7 +564,7 @@ S_callback_refcount_mods(CFCMethod *method) {
     // refcount.  (No function can return a decremented object.)
     if (CFCType_is_object(return_type) && !CFCType_incremented(return_type)) {
         refcount_mods = CFCUtil_cat(refcount_mods,
-                                    "\n    CFISH_DECREF(retval);", NULL);
+                                    "    CFISH_DECREF(retval);\n", NULL);
     }
 
     // Adjust refcounts of arguments per method signature, so that Perl code
@@ -556,12 +577,12 @@ S_callback_refcount_mods(CFCMethod *method) {
             continue;
         }
         else if (CFCType_incremented(type)) {
-            refcount_mods = CFCUtil_cat(refcount_mods, "\n    CFISH_INCREF(",
-                                        name, ");", NULL);
+            refcount_mods = CFCUtil_cat(refcount_mods, "    CFISH_INCREF(",
+                                        name, ");\n", NULL);
         }
         else if (CFCType_decremented(type)) {
-            refcount_mods = CFCUtil_cat(refcount_mods, "\n    CFISH_DECREF(",
-                                        name, ");", NULL);
+            refcount_mods = CFCUtil_cat(refcount_mods, "    CFISH_DECREF(",
+                                        name, ");\n", NULL);
         }
     }
 
@@ -569,12 +590,9 @@ S_callback_refcount_mods(CFCMethod *method) {
 }
 
 static char*
-S_invalid_callback_def(CFCMethod *method) {
-    const char *override_sym   = CFCMethod_full_override_sym(method);
-    CFCType      *return_type  = CFCMethod_get_return_type(method);
-    CFCParamList *param_list   = CFCMethod_get_param_list(method);
-    const char   *ret_type_str = CFCType_to_c(return_type);
-    const char   *params       = CFCParamList_to_c(param_list);
+S_invalid_callback_body(CFCMethod *method) {
+    CFCType *return_type = CFCMethod_get_return_type(method);
+    const char *ret_type_str = CFCType_to_c(return_type);
     char *maybe_ret
         = CFCType_is_void(return_type)
           ? CFCUtil_sprintf("")
@@ -583,45 +601,34 @@ S_invalid_callback_def(CFCMethod *method) {
     char *perl_name = CFCPerlMethod_perl_name(method);
 
     char pattern[] =
-        "%s\n"
-        "%s(%s) {\n"
         "    CFISH_UNUSED_VAR(self);\n"
         "    cfish_Err_invalid_callback(\"%s\");\n"
-        "%s"
-        "}\n"
-        ;
-    char *callback_def = CFCUtil_sprintf(pattern, ret_type_str, override_sym,
-                                         params, perl_name, maybe_ret);
+        "%s";
+    char *callback_body = CFCUtil_sprintf(pattern, perl_name, maybe_ret);
+
     FREEMEM(perl_name);
     FREEMEM(maybe_ret);
-    return callback_def;
+    return callback_body;
 }
 
 static char*
-S_void_callback_def(CFCMethod *method, const char *callback_start,
-                    const char *refcount_mods) {
-    const char *override_sym = CFCMethod_full_override_sym(method);
-    const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
+S_void_callback_body(CFCMethod *method, const char *callback_start,
+                     const char *refcount_mods) {
     char *perl_name = CFCPerlMethod_perl_name(method);
     const char pattern[] =
-        "void\n"
-        "%s(%s) {\n"
         "%s"
-        "    S_finish_callback_void(aTHX_ \"%s\");%s\n"
-        "}\n";
-    char *callback_def
-        = CFCUtil_sprintf(pattern, override_sym, params, callback_start,
-                          perl_name, refcount_mods);
+        "    S_finish_callback_void(aTHX_ \"%s\");\n"
+        "%s";
+    char *callback_body
+        = CFCUtil_sprintf(pattern, callback_start, perl_name, refcount_mods);
 
     FREEMEM(perl_name);
-    return callback_def;
+    return callback_body;
 }
 
 static char*
-S_primitive_callback_def(CFCMethod *method, const char *callback_start,
-                         const char *refcount_mods) {
-    const char *override_sym = CFCMethod_full_override_sym(method);
-    const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
+S_primitive_callback_body(CFCMethod *method, const char *callback_start,
+                          const char *refcount_mods) {
     CFCType *return_type = CFCMethod_get_return_type(method);
     const char *ret_type_str = CFCType_to_c(return_type);
     char callback_func[50];
@@ -644,26 +651,21 @@ S_primitive_callback_def(CFCMethod *method, const char *callback_start,
     char *perl_name = CFCPerlMethod_perl_name(method);
 
     char pattern[] =
-        "%s\n"
-        "%s(%s) {\n"
         "%s"
-        "    %s retval = (%s)%s(aTHX_ \"%s\");%s\n"
-        "    return retval;\n"
-        "}\n";
-    char *callback_def
-        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params,
-                          callback_start, ret_type_str, ret_type_str,
+        "    %s retval = (%s)%s(aTHX_ \"%s\");\n"
+        "%s"
+        "    return retval;\n";
+    char *callback_body
+        = CFCUtil_sprintf(pattern, callback_start, ret_type_str, ret_type_str,
                           callback_func, perl_name, refcount_mods);
 
     FREEMEM(perl_name);
-    return callback_def;
+    return callback_body;
 }
 
 static char*
-S_obj_callback_def(CFCMethod *method, const char *callback_start,
-                   const char *refcount_mods) {
-    const char *override_sym = CFCMethod_full_override_sym(method);
-    const char *params = CFCParamList_to_c(CFCMethod_get_param_list(method));
+S_obj_callback_body(CFCMethod *method, const char *callback_start,
+                    const char *refcount_mods) {
     CFCType *return_type = CFCMethod_get_return_type(method);
     const char *ret_type_str = CFCType_to_c(return_type);
     const char *nullable  = CFCType_nullable(return_type) ? "true" : "false";
@@ -671,18 +673,15 @@ S_obj_callback_def(CFCMethod *method, const char *callback_start,
     char *perl_name = CFCPerlMethod_perl_name(method);
 
     char pattern[] =
-        "%s\n"
-        "%s(%s) {\n"
         "%s"
-        "    %s retval = (%s)S_finish_callback_obj(aTHX_ self, \"%s\", %s);%s\n"
-        "    return retval;\n"
-        "}\n";
-    char *callback_def
-        = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params,
-                          callback_start, ret_type_str, ret_type_str,
+        "    %s retval = (%s)S_finish_callback_obj(aTHX_ self, \"%s\", %s);\n"
+        "%s"
+        "    return retval;\n";
+    char *callback_body
+        = CFCUtil_sprintf(pattern, callback_start, ret_type_str, ret_type_str,
                           perl_name, nullable, refcount_mods);
 
     FREEMEM(perl_name);
-    return callback_def;
+    return callback_body;
 }
 
