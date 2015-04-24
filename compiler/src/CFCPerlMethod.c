@@ -586,7 +586,6 @@ S_callback_refcount_mods(CFCMethod *method) {
 static char*
 S_invalid_callback_def(CFCMethod *method) {
     const char *override_sym   = CFCMethod_full_override_sym(method);
-    char *full_method_sym      = CFCMethod_full_method_sym(method, NULL);
     CFCType      *return_type  = CFCMethod_get_return_type(method);
     CFCParamList *param_list   = CFCMethod_get_param_list(method);
     const char   *ret_type_str = CFCType_to_c(return_type);
@@ -595,6 +594,9 @@ S_invalid_callback_def(CFCMethod *method) {
         = CFCType_is_void(return_type)
           ? CFCUtil_sprintf("")
           : CFCUtil_sprintf("CFISH_UNREACHABLE_RETURN(%s);\n", ret_type_str);
+
+    char *perl_name = CFCPerlMethod_perl_name(method);
+
     char pattern[] =
         "%s\n"
         "%s(%s) {\n"
@@ -604,8 +606,8 @@ S_invalid_callback_def(CFCMethod *method) {
         "}\n"
         ;
     char *callback_def = CFCUtil_sprintf(pattern, ret_type_str, override_sym,
-                                         params, full_method_sym, maybe_ret);
-    FREEMEM(full_method_sym);
+                                         params, perl_name, maybe_ret);
+    FREEMEM(perl_name);
     FREEMEM(maybe_ret);
     return callback_def;
 }

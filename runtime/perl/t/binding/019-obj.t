@@ -131,7 +131,7 @@ SKIP: {
         "Don't allow methods without nullable return values to return NULL" );
 
     eval { InvalidCallbackTestObj->new; };
-    like( $@, qr/Can't override CFISH_Obj_To_Host via binding/ );
+    like( $@, qr/Can't override to_host via binding/ );
 }
 
 my $alias_test = Clownfish::Test::AliasTestObj->new;
