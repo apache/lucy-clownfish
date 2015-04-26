@@ -278,18 +278,18 @@ SI_choose_pivot4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
 static void
 S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
          CFISH_Sort_Compare_t compare, void *context) {
+    if (right <= left) { return; }
+
+    /* TODO: A standard optimization for quicksort is to fall back to an
+     * insertion sort when the the number of elements to be sorted becomes
+     * small enough. */
+
     FOUR_BYTE_TYPE *const pivot
         = SI_choose_pivot4(elems, left, right, compare, context);
     int32_t i = left;
     int32_t j = right - 1;
     int32_t p = left;
     int32_t q = right - 1;
-
-    if (right <= left) { return; }
-
-    /* TODO: A standard optimization for quicksort is to fall back to an
-     * insertion sort when the the number of elements to be sorted becomes
-     * small enough. */
 
     while (1) {
         int comparison1;
@@ -386,18 +386,18 @@ SI_choose_pivot8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
 static void
 S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
          CFISH_Sort_Compare_t compare, void *context) {
+    if (right <= left) { return; }
+
+    /* TODO: A standard optimization for quicksort is to fall back to an
+     * insertion sort when the the number of elements to be sorted becomes
+     * small enough. */
+
     EIGHT_BYTE_TYPE *const pivot
         = SI_choose_pivot8(elems, left, right, compare, context);
     int32_t i = left;
     int32_t j = right - 1;
     int32_t p = left;
     int32_t q = right - 1;
-
-    if (right <= left) { return; }
-
-    /* TODO: A standard optimization for quicksort is to fall back to an
-     * insertion sort when the the number of elements to be sorted becomes
-     * small enough. */
 
     while (1) {
         int comparison1;
