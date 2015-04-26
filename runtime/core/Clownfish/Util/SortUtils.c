@@ -280,8 +280,8 @@ S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
          CFISH_Sort_Compare_t compare, void *context) {
     FOUR_BYTE_TYPE *const pivot
         = SI_choose_pivot4(elems, left, right, compare, context);
-    int32_t i = left - 1;
-    int32_t j = right;
+    int32_t i = left;
+    int32_t j = right - 1;
     int32_t p = left - 1;
     int32_t q = right;
 
@@ -298,19 +298,19 @@ S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
         // Find an element from the left that is greater than or equal to the
         // pivot (i.e. that should move to the right).
         while (1) {
-            i++;
             comparison1 = compare(context, elems + i, pivot);
             if (comparison1 >= 0) { break; }
             if (i == right)       { break; }
+            i++;
         }
 
         // Find an element from the right that is less than or equal to the
         // pivot (i.e. that should move to the left).
         while (1) {
-            j--;
             comparison2 = compare(context, elems + j, pivot);
             if (comparison2 <= 0) { break; }
             if (j == left)        { break; }
+            j--;
         }
 
         // Bail out of loop when we meet in the middle.
@@ -330,6 +330,9 @@ S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
             q--;
             SI_exchange4(elems, j, q);
         }
+
+        i++;
+        j--;
     }
 
     /* Move "equal" elements from the outside edges to the center.
@@ -385,8 +388,8 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
          CFISH_Sort_Compare_t compare, void *context) {
     EIGHT_BYTE_TYPE *const pivot
         = SI_choose_pivot8(elems, left, right, compare, context);
-    int32_t i = left - 1;
-    int32_t j = right;
+    int32_t i = left;
+    int32_t j = right - 1;
     int32_t p = left - 1;
     int32_t q = right;
 
@@ -403,19 +406,19 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
         // Find an element from the left that is greater than or equal to the
         // pivot (i.e. that should move to the right).
         while (1) {
-            i++;
             comparison1 = compare(context, elems + i, pivot);
             if (comparison1 >= 0) { break; }
             if (i == right)       { break; }
+            i++;
         }
 
         // Find an element from the right that is less than or equal to the
         // pivot (i.e. that should move to the left).
         while (1) {
-            j--;
             comparison2 = compare(context, elems + j, pivot);
             if (comparison2 <= 0) { break; }
             if (j == left)        { break; }
+            j--;
         }
 
         // Bail out of loop when we meet in the middle.
@@ -435,6 +438,9 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
             q--;
             SI_exchange8(elems, j, q);
         }
+
+        i++;
+        j--;
     }
 
     /* Move "equal" elements from the outside edges to the center.
