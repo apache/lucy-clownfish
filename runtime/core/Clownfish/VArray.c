@@ -246,8 +246,10 @@ S_default_compare(void *context, const void *va, const void *vb) {
 
 void
 VA_Sort_IMP(VArray *self) {
-    Sort_quicksort(self->elems, self->size, sizeof(void*), S_default_compare,
-                   NULL);
+    void *scratch = MALLOCATE(self->size * sizeof(Obj*));
+    Sort_mergesort(self->elems, scratch, self->size, sizeof(void*),
+                   S_default_compare, NULL);
+    FREEMEM(scratch);
 }
 
 bool

@@ -96,7 +96,7 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     public incremented VArray*
     Clone(VArray *self);
 
-    /** Quicksort the VArray.
+    /** Sort the VArray.
      */
     void
     Sort(VArray *self);
