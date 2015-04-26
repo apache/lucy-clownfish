@@ -17,8 +17,6 @@
 parcel Clownfish;
 
 __C__
-#include "Clownfish/Util/SortUtils.h"
-
 typedef bool
 (*CFISH_VA_Gather_Test_t)(cfish_VArray *self, size_t tick, void *data);
 
@@ -112,16 +110,10 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     public incremented VArray*
     Clone(VArray *self);
 
-    /** Quicksort the VArry using the supplied comparison routine.  Safety
-     * checks are the responsibility of the caller.
-     *
-     * @param compare Comparison routine.  The default uses Obj_Compare_To and
-     * sorts NULL elements towards the end.
-     * @param context Argument supplied to the comparison routine.
+    /** Quicksort the VArray.
      */
     void
-    Sort(VArray *self, CFISH_Sort_Compare_t compare = NULL,
-         void *context = NULL);
+    Sort(VArray *self);
 
     /** Set the size for the VArray.  If the new size is larger than the
      * current size, grow the object to accommodate NULL elements; if smaller

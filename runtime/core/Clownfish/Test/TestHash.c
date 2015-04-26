@@ -141,12 +141,12 @@ test_Keys_Values(TestBatchRunner *runner) {
         VA_Push(expected, INCREF(str));
     }
 
-    VA_Sort(expected, NULL, NULL);
+    VA_Sort(expected);
 
     keys   = Hash_Keys(hash);
     values = Hash_Values(hash);
-    VA_Sort(keys, NULL, NULL);
-    VA_Sort(values, NULL, NULL);
+    VA_Sort(keys);
+    VA_Sort(values);
     TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "Keys");
     TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values");
     VA_Clear(keys);
@@ -185,7 +185,7 @@ test_stress(TestBatchRunner *runner) {
         VA_Push(expected, INCREF(str));
     }
 
-    VA_Sort(expected, NULL, NULL);
+    VA_Sort(expected);
 
     // Overwrite for good measure.
     for (uint32_t i = 0; i < 1000; i++) {
@@ -195,8 +195,8 @@ test_stress(TestBatchRunner *runner) {
 
     keys   = Hash_Keys(hash);
     values = Hash_Values(hash);
-    VA_Sort(keys, NULL, NULL);
-    VA_Sort(values, NULL, NULL);
+    VA_Sort(keys);
+    VA_Sort(values);
     TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "stress Keys");
     TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "stress Values");
 

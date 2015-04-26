@@ -425,29 +425,6 @@ test_exceptions(TestBatchRunner *runner) {
                      "Store throws on overflow");
 }
 
-static int
-S_reverse_compare(void *context, const void *va, const void *vb) {
-    Obj *a = *(Obj**)va;
-    Obj *b = *(Obj**)vb;
-    UNUSED_VAR(context);
-    if (a != NULL && b != NULL)      { return -Obj_Compare_To(a, b); }
-    else if (a == NULL && b == NULL) { return 0;  }
-    else if (a == NULL)              { return -1; } // NULL to the front
-    else  /* b == NULL */            { return 1;  } // NULL to the front
-}
-
-static void
-S_reverse_array(VArray *array) {
-    uint32_t size = VA_Get_Size(array);
-
-    for (uint32_t l = 0, r = size - 1; l < r; ++l, --r) {
-        Obj *left  = VA_Delete(array, l);
-        Obj *right = VA_Delete(array, r);
-        VA_Store(array, l, right);
-        VA_Store(array, r, left);
-    }
-}
-
 static void
 test_Sort(TestBatchRunner *runner) {
     VArray *array  = VA_new(8);
@@ -469,12 +446,8 @@ test_Sort(TestBatchRunner *runner) {
     VA_Push(wanted, NULL);
     VA_Push(wanted, NULL);
 
-    VA_Sort(array, NULL, NULL);
+    VA_Sort(array);
     TEST_TRUE(runner, VA_Equals(array, (Obj*)wanted), "Sort with NULLs");
-
-    VA_Sort(array, S_reverse_compare, NULL);
-    S_reverse_array(wanted);
-    TEST_TRUE(runner, VA_Equals(array, (Obj*)wanted), "Custom Sort");
 
     DECREF(array);
     DECREF(wanted);
@@ -544,7 +517,7 @@ test_Grow(TestBatchRunner *runner) {
 
 void
 TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 63);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 62);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Insert(runner);

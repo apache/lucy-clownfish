@@ -50,7 +50,7 @@ test_Next(TestBatchRunner *runner) {
         VA_Push(expected, INCREF(str));
     }
 
-    VA_Sort(expected, NULL, NULL);
+    VA_Sort(expected);
 
     {
         HashIterator *iter = HashIter_new(hash);
@@ -66,8 +66,8 @@ test_Next(TestBatchRunner *runner) {
         DECREF(iter);
     }
 
-    VA_Sort(keys, NULL, NULL);
-    VA_Sort(values, NULL, NULL);
+    VA_Sort(keys);
+    VA_Sort(values);
     TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "Keys from Iter");
     TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values from Iter");
 
