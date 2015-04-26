@@ -340,7 +340,7 @@ test_Slice(TestBatchRunner *runner) {
 }
 
 static void
-test_Clone_and_Shallow_Copy(TestBatchRunner *runner) {
+test_Clone(TestBatchRunner *runner) {
     VArray *array = VA_new(0);
     VArray *twin;
     uint32_t i;
@@ -349,16 +349,10 @@ test_Clone_and_Shallow_Copy(TestBatchRunner *runner) {
         VA_Push(array, (Obj*)Int32_new(i));
     }
     VA_Push(array, NULL);
-    twin = VA_Shallow_Copy(array);
-    TEST_TRUE(runner, VA_Equals(array, (Obj*)twin), "Shallow_Copy");
-    TEST_TRUE(runner, VA_Fetch(array, 1) == VA_Fetch(twin, 1),
-              "Shallow_Copy doesn't clone elements");
-    DECREF(twin);
-
     twin = VA_Clone(array);
     TEST_TRUE(runner, VA_Equals(array, (Obj*)twin), "Clone");
-    TEST_TRUE(runner, VA_Fetch(array, 1) != VA_Fetch(twin, 1),
-              "Clone performs deep clone");
+    TEST_TRUE(runner, VA_Fetch(array, 1) == VA_Fetch(twin, 1),
+              "Clone doesn't clone elements");
 
     DECREF(array);
     DECREF(twin);
@@ -517,7 +511,7 @@ test_Grow(TestBatchRunner *runner) {
 
 void
 TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 62);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 60);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Insert(runner);
@@ -526,7 +520,7 @@ TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
     test_Excise(runner);
     test_Push_All(runner);
     test_Slice(runner);
-    test_Clone_and_Shallow_Copy(runner);
+    test_Clone(runner);
     test_exceptions(runner);
     test_Sort(runner);
     test_Gather(runner);

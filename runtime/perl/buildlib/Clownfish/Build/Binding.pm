@@ -486,7 +486,6 @@ END_XS_CODE
 
 sub bind_varray {
     my @hand_rolled = qw(
-        Shallow_Copy
         Pop
         Delete
         Store
@@ -495,13 +494,6 @@ sub bind_varray {
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::VArray
-
-SV*
-shallow_copy(self)
-    cfish_VArray *self;
-CODE:
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_VA_Shallow_Copy(self));
-OUTPUT: RETVAL
 
 SV*
 _clone(self)

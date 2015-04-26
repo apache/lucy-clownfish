@@ -102,11 +102,6 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     /** Clone the VArray but merely increment the refcounts of its elements
      * rather than clone them.
      */
-    incremented VArray*
-    Shallow_Copy(VArray *self);
-
-    /** Dupe the VArray, cloning each internal element.
-     */
     public incremented VArray*
     Clone(VArray *self);
 

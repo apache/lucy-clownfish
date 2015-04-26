@@ -65,24 +65,6 @@ VA_Destroy_IMP(VArray *self) {
 
 VArray*
 VA_Clone_IMP(VArray *self) {
-    VArray *twin = VA_new(self->size);
-
-    // Clone each element.
-    for (size_t i = 0; i < self->size; i++) {
-        Obj *elem = self->elems[i];
-        if (elem) {
-            twin->elems[i] = Obj_Clone(elem);
-        }
-    }
-
-    // Ensure that size is the same if NULL elems at end.
-    twin->size = self->size;
-
-    return twin;
-}
-
-VArray*
-VA_Shallow_Copy_IMP(VArray *self) {
     // Dupe, then increment refcounts.
     VArray *twin = VA_new(self->size);
     Obj **elems = twin->elems;
