@@ -77,7 +77,7 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     void
     Grow(VArray *self, size_t capacity);
 
-    /** Fetch the element at <code>tick</tick>.
+    /** Fetch the element at `tick`.
      */
     nullable Obj*
     Fetch(VArray *self, size_t tick);
