@@ -487,7 +487,6 @@ END_XS_CODE
 sub bind_varray {
     my @hand_rolled = qw(
         Shallow_Copy
-        Shift
         Pop
         Delete
         Store
@@ -509,13 +508,6 @@ _clone(self)
     cfish_VArray *self;
 CODE:
     RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_VA_Clone(self));
-OUTPUT: RETVAL
-
-SV*
-shift(self)
-    cfish_VArray *self;
-CODE:
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_VA_Shift(self));
 OUTPUT: RETVAL
 
 SV*

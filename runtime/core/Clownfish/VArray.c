@@ -138,22 +138,6 @@ VA_Unshift_IMP(VArray *self, Obj *elem) {
 }
 
 Obj*
-VA_Shift_IMP(VArray *self) {
-    if (!self->size) {
-        return NULL;
-    }
-    else {
-        Obj *const return_val = self->elems[0];
-        self->size--;
-        if (self->size > 0) {
-            memmove(self->elems, self->elems + 1,
-                    self->size * sizeof(Obj*));
-        }
-        return return_val;
-    }
-}
-
-Obj*
 VA_Fetch_IMP(VArray *self, size_t num) {
     if (num >= self->size) {
         return NULL;

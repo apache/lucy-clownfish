@@ -140,15 +140,13 @@ test_Store_Fetch(TestBatchRunner *runner) {
 }
 
 static void
-test_Push_Pop_Shift_Unshift(TestBatchRunner *runner) {
+test_Push_Pop_Unshift(TestBatchRunner *runner) {
     VArray *array = VA_new(0);
     String *elem;
 
     TEST_INT_EQ(runner, VA_Get_Size(array), 0, "size starts at 0");
     TEST_TRUE(runner, VA_Pop(array) == NULL,
               "Pop from empty array returns NULL");
-    TEST_TRUE(runner, VA_Shift(array) == NULL,
-              "Shift from empty array returns NULL");
 
     VA_Push(array, (Obj*)Str_newf("a"));
     VA_Push(array, (Obj*)Str_newf("b"));
@@ -157,20 +155,15 @@ test_Push_Pop_Shift_Unshift(TestBatchRunner *runner) {
     TEST_INT_EQ(runner, VA_Get_Size(array), 3, "size after Push");
     TEST_TRUE(runner, NULL != CERTIFY(VA_Fetch(array, 2), STRING), "Push");
 
-    elem = (String*)CERTIFY(VA_Shift(array), STRING);
-    TEST_TRUE(runner, Str_Equals_Utf8(elem, "a", 1), "Shift");
-    TEST_INT_EQ(runner, VA_Get_Size(array), 2, "size after Shift");
-    DECREF(elem);
-
     elem = (String*)CERTIFY(VA_Pop(array), STRING);
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "c", 1), "Pop");
-    TEST_INT_EQ(runner, VA_Get_Size(array), 1, "size after Pop");
+    TEST_INT_EQ(runner, VA_Get_Size(array), 2, "size after Pop");
     DECREF(elem);
 
     VA_Unshift(array, (Obj*)Str_newf("foo"));
     elem = (String*)CERTIFY(VA_Fetch(array, 0), STRING);
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Unshift");
-    TEST_INT_EQ(runner, VA_Get_Size(array), 2, "size after Shift");
+    TEST_INT_EQ(runner, VA_Get_Size(array), 3, "size after Shift");
 
     for (int i = 0; i < 256; ++i) {
         VA_Push(array, (Obj*)Str_newf("flotsam"));
@@ -178,7 +171,7 @@ test_Push_Pop_Shift_Unshift(TestBatchRunner *runner) {
     for (int i = 0; i < 512; ++i) {
         VA_Unshift(array, (Obj*)Str_newf("jetsam"));
     }
-    TEST_INT_EQ(runner, VA_Get_Size(array), 2 + 256 + 512,
+    TEST_INT_EQ(runner, VA_Get_Size(array), 3 + 256 + 512,
                 "size after exercising Pop and Unshift");
 
     DECREF(array);
@@ -551,10 +544,10 @@ test_Grow(TestBatchRunner *runner) {
 
 void
 TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 66);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 63);
     test_Equals(runner);
     test_Store_Fetch(runner);
-    test_Push_Pop_Shift_Unshift(runner);
+    test_Push_Pop_Unshift(runner);
     test_Delete(runner);
     test_Resize(runner);
     test_Excise(runner);
