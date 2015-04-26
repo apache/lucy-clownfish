@@ -447,44 +447,6 @@ test_Sort(TestBatchRunner *runner) {
     DECREF(wanted);
 }
 
-static bool
-S_elem_not_three(VArray *array, uint32_t tick, void *data) {
-    UNUSED_VAR(data);
-    Obj *elem = VA_Fetch(array, tick);
-    if (elem == NULL) { return true; }
-    StackString *three_str = SSTR_WRAP_UTF8("three", 5);
-    return !Obj_Equals(elem, (Obj*)three_str);
-}
-
-static void
-test_Gather(TestBatchRunner *runner) {
-    VArray *array  = VA_new(8);
-    VArray *wanted = VA_new(8);
-    VArray *got    = NULL;
-
-    VA_Push(array, NULL);
-    VA_Push(array, (Obj*)Str_newf("one"));
-    VA_Push(array, (Obj*)Str_newf("two"));
-    VA_Push(array, NULL);
-    VA_Push(array, NULL);
-    VA_Push(array, (Obj*)Str_newf("three"));
-    VA_Push(array, (Obj*)Str_newf("four"));
-
-    VA_Push(wanted, NULL);
-    VA_Push(wanted, (Obj*)Str_newf("one"));
-    VA_Push(wanted, (Obj*)Str_newf("two"));
-    VA_Push(wanted, NULL);
-    VA_Push(wanted, NULL);
-    VA_Push(wanted, (Obj*)Str_newf("four"));
-
-    got = VA_Gather(array, S_elem_not_three, NULL);
-    TEST_TRUE(runner, VA_Equals(got, (Obj*)wanted), "Gather");
-
-    DECREF(array);
-    DECREF(wanted);
-    DECREF(got);
-}
-
 static void
 test_Grow(TestBatchRunner *runner) {
     VArray   *array = VA_new(500);
@@ -511,7 +473,7 @@ test_Grow(TestBatchRunner *runner) {
 
 void
 TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 60);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 59);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Insert(runner);
@@ -523,7 +485,6 @@ TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
     test_Clone(runner);
     test_exceptions(runner);
     test_Sort(runner);
-    test_Gather(runner);
     test_Grow(runner);
 }
 

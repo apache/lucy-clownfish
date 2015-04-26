@@ -260,18 +260,6 @@ VA_Equals_IMP(VArray *self, Obj *other) {
 }
 
 VArray*
-VA_Gather_IMP(VArray *self, VA_Gather_Test_t test, void *data) {
-    VArray *gathered = VA_new(self->size);
-    for (size_t i = 0, max = self->size; i < max; i++) {
-        if (test(self, i, data)) {
-            Obj *elem = self->elems[i];
-            VA_Push(gathered, elem ? INCREF(elem) : NULL);
-        }
-    }
-    return gathered;
-}
-
-VArray*
 VA_Slice_IMP(VArray *self, size_t offset, size_t length) {
     // Adjust ranges if necessary.
     if (offset >= self->size) {
