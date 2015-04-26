@@ -37,6 +37,21 @@ TestVArray_new() {
     return (TestVArray*)Class_Make_Obj(TESTVARRAY);
 }
 
+// Return an array of size 10 with 30 garbage pointers behind.
+static VArray*
+S_array_with_garbage() {
+    VArray *array = VA_new(100);
+
+    for (int i = 0; i < 40; i++) {
+        VA_Push(array, (Obj*)CFISH_TRUE);
+    }
+
+    // Remove elements using different methods.
+    VA_Excise(array, 10, 10);
+    for (int i = 0; i < 10; i++) { VA_Pop(array); }
+    VA_Resize(array, 10);
+}
+
 static void
 test_Equals(TestBatchRunner *runner) {
     VArray *array = VA_new(0);
@@ -110,6 +125,15 @@ test_Store_Fetch(TestBatchRunner *runner) {
     elem = (String*)CERTIFY(VA_Fetch(array, 2), STRING);
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "bar", 3), "Store displacement");
 
+    DECREF(array);
+
+    array = S_array_with_garbage();
+    VA_Store(array, 40, (Obj*)CFISH_TRUE);
+    bool all_null = true;
+    for (int i = 10; i < 40; i++) {
+        if (VA_Fetch(array, i) != NULL) { all_null = false; }
+    }
+    TEST_TRUE(runner, all_null, "Out-of-bounds Store clears excised elements");
     DECREF(array);
 }
 
@@ -199,6 +223,15 @@ test_Resize(TestBatchRunner *runner) {
     VA_Resize(array, 2);
     TEST_INT_EQ(runner, VA_Get_Size(array), 2, "Resize to same size");
 
+    DECREF(array);
+
+    array = S_array_with_garbage();
+    VA_Resize(array, 40);
+    bool all_null = true;
+    for (int i = 10; i < 40; i++) {
+        if (VA_Fetch(array, i) != NULL) { all_null = false; }
+    }
+    TEST_TRUE(runner, all_null, "Resize clears excised elements");
     DECREF(array);
 }
 
@@ -516,7 +549,7 @@ test_Grow(TestBatchRunner *runner) {
 
 void
 TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 64);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 66);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Shift_Unshift(runner);

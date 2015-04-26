@@ -113,9 +113,7 @@ VA_Push_VArray_IMP(VArray *self, VArray *other) {
     }
     for (size_t i = 0, tick = self->size; i < other->size; i++, tick++) {
         Obj *elem = VA_Fetch(other, i);
-        if (elem != NULL) {
-            self->elems[tick] = INCREF(elem);
-        }
+        self->elems[tick] = INCREF(elem);
     }
     self->size += other->size;
 }
@@ -172,8 +170,14 @@ VA_Store_IMP(VArray *self, size_t tick, Obj *elem) {
         }
         SI_grow_by(self, tick + 1 - self->size);
     }
-    if (tick < self->size) { DECREF(self->elems[tick]); }
-    else                   { self->size = tick + 1; }
+    if (tick < self->size) {
+        DECREF(self->elems[tick]);
+    }
+    else {
+        memset(self->elems + self->size, 0,
+               (tick - self->size) * sizeof(Obj*));
+        self->size = tick + 1;
+    }
     self->elems[tick] = elem;
 }
 
@@ -185,8 +189,6 @@ VA_Grow_IMP(VArray *self, size_t capacity) {
         }
         self->elems = (Obj**)REALLOCATE(self->elems, capacity * sizeof(Obj*));
         self->cap   = capacity;
-        memset(self->elems + self->size, 0,
-               (capacity - self->size) * sizeof(Obj*));
     }
 }
 
@@ -227,6 +229,8 @@ VA_Resize_IMP(VArray *self, size_t size) {
     }
     else if (size > self->size) {
         VA_Grow(self, size);
+        memset(self->elems + self->size, 0,
+               (size - self->size) * sizeof(Obj*));
     }
     self->size = size;
 }
