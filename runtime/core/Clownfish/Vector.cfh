@@ -18,46 +18,46 @@ parcel Clownfish;
 
 /** Variable-sized array.
  */
-class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
+public class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
 
     Obj      **elems;
     size_t     size;
     size_t     cap;
 
-    inert incremented Vector*
+    public inert incremented Vector*
     new(size_t capacity = 0);
 
     /**
      * @param capacity Initial number of elements that the object will be able
      * to hold before reallocation.
      */
-    inert Vector*
+    public inert Vector*
     init(Vector *self, size_t capacity = 0);
 
     /** Push an item onto the end of a Vector.
      */
-    void
+    public void
     Push(Vector *self, decremented Obj *element = NULL);
 
     /** Push all the elements of another Vector onto the end of this one.
      */
-    void
+    public void
     Push_All(Vector *self, Vector *other);
 
     /** Pop an item off of the end of a Vector.
      */
-    incremented nullable Obj*
+    public incremented nullable Obj*
     Pop(Vector *self);
 
     /** Insert an element at `tick` moving the following elements.
      */
-    void
+    public void
     Insert(Vector *self, size_t tick, decremented Obj *element = NULL);
 
     /** Inserts elements from `other` vector at `tick` moving the following
      * elements.
      */
-    void
+    public void
     Insert_All(Vector *self, size_t tick, Vector *other);
 
     /** Ensure that the Vector has room for at least `capacity`
@@ -68,26 +68,26 @@ class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
 
     /** Fetch the element at `tick`.
      */
-    nullable Obj*
+    public nullable Obj*
     Fetch(Vector *self, size_t tick);
 
     /** Store an element at index `tick`, possibly displacing an
      * existing element.
      */
-    void
+    public void
     Store(Vector *self, size_t tick, decremented Obj *elem = NULL);
 
     /** Replace an element in the Vector with NULL and return it.
      *
      * @return whatever was stored at `tick`.
      */
-    incremented nullable Obj*
+    public incremented nullable Obj*
     Delete(Vector *self, size_t tick);
 
     /** Remove `length` elements from the vector, starting at
      * `offset`. Move elements over to fill in the gap.
      */
-    void
+    public void
     Excise(Vector *self, size_t offset, size_t length);
 
     /** Clone the Vector but merely increment the refcounts of its elements
@@ -98,19 +98,19 @@ class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
 
     /** Sort the Vector.
      */
-    void
+    public void
     Sort(Vector *self);
 
     /** Set the size for the Vector.  If the new size is larger than the
      * current size, grow the object to accommodate NULL elements; if smaller
      * than the current size, decrement and discard truncated elements.
      */
-    void
+    public void
     Resize(Vector *self, size_t size);
 
     /** Empty the Vector.
      */
-    void
+    public void
     Clear(Vector *self);
 
     /** Accessor for `size` member.
