@@ -65,15 +65,14 @@ VA_Destroy_IMP(VArray *self) {
 
 VArray*
 VA_Clone_IMP(VArray *self) {
-    // Dupe, then increment refcounts.
     VArray *twin = VA_new(self->size);
-    Obj **elems = twin->elems;
-    memcpy(elems, self->elems, self->size * sizeof(Obj*));
     twin->size = self->size;
-    for (size_t i = 0; i < self->size; i++) {
-        if (elems[i] != NULL) {
-            (void)INCREF(elems[i]);
-        }
+
+    // Copy and incref.
+    Obj **elems      = self->elems;
+    Obj **twin_elems = twin->elems;
+    for (size_t i = 0, max = self->size; i < max; i++) {
+        twin_elems[i] = INCREF(elems[i]);
     }
 
     return twin;
@@ -89,10 +88,14 @@ VA_Push_IMP(VArray *self, Obj *element) {
 void
 VA_Push_All_IMP(VArray *self, VArray *other) {
     SI_grow_and_oversize(self, self->size, other->size);
-    for (size_t i = 0, tick = self->size; i < other->size; i++, tick++) {
-        Obj *elem = VA_Fetch(other, i);
-        self->elems[tick] = INCREF(elem);
+
+    // Copy and incref.
+    Obj **dest        = self->elems + self->size;
+    Obj **other_elems = other->elems;
+    for (size_t i = 0, max = other->size; i < max; i++) {
+        dest[i] = INCREF(other_elems[i]);
     }
+
     self->size += other->size;
 }
 
@@ -122,6 +125,7 @@ VA_Insert_IMP(VArray *self, size_t tick, Obj *elem) {
 void
 VA_Insert_All_IMP(VArray *self, size_t tick, VArray *other) {
     SI_grow_and_oversize(self, tick, other->size);
+
     if (tick < self->size) {
         memmove(self->elems + tick + other->size, self->elems + tick,
                 (self->size - tick) * sizeof(Obj*));
@@ -130,9 +134,14 @@ VA_Insert_All_IMP(VArray *self, size_t tick, VArray *other) {
         memset(self->elems + self->size, 0,
                (tick - self->size) * sizeof(Obj*));
     }
-    for (size_t i = 0; i < other->size; i++) {
-        self->elems[tick+i] = INCREF(other->elems[i]);
+
+    // Copy and incref.
+    Obj **dest        = self->elems + tick;
+    Obj **other_elems = other->elems;
+    for (size_t i = 0, max = other->size; i < max; i++) {
+        dest[i] = INCREF(other_elems[i]);
     }
+
     self->size = tick + other->size;
 }
 
@@ -185,8 +194,9 @@ VA_Excise_IMP(VArray *self, size_t offset, size_t length) {
     if (offset >= self->size)         { return; }
     if (length > self->size - offset) { length = self->size - offset; }
 
+    Obj **elems = self->elems;
     for (size_t i = 0; i < length; i++) {
-        DECREF(self->elems[offset + i]);
+        DECREF(elems[offset + i]);
     }
 
     size_t num_to_move = self->size - (offset + length);
@@ -249,9 +259,11 @@ VA_Equals_IMP(VArray *self, Obj *other) {
         return false;
     }
     else {
+        Obj **elems      = self->elems;
+        Obj **twin_elems = twin->elems;
         for (size_t i = 0, max = self->size; i < max; i++) {
-            Obj *val       = self->elems[i];
-            Obj *other_val = twin->elems[i];
+            Obj *val       = elems[i];
+            Obj *other_val = twin_elems[i];
             if ((val && !other_val) || (other_val && !val)) { return false; }
             if (val && !Obj_Equals(val, other_val))         { return false; }
         }
