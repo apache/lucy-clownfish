@@ -26,7 +26,7 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
 #include "Clownfish/Num.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Class.h"
 
 /* Avoid conflicts with Clownfish bool type. */
@@ -117,14 +117,14 @@ cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
     cfish_XSBind_cfish_obj_to_sv_noinc(aTHX_ (cfish_Obj*)_obj)
 
 /** Deep conversion of Clownfish objects to Perl objects -- Strings to UTF-8
- * SVs, ByteBufs to SVs, VArrays to Perl array refs, Hashes to Perl hashrefs,
+ * SVs, ByteBufs to SVs, Vectors to Perl array refs, Hashes to Perl hashrefs,
  * and any other object to a Perl object wrapping the Clownfish Obj.
  */
 CFISH_VISIBLE SV*
 cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
 
 /** Deep conversion of Perl data structures to Clownfish objects -- Perl hash
- * to Hash, Perl array to VArray, Clownfish objects stripped of their
+ * to Hash, Perl array to Vector, Clownfish objects stripped of their
  * wrappers, and everything else stringified and turned to a String.
  */
 CFISH_VISIBLE cfish_Obj*

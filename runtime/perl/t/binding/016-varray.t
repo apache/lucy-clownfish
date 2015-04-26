@@ -21,7 +21,7 @@ use Clownfish;
 
 my ( $varray, $twin );
 
-$varray = Clownfish::VArray->new;
+$varray = Clownfish::Vector->new;
 $varray->push( Clownfish::String->new($_) ) for 1 .. 5;
 $varray->delete(3);
 $twin = $varray->_clone;

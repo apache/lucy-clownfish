@@ -27,7 +27,7 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/TestHarness/TestBatch.h"
 #include "Clownfish/TestHarness/TestFormatter.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Class.h"
 
 struct try_run_tests_context {

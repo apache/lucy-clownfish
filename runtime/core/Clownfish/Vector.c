@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-#define C_CFISH_VARRAY
+#define C_CFISH_VECTOR
 #include <string.h>
 #include <stdlib.h>
 
 #define CFISH_USE_SHORT_NAMES
 
 #include "Clownfish/Class.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/SortUtils.h"
 
 static CFISH_INLINE void
-SI_grow_and_oversize(VArray *self, size_t addend1, size_t addend2);
+SI_grow_and_oversize(Vector *self, size_t addend1, size_t addend2);
 
-VArray*
-VA_new(size_t capacity) {
-    VArray *self = (VArray*)Class_Make_Obj(VARRAY);
-    VA_init(self, capacity);
+Vector*
+Vec_new(size_t capacity) {
+    Vector *self = (Vector*)Class_Make_Obj(VECTOR);
+    Vec_init(self, capacity);
     return self;
 }
 
-VArray*
-VA_init(VArray *self, size_t capacity) {
+Vector*
+Vec_init(Vector *self, size_t capacity) {
     // Init.
     self->size = 0;
 
@@ -51,7 +51,7 @@ VA_init(VArray *self, size_t capacity) {
 }
 
 void
-VA_Destroy_IMP(VArray *self) {
+Vec_Destroy_IMP(Vector *self) {
     if (self->elems) {
         Obj **elems        = self->elems;
         Obj **const limit  = elems + self->size;
@@ -60,12 +60,12 @@ VA_Destroy_IMP(VArray *self) {
         }
         FREEMEM(self->elems);
     }
-    SUPER_DESTROY(self, VARRAY);
+    SUPER_DESTROY(self, VECTOR);
 }
 
-VArray*
-VA_Clone_IMP(VArray *self) {
-    VArray *twin = VA_new(self->size);
+Vector*
+Vec_Clone_IMP(Vector *self) {
+    Vector *twin = Vec_new(self->size);
     twin->size = self->size;
 
     // Copy and incref.
@@ -79,14 +79,14 @@ VA_Clone_IMP(VArray *self) {
 }
 
 void
-VA_Push_IMP(VArray *self, Obj *element) {
+Vec_Push_IMP(Vector *self, Obj *element) {
     SI_grow_and_oversize(self, self->size, 1);
     self->elems[self->size] = element;
     self->size++;
 }
 
 void
-VA_Push_All_IMP(VArray *self, VArray *other) {
+Vec_Push_All_IMP(Vector *self, Vector *other) {
     SI_grow_and_oversize(self, self->size, other->size);
 
     // Copy and incref.
@@ -100,7 +100,7 @@ VA_Push_All_IMP(VArray *self, VArray *other) {
 }
 
 Obj*
-VA_Pop_IMP(VArray *self) {
+Vec_Pop_IMP(Vector *self) {
     if (!self->size) {
         return NULL;
     }
@@ -109,9 +109,9 @@ VA_Pop_IMP(VArray *self) {
 }
 
 void
-VA_Insert_IMP(VArray *self, size_t tick, Obj *elem) {
+Vec_Insert_IMP(Vector *self, size_t tick, Obj *elem) {
     if (tick >= self->size) {
-        VA_Store(self, tick, elem);
+        Vec_Store(self, tick, elem);
         return;
     }
 
@@ -123,7 +123,7 @@ VA_Insert_IMP(VArray *self, size_t tick, Obj *elem) {
 }
 
 void
-VA_Insert_All_IMP(VArray *self, size_t tick, VArray *other) {
+Vec_Insert_All_IMP(Vector *self, size_t tick, Vector *other) {
     SI_grow_and_oversize(self, tick, other->size);
 
     if (tick < self->size) {
@@ -146,7 +146,7 @@ VA_Insert_All_IMP(VArray *self, size_t tick, VArray *other) {
 }
 
 Obj*
-VA_Fetch_IMP(VArray *self, size_t num) {
+Vec_Fetch_IMP(Vector *self, size_t num) {
     if (num >= self->size) {
         return NULL;
     }
@@ -155,7 +155,7 @@ VA_Fetch_IMP(VArray *self, size_t num) {
 }
 
 void
-VA_Store_IMP(VArray *self, size_t tick, Obj *elem) {
+Vec_Store_IMP(Vector *self, size_t tick, Obj *elem) {
     SI_grow_and_oversize(self, tick, 1);
     if (tick < self->size) {
         DECREF(self->elems[tick]);
@@ -169,10 +169,10 @@ VA_Store_IMP(VArray *self, size_t tick, Obj *elem) {
 }
 
 void
-VA_Grow_IMP(VArray *self, size_t capacity) {
+Vec_Grow_IMP(Vector *self, size_t capacity) {
     if (capacity > self->cap) {
         if (capacity > SIZE_MAX / sizeof(Obj*)) {
-            THROW(ERR, "Array index overflow");
+            THROW(ERR, "Vector index overflow");
         }
         self->elems = (Obj**)REALLOCATE(self->elems, capacity * sizeof(Obj*));
         self->cap   = capacity;
@@ -180,7 +180,7 @@ VA_Grow_IMP(VArray *self, size_t capacity) {
 }
 
 Obj*
-VA_Delete_IMP(VArray *self, size_t num) {
+Vec_Delete_IMP(Vector *self, size_t num) {
     Obj *elem = NULL;
     if (num < self->size) {
         elem = self->elems[num];
@@ -190,7 +190,7 @@ VA_Delete_IMP(VArray *self, size_t num) {
 }
 
 void
-VA_Excise_IMP(VArray *self, size_t offset, size_t length) {
+Vec_Excise_IMP(Vector *self, size_t offset, size_t length) {
     if (offset >= self->size)         { return; }
     if (length > self->size - offset) { length = self->size - offset; }
 
@@ -206,17 +206,17 @@ VA_Excise_IMP(VArray *self, size_t offset, size_t length) {
 }
 
 void
-VA_Clear_IMP(VArray *self) {
-    VA_Excise_IMP(self, 0, self->size);
+Vec_Clear_IMP(Vector *self) {
+    Vec_Excise_IMP(self, 0, self->size);
 }
 
 void
-VA_Resize_IMP(VArray *self, size_t size) {
+Vec_Resize_IMP(Vector *self, size_t size) {
     if (size < self->size) {
-        VA_Excise(self, size, self->size - size);
+        Vec_Excise(self, size, self->size - size);
     }
     else if (size > self->size) {
-        VA_Grow(self, size);
+        Vec_Grow(self, size);
         memset(self->elems + self->size, 0,
                (size - self->size) * sizeof(Obj*));
     }
@@ -224,12 +224,12 @@ VA_Resize_IMP(VArray *self, size_t size) {
 }
 
 size_t
-VA_Get_Size_IMP(VArray *self) {
+Vec_Get_Size_IMP(Vector *self) {
     return self->size;
 }
 
 size_t
-VA_Get_Capacity_IMP(VArray *self) {
+Vec_Get_Capacity_IMP(Vector *self) {
     return self->cap;
 }
 
@@ -245,7 +245,7 @@ S_default_compare(void *context, const void *va, const void *vb) {
 }
 
 void
-VA_Sort_IMP(VArray *self) {
+Vec_Sort_IMP(Vector *self) {
     void *scratch = MALLOCATE(self->size * sizeof(Obj*));
     Sort_mergesort(self->elems, scratch, self->size, sizeof(void*),
                    S_default_compare, NULL);
@@ -253,10 +253,10 @@ VA_Sort_IMP(VArray *self) {
 }
 
 bool
-VA_Equals_IMP(VArray *self, Obj *other) {
-    VArray *twin = (VArray*)other;
+Vec_Equals_IMP(Vector *self, Obj *other) {
+    Vector *twin = (Vector*)other;
     if (twin == self)             { return true; }
-    if (!Obj_Is_A(other, VARRAY)) { return false; }
+    if (!Obj_Is_A(other, VECTOR)) { return false; }
     if (twin->size != self->size) {
         return false;
     }
@@ -273,8 +273,8 @@ VA_Equals_IMP(VArray *self, Obj *other) {
     return true;
 }
 
-VArray*
-VA_Slice_IMP(VArray *self, size_t offset, size_t length) {
+Vector*
+Vec_Slice_IMP(Vector *self, size_t offset, size_t length) {
     // Adjust ranges if necessary.
     if (offset >= self->size) {
         offset = 0;
@@ -285,7 +285,7 @@ VA_Slice_IMP(VArray *self, size_t offset, size_t length) {
     }
 
     // Copy elements.
-    VArray *slice = VA_new(length);
+    Vector *slice = Vec_new(length);
     slice->size = length;
     Obj **slice_elems = slice->elems;
     Obj **my_elems    = self->elems;
@@ -296,18 +296,18 @@ VA_Slice_IMP(VArray *self, size_t offset, size_t length) {
     return slice;
 }
 
-// Ensure that the array's capacity is at least (addend1 + addend2).
-// If the array must be grown, oversize the allocation.
+// Ensure that the vector's capacity is at least (addend1 + addend2).
+// If the vector must be grown, oversize the allocation.
 static void
-SI_grow_and_oversize(VArray *self, size_t addend1, size_t addend2) {
+SI_grow_and_oversize(Vector *self, size_t addend1, size_t addend2) {
     size_t new_size = addend1 + addend2;
     // Check for overflow.
     if (new_size < addend1) {
-        THROW(ERR, "Array index overflow");
+        THROW(ERR, "Vector index overflow");
     }
     if (new_size > self->cap) {
         size_t capacity = Memory_oversize(new_size, sizeof(Obj*));
-        VA_Grow(self, capacity);
+        Vec_Grow(self, capacity);
     }
 }
 

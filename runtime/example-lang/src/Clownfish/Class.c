@@ -42,10 +42,10 @@ cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
     THROW(CFISH_ERR, "TODO");
 }
 
-cfish_VArray*
+cfish_Vector*
 cfish_Class_fresh_host_methods(const cfish_String *class_name) {
     THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(cfish_VArray*);
+    UNREACHABLE_RETURN(cfish_Vector*);
 }
 
 cfish_String*

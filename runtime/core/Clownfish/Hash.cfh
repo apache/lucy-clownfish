@@ -85,14 +85,14 @@ public class Clownfish::Hash inherits Clownfish::Obj {
     nullable String*
     Find_Key(Hash *self, String *key, size_t hash_sum);
 
-    /** Return an VArray of pointers to the hash's keys.
+    /** Return an Vector of pointers to the hash's keys.
      */
-    public incremented VArray*
+    public incremented Vector*
     Keys(Hash *self);
 
-    /** Return an VArray of pointers to the hash's values.
+    /** Return an Vector of pointers to the hash's values.
      */
-    public incremented VArray*
+    public incremented Vector*
     Values(Hash *self);
 
     size_t

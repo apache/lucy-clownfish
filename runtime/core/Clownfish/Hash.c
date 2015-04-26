@@ -25,7 +25,7 @@
 #include "Clownfish/Hash.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Util/Memory.h"
 
 // TOMBSTONE is shared across threads, so it must never be incref'd or
@@ -227,30 +227,30 @@ Hash_Find_Key_IMP(Hash *self, String *key, size_t hash_sum) {
     return entry ? entry->key : NULL;
 }
 
-VArray*
+Vector*
 Hash_Keys_IMP(Hash *self) {
-    VArray    *keys        = VA_new(self->size);
+    Vector    *keys        = Vec_new(self->size);
     HashEntry *entry       = (HashEntry*)self->entries;
     HashEntry *const limit = entry + self->capacity;
 
     for (; entry < limit; entry++) {
         if (entry->key && entry->key != TOMBSTONE) {
-            VA_Push(keys, INCREF(entry->key));
+            Vec_Push(keys, INCREF(entry->key));
         }
     }
 
     return keys;
 }
 
-VArray*
+Vector*
 Hash_Values_IMP(Hash *self) {
-    VArray    *values      = VA_new(self->size);
+    Vector    *values      = Vec_new(self->size);
     HashEntry *entry       = (HashEntry*)self->entries;
     HashEntry *const limit = entry + self->capacity;
 
     for (; entry < limit; entry++) {
         if (entry->key && entry->key != TOMBSTONE) {
-            VA_Push(values, INCREF(entry->value));
+            Vec_Push(values, INCREF(entry->value));
         }
     }
 

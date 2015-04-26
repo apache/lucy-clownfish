@@ -32,7 +32,7 @@
 #include "Clownfish/Test/TestNum.h"
 #include "Clownfish/Test/TestObj.h"
 #include "Clownfish/Test/TestThreads.h"
-#include "Clownfish/Test/TestVArray.h"
+#include "Clownfish/Test/TestVector.h"
 #include "Clownfish/Test/Util/TestAtomic.h"
 #include "Clownfish/Test/Util/TestMemory.h"
 #include "Clownfish/Test/Util/TestNumberUtils.h"
@@ -42,7 +42,7 @@ TestSuite*
 Test_create_test_suite() {
     TestSuite *suite = TestSuite_new();
 
-    TestSuite_Add_Batch(suite, (TestBatch*)TestVArray_new());
+    TestSuite_Add_Batch(suite, (TestBatch*)TestVector_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestHash_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestHashIterator_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestObj_new());

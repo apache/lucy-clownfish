@@ -493,53 +493,53 @@ sub bind_varray {
     );
 
     my $xs_code = <<'END_XS_CODE';
-MODULE = Clownfish   PACKAGE = Clownfish::VArray
+MODULE = Clownfish   PACKAGE = Clownfish::Vector
 
 SV*
 _clone(self)
-    cfish_VArray *self;
+    cfish_Vector *self;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_VA_Clone(self));
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Vec_Clone(self));
 OUTPUT: RETVAL
 
 SV*
 pop(self)
-    cfish_VArray *self;
+    cfish_Vector *self;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_VA_Pop(self));
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Vec_Pop(self));
 OUTPUT: RETVAL
 
 SV*
 delete(self, tick)
-    cfish_VArray *self;
+    cfish_Vector *self;
     uint32_t    tick;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_VA_Delete(self, tick));
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Vec_Delete(self, tick));
 OUTPUT: RETVAL
 
 void
 store(self, tick, value);
-    cfish_VArray *self;
+    cfish_Vector *self;
     uint32_t     tick;
     cfish_Obj    *value;
 PPCODE:
 {
     if (value) { CFISH_INCREF(value); }
-    CFISH_VA_Store_IMP(self, tick, value);
+    CFISH_Vec_Store_IMP(self, tick, value);
 }
 
 SV*
 fetch(self, tick)
-    cfish_VArray *self;
+    cfish_Vector *self;
     uint32_t     tick;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV(CFISH_VA_Fetch(self, tick));
+    RETVAL = CFISH_OBJ_TO_SV(CFISH_Vec_Fetch(self, tick));
 OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         parcel     => "Clownfish",
-        class_name => "Clownfish::VArray",
+        class_name => "Clownfish::Vector",
     );
     $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);

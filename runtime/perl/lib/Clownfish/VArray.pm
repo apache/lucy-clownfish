@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package Clownfish::VArray;
+package Clownfish::Vector;
 use Clownfish;
 our $VERSION = '0.004000';
 $VERSION = eval $VERSION;

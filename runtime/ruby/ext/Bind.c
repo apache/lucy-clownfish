@@ -24,8 +24,8 @@ Bind_cfish_to_ruby(cfish_Obj *obj) {
   if (CFISH_Obj_Is_A(obj, CFISH_STRING)) {
       return Bind_str_to_ruby((cfish_String*)obj);
   }
-  else if (CFISH_Obj_Is_A(obj, CFISH_VARRAY)) {
-      return S_cfish_array_to_ruby_array((cfish_VArray*)obj);
+  else if (CFISH_Obj_Is_A(obj, CFISH_VECTOR)) {
+      return S_cfish_array_to_ruby_array((cfish_Vector*)obj);
   }
 }
 
@@ -40,8 +40,8 @@ Bind_str_to_ruby(cfish_String *str) {
 }
 
 static VALUE
-S_cfish_array_to_ruby_array(cfish_VArray *varray) {
-    uint32_t num_elems = CFISH_VA_Get_Size(varray);
+S_cfish_array_to_ruby_array(cfish_Vector *varray) {
+    uint32_t num_elems = CFISH_Vec_Get_Size(varray);
 
     VALUE ruby_array = rb_ary_new2(num_elems - 1);
 
@@ -49,7 +49,7 @@ S_cfish_array_to_ruby_array(cfish_VArray *varray) {
         //TODO Need to determine why c99 mode is not being honored
         uint32_t i;
         for (uint32_t i = 0; i < num_elems; i++) {
-            cfish_Obj *val = CFISH_VA_Fetch(varray, i);
+            cfish_Obj *val = CFISH_Vec_Fetch(varray, i);
             if (val == NULL) {
                 continue;
             }

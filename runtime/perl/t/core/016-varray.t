@@ -17,7 +17,7 @@ use strict;
 use warnings;
 
 use Clownfish::Test;
-my $success = Clownfish::Test::run_tests("Clownfish::Test::TestVArray");
+my $success = Clownfish::Test::run_tests("Clownfish::Test::TestVector");
 
 exit($success ? 0 : 1);
 

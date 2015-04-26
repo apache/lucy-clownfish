@@ -89,7 +89,7 @@ class Clownfish::Class inherits Clownfish::Obj {
 
     /** List all of the methods defined directly within a host subclass.
      */
-    inert incremented VArray*
+    inert incremented Vector*
     fresh_host_methods(String *class_name);
 
     /** Replace a function pointer in the Class's vtable.
@@ -133,7 +133,7 @@ class Clownfish::Class inherits Clownfish::Obj {
 
     /** Return novel methods of the class.
      */
-    VArray*
+    Vector*
     Get_Methods(Class *self);
 
     public incremented Class*

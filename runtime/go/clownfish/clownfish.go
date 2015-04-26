@@ -25,7 +25,7 @@ package clownfish
 #include "Clownfish/Class.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Hash.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/LockFreeRegistry.h"
@@ -101,8 +101,8 @@ type implHash struct {
 	ref *C.cfish_Hash
 }
 
-type implVArray struct {
-	ref *C.cfish_VArray
+type implVector struct {
+	ref *C.cfish_Vector
 }
 
 type implClass struct {

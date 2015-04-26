@@ -18,126 +18,126 @@ parcel Clownfish;
 
 /** Variable-sized array.
  */
-class Clownfish::VArray nickname VA inherits Clownfish::Obj {
+class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
 
     Obj      **elems;
     size_t     size;
     size_t     cap;
 
-    inert incremented VArray*
+    inert incremented Vector*
     new(size_t capacity = 0);
 
     /**
      * @param capacity Initial number of elements that the object will be able
      * to hold before reallocation.
      */
-    inert VArray*
-    init(VArray *self, size_t capacity = 0);
+    inert Vector*
+    init(Vector *self, size_t capacity = 0);
 
-    /** Push an item onto the end of a VArray.
+    /** Push an item onto the end of a Vector.
      */
     void
-    Push(VArray *self, decremented Obj *element = NULL);
+    Push(Vector *self, decremented Obj *element = NULL);
 
-    /** Push all the elements of another VArray onto the end of this one.
+    /** Push all the elements of another Vector onto the end of this one.
      */
     void
-    Push_All(VArray *self, VArray *other);
+    Push_All(Vector *self, Vector *other);
 
-    /** Pop an item off of the end of a VArray.
+    /** Pop an item off of the end of a Vector.
      */
     incremented nullable Obj*
-    Pop(VArray *self);
+    Pop(Vector *self);
 
     /** Insert an element at `tick` moving the following elements.
      */
     void
-    Insert(VArray *self, size_t tick, decremented Obj *element = NULL);
+    Insert(Vector *self, size_t tick, decremented Obj *element = NULL);
 
-    /** Inserts elements from `other` array at `tick` moving the following
+    /** Inserts elements from `other` vector at `tick` moving the following
      * elements.
      */
     void
-    Insert_All(VArray *self, size_t tick, VArray *other);
+    Insert_All(Vector *self, size_t tick, Vector *other);
 
-    /** Ensure that the VArray has room for at least `capacity`
+    /** Ensure that the Vector has room for at least `capacity`
      * elements.
      */
     void
-    Grow(VArray *self, size_t capacity);
+    Grow(Vector *self, size_t capacity);
 
     /** Fetch the element at `tick`.
      */
     nullable Obj*
-    Fetch(VArray *self, size_t tick);
+    Fetch(Vector *self, size_t tick);
 
     /** Store an element at index `tick`, possibly displacing an
      * existing element.
      */
     void
-    Store(VArray *self, size_t tick, decremented Obj *elem = NULL);
+    Store(Vector *self, size_t tick, decremented Obj *elem = NULL);
 
-    /** Replace an element in the VArray with NULL and return it.
+    /** Replace an element in the Vector with NULL and return it.
      *
      * @return whatever was stored at `tick`.
      */
     incremented nullable Obj*
-    Delete(VArray *self, size_t tick);
+    Delete(Vector *self, size_t tick);
 
-    /** Remove `length` elements from the array, starting at
+    /** Remove `length` elements from the vector, starting at
      * `offset`. Move elements over to fill in the gap.
      */
     void
-    Excise(VArray *self, size_t offset, size_t length);
+    Excise(Vector *self, size_t offset, size_t length);
 
-    /** Clone the VArray but merely increment the refcounts of its elements
+    /** Clone the Vector but merely increment the refcounts of its elements
      * rather than clone them.
      */
-    public incremented VArray*
-    Clone(VArray *self);
+    public incremented Vector*
+    Clone(Vector *self);
 
-    /** Sort the VArray.
+    /** Sort the Vector.
      */
     void
-    Sort(VArray *self);
+    Sort(Vector *self);
 
-    /** Set the size for the VArray.  If the new size is larger than the
+    /** Set the size for the Vector.  If the new size is larger than the
      * current size, grow the object to accommodate NULL elements; if smaller
      * than the current size, decrement and discard truncated elements.
      */
     void
-    Resize(VArray *self, size_t size);
+    Resize(Vector *self, size_t size);
 
-    /** Empty the VArray.
+    /** Empty the Vector.
      */
     void
-    Clear(VArray *self);
+    Clear(Vector *self);
 
     /** Accessor for `size` member.
      */
     public size_t
-    Get_Size(VArray *self);
+    Get_Size(Vector *self);
 
     /** Accessor for `capacity` member.
      */
     size_t
-    Get_Capacity(VArray *self);
+    Get_Capacity(Vector *self);
 
-    /** Return a new array consisting of elements from a contiguous slice.  If
-     * the specified range is out of bounds, return an array with fewer
+    /** Return a new vector consisting of elements from a contiguous slice.  If
+     * the specified range is out of bounds, return an vector with fewer
      * elements -- potentially none.
      *
      * @param offset The index of the element to start at.
      * @param length The maximum number of elements to slice.
      */
-    public incremented VArray*
-    Slice(VArray *self, size_t offset, size_t length);
+    public incremented Vector*
+    Slice(Vector *self, size_t offset, size_t length);
 
     public bool
-    Equals(VArray *self, Obj *other);
+    Equals(Vector *self, Obj *other);
 
     public void
-    Destroy(VArray *self);
+    Destroy(Vector *self);
 }
 
 

@@ -41,15 +41,15 @@
 static cfish_Hash*
 S_perl_hash_to_cfish_hash(pTHX_ HV *phash);
 
-// Convert a Perl array into a Clownfish VArray.  Caller takes responsibility
+// Convert a Perl array into a Clownfish Vector.  Caller takes responsibility
 // for a refcount.
-static cfish_VArray*
+static cfish_Vector*
 S_perl_array_to_cfish_array(pTHX_ AV *parray);
 
-// Convert a VArray to a Perl array.  Caller takes responsibility for a
+// Convert a Vector to a Perl array.  Caller takes responsibility for a
 // refcount.
 static SV*
-S_cfish_array_to_perl_array(pTHX_ cfish_VArray *varray);
+S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray);
 
 // Convert a Hash to a Perl hash.  Caller takes responsibility for a refcount.
 static SV*
@@ -119,7 +119,7 @@ XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
             // Attempt to convert Perl hashes and arrays into their Clownfish
             // analogues.
             SV *inner = SvRV(sv);
-            if (SvTYPE(inner) == SVt_PVAV && klass == CFISH_VARRAY) {
+            if (SvTYPE(inner) == SVt_PVAV && klass == CFISH_VECTOR) {
                 retval = (cfish_Obj*)
                          S_perl_array_to_cfish_array(aTHX_ (AV*)inner);
             }
@@ -153,8 +153,8 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     else if (CFISH_Obj_Is_A(obj, CFISH_BYTEBUF)) {
         return XSBind_bb_to_sv(aTHX_ (cfish_ByteBuf*)obj);
     }
-    else if (CFISH_Obj_Is_A(obj, CFISH_VARRAY)) {
-        return S_cfish_array_to_perl_array(aTHX_ (cfish_VArray*)obj);
+    else if (CFISH_Obj_Is_A(obj, CFISH_VECTOR)) {
+        return S_cfish_array_to_perl_array(aTHX_ (cfish_Vector*)obj);
     }
     else if (CFISH_Obj_Is_A(obj, CFISH_HASH)) {
         return S_cfish_hash_to_perl_hash(aTHX_ (cfish_Hash*)obj);
@@ -292,34 +292,34 @@ S_perl_hash_to_cfish_hash(pTHX_ HV *phash) {
     return retval;
 }
 
-static cfish_VArray*
+static cfish_Vector*
 S_perl_array_to_cfish_array(pTHX_ AV *parray) {
     const uint32_t  size   = av_len(parray) + 1;
-    cfish_VArray   *retval = cfish_VA_new(size);
+    cfish_Vector   *retval = cfish_Vec_new(size);
 
     // Iterate over array elems.
     for (uint32_t i = 0; i < size; i++) {
         SV **elem_sv = av_fetch(parray, i, false);
         if (elem_sv) {
             cfish_Obj *elem = XSBind_perl_to_cfish(aTHX_ *elem_sv);
-            if (elem) { CFISH_VA_Store(retval, i, elem); }
+            if (elem) { CFISH_Vec_Store(retval, i, elem); }
         }
     }
-    CFISH_VA_Resize(retval, size); // needed if last elem is NULL
+    CFISH_Vec_Resize(retval, size); // needed if last elem is NULL
 
     return retval;
 }
 
 static SV*
-S_cfish_array_to_perl_array(pTHX_ cfish_VArray *varray) {
+S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray) {
     AV *perl_array = newAV();
-    uint32_t num_elems = CFISH_VA_Get_Size(varray);
+    uint32_t num_elems = CFISH_Vec_Get_Size(varray);
 
     // Iterate over array elems.
     if (num_elems) {
         av_fill(perl_array, num_elems - 1);
         for (uint32_t i = 0; i < num_elems; i++) {
-            cfish_Obj *val = CFISH_VA_Fetch(varray, i);
+            cfish_Obj *val = CFISH_Vec_Fetch(varray, i);
             if (val == NULL) {
                 continue;
             }
@@ -808,7 +808,7 @@ cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
     LEAVE;
 }
 
-cfish_VArray*
+cfish_Vector*
 cfish_Class_fresh_host_methods(cfish_String *class_name) {
     dTHX;
     dSP;
@@ -820,7 +820,7 @@ cfish_Class_fresh_host_methods(cfish_String *class_name) {
     PUTBACK;
     call_pv("Clownfish::Class::_fresh_host_methods", G_SCALAR);
     SPAGAIN;
-    cfish_VArray *methods = (cfish_VArray*)XSBind_perl_to_cfish(aTHX_ POPs);
+    cfish_Vector *methods = (cfish_Vector*)XSBind_perl_to_cfish(aTHX_ POPs);
     PUTBACK;
     FREETMPS;
     LEAVE;

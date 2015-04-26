@@ -24,7 +24,7 @@
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 
 Obj*
 Class_Make_Obj_IMP(Class *self) {
@@ -56,10 +56,10 @@ Class_register_with_host(Class *singleton, Class *parent) {
     UNUSED_VAR(parent);
 }
 
-VArray*
+Vector*
 Class_fresh_host_methods(String *class_name) {
     UNUSED_VAR(class_name);
-    return VA_new(0);
+    return Vec_new(0);
 }
 
 String*

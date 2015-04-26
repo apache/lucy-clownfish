@@ -16,14 +16,14 @@
 
 parcel TestClownfish;
 
-class Clownfish::Test::TestVArray
+class Clownfish::Test::TestVector
     inherits Clownfish::TestHarness::TestBatch {
 
-    inert incremented TestVArray*
+    inert incremented TestVector*
     new();
 
     void
-    Run(TestVArray *self, TestBatchRunner *runner);
+    Run(TestVector *self, TestBatchRunner *runner);
 }
 
 
