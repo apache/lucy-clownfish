@@ -137,6 +137,23 @@ VA_Insert_IMP(VArray *self, size_t tick, Obj *elem) {
     self->size++;
 }
 
+void
+VA_Insert_All_IMP(VArray *self, size_t tick, VArray *other) {
+    SI_grow_and_oversize(self, tick, other->size);
+    if (tick < self->size) {
+        memmove(self->elems + tick + other->size, self->elems + tick,
+                (self->size - tick) * sizeof(Obj*));
+    }
+    else {
+        memset(self->elems + self->size, 0,
+               (tick - self->size) * sizeof(Obj*));
+    }
+    for (size_t i = 0; i < other->size; i++) {
+        self->elems[tick+i] = INCREF(other->elems[i]);
+    }
+    self->size = tick + other->size;
+}
+
 Obj*
 VA_Fetch_IMP(VArray *self, size_t num) {
     if (num >= self->size) {

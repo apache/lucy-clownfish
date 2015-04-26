@@ -65,6 +65,12 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     void
     Insert(VArray *self, size_t tick, decremented Obj *element = NULL);
 
+    /** Inserts elements from `other` array at `tick` moving the following
+     * elements.
+     */
+    void
+    Insert_All(VArray *self, size_t tick, VArray *other);
+
     /** Ensure that the VArray has room for at least `capacity`
      * elements.
      */
