@@ -268,7 +268,7 @@ test_Excise(TestBatchRunner *runner) {
 }
 
 static void
-test_Push_VArray(TestBatchRunner *runner) {
+test_Push_All(TestBatchRunner *runner) {
     VArray *wanted  = VA_new(0);
     VArray *got     = VA_new(0);
     VArray *scratch = VA_new(0);
@@ -281,12 +281,12 @@ test_Push_VArray(TestBatchRunner *runner) {
     for (i = 20; i < 40; i++) { VA_Push(scratch, (Obj*)Str_newf("%u32", i)); }
     VA_Push(scratch, NULL);
 
-    VA_Push_VArray(got, scratch);
-    TEST_TRUE(runner, VA_Equals(wanted, (Obj*)got), "Push_VArray");
+    VA_Push_All(got, scratch);
+    TEST_TRUE(runner, VA_Equals(wanted, (Obj*)got), "Push_All");
 
-    VA_Push_VArray(got, empty);
+    VA_Push_All(got, empty);
     TEST_TRUE(runner, VA_Equals(wanted, (Obj*)got),
-              "Push_VArray with empty array");
+              "Push_All with empty array");
 
     DECREF(wanted);
     DECREF(got);
@@ -383,7 +383,7 @@ S_overflow_Insert(void *context) {
 }
 
 static void
-S_overflow_Push_VArray(void *context) {
+S_overflow_Push_All(void *context) {
     UNUSED_VAR(context);
     VArray *array = VA_new(0);
     array->cap  = 1000000000;
@@ -391,7 +391,7 @@ S_overflow_Push_VArray(void *context) {
     VArray *other = VA_new(0);
     other->cap  = SIZE_MAX - array->cap + 1;
     other->size = other->cap;
-    VA_Push_VArray(array, other);
+    VA_Push_All(array, other);
 }
 
 static void
@@ -419,8 +419,8 @@ test_exceptions(TestBatchRunner *runner) {
                      "Push throws on overflow");
     S_test_exception(runner, S_overflow_Insert,
                      "Insert throws on overflow");
-    S_test_exception(runner, S_overflow_Push_VArray,
-                     "Push_VArray throws on overflow");
+    S_test_exception(runner, S_overflow_Push_All,
+                     "Push_All throws on overflow");
     S_test_exception(runner, S_overflow_Store,
                      "Store throws on overflow");
 }
@@ -551,7 +551,7 @@ TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
     test_Delete(runner);
     test_Resize(runner);
     test_Excise(runner);
-    test_Push_VArray(runner);
+    test_Push_All(runner);
     test_Slice(runner);
     test_Clone_and_Shallow_Copy(runner);
     test_exceptions(runner);

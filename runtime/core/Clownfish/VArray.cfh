@@ -53,7 +53,7 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     /** Push all the elements of another VArray onto the end of this one.
      */
     void
-    Push_VArray(VArray *self, VArray *other);
+    Push_All(VArray *self, VArray *other);
 
     /** Pop an item off of the end of a VArray.
      */

@@ -105,7 +105,7 @@ VA_Push_IMP(VArray *self, Obj *element) {
 }
 
 void
-VA_Push_VArray_IMP(VArray *self, VArray *other) {
+VA_Push_All_IMP(VArray *self, VArray *other) {
     SI_grow_and_oversize(self, self->size, other->size);
     for (size_t i = 0, tick = self->size; i < other->size; i++, tick++) {
         Obj *elem = VA_Fetch(other, i);
