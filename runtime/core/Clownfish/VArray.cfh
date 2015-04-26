@@ -60,10 +60,10 @@ class Clownfish::VArray nickname VA inherits Clownfish::Obj {
     incremented nullable Obj*
     Pop(VArray *self);
 
-    /** Unshift an item onto the front of a VArray.
+    /** Insert an element at `tick` moving the following elements.
      */
     void
-    Unshift(VArray *self, decremented Obj *element = NULL);
+    Insert(VArray *self, size_t tick, decremented Obj *element = NULL);
 
     /** Ensure that the VArray has room for at least `capacity`
      * elements.

@@ -128,12 +128,17 @@ VA_Pop_IMP(VArray *self) {
 }
 
 void
-VA_Unshift_IMP(VArray *self, Obj *elem) {
+VA_Insert_IMP(VArray *self, size_t tick, Obj *elem) {
+    if (tick >= self->size) {
+        VA_Store(self, tick, elem);
+        return;
+    }
     if (self->size == self->cap) {
         SI_grow_by(self, 1);
     }
-    memmove(self->elems + 1, self->elems, self->size * sizeof(Obj*));
-    self->elems[0] = elem;
+    memmove(self->elems + tick + 1, self->elems + tick,
+            (self->size - tick) * sizeof(Obj*));
+    self->elems[tick] = elem;
     self->size++;
 }
 

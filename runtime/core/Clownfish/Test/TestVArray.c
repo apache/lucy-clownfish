@@ -140,7 +140,7 @@ test_Store_Fetch(TestBatchRunner *runner) {
 }
 
 static void
-test_Push_Pop_Unshift(TestBatchRunner *runner) {
+test_Push_Pop_Insert(TestBatchRunner *runner) {
     VArray *array = VA_new(0);
     String *elem;
 
@@ -160,19 +160,19 @@ test_Push_Pop_Unshift(TestBatchRunner *runner) {
     TEST_INT_EQ(runner, VA_Get_Size(array), 2, "size after Pop");
     DECREF(elem);
 
-    VA_Unshift(array, (Obj*)Str_newf("foo"));
+    VA_Insert(array, 0, (Obj*)Str_newf("foo"));
     elem = (String*)CERTIFY(VA_Fetch(array, 0), STRING);
-    TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Unshift");
-    TEST_INT_EQ(runner, VA_Get_Size(array), 3, "size after Shift");
+    TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Insert");
+    TEST_INT_EQ(runner, VA_Get_Size(array), 3, "size after Insert");
 
     for (int i = 0; i < 256; ++i) {
         VA_Push(array, (Obj*)Str_newf("flotsam"));
     }
     for (int i = 0; i < 512; ++i) {
-        VA_Unshift(array, (Obj*)Str_newf("jetsam"));
+        VA_Insert(array, i, (Obj*)Str_newf("jetsam"));
     }
     TEST_INT_EQ(runner, VA_Get_Size(array), 3 + 256 + 512,
-                "size after exercising Pop and Unshift");
+                "size after exercising Push and Insert");
 
     DECREF(array);
 }
@@ -374,12 +374,12 @@ S_overflow_Push(void *context) {
 }
 
 static void
-S_overflow_Unshift(void *context) {
+S_overflow_Insert(void *context) {
     UNUSED_VAR(context);
     VArray *array = VA_new(0);
     array->cap  = SIZE_MAX;
     array->size = array->cap;
-    VA_Unshift(array, (Obj*)CFISH_TRUE);
+    VA_Insert(array, 38911, (Obj*)CFISH_TRUE);
 }
 
 static void
@@ -417,8 +417,8 @@ test_exceptions(TestBatchRunner *runner) {
     }
     S_test_exception(runner, S_overflow_Push,
                      "Push throws on overflow");
-    S_test_exception(runner, S_overflow_Unshift,
-                     "Unshift throws on overflow");
+    S_test_exception(runner, S_overflow_Insert,
+                     "Insert throws on overflow");
     S_test_exception(runner, S_overflow_Push_VArray,
                      "Push_VArray throws on overflow");
     S_test_exception(runner, S_overflow_Store,
@@ -547,7 +547,7 @@ TestVArray_Run_IMP(TestVArray *self, TestBatchRunner *runner) {
     TestBatchRunner_Plan(runner, (TestBatch*)self, 63);
     test_Equals(runner);
     test_Store_Fetch(runner);
-    test_Push_Pop_Unshift(runner);
+    test_Push_Pop_Insert(runner);
     test_Delete(runner);
     test_Resize(runner);
     test_Excise(runner);
