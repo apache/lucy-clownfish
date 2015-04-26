@@ -106,7 +106,7 @@ S_msort4(void *velems, void *vscratch, uint32_t left, uint32_t right,
     uint8_t *elems   = (uint8_t*)velems;
     uint8_t *scratch = (uint8_t*)vscratch;
     if (right > left) {
-        const uint32_t mid = ((right + left) / 2) + 1;
+        const uint32_t mid = left + (right - left) / 2 + 1;
         S_msort4(elems, scratch, left, mid - 1, compare, context);
         S_msort4(elems, scratch, mid,  right, compare, context);
         SI_merge((elems + left * WIDTH), (mid - left),
@@ -124,7 +124,7 @@ S_msort8(void *velems, void *vscratch, uint32_t left, uint32_t right,
     uint8_t *elems   = (uint8_t*)velems;
     uint8_t *scratch = (uint8_t*)vscratch;
     if (right > left) {
-        const uint32_t mid = ((right + left) / 2) + 1;
+        const uint32_t mid = left + (right - left) / 2 + 1;
         S_msort8(elems, scratch, left, mid - 1, compare, context);
         S_msort8(elems, scratch, mid,  right, compare, context);
         SI_merge((elems + left * WIDTH), (mid - left),
@@ -141,7 +141,7 @@ S_msort_any(void *velems, void *vscratch, uint32_t left, uint32_t right,
     uint8_t *elems   = (uint8_t*)velems;
     uint8_t *scratch = (uint8_t*)vscratch;
     if (right > left) {
-        const uint32_t mid = ((right + left) / 2) + 1;
+        const uint32_t mid = left + (right - left) / 2 + 1;
         S_msort_any(elems, scratch, left, mid - 1, compare, context, width);
         S_msort_any(elems, scratch, mid,  right,   compare, context, width);
         SI_merge((elems + left * width), (mid - left),
