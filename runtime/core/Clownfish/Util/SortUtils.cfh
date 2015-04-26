@@ -37,7 +37,7 @@ inert class Clownfish::Util::SortUtils nickname Sort {
      * sorted.
      */
     inert void
-    mergesort(void *elems, void *scratch, uint32_t num_elems, uint32_t width,
+    mergesort(void *elems, void *scratch, size_t num_elems, size_t width,
               CFISH_Sort_Compare_t compare, void *context);
 
     /** Merge two source arrays together using the classic mergesort merge
@@ -54,8 +54,8 @@ inert class Clownfish::Util::SortUtils nickname Sort {
      * consolidated buffer.
      */
     inert void
-    merge(void *left_ptr,  uint32_t left_num_elems,
-          void *right_ptr, uint32_t right_num_elems,
+    merge(void *left_ptr,  size_t left_num_elems,
+          void *right_ptr, size_t right_num_elems,
           void *dest, size_t width, CFISH_Sort_Compare_t compare, void *context);
 
     /** Quicksort.
