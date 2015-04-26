@@ -27,7 +27,7 @@
 #include "Clownfish/Util/SortUtils.h"
 
 static CFISH_INLINE void
-SI_grow_by(VArray *self, size_t add_size);
+SI_grow_and_oversize(VArray *self, size_t addend1, size_t addend2);
 
 VArray*
 VA_new(size_t capacity) {
@@ -99,18 +99,14 @@ VA_Shallow_Copy_IMP(VArray *self) {
 
 void
 VA_Push_IMP(VArray *self, Obj *element) {
-    if (self->size == self->cap) {
-        SI_grow_by(self, 1);
-    }
+    SI_grow_and_oversize(self, self->size, 1);
     self->elems[self->size] = element;
     self->size++;
 }
 
 void
 VA_Push_VArray_IMP(VArray *self, VArray *other) {
-    if (other->size > self->cap - self->size) {
-        SI_grow_by(self, other->size);
-    }
+    SI_grow_and_oversize(self, self->size, other->size);
     for (size_t i = 0, tick = self->size; i < other->size; i++, tick++) {
         Obj *elem = VA_Fetch(other, i);
         self->elems[tick] = INCREF(elem);
@@ -133,9 +129,8 @@ VA_Insert_IMP(VArray *self, size_t tick, Obj *elem) {
         VA_Store(self, tick, elem);
         return;
     }
-    if (self->size == self->cap) {
-        SI_grow_by(self, 1);
-    }
+
+    SI_grow_and_oversize(self, self->size, 1);
     memmove(self->elems + tick + 1, self->elems + tick,
             (self->size - tick) * sizeof(Obj*));
     self->elems[tick] = elem;
@@ -153,12 +148,7 @@ VA_Fetch_IMP(VArray *self, size_t num) {
 
 void
 VA_Store_IMP(VArray *self, size_t tick, Obj *elem) {
-    if (tick >= self->cap) {
-        if (tick == SIZE_MAX) {
-            THROW(ERR, "Invalid tick");
-        }
-        SI_grow_by(self, tick + 1 - self->size);
-    }
+    SI_grow_and_oversize(self, tick, 1);
     if (tick < self->size) {
         DECREF(self->elems[tick]);
     }
@@ -174,7 +164,7 @@ void
 VA_Grow_IMP(VArray *self, size_t capacity) {
     if (capacity > self->cap) {
         if (capacity > SIZE_MAX / sizeof(Obj*)) {
-            THROW(ERR, "Array grew too large");
+            THROW(ERR, "Array index overflow");
         }
         self->elems = (Obj**)REALLOCATE(self->elems, capacity * sizeof(Obj*));
         self->cap   = capacity;
@@ -305,14 +295,18 @@ VA_Slice_IMP(VArray *self, size_t offset, size_t length) {
     return slice;
 }
 
+// Ensure that the array's capacity is at least (addend1 + addend2).
+// If the array must be grown, oversize the allocation.
 static void
-SI_grow_by(VArray *self, size_t add_size) {
-    size_t min_size = self->size + add_size;
+SI_grow_and_oversize(VArray *self, size_t addend1, size_t addend2) {
+    size_t new_size = addend1 + addend2;
     // Check for overflow.
-    if (min_size < add_size) {
-        THROW(ERR, "Array grew too large");
+    if (new_size < addend1) {
+        THROW(ERR, "Array index overflow");
     }
-    size_t new_size = Memory_oversize(min_size, sizeof(Obj*));
-    VA_Grow(self, new_size);
+    if (new_size > self->cap) {
+        size_t capacity = Memory_oversize(new_size, sizeof(Obj*));
+        VA_Grow(self, capacity);
+    }
 }
 
