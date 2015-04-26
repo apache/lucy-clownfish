@@ -282,8 +282,8 @@ S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
         = SI_choose_pivot4(elems, left, right, compare, context);
     int32_t i = left;
     int32_t j = right - 1;
-    int32_t p = left - 1;
-    int32_t q = right;
+    int32_t p = left;
+    int32_t q = right - 1;
 
     if (right <= left) { return; }
 
@@ -323,12 +323,12 @@ S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
         // Move any elements which test as "equal" to the pivot to the outside
         // edges of the array.
         if (comparison2 == 0) {
-            p++;
             SI_exchange4(elems, p, i);
+            p++;
         }
         if (comparison1 == 0) {
-            q--;
             SI_exchange4(elems, j, q);
+            q--;
         }
 
         i++;
@@ -390,8 +390,8 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
         = SI_choose_pivot8(elems, left, right, compare, context);
     int32_t i = left;
     int32_t j = right - 1;
-    int32_t p = left - 1;
-    int32_t q = right;
+    int32_t p = left;
+    int32_t q = right - 1;
 
     if (right <= left) { return; }
 
@@ -431,12 +431,12 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
         // Move any elements which test as "equal" to the pivot to the outside
         // edges of the array.
         if (comparison2 == 0) {
-            p++;
             SI_exchange8(elems, p, i);
+            p++;
         }
         if (comparison1 == 0) {
-            q--;
             SI_exchange8(elems, j, q);
+            q--;
         }
 
         i++;
