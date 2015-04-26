@@ -50,6 +50,8 @@ S_array_with_garbage() {
     VA_Excise(array, 10, 10);
     for (int i = 0; i < 10; i++) { VA_Pop(array); }
     VA_Resize(array, 10);
+
+    return array;
 }
 
 static void
