@@ -185,9 +185,9 @@ Str_Destroy_IMP(String *self) {
     SUPER_DESTROY(self, STRING);
 }
 
-int32_t
+size_t
 Str_Hash_Sum_IMP(String *self) {
-    uint32_t hashvalue = 5381;
+    size_t hashvalue = 5381;
     StackStringIterator *iter = STR_STACKTOP(self);
 
     const SStrIter_Next_t next
@@ -197,7 +197,7 @@ Str_Hash_Sum_IMP(String *self) {
         hashvalue = ((hashvalue << 5) + hashvalue) ^ code_point;
     }
 
-    return (int32_t) hashvalue;
+    return hashvalue;
 }
 
 static void

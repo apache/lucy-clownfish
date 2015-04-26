@@ -23,23 +23,23 @@ parcel Clownfish;
  */
 public class Clownfish::Hash inherits Clownfish::Obj {
 
-    void          *entries;
-    uint32_t       capacity;
-    uint32_t       size;
-    uint32_t       threshold;    /* rehashing trigger point */
+    void   *entries;
+    size_t  capacity;
+    size_t  size;
+    size_t  threshold;    /* rehashing trigger point */
 
     inert void
     init_class();
 
     public inert incremented Hash*
-    new(uint32_t capacity = 0);
+    new(size_t capacity = 0);
 
     /**
      * @param capacity The number of elements that the hash will be asked to
      * hold initially.
      */
     public inert Hash*
-    init(Hash *self, uint32_t capacity = 0);
+    init(Hash *self, size_t capacity = 0);
 
     inert String*
     get_tombstone();
@@ -83,7 +83,7 @@ public class Clownfish::Hash inherits Clownfish::Obj {
      * rather than its value.
      */
     nullable String*
-    Find_Key(Hash *self, String *key, int32_t hash_sum);
+    Find_Key(Hash *self, String *key, size_t hash_sum);
 
     /** Return an VArray of pointers to the hash's keys.
      */
@@ -95,14 +95,14 @@ public class Clownfish::Hash inherits Clownfish::Obj {
     public incremented VArray*
     Values(Hash *self);
 
-    uint32_t
+    size_t
     Get_Capacity(Hash *self);
 
     /** Accessor for Hash's "size" member.
      *
      * @return the number of key-value pairs.
      */
-    public uint32_t
+    public size_t
     Get_Size(Hash *self);
 
     public bool

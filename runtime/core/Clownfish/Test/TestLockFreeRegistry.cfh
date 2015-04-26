@@ -33,7 +33,7 @@ class Clownfish::Test::StupidHashString inherits Clownfish::String {
     new(const char *text);
 
     /** Always returns 1, guaranteeing collisions. */
-    int32_t
+    size_t
     Hash_Sum(StupidHashString *self);
 }
 

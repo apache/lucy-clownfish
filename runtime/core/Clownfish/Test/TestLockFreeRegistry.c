@@ -39,7 +39,7 @@ StupidHashString_new(const char *text) {
                                                          strlen(text));
 }
 
-int32_t
+size_t
 StupidHashString_Hash_Sum_IMP(StupidHashString *self) {
     UNUSED_VAR(self);
     return 1;

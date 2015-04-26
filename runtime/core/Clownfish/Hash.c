@@ -35,14 +35,14 @@ static String *TOMBSTONE;
 #define HashEntry cfish_HashEntry
 
 typedef struct HashEntry {
-    String  *key;
-    Obj     *value;
-    int32_t  hash_sum;
+    String *key;
+    Obj    *value;
+    size_t  hash_sum;
 } HashEntry;
 
 // Return the entry associated with the key, if any.
 static CFISH_INLINE HashEntry*
-SI_fetch_entry(Hash *self, String *key, int32_t hash_sum);
+SI_fetch_entry(Hash *self, String *key, size_t hash_sum);
 
 // Double the number of buckets and redistribute all entries.
 static CFISH_INLINE HashEntry*
@@ -54,31 +54,30 @@ Hash_init_class() {
 }
 
 Hash*
-Hash_new(uint32_t capacity) {
+Hash_new(size_t capacity) {
     Hash *self = (Hash*)Class_Make_Obj(HASH);
     return Hash_init(self, capacity);
 }
 
 Hash*
-Hash_init(Hash *self, uint32_t capacity) {
+Hash_init(Hash *self, size_t min_threshold) {
     // Allocate enough space to hold the requested number of elements without
     // triggering a rebuild.
-    uint32_t requested_capacity = capacity < INT32_MAX ? capacity : INT32_MAX;
-    uint32_t threshold;
-    capacity = 16;
-    while (1) {
+    size_t threshold;
+    size_t capacity = 16;
+    do {
         threshold = (capacity / 3) * 2;
-        if (threshold > requested_capacity) { break; }
+        if (threshold > min_threshold) { break; }
         capacity *= 2;
-    }
+    } while (capacity <= SIZE_MAX / 2);
 
     // Init.
-    self->size         = 0;
+    self->size      = 0;
 
     // Derive.
-    self->capacity     = capacity;
-    self->entries      = (HashEntry*)CALLOCATE(capacity, sizeof(HashEntry));
-    self->threshold    = threshold;
+    self->capacity  = capacity;
+    self->entries   = (HashEntry*)CALLOCATE(capacity, sizeof(HashEntry));
+    self->threshold = threshold;
 
     return self;
 }
@@ -117,7 +116,7 @@ Hash_Clear_IMP(Hash *self) {
 }
 
 static void
-S_do_store(Hash *self, String *key, Obj *value, int32_t hash_sum,
+S_do_store(Hash *self, String *key, Obj *value, size_t hash_sum,
            bool incref_key) {
     HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
     if (entry) {
@@ -129,8 +128,8 @@ S_do_store(Hash *self, String *key, Obj *value, int32_t hash_sum,
     HashEntry *entries = self->size >= self->threshold
                          ? SI_rebuild_hash(self)
                          : (HashEntry*)self->entries;
-    uint32_t       tick = hash_sum;
-    const uint32_t mask = self->capacity - 1;
+    size_t       tick = hash_sum;
+    const size_t mask = self->capacity - 1;
 
     while (1) {
         tick &= mask;
@@ -170,8 +169,8 @@ Hash_Fetch_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
 }
 
 static CFISH_INLINE HashEntry*
-SI_fetch_entry(Hash *self, String *key, int32_t hash_sum) {
-    uint32_t tick = hash_sum;
+SI_fetch_entry(Hash *self, String *key, size_t hash_sum) {
+    size_t tick = hash_sum;
     HashEntry *const entries = (HashEntry*)self->entries;
     HashEntry *entry;
 
@@ -223,7 +222,7 @@ Hash_Delete_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
 }
 
 String*
-Hash_Find_Key_IMP(Hash *self, String *key, int32_t hash_sum) {
+Hash_Find_Key_IMP(Hash *self, String *key, size_t hash_sum) {
     HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
     return entry ? entry->key : NULL;
 }
@@ -281,20 +280,19 @@ Hash_Equals_IMP(Hash *self, Obj *other) {
     return true;
 }
 
-uint32_t
+size_t
 Hash_Get_Capacity_IMP(Hash *self) {
     return self->capacity;
 }
 
-uint32_t
+size_t
 Hash_Get_Size_IMP(Hash *self) {
     return self->size;
 }
 
 static CFISH_INLINE HashEntry*
 SI_rebuild_hash(Hash *self) {
-    // HashIterator ticks are int32_t.
-    if (self->capacity > INT32_MAX / 2) {
+    if (self->capacity > SIZE_MAX / 2) {
         THROW(ERR, "Hash grew too large");
     }
 

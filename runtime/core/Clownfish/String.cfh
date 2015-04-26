@@ -217,7 +217,7 @@ class Clownfish::String nickname Str
 
     /** Return a hash code for the string.
      */
-    int32_t
+    size_t
     Hash_Sum(String *self);
 
     public incremented String*

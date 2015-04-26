@@ -28,9 +28,9 @@
 static String *TOMBSTONE;
 
 typedef struct HashEntry {
-    String  *key;
-    Obj     *value;
-    int32_t  hash_sum;
+    String *key;
+    Obj    *value;
+    size_t  hash_sum;
 } HashEntry;
 
 void
@@ -50,7 +50,7 @@ HashIter_new(Hash *hash) {
 HashIterator*
 HashIter_init(HashIterator *self, Hash *hash) {
     self->hash     = (Hash*)INCREF(hash);
-    self->tick     = -1;
+    self->tick     = (size_t)-1;
     self->capacity = hash->capacity;
     return self;
 }
@@ -61,7 +61,7 @@ HashIter_Next_IMP(HashIterator *self) {
         THROW(ERR, "Hash modified during iteration.");
     }
     while (1) {
-        if (++self->tick >= (int32_t)self->capacity) {
+        if (++self->tick >= self->capacity) {
             // Iteration complete. Pin tick at capacity.
             self->tick = self->capacity;
             return false;
@@ -82,10 +82,10 @@ HashIter_Get_Key_IMP(HashIterator *self) {
     if (self->capacity != self->hash->capacity) {
         THROW(ERR, "Hash modified during iteration.");
     }
-    if (self->tick >= (int32_t)self->capacity) {
+    if (self->tick >= self->capacity) {
         THROW(ERR, "Invalid call to Get_Key after end of iteration.");
     }
-    else if (self->tick == -1) {
+    else if (self->tick == (size_t)-1) {
         THROW(ERR, "Invalid call to Get_Key before iteration.");
     }
 
@@ -102,10 +102,10 @@ HashIter_Get_Value_IMP(HashIterator *self) {
     if (self->capacity != self->hash->capacity) {
         THROW(ERR, "Hash modified during iteration.");
     }
-    if (self->tick >= (int32_t)self->capacity) {
+    if (self->tick >= self->capacity) {
         THROW(ERR, "Invalid call to Get_Value after end of iteration.");
     }
-    else if (self->tick == -1) {
+    else if (self->tick == (size_t)-1) {
         THROW(ERR, "Invalid call to Get_Value before iteration.");
     }
 
