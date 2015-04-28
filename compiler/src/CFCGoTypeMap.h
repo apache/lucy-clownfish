@@ -23,10 +23,34 @@ extern "C" {
 
 struct CFCType;
 struct CFCParcel;
+struct CFCParamList;
 
 char*
 CFCGoTypeMap_go_type_name(struct CFCType *type,
                           struct CFCParcel *current_parcel);
+
+/** Return the Go package name associated with a Clownfish parcel.
+ */
+char*
+CFCGoTypeMap_go_short_package(struct CFCParcel *parcel);
+
+/** Convert param names to lowerCamelCase, storing the result in `buf`.
+ */
+void
+CFCGoTypeMap_go_arg_name(struct CFCParamList *param_list, size_t tick,
+                         char *buf, size_t buf_len);
+
+/** For the name of the method receiver, default to lower case letter derived
+ * from type, e.g. `f` for `Foo`.
+ *
+ * `param_list` may be NULL.  If it is not, check to see whether the
+ * single-letter name is already taken by another parameter.  In the event of
+ * a clash, use the result of `CFCGoTypeMap_go_arg_name` instead.
+ */
+void
+CFCGoTypeMap_go_meth_receiever(const char *struct_name,
+                               struct CFCParamList *param_list,
+                               char *buf, size_t buf_len);
 
 #ifdef __cplusplus
 }

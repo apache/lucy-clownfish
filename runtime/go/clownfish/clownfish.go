@@ -60,7 +60,6 @@ GoCfish_RunRoutine(CFISH_Err_Attempt_t routine, void *context) {
 
 */
 import "C"
-import "runtime"
 import "unsafe"
 
 func init() {
@@ -68,75 +67,11 @@ func init() {
 	C.cfish_bootstrap_parcel()
 }
 
-type Obj interface {
-	TOPTR() uintptr
-}
-
-type implObj struct {
-	ref *C.cfish_Obj
-}
-
-type Err interface {
-	Obj
-	Error() string
-}
-
-type implErr struct {
-	ref *C.cfish_Err
-}
-
-type String interface {
-	Obj
-}
-
-type implString struct {
-	ref *C.cfish_String
-}
-
-type implByteBuf struct {
-	ref *C.cfish_ByteBuf
-}
-
-type implHash struct {
-	ref *C.cfish_Hash
-}
-
-type implVArray struct {
-	ref *C.cfish_VArray
-}
-
-type implClass struct {
-	ref *C.cfish_Class
-}
-
-type implMethod struct {
-	ref *C.cfish_Method
-}
-
-type implLockFreeRegistry struct {
-	ref *C.cfish_LockFreeRegistry
-}
-
 func NewString(goString string) String {
 	str := C.CString(goString)
 	len := C.size_t(len(goString))
 	cfObj := C.cfish_Str_new_steal_utf8(str, len)
 	return WRAPString(unsafe.Pointer(cfObj))
-}
-
-func WRAPString(ptr unsafe.Pointer) String {
-	obj := &implString{((*C.cfish_String)(ptr))}
-	runtime.SetFinalizer(obj, (*implString).finalize)
-	return obj
-}
-
-func (obj *implString) finalize() {
-	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
-	obj.ref = nil
-}
-
-func (obj *implString) TOPTR() uintptr {
-	return uintptr(unsafe.Pointer(obj.ref))
 }
 
 func CFStringToGo(ptr unsafe.Pointer) string {
@@ -159,21 +94,6 @@ func NewErr(mess string) Err {
 	messC := C.cfish_Str_new_steal_utf8(str, len)
 	cfObj := C.cfish_Err_new(messC)
 	return WRAPErr(unsafe.Pointer(cfObj))
-}
-
-func WRAPErr(ptr unsafe.Pointer) Err {
-	obj := &implErr{((*C.cfish_Err)(ptr))}
-	runtime.SetFinalizer(obj, (*implErr).finalize)
-	return obj
-}
-
-func (obj *implErr) finalize() {
-	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
-	obj.ref = nil
-}
-
-func (obj *implErr) TOPTR() uintptr {
-	return uintptr(unsafe.Pointer(obj.ref))
 }
 
 func (obj *implErr) Error() string {

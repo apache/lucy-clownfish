@@ -15,13 +15,21 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 
 #include "CFCGoTypeMap.h"
 #include "CFCParcel.h"
+#include "CFCParamList.h"
+#include "CFCVariable.h"
 #include "CFCType.h"
 #include "CFCUtil.h"
+
+#ifndef true
+    #define true 1
+    #define false 0
+#endif
 
 /* Integer types with implementation-specific widths are tricky to convert.
  * If a C `int` and a Go `int` are not the same width, it is potentially
@@ -56,6 +64,36 @@ static struct {
 };
 
 static int num_conversions = sizeof(conversions) / sizeof(conversions[0]);
+
+static const char* go_keywords[] = {
+    "break",
+    "case",
+    "chan",
+    "const",
+    "continue",
+    "default",
+    "defer",
+    "else",
+    "fallthrough",
+    "for",
+    "func",
+    "go",
+    "goto",
+    "if",
+    "import",
+    "interface",
+    "map",
+    "package",
+    "range",
+    "return",
+    "select",
+    "struct",
+    "switch",
+    "type",
+    "var"
+};
+
+static int num_go_keywords = sizeof(go_keywords) / sizeof(go_keywords[0]);
 
 /* TODO: Optimize local conversions by creating a static wrapper function
  * which takes a buffer and allocates memory only if the buffer isn't big
@@ -124,3 +162,108 @@ CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
     return NULL;
 }
 
+char*
+CFCGoTypeMap_go_short_package(CFCParcel *parcel) {
+    // The Go short package name is the last component of the dot-separated
+    // Clownfish parcel name.
+    const char *parcel_frag = strrchr(CFCParcel_get_name(parcel), '.');
+    if (parcel_frag) {
+        parcel_frag += 1;
+    }
+    else {
+        parcel_frag = CFCParcel_get_name(parcel);
+    }
+    // TODO: Don't downcase package name once caps are forbidden in Clownfish
+    // parcel names.
+    char *go_short_package = CFCUtil_strdup(parcel_frag);
+    for (int i = 0; go_short_package[i] != '\0'; i++) {
+        go_short_package[i] = tolower(go_short_package[i]);
+    }
+    return go_short_package;
+}
+
+
+void
+CFCGoTypeMap_go_meth_receiever(const char *struct_name,
+                               CFCParamList *param_list,
+                               char *buf, size_t buf_len) {
+    size_t max_required = 2;
+    if (param_list != NULL && CFCParamList_num_vars(param_list) > 0) {
+        CFCVariable **vars = CFCParamList_get_variables(param_list);
+        const char *orig = CFCVariable_micro_sym(vars[0]);
+        max_required = strlen(orig) + 1;
+    }
+    if (buf_len < max_required) {
+        CFCUtil_die("Buffer length too short: %d", buf_len);
+    }
+
+    // Find the first letter of the type and lowercase it.
+    for (size_t i = 0, max = strlen(struct_name); i < max; i++) {
+        if (isupper(struct_name[i])) {
+            buf[0] = tolower(struct_name[i]);
+            buf[1] = '\0';
+            break;
+        }
+    }
+
+    // Check for another argument with the same name.
+    if (param_list != NULL) {
+        CFCVariable **vars = CFCParamList_get_variables(param_list);
+        size_t num_vars = CFCParamList_num_vars(param_list);
+        for (int i = 1; i < num_vars; i++) {
+            const char *name = CFCVariable_micro_sym(vars[i]);
+            if (strcmp(name, buf) == 0) {
+                // Bah, a clash.  Use the original name, even though it's
+                // probably "self" which isn't good Go style.
+                CFCGoTypeMap_go_arg_name(param_list, 0, buf, buf_len);
+                break;
+            }
+        }
+    }
+}
+
+void
+CFCGoTypeMap_go_arg_name(CFCParamList *param_list, size_t tick, char *buf,
+                         size_t buf_len) {
+    size_t num_vars = CFCParamList_num_vars(param_list);
+    if (tick >= num_vars) {
+        CFCUtil_die("Index out of range: %d >= %d", (int)tick, (int)num_vars);
+    }
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    const char *orig = CFCVariable_micro_sym(vars[tick]);
+    size_t max_required = strlen(orig) + 2;
+    if (buf_len < max_required || buf_len < 5) {
+        CFCUtil_die("Buffer length too short: %d", buf_len);
+    }
+
+    // If the argument name is a Go keyword, append an underscore.  This is
+    // ugly but bulletproof.
+    for (int i = 0; i < num_go_keywords; i++) {
+        if (strcmp(orig, go_keywords[i]) == 0) {
+            sprintf(buf, "%s_", orig);
+            return;
+        }
+    }
+
+    // Transform into lowerCamelCase.
+    size_t dest_tick = 0;
+    int last_was_underscore = 0;
+    for (size_t i = 0; i <= strlen(orig); i++) {
+        if (i > buf_len) {
+            CFCUtil_die("Name too long for buffer of size %d: '%s'", buf_len,
+                        orig);
+        }
+        if (orig[i] == '_') {
+            last_was_underscore = 1;
+            continue;
+        }
+        else if (last_was_underscore) {
+            buf[dest_tick] = toupper(orig[i]);
+        }
+        else {
+            buf[dest_tick] = orig[i];
+        }
+        last_was_underscore = 0;
+        dest_tick++;
+    }
+}
