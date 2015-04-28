@@ -28,7 +28,6 @@ BEGIN {
     our @EXPORT_OK = qw(
         to_clownfish
         to_perl
-        kdump
         );
 }
 
@@ -42,14 +41,6 @@ BEGIN {
     our @ISA = qw( DynaLoader );
     # This loads a large number of disparate subs.
     bootstrap Clownfish '0.4.0';
-}
-
-sub kdump {
-    require Data::Dumper;
-    my $kdumper = Data::Dumper->new( [@_] );
-    $kdumper->Sortkeys( sub { return [ sort keys %{ $_[0] } ] } );
-    $kdumper->Indent(1);
-    warn $kdumper->Dump;
 }
 
 sub error {$Clownfish::Err::error}
