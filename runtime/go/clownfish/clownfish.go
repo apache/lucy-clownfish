@@ -72,8 +72,8 @@ type Obj interface {
 	TOPTR() uintptr
 }
 
-type implObj struct {
-	ref *C.cfish_Obj
+type ObjIMP struct {
+	ref uintptr
 }
 
 type Err interface {
@@ -81,40 +81,40 @@ type Err interface {
 	Error() string
 }
 
-type implErr struct {
-	ref *C.cfish_Err
+type ErrIMP struct {
+	ObjIMP
 }
 
 type String interface {
 	Obj
 }
 
-type implString struct {
-	ref *C.cfish_String
+type StringIMP struct {
+	ObjIMP
 }
 
-type implByteBuf struct {
-	ref *C.cfish_ByteBuf
+type ByteBufIMP struct {
+	ObjIMP
 }
 
-type implHash struct {
-	ref *C.cfish_Hash
+type HashIMP struct {
+	ObjIMP
 }
 
-type implVector struct {
-	ref *C.cfish_Vector
+type VectorIMP struct {
+	ObjIMP
 }
 
-type implClass struct {
-	ref *C.cfish_Class
+type ClassIMP struct {
+	ObjIMP
 }
 
-type implMethod struct {
-	ref *C.cfish_Method
+type MethodIMP struct {
+	ObjIMP
 }
 
-type implLockFreeRegistry struct {
-	ref *C.cfish_LockFreeRegistry
+type LockFreeRegistryIMP struct {
+	ObjIMP
 }
 
 func NewString(goString string) String {
@@ -124,19 +124,24 @@ func NewString(goString string) String {
 	return WRAPString(unsafe.Pointer(cfObj))
 }
 
+func (o *ObjIMP) INITOBJ(ptr unsafe.Pointer) {
+	o.ref = uintptr(ptr)
+	runtime.SetFinalizer(o, ClearRef)
+}
+
+func ClearRef (o *ObjIMP) {
+	C.cfish_dec_refcount(unsafe.Pointer(o.ref))
+	o.ref = 0
+}
+
+func (o *ObjIMP) TOPTR() uintptr {
+	return o.ref
+}
+
 func WRAPString(ptr unsafe.Pointer) String {
-	obj := &implString{((*C.cfish_String)(ptr))}
-	runtime.SetFinalizer(obj, (*implString).finalize)
-	return obj
-}
-
-func (obj *implString) finalize() {
-	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
-	obj.ref = nil
-}
-
-func (obj *implString) TOPTR() uintptr {
-	return uintptr(unsafe.Pointer(obj.ref))
+	s := &StringIMP{ObjIMP{}}
+	s.INITOBJ(ptr)
+	return s
 }
 
 func CFStringToGo(ptr unsafe.Pointer) string {
@@ -162,22 +167,14 @@ func NewErr(mess string) Err {
 }
 
 func WRAPErr(ptr unsafe.Pointer) Err {
-	obj := &implErr{((*C.cfish_Err)(ptr))}
-	runtime.SetFinalizer(obj, (*implErr).finalize)
-	return obj
+	e := &ErrIMP{ObjIMP{}}
+	e.INITOBJ(ptr)
+	return e
 }
 
-func (obj *implErr) finalize() {
-	C.cfish_dec_refcount(unsafe.Pointer(obj.ref))
-	obj.ref = nil
-}
-
-func (obj *implErr) TOPTR() uintptr {
-	return uintptr(unsafe.Pointer(obj.ref))
-}
-
-func (obj *implErr) Error() string {
-	return CFStringToGo(unsafe.Pointer(C.CFISH_Err_Get_Mess(obj.ref)))
+func (e *ErrIMP) Error() string {
+	mess := C.CFISH_Err_Get_Mess((*C.cfish_Err)(unsafe.Pointer(e.ref)))
+	return CFStringToGo(unsafe.Pointer(mess))
 }
 
 //export GoCfish_PanicErr_internal
