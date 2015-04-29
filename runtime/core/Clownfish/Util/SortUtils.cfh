@@ -26,8 +26,6 @@ __END_C__
  * SortUtils provides a merge sort algorithm which allows access to its
  * internals, enabling specialized functions to jump in and only execute part
  * of the sort.
- *
- * SortUtils also provides a quicksort with an additional context argument.
  */
 inert class Clownfish::Util::SortUtils nickname Sort {
 
@@ -57,12 +55,6 @@ inert class Clownfish::Util::SortUtils nickname Sort {
     merge(void *left_ptr,  size_t left_num_elems,
           void *right_ptr, size_t right_num_elems,
           void *dest, size_t width, CFISH_Sort_Compare_t compare, void *context);
-
-    /** Quicksort.
-     */
-    inert void
-    quicksort(void *elems, size_t num_elems, size_t width,
-              CFISH_Sort_Compare_t compare, void *context);
 }
 
 
