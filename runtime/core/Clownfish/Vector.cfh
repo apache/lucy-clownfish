@@ -96,7 +96,8 @@ public class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     public incremented Vector*
     Clone(Vector *self);
 
-    /** Sort the Vector.
+    /** Sort the Vector.  Sort order is guaranteed to be _stable_: the
+     * relative order of elements which compare as equal will not change.
      */
     public void
     Sort(Vector *self);
