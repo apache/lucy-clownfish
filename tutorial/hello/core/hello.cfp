@@ -1,0 +1,8 @@
+{
+    "name": "hello",
+    "version": "v0.1.0",
+    "prerequisites": {
+        "Clownfish": "v0.4.0",
+    }
+}
+

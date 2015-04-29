@@ -1,0 +1,13 @@
+parcel hello;
+
+public class Person inherits Greeter {
+    public inert incremented Person*
+    new();
+
+    public inert Person*
+    init(Person *self);
+
+    public incremented String*
+    Salutation(Person *self);
+}
+
