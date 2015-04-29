@@ -28,7 +28,7 @@
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestFormatter.h"
 #include "Clownfish/TestHarness/TestSuiteRunner.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Class.h"
 
 static void
@@ -42,7 +42,7 @@ TestSuite_new() {
 
 TestSuite*
 TestSuite_init(TestSuite *self) {
-    self->batches = VA_new(0);
+    self->batches = Vec_new(0);
     return self;
 }
 
@@ -54,7 +54,7 @@ TestSuite_Destroy_IMP(TestSuite *self) {
 
 void
 TestSuite_Add_Batch_IMP(TestSuite *self, TestBatch *batch) {
-    VA_Push(self->batches, (Obj*)batch);
+    Vec_Push(self->batches, (Obj*)batch);
 }
 
 bool
@@ -62,10 +62,10 @@ TestSuite_Run_Batch_IMP(TestSuite *self, String *class_name,
                     TestFormatter *formatter) {
     S_unbuffer_stdout();
 
-    uint32_t size = VA_Get_Size(self->batches);
+    uint32_t size = Vec_Get_Size(self->batches);
 
     for (uint32_t i = 0; i < size; ++i) {
-        TestBatch *batch = (TestBatch*)VA_Fetch(self->batches, i);
+        TestBatch *batch = (TestBatch*)Vec_Fetch(self->batches, i);
 
         if (Str_Equals(TestBatch_Get_Class_Name(batch), (Obj*)class_name)) {
             TestBatchRunner *runner = TestBatchRunner_new(formatter);
@@ -84,10 +84,10 @@ TestSuite_Run_All_Batches_IMP(TestSuite *self, TestFormatter *formatter) {
     S_unbuffer_stdout();
 
     TestSuiteRunner *runner = TestSuiteRunner_new(formatter);
-    uint32_t size = VA_Get_Size(self->batches);
+    uint32_t size = Vec_Get_Size(self->batches);
 
     for (uint32_t i = 0; i < size; ++i) {
-        TestBatch *batch = (TestBatch*)VA_Fetch(self->batches, i);
+        TestBatch *batch = (TestBatch*)Vec_Fetch(self->batches, i);
         TestSuiteRunner_Run_Batch(runner, batch);
     }
 

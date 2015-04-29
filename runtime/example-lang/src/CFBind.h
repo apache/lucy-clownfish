@@ -31,7 +31,7 @@ extern "C" {
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
 #include "Clownfish/Num.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Class.h"
 
 /* Strip the prefix from some common symbols where we know there's no

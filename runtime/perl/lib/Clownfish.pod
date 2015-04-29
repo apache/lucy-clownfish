@@ -507,10 +507,10 @@ before the call and decrement it when it's no longer used. If the caller does
 not make further use of the passed-in object, it must not decrement its
 reference count after the call.
 
-This is typically used in container classes like VArray:
+This is typically used in container classes like Vector:
 
     String *string = String_newf("Hello");
-    VA_Push(array, (Obj*)string);
+    Vec_Push(array, (Obj*)string);
     // No need to DECREF the string.
 
 =head3 Default parameter values
@@ -625,7 +625,7 @@ Example:
     /* Clownfish header */
 
     class Path {
-        VArray *nodes;
+        Vector *nodes;
 
         public void
         Destroy(Path *self);

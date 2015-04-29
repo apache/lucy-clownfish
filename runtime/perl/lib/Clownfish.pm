@@ -109,7 +109,7 @@ sub error {$Clownfish::Err::error}
         no strict 'refs';
         my $stash = \%{"$package\::"};
         my $methods
-            = Clownfish::VArray->new( capacity => scalar keys %$stash );
+            = Clownfish::Vector->new( capacity => scalar keys %$stash );
         while ( my ( $symbol, $glob ) = each %$stash ) {
             next if ref $glob;
             next unless *$glob{CODE};
@@ -215,7 +215,7 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::VArray;
+    package Clownfish::Vector;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
     no warnings 'redefine';

@@ -31,12 +31,12 @@ extern "C" {
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
 #include "Clownfish/Num.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Class.h"
 
 VALUE Bind_cfish_to_ruby(cfish_Obj *obj);
 VALUE Bind_str_to_ruby(cfish_String *str);
-static VALUE S_cfish_array_to_ruby_array(cfish_VArray *varray);
+static VALUE S_cfish_array_to_ruby_array(cfish_Vector *varray);
 
 #ifdef __cplusplus
 }

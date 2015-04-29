@@ -27,7 +27,7 @@
 #include "Clownfish/Hash.h"
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Test.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Class.h"
@@ -40,25 +40,25 @@ TestHashIterator_new() {
 static void
 test_Next(TestBatchRunner *runner) {
     Hash     *hash     = Hash_new(0); // trigger multiple rebuilds.
-    VArray   *expected = VA_new(100);
-    VArray   *keys     = VA_new(500);
-    VArray   *values   = VA_new(500);
+    Vector   *expected = Vec_new(100);
+    Vector   *keys     = Vec_new(500);
+    Vector   *values   = Vec_new(500);
 
     for (uint32_t i = 0; i < 500; i++) {
         String *str = Str_newf("%u32", i);
         Hash_Store(hash, str, (Obj*)str);
-        VA_Push(expected, INCREF(str));
+        Vec_Push(expected, INCREF(str));
     }
 
-    VA_Sort(expected, NULL, NULL);
+    Vec_Sort(expected);
 
     {
         HashIterator *iter = HashIter_new(hash);
         while (HashIter_Next(iter)) {
             String *key = HashIter_Get_Key(iter);
             Obj *value = HashIter_Get_Value(iter);
-            VA_Push(keys, INCREF(key));
-            VA_Push(values, INCREF(value));
+            Vec_Push(keys, INCREF(key));
+            Vec_Push(values, INCREF(value));
         }
         TEST_TRUE(runner, !HashIter_Next(iter),
                   "Next continues to return false after iteration finishes.");
@@ -66,10 +66,10 @@ test_Next(TestBatchRunner *runner) {
         DECREF(iter);
     }
 
-    VA_Sort(keys, NULL, NULL);
-    VA_Sort(values, NULL, NULL);
-    TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "Keys from Iter");
-    TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values from Iter");
+    Vec_Sort(keys);
+    Vec_Sort(values);
+    TEST_TRUE(runner, Vec_Equals(keys, (Obj*)expected), "Keys from Iter");
+    TEST_TRUE(runner, Vec_Equals(values, (Obj*)expected), "Values from Iter");
 
     DECREF(hash);
     DECREF(expected);

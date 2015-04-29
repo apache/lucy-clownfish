@@ -19,7 +19,7 @@ parcel Clownfish;
 /** Manage a collection of test batches.
  */
 class Clownfish::TestHarness::TestSuite inherits Clownfish::Obj {
-    VArray *batches;
+    Vector *batches;
 
     inert incremented TestSuite*
     new();

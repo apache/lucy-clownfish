@@ -33,7 +33,7 @@
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Method.h"
 #include "Clownfish/Num.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 
@@ -222,12 +222,12 @@ Class_Get_Obj_Alloc_Size_IMP(Class *self) {
     return self->obj_alloc_size;
 }
 
-VArray*
+Vector*
 Class_Get_Methods_IMP(Class *self) {
-    VArray *retval = VA_new(0);
+    Vector *retval = Vec_new(0);
 
     for (size_t i = 0; self->methods[i]; ++i) {
-        VA_Push(retval, INCREF(self->methods[i]));
+        Vec_Push(retval, INCREF(self->methods[i]));
     }
 
     return retval;
@@ -252,7 +252,7 @@ Class_singleton(String *class_name, Class *parent) {
 
     Class *singleton = (Class*)LFReg_Fetch(Class_registry, class_name);
     if (singleton == NULL) {
-        VArray *fresh_host_methods;
+        Vector *fresh_host_methods;
         uint32_t num_fresh;
 
         if (parent == NULL) {
@@ -278,11 +278,11 @@ Class_singleton(String *class_name, Class *parent) {
 
         // Allow host methods to override.
         fresh_host_methods = Class_fresh_host_methods(class_name);
-        num_fresh = VA_Get_Size(fresh_host_methods);
+        num_fresh = Vec_Get_Size(fresh_host_methods);
         if (num_fresh) {
             Hash *meths = Hash_new(num_fresh);
             for (uint32_t i = 0; i < num_fresh; i++) {
-                String *meth = (String*)VA_Fetch(fresh_host_methods, i);
+                String *meth = (String*)Vec_Fetch(fresh_host_methods, i);
                 Hash_Store(meths, meth, (Obj*)CFISH_TRUE);
             }
             for (Class *klass = parent; klass; klass = klass->parent) {

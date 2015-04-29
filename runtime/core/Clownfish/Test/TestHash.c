@@ -28,7 +28,7 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
-#include "Clownfish/VArray.h"
+#include "Clownfish/Vector.h"
 #include "Clownfish/Class.h"
 
 TestHash*
@@ -66,8 +66,8 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     Hash          *hash         = Hash_new(100);
     Hash          *dupe         = Hash_new(100);
     const uint32_t starting_cap = Hash_Get_Capacity(hash);
-    VArray        *expected     = VA_new(100);
-    VArray        *got          = VA_new(100);
+    Vector        *expected     = Vec_new(100);
+    Vector        *got          = Vec_new(100);
     StackString *twenty       = SSTR_WRAP_UTF8("20", 2);
     StackString *forty        = SSTR_WRAP_UTF8("40", 2);
     StackString *foo          = SSTR_WRAP_UTF8("foo", 3);
@@ -76,7 +76,7 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
         String *str = Str_newf("%i32", i);
         Hash_Store(hash, str, (Obj*)str);
         Hash_Store(dupe, str, INCREF(str));
-        VA_Push(expected, INCREF(str));
+        Vec_Push(expected, INCREF(str));
     }
     TEST_TRUE(runner, Hash_Equals(hash, (Obj*)dupe), "Equals");
 
@@ -84,12 +84,12 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
                 "Initial capacity sufficient (no rebuilds)");
 
     for (int32_t i = 0; i < 100; i++) {
-        String *key  = (String*)VA_Fetch(expected, i);
+        String *key  = (String*)Vec_Fetch(expected, i);
         Obj    *elem = Hash_Fetch(hash, key);
-        VA_Push(got, (Obj*)INCREF(elem));
+        Vec_Push(got, (Obj*)INCREF(elem));
     }
 
-    TEST_TRUE(runner, VA_Equals(got, (Obj*)expected),
+    TEST_TRUE(runner, Vec_Equals(got, (Obj*)expected),
               "basic Store and Fetch");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
                 "size incremented properly by Hash_Store");
@@ -116,7 +116,7 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
                 "size not decremented by unsuccessful Delete");
     DECREF(Hash_Delete(dupe, (String*)forty));
-    TEST_TRUE(runner, VA_Equals(got, (Obj*)expected), "Equals after Delete");
+    TEST_TRUE(runner, Vec_Equals(got, (Obj*)expected), "Equals after Delete");
 
     Hash_Clear(hash);
     TEST_TRUE(runner, Hash_Fetch(hash, (String*)twenty) == NULL, "Clear");
@@ -131,26 +131,26 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
 static void
 test_Keys_Values(TestBatchRunner *runner) {
     Hash     *hash     = Hash_new(0); // trigger multiple rebuilds.
-    VArray   *expected = VA_new(100);
-    VArray   *keys;
-    VArray   *values;
+    Vector   *expected = Vec_new(100);
+    Vector   *keys;
+    Vector   *values;
 
     for (uint32_t i = 0; i < 500; i++) {
         String *str = Str_newf("%u32", i);
         Hash_Store(hash, str, (Obj*)str);
-        VA_Push(expected, INCREF(str));
+        Vec_Push(expected, INCREF(str));
     }
 
-    VA_Sort(expected, NULL, NULL);
+    Vec_Sort(expected);
 
     keys   = Hash_Keys(hash);
     values = Hash_Values(hash);
-    VA_Sort(keys, NULL, NULL);
-    VA_Sort(values, NULL, NULL);
-    TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "Keys");
-    TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "Values");
-    VA_Clear(keys);
-    VA_Clear(values);
+    Vec_Sort(keys);
+    Vec_Sort(values);
+    TEST_TRUE(runner, Vec_Equals(keys, (Obj*)expected), "Keys");
+    TEST_TRUE(runner, Vec_Equals(values, (Obj*)expected), "Values");
+    Vec_Clear(keys);
+    Vec_Clear(values);
 
     {
         StackString *forty = SSTR_WRAP_UTF8("40", 2);
@@ -171,9 +171,9 @@ test_Keys_Values(TestBatchRunner *runner) {
 static void
 test_stress(TestBatchRunner *runner) {
     Hash     *hash     = Hash_new(0); // trigger multiple rebuilds.
-    VArray   *expected = VA_new(1000);
-    VArray   *keys;
-    VArray   *values;
+    Vector   *expected = Vec_new(1000);
+    Vector   *keys;
+    Vector   *values;
 
     for (uint32_t i = 0; i < 1000; i++) {
         String *str = TestUtils_random_string(rand() % 1200);
@@ -182,23 +182,23 @@ test_stress(TestBatchRunner *runner) {
             str = TestUtils_random_string(rand() % 1200);
         }
         Hash_Store(hash, str, (Obj*)str);
-        VA_Push(expected, INCREF(str));
+        Vec_Push(expected, INCREF(str));
     }
 
-    VA_Sort(expected, NULL, NULL);
+    Vec_Sort(expected);
 
     // Overwrite for good measure.
     for (uint32_t i = 0; i < 1000; i++) {
-        String *str = (String*)VA_Fetch(expected, i);
+        String *str = (String*)Vec_Fetch(expected, i);
         Hash_Store(hash, str, INCREF(str));
     }
 
     keys   = Hash_Keys(hash);
     values = Hash_Values(hash);
-    VA_Sort(keys, NULL, NULL);
-    VA_Sort(values, NULL, NULL);
-    TEST_TRUE(runner, VA_Equals(keys, (Obj*)expected), "stress Keys");
-    TEST_TRUE(runner, VA_Equals(values, (Obj*)expected), "stress Values");
+    Vec_Sort(keys);
+    Vec_Sort(values);
+    TEST_TRUE(runner, Vec_Equals(keys, (Obj*)expected), "stress Keys");
+    TEST_TRUE(runner, Vec_Equals(values, (Obj*)expected), "stress Values");
 
     DECREF(keys);
     DECREF(values);
