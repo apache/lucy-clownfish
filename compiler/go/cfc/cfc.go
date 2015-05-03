@@ -280,3 +280,11 @@ func (obj *BindGoClass) SpecMethod(name, sig string) {
 	}
 	C.CFCGoClass_spec_method(obj.ref, nameC, sigC)
 }
+
+func (obj *BindGoClass) SetSuppressStruct(suppressStruct bool) {
+	if suppressStruct {
+		C.CFCGoClass_set_suppress_struct(obj.ref, C.int(1))
+	} else {
+		C.CFCGoClass_set_suppress_struct(obj.ref, C.int(0))
+	}
+}

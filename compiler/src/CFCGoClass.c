@@ -39,6 +39,7 @@ struct CFCGoClass {
     CFCClass *client;
     CFCGoMethod **method_bindings;
     size_t num_bound;
+    int suppress_struct;
 };
 
 static CFCGoClass **registry = NULL;
@@ -163,12 +164,10 @@ CFCGoClass_go_typing(CFCGoClass *self) {
         const char *full_struct  = CFCClass_full_struct_sym(self->client);
 
         CFCClass *parent = CFCClass_get_parent(self->client);
-        char *parent_iface;
-        char *go_struct_def;
+        char *parent_type_str = NULL;
         if (parent) {
             const char *parent_struct = CFCClass_get_struct_sym(parent);
             CFCParcel *parent_parcel = CFCClass_get_parcel(parent);
-            char *parent_type_str;
             if (parent_parcel == self->parcel) {
                 parent_type_str = CFCUtil_strdup(parent_struct);
             }
@@ -179,15 +178,24 @@ CFCGoClass_go_typing(CFCGoClass *self) {
                                                   parent_struct);
                 FREEMEM(parent_package);
             }
-            parent_iface = CFCUtil_sprintf("\t%s\n", parent_type_str);
+        }
+
+        char *go_struct_def;
+        if (parent && !self->suppress_struct) {
             go_struct_def
                 = CFCUtil_sprintf("type %sIMP struct {\n\t%sIMP\n}\n",
                                   short_struct, parent_type_str);
-            FREEMEM(parent_type_str);
+        }
+        else {
+            go_struct_def = CFCUtil_strdup("");
+        }
+
+        char *parent_iface;
+        if (parent) {
+            parent_iface = CFCUtil_sprintf("\t%s\n", parent_type_str);
         }
         else {
             parent_iface = CFCUtil_strdup("");
-            go_struct_def = CFCUtil_strdup("");
         }
 
         char *novel_iface = CFCUtil_strdup("");
@@ -219,6 +227,7 @@ CFCGoClass_go_typing(CFCGoClass *self) {
             ;
         content = CFCUtil_sprintf(pattern, short_struct, parent_iface,
                                   novel_iface, go_struct_def);
+        FREEMEM(parent_type_str);
         FREEMEM(go_struct_def);
         FREEMEM(parent_iface);
     }
@@ -343,5 +352,10 @@ CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig) {
         }
         CFCGoMethod_customize(binding, sig);
     }
+}
+
+void
+CFCGoClass_set_suppress_struct(CFCGoClass *self, int suppress_struct) {
+    self->suppress_struct = !!suppress_struct;
 }
 
