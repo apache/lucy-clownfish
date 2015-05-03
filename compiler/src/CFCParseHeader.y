@@ -51,6 +51,7 @@ S_start_class(CFCParser *state, CFCDocuComment *docucomment, char *exposure,
     }
     CFCParser_set_class_name(state, class_name);
     CFCParser_set_class_nickname(state, class_nickname);
+    CFCParser_set_class_final(state, is_final);
     CFCClass *klass = CFCClass_create(CFCParser_get_parcel(state), exposure,
                                       class_name, class_nickname, NULL,
                                       docucomment, file_spec, inheritance,
@@ -104,6 +105,9 @@ S_new_sub(CFCParser *state, CFCDocuComment *docucomment,
         is_final    = !!strstr(modifiers, "final");
         is_inline   = !!strstr(modifiers, "inline");
         is_inert    = !!strstr(modifiers, "inert");
+    }
+    if (CFCParser_get_class_final(state) && !is_inert) {
+        is_final = true;
     }
 
     /* If "inert", it's a function, otherwise it's a method. */
