@@ -76,6 +76,9 @@ CFCGoClass_gen_meth_glue(CFCGoClass *self);
 void
 CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig);
 
+void
+CFCGoClass_set_suppress_struct(CFCGoClass *self, int suppress_struct);
+
 #ifdef __cplusplus
 }
 #endif
