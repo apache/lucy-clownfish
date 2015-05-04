@@ -24,6 +24,7 @@
 
 #include "Clownfish/Class.h"
 #include "Clownfish/ByteBuf.h"
+#include "Clownfish/Blob.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
 
@@ -180,6 +181,15 @@ char*
 BB_Grow_IMP(ByteBuf *self, size_t size) {
     if (size > self->cap) { S_grow(self, size); }
     return self->buf;
+}
+
+Blob*
+BB_Yield_Blob_IMP(ByteBuf *self) {
+    Blob *blob = Blob_new_steal(self->buf, self->size);
+    self->buf  = NULL;
+    self->size = 0;
+    self->cap  = 0;
+    return blob;
 }
 
 int
