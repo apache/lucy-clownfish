@@ -143,14 +143,6 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::ViewByteBuf;
-    our $VERSION = '0.004000';
-    $VERSION = eval $VERSION;
-    use Carp;
-    sub new { confess "ViewByteBuf objects can only be created from C." }
-}
-
-{
     package Clownfish::String;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;

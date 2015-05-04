@@ -15,7 +15,6 @@
  */
 
 #define C_CFISH_BYTEBUF
-#define C_CFISH_VIEWBYTEBUF
 #define CFISH_USE_SHORT_NAMES
 
 #include <stdlib.h>
@@ -202,40 +201,6 @@ int32_t
 BB_Compare_To_IMP(ByteBuf *self, Obj *other) {
     CERTIFY(other, BYTEBUF);
     return BB_compare(&self, &other);
-}
-
-/******************************************************************/
-
-ViewByteBuf*
-ViewBB_new(char *buf, size_t size) {
-    ViewByteBuf *self = (ViewByteBuf*)Class_Make_Obj(VIEWBYTEBUF);
-    return ViewBB_init(self, buf, size);
-}
-
-ViewByteBuf*
-ViewBB_init(ViewByteBuf *self, char *buf, size_t size) {
-    self->cap  = 0;
-    self->buf  = buf;
-    self->size = size;
-    return self;
-}
-
-void
-ViewBB_Destroy_IMP(ViewByteBuf *self) {
-    Obj_Destroy_t super_duper_destroy = METHOD_PTR(OBJ, CFISH_Obj_Destroy);
-    super_duper_destroy((Obj*)self);
-}
-
-void
-ViewBB_Assign_Bytes_IMP(ViewByteBuf *self, char*buf, size_t size) {
-    self->buf  = buf;
-    self->size = size;
-}
-
-void
-ViewBB_Assign_IMP(ViewByteBuf *self, ByteBuf *other) {
-    self->buf  = other->buf;
-    self->size = other->size;
 }
 
 

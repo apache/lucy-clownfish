@@ -124,33 +124,4 @@ class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     Equals(ByteBuf *self, Obj *other);
 }
 
-/**
- * A ByteBuf that doesn't own its own string.
- */
-class Clownfish::ViewByteBuf nickname ViewBB
-    inherits Clownfish::ByteBuf {
-
-    /** Return a pointer to a new "view" ByteBuf, offing a persective on the
-     * passed-in string.
-     */
-    inert incremented ViewByteBuf*
-    new(char *buf, size_t size);
-
-    inert incremented ViewByteBuf*
-    init(ViewByteBuf *self, char *buf, size_t size);
-
-    /** Assign buf and size members to the passed in values.
-     */
-    void
-    Assign_Bytes(ViewByteBuf *self, char *buf, size_t size);
-
-    /** Assign buf and size members from the passed-in ByteBuf.
-     */
-    void
-    Assign(ViewByteBuf *self, ByteBuf *other);
-
-    public void
-    Destroy(ViewByteBuf *self);
-}
-
 
