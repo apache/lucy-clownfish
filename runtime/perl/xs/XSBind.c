@@ -150,6 +150,9 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     else if (CFISH_Obj_Is_A(obj, CFISH_STRING)) {
         return XSBind_str_to_sv(aTHX_ (cfish_String*)obj);
     }
+    else if (CFISH_Obj_Is_A(obj, CFISH_BLOB)) {
+        return XSBind_blob_to_sv(aTHX_ (cfish_Blob*)obj);
+    }
     else if (CFISH_Obj_Is_A(obj, CFISH_BYTEBUF)) {
         return XSBind_bb_to_sv(aTHX_ (cfish_ByteBuf*)obj);
     }
@@ -229,6 +232,13 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
     }
 
     return retval;
+}
+
+SV*
+XSBind_blob_to_sv(pTHX_ cfish_Blob *blob) {
+    return blob
+           ? newSVpvn(CFISH_Blob_Get_Buf(blob), CFISH_Blob_Get_Size(blob))
+           : newSV(0);
 }
 
 SV*

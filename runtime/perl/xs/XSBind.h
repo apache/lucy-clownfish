@@ -21,6 +21,7 @@
 #define H_CFISH_XSBIND 1
 
 #include "Clownfish/Obj.h"
+#include "Clownfish/Blob.h"
 #include "Clownfish/ByteBuf.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
@@ -117,8 +118,9 @@ cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
     cfish_XSBind_cfish_obj_to_sv_noinc(aTHX_ (cfish_Obj*)_obj)
 
 /** Deep conversion of Clownfish objects to Perl objects -- Strings to UTF-8
- * SVs, ByteBufs to SVs, Vectors to Perl array refs, Hashes to Perl hashrefs,
- * and any other object to a Perl object wrapping the Clownfish Obj.
+ * SVs, Blobs to SVs, ByteBufs to SVs, Vectors to Perl array refs, Hashes to
+ * Perl hashrefs, and any other object to a Perl object wrapping the Clownfish
+ * Obj.
  */
 CFISH_VISIBLE SV*
 cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
@@ -129,6 +131,11 @@ cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
  */
 CFISH_VISIBLE cfish_Obj*
 cfish_XSBind_perl_to_cfish(pTHX_ SV *sv);
+
+/** Convert a Blob into a new string SV.
+ */
+CFISH_VISIBLE SV*
+cfish_XSBind_blob_to_sv(pTHX_ cfish_Blob *blob);
 
 /** Convert a ByteBuf into a new string SV.
  */
@@ -317,6 +324,7 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
 #define XSBind_perl_to_cfish           cfish_XSBind_perl_to_cfish
+#define XSBind_blob_to_sv              cfish_XSBind_blob_to_sv
 #define XSBind_bb_to_sv                cfish_XSBind_bb_to_sv
 #define XSBind_str_to_sv               cfish_XSBind_str_to_sv
 #define XSBind_trap                    cfish_XSBind_trap

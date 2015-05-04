@@ -30,7 +30,7 @@ is_deeply( $transformed, \%complex_data_structure,
     "transform from Perl to Clownfish data structures and back" );
 
 my $bread_and_butter = Clownfish::Hash->new;
-$bread_and_butter->store( 'bread', Clownfish::ByteBuf->new('butter') );
+$bread_and_butter->store( 'bread', Clownfish::Blob->new('butter') );
 my $salt_and_pepper = Clownfish::Hash->new;
 $salt_and_pepper->store( 'salt', Clownfish::ByteBuf->new('pepper') );
 $complex_data_structure{c} = $bread_and_butter;

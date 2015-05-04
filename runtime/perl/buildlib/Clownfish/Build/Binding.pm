@@ -24,6 +24,7 @@ sub bind_all {
     $class->bind_clownfish;
     $class->bind_test;
     $class->bind_test_alias_obj;
+    $class->bind_blob;
     $class->bind_bytebuf;
     $class->bind_string;
     $class->bind_err;
@@ -137,6 +138,36 @@ sub bind_test_alias_obj {
         alias  => 'perl_alias',
         method => 'Aliased',
     );
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_blob {
+    my $xs_code = <<'END_XS_CODE';
+MODULE = Clownfish     PACKAGE = Clownfish::Blob
+
+SV*
+new(either_sv, sv)
+    SV *either_sv;
+    SV *sv;
+CODE:
+{
+    STRLEN size;
+    char *ptr = SvPV(sv, size);
+    cfish_Blob *self
+        = (cfish_Blob*)XSBind_new_blank_obj(aTHX_ either_sv);
+    cfish_Blob_init(self, ptr, size);
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
+}
+OUTPUT: RETVAL
+END_XS_CODE
+
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "Clownfish",
+        class_name => "Clownfish::Blob",
+    );
+    $binding->append_xs($xs_code);
+    $binding->exclude_constructor;
+
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
 
