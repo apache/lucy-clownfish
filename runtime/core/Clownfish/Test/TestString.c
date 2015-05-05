@@ -439,6 +439,7 @@ test_Starts_Ends_With(TestBatchRunner *runner) {
 
     DECREF(prefix);
     DECREF(postfix);
+    DECREF(empty);
 }
 
 static void
