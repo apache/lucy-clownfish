@@ -591,6 +591,15 @@ S_callback_refcount_mods(CFCMethod *method) {
 
 static char*
 S_invalid_callback_body(CFCMethod *method) {
+    CFCParamList *param_list   = CFCMethod_get_param_list(method);
+    CFCVariable **param_vars = CFCParamList_get_variables(param_list);
+    char *unused = CFCUtil_strdup("");
+    for (int i = 0; param_vars[i] != NULL; i++) {
+        const char *name = CFCVariable_micro_sym(param_vars[i]);
+        unused = CFCUtil_cat(unused, "    CFISH_UNUSED_VAR(", name, ");\n",
+                             NULL);
+    }
+
     CFCType *return_type = CFCMethod_get_return_type(method);
     const char *ret_type_str = CFCType_to_c(return_type);
     char *maybe_ret
@@ -602,12 +611,14 @@ S_invalid_callback_body(CFCMethod *method) {
     char *perl_name = CFCPerlMethod_perl_name(method);
 
     char pattern[] =
-        "    CFISH_UNUSED_VAR(self);\n"
+        "%s"
         "    cfish_Err_invalid_callback(\"%s\");\n"
         "%s";
-    char *callback_body = CFCUtil_sprintf(pattern, perl_name, maybe_ret);
+    char *callback_body
+        = CFCUtil_sprintf(pattern, unused, perl_name, maybe_ret);
 
     FREEMEM(perl_name);
+    FREEMEM(unused);
     FREEMEM(maybe_ret);
     return callback_body;
 }
