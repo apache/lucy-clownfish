@@ -68,53 +68,8 @@ func init() {
 	C.cfish_bootstrap_parcel()
 }
 
-type Obj interface {
-	TOPTR() uintptr
-}
-
 type ObjIMP struct {
 	ref uintptr
-}
-
-type Err interface {
-	Obj
-	Error() string
-}
-
-type ErrIMP struct {
-	ObjIMP
-}
-
-type String interface {
-	Obj
-}
-
-type StringIMP struct {
-	ObjIMP
-}
-
-type ByteBufIMP struct {
-	ObjIMP
-}
-
-type HashIMP struct {
-	ObjIMP
-}
-
-type VectorIMP struct {
-	ObjIMP
-}
-
-type ClassIMP struct {
-	ObjIMP
-}
-
-type MethodIMP struct {
-	ObjIMP
-}
-
-type LockFreeRegistryIMP struct {
-	ObjIMP
 }
 
 func NewString(goString string) String {
@@ -138,12 +93,6 @@ func (o *ObjIMP) TOPTR() uintptr {
 	return o.ref
 }
 
-func WRAPString(ptr unsafe.Pointer) String {
-	s := &StringIMP{}
-	s.INITOBJ(ptr)
-	return s
-}
-
 func CFStringToGo(ptr unsafe.Pointer) string {
 	cfString := (*C.cfish_String)(ptr)
 	if cfString == nil {
@@ -164,12 +113,6 @@ func NewErr(mess string) Err {
 	messC := C.cfish_Str_new_steal_utf8(str, len)
 	cfObj := C.cfish_Err_new(messC)
 	return WRAPErr(unsafe.Pointer(cfObj))
-}
-
-func WRAPErr(ptr unsafe.Pointer) Err {
-	e := &ErrIMP{}
-	e.INITOBJ(ptr)
-	return e
 }
 
 func (e *ErrIMP) Error() string {

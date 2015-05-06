@@ -41,6 +41,7 @@ struct CFCParser {
     int lineno;
     char *class_name;
     char *class_nickname;
+    int class_is_final;
     CFCFileSpec *file_spec;
     CFCMemPool *pool;
     CFCParcel  *parcel;
@@ -207,6 +208,16 @@ CFCParser_set_class_nickname(CFCParser *self, const char *class_nickname) {
 const char*
 CFCParser_get_class_nickname(CFCParser *self) {
     return self->class_nickname;
+}
+
+void
+CFCParser_set_class_final(CFCParser *self, int is_final) {
+    self->class_is_final = is_final;
+}
+
+int
+CFCParser_get_class_final(CFCParser *self) {
+    return self->class_is_final;
 }
 
 void

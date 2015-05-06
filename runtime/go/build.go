@@ -39,12 +39,14 @@ var charmonyH string = "charmony.h"
 var buildDir string
 var buildGO string
 var configGO string
+var cfbindGO string
 var installedLibPath string
 
 func init() {
 	_, buildGO, _, _ = runtime.Caller(1)
 	buildDir = path.Dir(buildGO)
 	configGO = path.Join(buildDir, "clownfish", "config.go")
+	cfbindGO = path.Join(buildDir, "clownfish", "cfbind.go")
 	var err error
 	installedLibPath, err = cfc.InstalledLibPath(packageName)
 	if err != nil {
@@ -123,11 +125,23 @@ func runCFC() {
 	if modified {
 		goBinding := cfc.NewBindGo(hierarchy)
 		goBinding.SetHeader(autogenHeader)
+		goBinding.SetSuppressInit(true)
 		parcel := cfc.FetchParcel("Clownfish")
+		specMethods(parcel)
 		packageDir := path.Join(buildDir, "clownfish")
 		goBinding.WriteBindings(parcel, packageDir)
 		hierarchy.WriteLog()
 	}
+}
+
+func specMethods(parcel *cfc.Parcel) {
+	objBinding := cfc.NewGoClass(parcel, "Clownfish::Obj")
+	objBinding.SpecMethod("", "TOPTR() uintptr")
+	objBinding.Register()
+
+	errBinding := cfc.NewGoClass(parcel, "Clownfish::Err")
+	errBinding.SpecMethod("", "Error() string")
+	errBinding.Register()
 }
 
 func prep() {
@@ -229,7 +243,7 @@ func clean() {
 	}
 	fmt.Println("Cleaning")
 	runCommand("make", "clean")
-	cleanables := []string{charmonizerEXE, charmonyH, "Makefile", configGO}
+	cleanables := []string{charmonizerEXE, charmonyH, "Makefile", configGO, cfbindGO}
 	for _, file := range cleanables {
 		err := os.Remove(file)
 		if err == nil {

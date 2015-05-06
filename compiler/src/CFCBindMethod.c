@@ -206,19 +206,47 @@ CFCBindMeth_inherited_spec_def(CFCMethod *method, CFCClass *klass) {
 
 char*
 CFCBindMeth_abstract_method_def(CFCMethod *method) {
+    CFCType    *ret_type      = CFCMethod_get_return_type(method);
+    const char *ret_type_str  = CFCType_to_c(ret_type);
     CFCType    *type          = CFCMethod_self_type(method);
     const char *full_func_sym = CFCMethod_imp_func(method);
     const char *class_var     = CFCType_get_class_var(type);
     const char *macro_sym     = CFCMethod_get_macro_sym(method);
+    CFCParamList *param_list  = CFCMethod_get_param_list(method);
+    const char *params        = CFCParamList_to_c(param_list);
+    CFCVariable **vars        = CFCParamList_get_variables(param_list);
+    const char *invocant      = CFCVariable_micro_sym(vars[0]);
+
+    // All variables other than the invocant are unused, and the return is
+    // unreachable.
+    char *unused = CFCUtil_strdup("");
+    for (int i = 1; vars[i] != NULL; i++) {
+        const char *var_name = CFCVariable_micro_sym(vars[i]);
+        size_t size = strlen(unused) + strlen(var_name) + 80;
+        unused = (char*)REALLOCATE(unused, size);
+        strcat(unused, "\n    CFISH_UNUSED_VAR(");
+        strcat(unused, var_name);
+        strcat(unused, ");");
+    }
+    char *unreachable = CFCUtil_strdup("");
+    if (!CFCType_is_void(ret_type)) {
+        unreachable = CFCUtil_sprintf("    CFISH_UNREACHABLE_RETURN(%s);\n",
+                                      ret_type_str);
+    }
 
     char pattern[] =
-        "void\n"
-        "%s(cfish_Obj *self) {\n"
-        "    cfish_Err_abstract_method_call(self, %s, \"%s\");\n"
+        "%s\n"
+        "%s(%s) {\n"
+        "%s"
+        "    cfish_Err_abstract_method_call((cfish_Obj*)%s, %s, \"%s\");\n"
+        "%s"
         "}\n";
     char *abstract_def
-        = CFCUtil_sprintf(pattern, full_func_sym, class_var, macro_sym);
+        = CFCUtil_sprintf(pattern, ret_type_str, full_func_sym, params,
+                          unused, invocant, class_var, macro_sym,
+                          unreachable);
 
+    FREEMEM(unused);
     return abstract_def;
 }
 

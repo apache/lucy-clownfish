@@ -616,7 +616,6 @@ S_sub_declarations(CFCBindClass *self) {
     }
     for (int i = 0; fresh_methods[i] != NULL; i++) {
         CFCMethod *method = fresh_methods[i];
-        if (CFCMethod_abstract(method)) { continue; }
         char *dec = CFCBindMeth_imp_declaration(method);
         if (CFCMethod_final(method)) {
             declarations = CFCUtil_cat(declarations, PREFIX, "VISIBLE ", NULL);

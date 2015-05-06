@@ -95,6 +95,12 @@ const char*
 CFCParser_get_class_nickname(CFCParser *self);
 
 void
+CFCParser_set_class_final(CFCParser *self, int is_final);
+
+int
+CFCParser_get_class_final(CFCParser *self);
+
+void
 CFCParser_set_file_spec(CFCParser *self, struct CFCFileSpec *file_spec);
 
 struct CFCFileSpec*
