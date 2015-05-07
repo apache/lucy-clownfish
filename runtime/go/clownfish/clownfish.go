@@ -28,7 +28,6 @@ package clownfish
 #include "Clownfish/Vector.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Method.h"
 
 extern void

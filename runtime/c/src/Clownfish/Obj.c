@@ -44,14 +44,6 @@ SI_is_string_type(cfish_Class *klass) {
     return false;
 }
 
-static CFISH_INLINE bool
-SI_threadsafe_but_not_immortal(cfish_Class *klass) {
-    if (klass == CFISH_LOCKFREEREGISTRY) {
-        return true;
-    }
-    return false;
-}
-
 uint32_t
 cfish_get_refcount(void *vself) {
     cfish_Obj *self = (cfish_Obj*)vself;
@@ -77,9 +69,6 @@ cfish_inc_refcount(void *vself) {
         else if (SI_immortal(klass)) {
             return self;
         }
-        else if (SI_threadsafe_but_not_immortal(klass)) {
-            // TODO: use atomic operation
-        }
     }
 
     self->refcount++;
@@ -93,9 +82,6 @@ cfish_dec_refcount(void *vself) {
     if (klass->flags & CFISH_fREFCOUNTSPECIAL) {
         if (SI_immortal(klass)) {
             return self->refcount;
-        }
-        else if (SI_threadsafe_but_not_immortal(klass)) {
-            // TODO: use atomic operation
         }
     }
 

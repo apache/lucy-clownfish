@@ -50,6 +50,7 @@ S_find_method(Class *self, const char *meth_name);
 static int32_t
 S_claim_parcel_id(void);
 
+#define Class_registry cfish_Class_registry
 LockFreeRegistry *Class_registry = NULL;
 
 void
@@ -102,7 +103,6 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
             || spec->klass == &BOOLNUM
             || spec->klass == &STRING
             || spec->klass == &STACKSTRING
-            || spec->klass == &LOCKFREEREGISTRY
            ) {
             klass->flags |= CFISH_fREFCOUNTSPECIAL;
         }

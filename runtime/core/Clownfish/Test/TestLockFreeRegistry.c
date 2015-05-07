@@ -73,7 +73,7 @@ test_all(TestBatchRunner *runner) {
     DECREF(baz);
     DECREF(bar);
     DECREF(foo);
-    DECREF(registry);
+    LFReg_Destroy(registry);
 }
 
 void

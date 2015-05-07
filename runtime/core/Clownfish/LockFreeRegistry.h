@@ -14,29 +14,36 @@
  * limitations under the License.
  */
 
-parcel Clownfish;
-
 /** Specialized lock free hash table for storing Classes.
  */
-class Clownfish::LockFreeRegistry nickname LFReg inherits Clownfish::Obj {
 
-    size_t  capacity;
-    void   *entries;
+struct cfish_Obj;
+struct cfish_String;
 
-    inert incremented LockFreeRegistry*
-    new(size_t capacity);
+typedef struct cfish_LockFreeRegistry cfish_LockFreeRegistry;
 
-    inert LockFreeRegistry*
-    init(LockFreeRegistry *self, size_t capacity);
+cfish_LockFreeRegistry*
+cfish_LFReg_new(size_t capacity);
 
-    public void
-    Destroy(LockFreeRegistry *self);
+cfish_LockFreeRegistry*
+cfish_LFReg_init(cfish_LockFreeRegistry *self, size_t capacity);
 
-    bool
-    Register(LockFreeRegistry *self, String *key, Obj *value);
+void
+CFISH_LFReg_Destroy(cfish_LockFreeRegistry *self);
 
-    nullable Obj*
-    Fetch(LockFreeRegistry *self, String *key);
-}
+bool
+CFISH_LFReg_Register(cfish_LockFreeRegistry *self, struct cfish_String *key,
+                     struct cfish_Obj *value);
 
+struct cfish_Obj*
+CFISH_LFReg_Fetch(cfish_LockFreeRegistry *self, struct cfish_String *key);
+
+#ifdef CFISH_USE_SHORT_NAMES
+  #define LockFreeRegistry cfish_LockFreeRegistry
+  #define LFReg_new        cfish_LFReg_new
+  #define LFReg_init       cfish_LFReg_init
+  #define LFReg_Destroy    CFISH_LFReg_Destroy
+  #define LFReg_Register   CFISH_LFReg_Register
+  #define LFReg_Fetch      CFISH_LFReg_Fetch
+#endif
 

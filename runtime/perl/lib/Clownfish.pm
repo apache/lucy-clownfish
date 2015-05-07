@@ -64,15 +64,6 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::LockFreeRegistry;
-    our $VERSION = '0.004000';
-    $VERSION = eval $VERSION;
-    no warnings 'redefine';
-    sub CLONE_SKIP { 0; }
-    sub DESTROY { }    # leak all
-}
-
-{
     package Clownfish::Obj;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
