@@ -29,21 +29,21 @@ cfish_LockFreeRegistry*
 cfish_LFReg_init(cfish_LockFreeRegistry *self, size_t capacity);
 
 void
-CFISH_LFReg_Destroy(cfish_LockFreeRegistry *self);
+cfish_LFReg_destroy(cfish_LockFreeRegistry *self);
 
 bool
-CFISH_LFReg_Register(cfish_LockFreeRegistry *self, struct cfish_String *key,
+cfish_LFReg_register(cfish_LockFreeRegistry *self, struct cfish_String *key,
                      struct cfish_Obj *value);
 
 struct cfish_Obj*
-CFISH_LFReg_Fetch(cfish_LockFreeRegistry *self, struct cfish_String *key);
+cfish_LFReg_fetch(cfish_LockFreeRegistry *self, struct cfish_String *key);
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define LockFreeRegistry cfish_LockFreeRegistry
   #define LFReg_new        cfish_LFReg_new
   #define LFReg_init       cfish_LFReg_init
-  #define LFReg_Destroy    CFISH_LFReg_Destroy
-  #define LFReg_Register   CFISH_LFReg_Register
-  #define LFReg_Fetch      CFISH_LFReg_Fetch
+  #define LFReg_destroy    cfish_LFReg_destroy
+  #define LFReg_register   cfish_LFReg_register
+  #define LFReg_fetch      cfish_LFReg_fetch
 #endif
 
