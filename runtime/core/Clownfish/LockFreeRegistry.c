@@ -25,7 +25,6 @@
 #include "Clownfish/Util/Memory.h"
 
 struct cfish_LockFreeRegistry {
-    CFISH_OBJ_HEAD;
     size_t  capacity;
     void   *entries;
 };
@@ -41,12 +40,6 @@ typedef struct cfish_LFRegEntry {
 LockFreeRegistry*
 LFReg_new(size_t capacity) {
     LockFreeRegistry *self = CALLOCATE(1, sizeof(LockFreeRegistry));
-    Class_Init_Obj(OBJ, self);
-    return LFReg_init(self, capacity);
-}
-
-LockFreeRegistry*
-LFReg_init(LockFreeRegistry *self, size_t capacity) {
     self->capacity = capacity;
     self->entries  = CALLOCATE(capacity, sizeof(void*));
     return self;
@@ -129,7 +122,7 @@ LFReg_destroy(LockFreeRegistry *self) {
     }
     FREEMEM(self->entries);
 
-    Obj_Destroy_IMP((Obj*)self);
+    FREEMEM(self);
 }
 
 

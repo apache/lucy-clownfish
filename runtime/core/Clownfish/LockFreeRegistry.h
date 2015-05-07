@@ -25,9 +25,6 @@ typedef struct cfish_LockFreeRegistry cfish_LockFreeRegistry;
 cfish_LockFreeRegistry*
 cfish_LFReg_new(size_t capacity);
 
-cfish_LockFreeRegistry*
-cfish_LFReg_init(cfish_LockFreeRegistry *self, size_t capacity);
-
 void
 cfish_LFReg_destroy(cfish_LockFreeRegistry *self);
 
@@ -41,7 +38,6 @@ cfish_LFReg_fetch(cfish_LockFreeRegistry *self, struct cfish_String *key);
 #ifdef CFISH_USE_SHORT_NAMES
   #define LockFreeRegistry cfish_LockFreeRegistry
   #define LFReg_new        cfish_LFReg_new
-  #define LFReg_init       cfish_LFReg_init
   #define LFReg_destroy    cfish_LFReg_destroy
   #define LFReg_register   cfish_LFReg_register
   #define LFReg_fetch      cfish_LFReg_fetch
