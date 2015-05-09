@@ -146,17 +146,16 @@ sub bind_blob {
 MODULE = Clownfish     PACKAGE = Clownfish::Blob
 
 SV*
-new(either_sv, sv)
-    SV *either_sv;
+new(unused_sv, sv)
+    SV *unused_sv;
     SV *sv;
 CODE:
 {
     STRLEN size;
     char *ptr = SvPV(sv, size);
-    cfish_Blob *self
-        = (cfish_Blob*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_Blob_init(self, ptr, size);
+    cfish_Blob *self = cfish_Blob_new(ptr, size);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
+    CFISH_UNUSED_VAR(unused_sv);
 }
 OUTPUT: RETVAL
 END_XS_CODE
@@ -176,18 +175,16 @@ sub bind_bytebuf {
 MODULE = Clownfish     PACKAGE = Clownfish::ByteBuf
 
 SV*
-new(either_sv, sv)
-    SV *either_sv;
+new(unused_sv, sv)
+    SV *unused_sv;
     SV *sv;
 CODE:
 {
     STRLEN size;
     char *ptr = SvPV(sv, size);
-    cfish_ByteBuf *self
-        = (cfish_ByteBuf*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_BB_init(self, size);
-    CFISH_BB_Mimic_Bytes(self, ptr, size);
+    cfish_ByteBuf *self = cfish_BB_new_bytes(ptr, size);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
+    CFISH_UNUSED_VAR(unused_sv);
 }
 OUTPUT: RETVAL
 END_XS_CODE
@@ -336,15 +333,14 @@ sub bind_float32 {
 MODULE = Clownfish   PACKAGE = Clownfish::Float32
 
 SV*
-new(either_sv, value)
-    SV    *either_sv;
+new(unused_sv, value)
+    SV    *unused_sv;
     float  value;
 CODE:
 {
-    cfish_Float32 *self
-        = (cfish_Float32*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_Float32_init(self, value);
+    cfish_Float32 *self = cfish_Float32_new(value);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
+    CFISH_UNUSED_VAR(unused_sv);
 }
 OUTPUT: RETVAL
 END_XS_CODE
@@ -364,15 +360,14 @@ sub bind_float64 {
 MODULE = Clownfish   PACKAGE = Clownfish::Float64
 
 SV*
-new(either_sv, value)
-    SV     *either_sv;
+new(unused_sv, value)
+    SV     *unused_sv;
     double  value;
 CODE:
 {
-    cfish_Float64 *self
-        = (cfish_Float64*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_Float64_init(self, value);
+    cfish_Float64 *self = cfish_Float64_new(value);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
+    CFISH_UNUSED_VAR(unused_sv);
 }
 OUTPUT: RETVAL
 END_XS_CODE
