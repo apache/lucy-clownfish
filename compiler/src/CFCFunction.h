@@ -25,19 +25,14 @@ extern "C" {
 #endif
 
 typedef struct CFCFunction CFCFunction;
-struct CFCParcel;
 struct CFCType;
 struct CFCDocuComment;
 struct CFCParamList;
 struct CFCClass;
 
 /**
- * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param exposure The function's exposure (see
  * L<Clownfish::CFC::Model::Symbol>).
- * @param class_name The full name of the class in whose namespace the
- * function resides.
- * @param class_nickname The C nickname for the class.
  * @param name The name of the function, without any namespacing prefixes.
  * @param return_type A Clownfish::CFC::Model::Type representing the
  * function's return type.
@@ -49,16 +44,12 @@ struct CFCClass;
  * compiler.
  */
 CFCFunction*
-CFCFunction_new(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_nickname,
-                const char *name, struct CFCType *return_type,
-                struct CFCParamList *param_list,
+CFCFunction_new(const char *exposure, const char *name,
+                struct CFCType *return_type, struct CFCParamList *param_list,
                 struct CFCDocuComment *docucomment, int is_inline);
 
 CFCFunction*
-CFCFunction_init(CFCFunction *self, struct CFCParcel *parcel,
-                 const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *name,
+CFCFunction_init(CFCFunction *self, const char *exposure, const char *name,
                  struct CFCType *return_type, struct CFCParamList *param_list,
                  struct CFCDocuComment *docucomment, int is_inline);
 
@@ -89,13 +80,13 @@ CFCFunction_void(CFCFunction *self);
 
 /** A synonym for full_sym().
  */
-const char*
-CFCFunction_full_func_sym(CFCFunction *self);
+char*
+CFCFunction_full_func_sym(CFCFunction *self, struct CFCClass *klass);
 
 /** A synonym for short_sym().
  */
-const char*
-CFCFunction_short_func_sym(CFCFunction *self);
+char*
+CFCFunction_short_func_sym(CFCFunction *self, struct CFCClass *klass);
 
 const char*
 CFCFunction_get_name(CFCFunction *self);

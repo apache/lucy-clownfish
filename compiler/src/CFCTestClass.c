@@ -44,7 +44,7 @@ S_has_symbol(CFCSymbol **symbols, const char *name);
 
 const CFCTestBatch CFCTEST_BATCH_CLASS = {
     "Clownfish::CFC::Model::Class",
-    85,
+    86,
     S_run_tests
 };
 
@@ -65,19 +65,16 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCType *thing_type = CFCTest_parse_type(test, parser, "Thing*");
-        thing = CFCVariable_new(neato, NULL, "Foo", NULL, "thing",
-                                thing_type, 0);
+        thing = CFCVariable_new(NULL, "thing", thing_type, 0);
 
         CFCType *widget_type = CFCTest_parse_type(test, parser, "Widget*");
-        widget = CFCVariable_new(neato, NULL, "Widget", NULL, "widget",
-                                 widget_type, 0);
+        widget = CFCVariable_new(NULL, "widget", widget_type, 0);
 
         CFCType *return_type = CFCTest_parse_type(test, parser, "void");
         CFCParamList *param_list
             = CFCTest_parse_param_list(test, parser, "()");
-        tread_water
-            = CFCFunction_new(neato, NULL, "Foo", NULL, "tread_water",
-                              return_type, param_list, NULL, 0);
+        tread_water = CFCFunction_new(NULL, "tread_water", return_type,
+                                      param_list, NULL, 0);
 
         CFCBase_decref((CFCBase*)thing_type);
         CFCBase_decref((CFCBase*)widget_type);
@@ -86,8 +83,8 @@ S_run_tests(CFCTest *test) {
     }
 
     CFCClass *foo
-        = CFCClass_create(neato, NULL, "Foo", NULL, NULL, NULL, NULL, NULL,
-                          0, 0, 0);
+        = CFCClass_create(neato, NULL, "Foo", NULL, NULL, NULL, NULL, false,
+                          false, false);
     CFCClass_add_function(foo, tread_water);
     CFCClass_add_member_var(foo, thing);
     CFCClass_add_inert_var(foo, widget);
@@ -98,16 +95,18 @@ S_run_tests(CFCTest *test) {
     }
 
     CFCClass *foo_jr
-        = CFCClass_create(neato, NULL, "Foo::FooJr", NULL, NULL, NULL, NULL,
-                          "Foo", 0, 0, 0);
+        = CFCClass_create(neato, NULL, "Foo::FooJr", NULL, NULL, NULL, "Foo",
+                          false, false, false);
     STR_EQ(test, CFCClass_get_struct_sym(foo_jr), "FooJr",
            "get_struct_sym");
     STR_EQ(test, CFCClass_full_struct_sym(foo_jr), "neato_FooJr",
            "full_struct_sym");
+    STR_EQ(test, CFCClass_get_nickname(foo_jr), "FooJr",
+           "derive class nickname from class name");
 
     CFCClass *final_foo
-        = CFCClass_create(neato, NULL, "Foo::FooJr::FinalFoo", NULL, NULL, NULL,
-                          file_spec, "Foo::FooJr", 1, 0, 0);
+        = CFCClass_create(neato, NULL, "Foo::FooJr::FinalFoo", NULL, NULL,
+                          file_spec, "Foo::FooJr", true, false, false);
     OK(test, CFCClass_final(final_foo), "final");
     STR_EQ(test, CFCClass_include_h(final_foo), "Foo/FooJr.h",
            "include_h uses path_part");

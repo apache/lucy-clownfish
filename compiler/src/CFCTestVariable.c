@@ -22,7 +22,13 @@
 #include "CFCSymbol.h"
 #include "CFCTest.h"
 #include "CFCType.h"
+#include "CFCUtil.h"
 #include "CFCVariable.h"
+
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
 
 static void
 S_run_tests(CFCTest *test);
@@ -42,8 +48,7 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCType *type = CFCTest_parse_type(test, parser, "float*");
-        CFCVariable *var
-            = CFCVariable_new(neato_parcel, NULL, NULL, NULL, "foo", type, 0);
+        CFCVariable *var = CFCVariable_new(NULL, "foo", type, 0);
         CFCVariable_resolve_type(var);
         STR_EQ(test, CFCVariable_local_c(var), "float* foo", "local_c");
         STR_EQ(test, CFCVariable_local_declaration(var), "float* foo;",
@@ -56,8 +61,7 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCType *type = CFCTest_parse_type(test, parser, "float[1]");
-        CFCVariable *var
-            = CFCVariable_new(neato_parcel, NULL, NULL, NULL, "foo", type, 0);
+        CFCVariable *var = CFCVariable_new(NULL, "foo", type, 0);
         CFCVariable_resolve_type(var);
         STR_EQ(test, CFCVariable_local_c(var), "float foo[1]",
                "to_c appends array to var name rather than type specifier");
@@ -68,16 +72,20 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCType *type = CFCTest_parse_type(test, parser, "Foo*");
-        CFCVariable *var
-            = CFCVariable_new(neato_parcel, NULL,
-                              "Crustacean::Lobster::LobsterClaw", "LobClaw",
-                              "foo", type, 0);
+        CFCVariable *var = CFCVariable_new(NULL, "foo", type, 0);
         CFCVariable_resolve_type(var);
-        STR_EQ(test, CFCVariable_global_c(var), "neato_Foo* neato_LobClaw_foo",
-               "global_c");
+        CFCClass *ork
+            = CFCClass_create(neato_parcel, NULL,
+                              "Crustacean::Lobster::LobsterClaw", "LobClaw",
+                              NULL, NULL, NULL, false, false, false);
+
+        char *global_c = CFCVariable_global_c(var, ork);
+        STR_EQ(test, global_c, "neato_Foo* neato_LobClaw_foo", "global_c");
+        FREEMEM(global_c);
 
         CFCBase_decref((CFCBase*)type);
         CFCBase_decref((CFCBase*)var);
+        CFCBase_decref((CFCBase*)ork);
     }
 
     {

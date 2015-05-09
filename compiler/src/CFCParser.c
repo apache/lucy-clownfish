@@ -40,7 +40,6 @@ struct CFCParser {
     int errors;
     int lineno;
     char *class_name;
-    char *class_nickname;
     int class_is_final;
     CFCFileSpec *file_spec;
     CFCMemPool *pool;
@@ -69,7 +68,6 @@ CFCParser_init(CFCParser *self) {
     self->errors         = false;
     self->lineno         = 0;
     self->class_name     = NULL;
-    self->class_nickname = NULL;
     self->file_spec      = NULL;
     self->pool           = NULL;
     self->parcel         = NULL;
@@ -80,7 +78,6 @@ void
 CFCParser_destroy(CFCParser *self) {
     CFCParseHeaderFree(self->header_parser, free);
     FREEMEM(self->class_name);
-    FREEMEM(self->class_nickname);
     CFCBase_decref((CFCBase*)self->file_spec);
     CFCBase_decref((CFCBase*)self->pool);
     CFCBase_decref(self->result);
@@ -192,22 +189,6 @@ CFCParser_set_class_name(CFCParser *self, const char *class_name) {
 const char*
 CFCParser_get_class_name(CFCParser *self) {
     return self->class_name;
-}
-
-void
-CFCParser_set_class_nickname(CFCParser *self, const char *class_nickname) {
-    FREEMEM(self->class_nickname);
-    if (class_nickname) {
-        self->class_nickname = CFCUtil_strdup(class_nickname);
-    }
-    else {
-        self->class_nickname = NULL;
-    }
-}
-
-const char*
-CFCParser_get_class_nickname(CFCParser *self) {
-    return self->class_nickname;
 }
 
 void

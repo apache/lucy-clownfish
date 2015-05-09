@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 38;
+use Test::More tests => 35;
 use File::Spec::Functions qw( catfile );
 
 BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
@@ -100,15 +100,6 @@ my $parcel = Clownfish::CFC::Model::Parcel->new(
 );
 $parcel->register;
 is( $parcel->get_version->get_vstring, 'v0', "get_version" );
-
-my $thing = Clownfish::CFC::Model::Symbol->new(
-    name     => 'sym',
-    parcel   => 'Crustacean',
-    exposure => 'parcel'
-);
-is( $thing->get_prefix, 'crust_', 'get_prefix with parcel' );
-is( $thing->get_Prefix, 'Crust_', 'get_Prefix with parcel' );
-is( $thing->get_PREFIX, 'CRUST_', 'get_PREFIx with parcel' );
 
 Clownfish::CFC::Model::Parcel->reap_singletons();
 

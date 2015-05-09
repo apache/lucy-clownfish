@@ -167,7 +167,7 @@ S_register_classes(CFCGo *self, CFCParcel *parcel) {
            ) {
             continue;
         }
-        const char *class_name = CFCClass_get_class_name(klass);
+        const char *class_name = CFCClass_get_name(klass);
         if (!CFCGoClass_singleton(class_name)) {
             CFCGoClass *binding = CFCGoClass_new(parcel, class_name);
             CFCGoClass_register(binding);

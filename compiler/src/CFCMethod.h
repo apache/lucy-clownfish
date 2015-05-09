@@ -33,42 +33,36 @@ extern "C" {
 #endif
 
 typedef struct CFCMethod CFCMethod;
-struct CFCParcel;
 struct CFCType;
 struct CFCClass;
 struct CFCParamList;
 struct CFCDocuComment;
 
 /**
- * @param parcel See Clownfish::CFC::Model::Function.
  * @param exposure See Clownfish::CFC::Model::Symbol.  Defaults to "parcel"
  * if not supplied.
- * @param class_name See Clownfish::CFC::Model::Function.
- * @param class_nickname See Clownfish::CFC::Model::Function.
  * @param name - The mixed case name which will be used when invoking the
  * method.
  * @param return_type See Clownfish::CFC::Model::Function.
  * @param param_list - A Clownfish::CFC::Model::ParamList.  The first element
  * must be an object of the class identified by C<class_name>.
  * @param docucomment see Clownfish::CFC::Model::Function.  May be NULL.
+ * @param class_name The full name of the class in whose namespace the
+ * method is fresh.
  * @param is_final - Indicate whether the method is final.
  * @param is_abstract - Indicate whether the method is abstract.
  */
 CFCMethod*
-CFCMethod_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *class_nickname,
-              const char *name, struct CFCType *return_type,
-              struct CFCParamList *param_list,
-              struct CFCDocuComment *docucomment, int is_final,
-              int is_abstract);
+CFCMethod_new(const char *exposure, const char *name,
+              struct CFCType *return_type, struct CFCParamList *param_list,
+              struct CFCDocuComment *docucomment, const char *class_name,
+              int is_final, int is_abstract);
 
 CFCMethod*
-CFCMethod_init(CFCMethod *self, struct CFCParcel *parcel,
-               const char *exposure, const char *class_name,
-               const char *class_nickname, const char *name,
+CFCMethod_init(CFCMethod *self, const char *exposure, const char *name,
                struct CFCType *return_type, struct CFCParamList *param_list,
-               struct CFCDocuComment *docucomment, int is_final,
-               int is_abstract);
+               struct CFCDocuComment *docucomment, const char *class_name,
+               int is_final, int is_abstract);
 
 void
 CFCMethod_resolve_types(CFCMethod *self);
@@ -175,8 +169,8 @@ CFCMethod_full_typedef(CFCMethod *self, struct CFCClass *invoker);
  * callback to the host in the event that a host method has been defined which
  * overrides this method, e.g. "crust_LobClaw_pinch_OVERRIDE".
  */
-const char*
-CFCMethod_full_override_sym(CFCMethod *self);
+char*
+CFCMethod_full_override_sym(CFCMethod *self, struct CFCClass *klass);
 
 int
 CFCMethod_final(CFCMethod *self);
@@ -208,26 +202,13 @@ CFCMethod_exclude_from_host(CFCMethod *self);
 int
 CFCMethod_excluded_from_host(CFCMethod *self);
 
-struct CFCParcel*
-CFCMethod_get_parcel(CFCMethod *self);
-
-const char*
-CFCMethod_get_prefix(CFCMethod *self);
-
-const char*
-CFCMethod_get_Prefix(CFCMethod *self);
-
-const char*
-CFCMethod_get_PREFIX(CFCMethod *self);
-
 const char*
 CFCMethod_get_exposure(CFCMethod *self);
 
-const char*
-CFCMethod_get_class_name(CFCMethod *self);
-
-const char*
-CFCMethod_get_class_nickname(CFCMethod *self);
+/** Return true if the method is fresh in `klass`.
+ */
+int
+CFCMethod_is_fresh(CFCMethod *self, struct CFCClass *klass);
 
 int
 CFCMethod_public(CFCMethod *self);
@@ -238,11 +219,11 @@ CFCMethod_get_return_type(CFCMethod *self);
 struct CFCParamList*
 CFCMethod_get_param_list(CFCMethod *self);
 
-const char*
-CFCMethod_imp_func(CFCMethod *self);
+char*
+CFCMethod_imp_func(CFCMethod *self, struct CFCClass *klass);
 
-const char*
-CFCMethod_short_imp_func(CFCMethod *self);
+char*
+CFCMethod_short_imp_func(CFCMethod *self, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

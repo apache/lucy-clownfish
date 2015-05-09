@@ -181,7 +181,7 @@ CFCPerlClass_bind_method(CFCPerlClass *self, const char *alias,
         CFCUtil_die("Can't bind_method %s -- can't find method %s in %s",
                     alias, meth_name, self->class_name);
     }
-    if (strcmp(CFCMethod_get_class_name(method), self->class_name) != 0) {
+    if (!CFCMethod_is_fresh(method, self->client)) {
         CFCUtil_die("Can't bind_method %s -- method %s not fresh in %s",
                     alias, meth_name, self->class_name);
     }
@@ -199,7 +199,7 @@ CFCPerlClass_exclude_method(CFCPerlClass *self, const char *meth_name) {
         CFCUtil_die("Can't exclude_method %s -- method not found in %s",
                     meth_name, self->class_name);
     }
-    if (strcmp(CFCMethod_get_class_name(method), self->class_name) != 0) {
+    if (!CFCMethod_is_fresh(method, self->client)) {
         CFCUtil_die("Can't exclude_method %s -- method not fresh in %s",
                     meth_name, self->class_name);
     }
@@ -257,7 +257,7 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
          * this way allows SUPER:: invocations from Perl-space to work
          * properly.
          */
-        CFCPerlMethod *meth_binding = CFCPerlMethod_new(method);
+        CFCPerlMethod *meth_binding = CFCPerlMethod_new(klass, method);
         size_t size = (num_bound + 2) * sizeof(CFCPerlMethod*);
         bound = (CFCPerlMethod**)REALLOCATE(bound, size);
         bound[num_bound] = meth_binding;
@@ -272,7 +272,7 @@ static const char NEW[] = "new";
 
 CFCPerlConstructor**
 CFCPerlClass_constructor_bindings(CFCClass *klass) {
-    const char    *class_name = CFCClass_get_class_name(klass);
+    const char    *class_name = CFCClass_get_name(klass);
     CFCPerlClass  *perl_class = CFCPerlClass_singleton(class_name);
     CFCFunction  **functions  = CFCClass_functions(klass);
     size_t         num_bound  = 0;
@@ -394,7 +394,7 @@ CFCPerlClass_create_pod(CFCPerlClass *self) {
                                   class_name, NULL);
         CFCClass *ancestor = client;
         while (NULL != (ancestor = CFCClass_get_parent(ancestor))) {
-            const char *ancestor_klass = CFCClass_get_class_name(ancestor);
+            const char *ancestor_klass = CFCClass_get_name(ancestor);
             if (CFCPerlClass_singleton(ancestor_klass)) {
                 inheritance = CFCUtil_cat(inheritance, " isa L<",
                                           ancestor_klass, ">", NULL);

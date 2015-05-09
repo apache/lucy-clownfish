@@ -25,7 +25,6 @@
 #define CFC_NEED_CALLABLE_STRUCT_DEF
 #include "CFCCallable.h"
 #include "CFCClass.h"
-#include "CFCParcel.h"
 #include "CFCType.h"
 #include "CFCParamList.h"
 #include "CFCVariable.h"
@@ -39,17 +38,14 @@ static const CFCMeta CFCCALLABLE_META = {
 };
 
 CFCCallable*
-CFCCallable_init(CFCCallable *self, CFCParcel *parcel, const char *exposure,
-                 const char *class_name, const char *class_nickname,
-                 const char *name, CFCType *return_type,
-                 CFCParamList *param_list, CFCDocuComment *docucomment) {
+CFCCallable_init(CFCCallable *self, const char *exposure, const char *name,
+                 CFCType *return_type, CFCParamList *param_list,
+                 CFCDocuComment *docucomment) {
 
     exposure = exposure ? exposure : "parcel";
-    CFCUTIL_NULL_CHECK(class_name);
     CFCUTIL_NULL_CHECK(return_type);
     CFCUTIL_NULL_CHECK(param_list);
-    CFCSymbol_init((CFCSymbol*)self, parcel, exposure, class_name,
-                   class_nickname, name);
+    CFCSymbol_init((CFCSymbol*)self, exposure, name);
     self->return_type = (CFCType*)CFCBase_incref((CFCBase*)return_type);
     self->param_list  = (CFCParamList*)CFCBase_incref((CFCBase*)param_list);
     self->docucomment = (CFCDocuComment*)CFCBase_incref((CFCBase*)docucomment);

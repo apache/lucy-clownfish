@@ -249,7 +249,7 @@ S_write_boot_c(CFCPerl *self) {
         CFCClass *klass = ordered[i];
         if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
 
-        const char *class_name = CFCClass_get_class_name(klass);
+        const char *class_name = CFCClass_get_name(klass);
 
         // Add aliases for selected KinoSearch classes which allow old indexes
         // to be read.
@@ -279,7 +279,7 @@ S_write_boot_c(CFCPerl *self) {
 
         CFCClass *parent = CFCClass_get_parent(klass);
         if (parent) {
-            const char *parent_class_name = CFCClass_get_class_name(parent);
+            const char *parent_class_name = CFCClass_get_name(parent);
             isa_pushes
                 = CFCUtil_cat(isa_pushes, "    isa = get_av(\"",
                               class_name, "::ISA\", 1);\n", NULL);
@@ -458,7 +458,8 @@ CFCPerl_write_bindings(CFCPerl *self) {
             CFCPerlSub *xsub = (CFCPerlSub*)constructors[j];
 
             // Add the XSUB function definition.
-            char *xsub_def = CFCPerlConstructor_xsub_def(constructors[j]);
+            char *xsub_def
+                = CFCPerlConstructor_xsub_def(constructors[j], klass);
             generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
                                        NULL);
             FREEMEM(xsub_def);
@@ -474,7 +475,7 @@ CFCPerl_write_bindings(CFCPerl *self) {
             CFCPerlSub *xsub = (CFCPerlSub*)methods[j];
 
             // Add the XSUB function definition.
-            char *xsub_def = CFCPerlMethod_xsub_def(methods[j]);
+            char *xsub_def = CFCPerlMethod_xsub_def(methods[j], klass);
             generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
                                        NULL);
             FREEMEM(xsub_def);
@@ -615,7 +616,7 @@ S_write_callbacks_c(CFCPerl *self) {
 
             // Define callback.
             if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-                char *cb_def = CFCPerlMethod_callback_def(method);
+                char *cb_def = CFCPerlMethod_callback_def(method, klass);
                 content = CFCUtil_cat(content, cb_def, "\n", NULL);
                 FREEMEM(cb_def);
             }

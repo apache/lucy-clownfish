@@ -39,7 +39,7 @@ struct CFCPerlMethod {
 
 // Return the main chunk of the code for the xsub.
 static char*
-S_xsub_body(CFCPerlMethod *self);
+S_xsub_body(CFCPerlMethod *self, CFCClass *klass);
 
 // Create an assignment statement for extracting $self from the Perl stack.
 static char*
@@ -47,11 +47,11 @@ S_self_assign_statement(CFCPerlMethod *self, CFCType *type);
 
 // Return code for an xsub which uses labeled params.
 static char*
-S_xsub_def_labeled_params(CFCPerlMethod *self);
+S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass);
 
 // Return code for an xsub which uses positional args.
 static char*
-S_xsub_def_positional_args(CFCPerlMethod *self);
+S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass);
 
 /* Generate code which converts C types to Perl types and pushes arguments
  * onto the Perl stack.
@@ -94,16 +94,16 @@ static const CFCMeta CFCPERLMETHOD_META = {
 };
 
 CFCPerlMethod*
-CFCPerlMethod_new(CFCMethod *method) {
+CFCPerlMethod_new(CFCClass *klass, CFCMethod *method) {
     CFCPerlMethod *self
         = (CFCPerlMethod*)CFCBase_allocate(&CFCPERLMETHOD_META);
-    return CFCPerlMethod_init(self, method);
+    return CFCPerlMethod_init(self, klass, method);
 }
 
 CFCPerlMethod*
-CFCPerlMethod_init(CFCPerlMethod *self, CFCMethod *method) {
+CFCPerlMethod_init(CFCPerlMethod *self, CFCClass *klass, CFCMethod *method) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
-    const char *class_name = CFCMethod_get_class_name(method);
+    const char *class_name = CFCClass_get_name(klass);
     int use_labeled_params = CFCParamList_num_vars(param_list) > 2
                              ? 1 : 0;
 
@@ -140,29 +140,22 @@ CFCPerlMethod_perl_name(CFCMethod *method) {
 }
 
 char*
-CFCPerlMethod_xsub_def(CFCPerlMethod *self) {
+CFCPerlMethod_xsub_def(CFCPerlMethod *self, CFCClass *klass) {
     if (self->sub.use_labeled_params) {
-        return S_xsub_def_labeled_params(self);
+        return S_xsub_def_labeled_params(self, klass);
     }
     else {
-        return S_xsub_def_positional_args(self);
+        return S_xsub_def_positional_args(self, klass);
     }
 }
 
 static char*
-S_xsub_body(CFCPerlMethod *self) {
+S_xsub_body(CFCPerlMethod *self, CFCClass *klass) {
     CFCMethod    *method     = self->method;
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     char         *name_list  = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
     char         *body       = CFCUtil_strdup("");
-
-    CFCParcel *parcel = CFCMethod_get_parcel(method);
-    const char *class_name = CFCMethod_get_class_name(method);
-    CFCClass *klass = CFCClass_fetch_singleton(parcel, class_name);
-    if (!klass) {
-        CFCUtil_die("Can't find a CFCClass for '%s'", class_name);
-    }
 
     // Extract the method function pointer.
     char *full_meth = CFCMethod_full_method_sym(method, klass);
@@ -230,7 +223,7 @@ S_self_assign_statement(CFCPerlMethod *self, CFCType *type) {
 }
 
 static char*
-S_xsub_def_labeled_params(CFCPerlMethod *self) {
+S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     CFCMethod *method = self->method;
     const char *c_name = self->sub.c_name;
     CFCParamList *param_list = self->sub.param_list;
@@ -241,10 +234,10 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
     const char  *self_type_c = CFCType_to_c(self_type);
     const char  *self_name   = CFCVariable_get_name(self_var);
     char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
-    char *meth_type_c  = CFCMethod_full_typedef(method, NULL);
+    char *meth_type_c  = CFCMethod_full_typedef(method, klass);
     char *self_assign  = S_self_assign_statement(self, self_type);
     char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
-    char *body         = S_xsub_body(self);
+    char *body         = S_xsub_body(self, klass);
 
     char *retval_decl;
     if (CFCType_is_void(return_type)) {
@@ -291,7 +284,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self) {
 }
 
 static char*
-S_xsub_def_positional_args(CFCPerlMethod *self) {
+S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     CFCMethod *method = self->method;
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     CFCVariable **arg_vars = CFCParamList_get_variables(param_list);
@@ -302,9 +295,9 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
     const char **arg_inits = CFCParamList_get_initial_values(param_list);
     unsigned num_vars = (unsigned)CFCParamList_num_vars(param_list);
     char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
-    char *meth_type_c = CFCMethod_full_typedef(method, NULL);
+    char *meth_type_c = CFCMethod_full_typedef(method, klass);
     char *self_assign = S_self_assign_statement(self, self_type);
-    char *body        = S_xsub_body(self);
+    char *body        = S_xsub_body(self, klass);
 
     // Determine how many args are truly required and build an error check.
     unsigned min_required = 0;
@@ -418,7 +411,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self) {
 }
 
 char*
-CFCPerlMethod_callback_def(CFCMethod *method) {
+CFCPerlMethod_callback_def(CFCMethod *method, CFCClass *klass) {
     CFCType *return_type = CFCMethod_get_return_type(method);
     char *callback_body = NULL;
 
@@ -452,7 +445,7 @@ CFCPerlMethod_callback_def(CFCMethod *method) {
         FREEMEM(refcount_mods);
     }
 
-    const char *override_sym = CFCMethod_full_override_sym(method);
+    char *override_sym = CFCMethod_full_override_sym(method, klass);
 
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     const char *params = CFCParamList_to_c(param_list);
@@ -469,6 +462,7 @@ CFCPerlMethod_callback_def(CFCMethod *method) {
                           callback_body);
 
     FREEMEM(callback_body);
+    FREEMEM(override_sym);
     return callback_def;
 }
 

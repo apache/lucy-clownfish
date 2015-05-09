@@ -94,7 +94,7 @@ S_run_basic_tests(CFCTest *test) {
             const char *cfc_class_name = CFCBase_get_cfc_class(block);
             if (strcmp(cfc_class_name, "Clownfish::CFC::Model::Class") == 0) {
                 CFCClass *klass = (CFCClass*)block;
-                const char *class_name = CFCClass_get_class_name(klass);
+                const char *class_name = CFCClass_get_name(klass);
                 if (strcmp(class_name, "Animal") == 0) {
                     animal = file;
                 }
@@ -180,7 +180,7 @@ S_run_include_tests(CFCTest *test) {
         for (num_classes = 0; classes[num_classes]; ++num_classes) {
             CFCClass *klass = classes[num_classes];
             int expect_included = 1;
-            const char *class_name = CFCClass_get_class_name(klass);
+            const char *class_name = CFCClass_get_name(klass);
             if (strcmp(class_name, "Animal::Rottweiler") == 0) {
                 rottweiler      = klass;
                 expect_included = 0;
@@ -191,7 +191,7 @@ S_run_include_tests(CFCTest *test) {
         }
         INT_EQ(test, num_classes, 5, "class count");
         INT_EQ(test, num_source_classes, 1, "source class count");
-        STR_EQ(test, CFCClass_get_class_name(CFCClass_get_parent(rottweiler)),
+        STR_EQ(test, CFCClass_get_name(CFCClass_get_parent(rottweiler)),
                "Animal::Dog", "parent of included class");
 
         FREEMEM(classes);
@@ -212,7 +212,7 @@ S_run_include_tests(CFCTest *test) {
         int num_classes;
         for (num_classes = 0; classes[num_classes]; ++num_classes) {
             CFCClass *klass = classes[num_classes];
-            const char *class_name = CFCClass_get_class_name(klass);
+            const char *class_name = CFCClass_get_name(klass);
             if (strcmp(class_name, "Animal::Rottweiler") == 0) {
                 rottweiler = klass;
             }
@@ -220,7 +220,7 @@ S_run_include_tests(CFCTest *test) {
         }
         INT_EQ(test, num_classes, 5, "class count");
         OK(test, rottweiler != NULL, "found rottweiler");
-        STR_EQ(test, CFCClass_get_class_name(CFCClass_get_parent(rottweiler)),
+        STR_EQ(test, CFCClass_get_name(CFCClass_get_parent(rottweiler)),
                "Animal::Dog", "parent of class from second source");
 
         FREEMEM(classes);

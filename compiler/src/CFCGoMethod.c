@@ -85,13 +85,13 @@ CFCGoMethod_customize(CFCGoMethod *self, const char *sig) {
 }
 
 static void
-S_lazy_init_sig(CFCGoMethod *self) {
+S_lazy_init_sig(CFCGoMethod *self, CFCClass *invoker) {
     if (self->sig || !self->method) {
         return;
     }
 
     CFCMethod *method = self->method;
-    CFCParcel *parcel = CFCMethod_get_parcel(method);
+    CFCParcel *parcel = CFCClass_get_parcel(invoker);
     CFCType *return_type = CFCMethod_get_return_type(method);
     char *name = CFCGoFunc_go_meth_name(CFCMethod_get_name(method));
     char *go_ret_type = CFCType_is_void(return_type)
@@ -120,7 +120,7 @@ S_lazy_init_sig(CFCGoMethod *self) {
 }
 
 const char*
-CFCGoMethod_get_sig(CFCGoMethod *self) {
+CFCGoMethod_get_sig(CFCGoMethod *self, CFCClass *invoker) {
     if (self->sig) {
         return self->sig;
     }
@@ -128,7 +128,7 @@ CFCGoMethod_get_sig(CFCGoMethod *self) {
         return "";
     }
     else {
-        S_lazy_init_sig(self);
+        S_lazy_init_sig(self, invoker);
         return self->sig;
     }
 }
@@ -191,7 +191,7 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
                                             param_list, ret_type, true);
     char *cfunc;
     if (CFCMethod_novel(self->method) && CFCMethod_final(self->method)) {
-        cfunc = CFCUtil_strdup(CFCMethod_imp_func(self->method));
+        cfunc = CFCUtil_strdup(CFCMethod_imp_func(self->method, invoker));
     }
     else {
         cfunc = CFCMethod_full_method_sym(novel_method, NULL);

@@ -25,7 +25,7 @@
 #define CFC_NEED_CALLABLE_STRUCT_DEF
 #include "CFCCallable.h"
 #include "CFCFunction.h"
-#include "CFCParcel.h"
+#include "CFCClass.h"
 #include "CFCType.h"
 #include "CFCParamList.h"
 #include "CFCVariable.h"
@@ -44,15 +44,12 @@ static const CFCMeta CFCFUNCTION_META = {
 };
 
 CFCFunction*
-CFCFunction_new(CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_nickname,
-                const char *name, CFCType *return_type,
+CFCFunction_new(const char *exposure, const char *name, CFCType *return_type,
                 CFCParamList *param_list, CFCDocuComment *docucomment,
                 int is_inline) {
     CFCFunction *self = (CFCFunction*)CFCBase_allocate(&CFCFUNCTION_META);
-    return CFCFunction_init(self, parcel, exposure, class_name, class_nickname,
-                            name, return_type, param_list, docucomment,
-                            is_inline);
+    return CFCFunction_init(self, exposure, name, return_type, param_list,
+                            docucomment, is_inline);
 }
 
 static int
@@ -67,19 +64,16 @@ S_validate_function_name(const char *name) {
 }
 
 CFCFunction*
-CFCFunction_init(CFCFunction *self, CFCParcel *parcel, const char *exposure,
-                 const char *class_name, const char *class_nickname,
-                 const char *name, CFCType *return_type,
-                 CFCParamList *param_list, CFCDocuComment *docucomment,
-                 int is_inline) {
+CFCFunction_init(CFCFunction *self, const char *exposure, const char *name,
+                 CFCType *return_type, CFCParamList *param_list,
+                 CFCDocuComment *docucomment, int is_inline) {
 
     if (!S_validate_function_name(name)) {
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Invalid function name: '%s'", name);
     }
-    CFCCallable_init((CFCCallable*)self, parcel, exposure, class_name,
-                     class_nickname, name, return_type, param_list,
-                     docucomment);
+    CFCCallable_init((CFCCallable*)self, exposure, name, return_type,
+                     param_list, docucomment);
     self->is_inline = is_inline;
     return self;
 }
@@ -124,14 +118,14 @@ CFCFunction_void(CFCFunction *self) {
     return CFCType_is_void(self->callable.return_type);
 }
 
-const char*
-CFCFunction_full_func_sym(CFCFunction *self) {
-    return CFCSymbol_full_sym((CFCSymbol*)self);
+char*
+CFCFunction_full_func_sym(CFCFunction *self, CFCClass *klass) {
+    return CFCSymbol_full_sym((CFCSymbol*)self, klass);
 }
 
-const char*
-CFCFunction_short_func_sym(CFCFunction *self) {
-    return CFCSymbol_short_sym((CFCSymbol*)self);
+char*
+CFCFunction_short_func_sym(CFCFunction *self, CFCClass *klass) {
+    return CFCSymbol_short_sym((CFCSymbol*)self, klass);
 }
 
 const char*

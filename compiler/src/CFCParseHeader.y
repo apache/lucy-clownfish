@@ -50,12 +50,11 @@ S_start_class(CFCParser *state, CFCDocuComment *docucomment, char *exposure,
         is_abstract = !!strstr(modifiers, "abstract");
     }
     CFCParser_set_class_name(state, class_name);
-    CFCParser_set_class_nickname(state, class_nickname);
     CFCParser_set_class_final(state, is_final);
     CFCClass *klass = CFCClass_create(CFCParser_get_parcel(state), exposure,
-                                      class_name, class_nickname, NULL,
-                                      docucomment, file_spec, inheritance,
-                                      is_final, is_inert, is_abstract);
+                                      class_name, class_nickname, docucomment,
+                                      file_spec, inheritance, is_final,
+                                      is_inert, is_abstract);
     CFCBase_decref((CFCBase*)docucomment);
     return klass;
 }
@@ -71,15 +70,7 @@ S_new_var(CFCParser *state, char *exposure, char *modifiers, CFCType *type,
         inert = true;
     }
 
-    CFCParcel  *parcel         = CFCParser_get_parcel(state);
-    const char *class_name     = NULL;
-    const char *class_nickname = NULL;
-    if (exposure && strcmp(exposure, "local") != 0) {
-        class_name     = CFCParser_get_class_name(state);
-        class_nickname = CFCParser_get_class_nickname(state);
-    }
-    CFCVariable *var = CFCVariable_new(parcel, exposure, class_name,
-                                       class_nickname, name, type, inert);
+    CFCVariable *var = CFCVariable_new(exposure, name, type, inert);
 
     /* Consume tokens. */
     CFCBase_decref((CFCBase*)type);
@@ -91,10 +82,6 @@ static CFCBase*
 S_new_sub(CFCParser *state, CFCDocuComment *docucomment, 
           char *exposure, char *modifiers, CFCType *type, char *name,
           CFCParamList *param_list) {
-    CFCParcel  *parcel         = CFCParser_get_parcel(state);
-    const char *class_name     = CFCParser_get_class_name(state);
-    const char *class_nickname = CFCParser_get_class_nickname(state);
-
     /* Find modifiers by scanning the list. */
     int is_abstract = false;
     int is_final    = false;
@@ -119,17 +106,17 @@ S_new_sub(CFCParser *state, CFCDocuComment *docucomment,
         if (is_final) {
             CFCUtil_die("Inert functions must not be final");
         }
-        sub = (CFCBase*)CFCFunction_new(parcel, exposure, class_name,
-                                         class_nickname, name, type,
-                                         param_list, docucomment, is_inline);
+        sub = (CFCBase*)CFCFunction_new(exposure, name, type, param_list,
+                                        docucomment, is_inline);
     }
     else {
         if (is_inline) {
             CFCUtil_die("Methods must not be inline");
         }
-        sub = (CFCBase*)CFCMethod_new(parcel, exposure, class_name,
-                                       class_nickname, name, type, param_list,
-                                       docucomment, is_final, is_abstract);
+        const char *class_name = CFCParser_get_class_name(state);
+        sub = (CFCBase*)CFCMethod_new(exposure, name, type, param_list,
+                                      docucomment, class_name, is_final,
+                                      is_abstract);
     }
 
     /* Consume tokens. */
@@ -349,7 +336,6 @@ class_declaration(A) ::= class_defs(B) RIGHT_CURLY_BRACE.
 {
     A = B;
     CFCParser_set_class_name(state, NULL);
-    CFCParser_set_class_nickname(state, NULL);
 }
 
 class_head(A) ::= docucomment(B) exposure_specifier(C) declaration_modifier_list(D) CLASS qualified_id(E) nickname(F) class_inheritance(G).  { A = S_start_class(state, B,    C,    D,    E,    F,    G   ); }

@@ -49,9 +49,9 @@ my $dest_dir = catdir(qw( t cfdest ));
 
         my $expect;
 
-        if ($class->get_class_name eq "Animal::Rottweiler") {
+        if ($class->get_name eq "Animal::Rottweiler") {
             $expect = 0;
-            my $parent_name = $class->get_parent->get_class_name;
+            my $parent_name = $class->get_parent->get_name;
             is( $parent_name, "Animal::Dog", "parent of included class" );
         }
         else {
@@ -87,8 +87,8 @@ my $dest_dir = catdir(qw( t cfdest ));
     for my $class (@$classes) {
         die "not a Class" unless isa_ok( $class, "Clownfish::CFC::Model::Class" );
 
-        if ($class->get_class_name eq "Animal::Rottweiler") {
-            my $parent_name = $class->get_parent->get_class_name;
+        if ($class->get_name eq "Animal::Rottweiler") {
+            my $parent_name = $class->get_parent->get_name;
             is( $parent_name, "Animal::Dog", "parent of class from second source" );
         }
     }

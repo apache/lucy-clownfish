@@ -331,7 +331,7 @@ S_run_object_tests(CFCTest *test) {
     CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
     CFCClass *foo_class
         = CFCClass_create(neato_parcel, NULL, "Foo", NULL, NULL, NULL, NULL,
-                          NULL, false, false, false);
+                          false, false, false);
     CFCType *foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
     CFCType_resolve(foo);
 
@@ -345,7 +345,7 @@ S_run_object_tests(CFCTest *test) {
     {
         CFCClass *bar_class
             = CFCClass_create(neato_parcel, NULL, "Bar", NULL, NULL, NULL,
-                              NULL, NULL, false, false, false);
+                              NULL, false, false, false);
         CFCType *bar = CFCType_new_object(0, neato_parcel, "Bar", 1);
         CFCType_resolve(bar);
         OK(test, !CFCType_equals(foo, bar),
@@ -359,7 +359,7 @@ S_run_object_tests(CFCTest *test) {
             = CFCParcel_new("Foreign", NULL, NULL, NULL);
         CFCClass *foreign_foo_class
             = CFCClass_create(foreign_parcel, NULL, "Foreign::Foo", NULL, NULL,
-                              NULL, NULL, NULL, false, false, false);
+                              NULL, NULL, false, false, false);
         CFCType *foreign_foo = CFCType_new_object(0, foreign_parcel, "Foo", 1);
         CFCType_resolve(foreign_foo);
         OK(test, !CFCType_equals(foo, foreign_foo),

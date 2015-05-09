@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 typedef struct CFCSymbol CFCSymbol;
+struct CFCClass;
 struct CFCParcel;
 
 #ifdef CFC_NEED_SYMBOL_STRUCT_DEF
@@ -36,45 +37,21 @@ struct CFCParcel;
 #include "CFCBase.h"
 struct CFCSymbol {
     CFCBase base;
-    struct CFCParcel *parcel;
     char *exposure;
-    char *class_name;
-    char *class_nickname;
     char *name;
-    char *short_sym;
-    char *full_sym;
 };
 #endif
 
-/** Return true if the supplied string is comprised solely of alphanumeric
- * characters, begins with an uppercase letter, and contains at least one
- * lower case letter.
- */
-int
-CFCSymbol_validate_class_name_component(const char *name);
-
 /**
- * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param exposure The scope in which the symbol is exposed.  Must be
  * 'public', 'parcel', 'private', or 'local'.
- * @param class_name A optional class name, consisting of one or more
- * components separated by "::".  Each component must start with a capital
- * letter, contain at least one lower-case letter, and consist entirely of the
- * characters [A-Za-z0-9].
- * @param class_nickname The C nickname associated with the supplied class
- * name.  If not supplied, will be derived if possible from C<class_name> by
- * extracting the last class name component.
  * @param name The local identifier for the symbol.
  */
 CFCSymbol*
-CFCSymbol_new(struct CFCParcel *parcel, const char *exposure,
-              const char *class_name, const char *class_nickname,
-              const char *name);
+CFCSymbol_new(const char *exposure, const char *name);
 
 CFCSymbol*
-CFCSymbol_init(CFCSymbol *self, struct CFCParcel *parcel, const char *exposure,
-               const char *class_name, const char *class_nickname,
-               const char *name);
+CFCSymbol_init(CFCSymbol *self, const char *exposure, const char *name);
 
 void
 CFCSymbol_destroy(CFCSymbol *self);
@@ -83,17 +60,6 @@ CFCSymbol_destroy(CFCSymbol *self);
  */
 int
 CFCSymbol_equals(CFCSymbol *self, CFCSymbol *other);
-
-struct CFCParcel*
-CFCSymbol_get_parcel(CFCSymbol *self);
-
-// May be NULL.
-const char*
-CFCSymbol_get_class_name(CFCSymbol *self);
-
-// May be NULL.
-const char*
-CFCSymbol_get_class_nickname(CFCSymbol *self);
 
 const char*
 CFCSymbol_get_exposure(CFCSymbol *self);
@@ -126,29 +92,14 @@ CFCSymbol_get_name(CFCSymbol *self);
 /** Returns the C representation for the symbol minus the parcel's prefix,
  * e.g.  "Lobster_average_lifespan".
  */
-const char*
-CFCSymbol_short_sym(CFCSymbol *self);
+char*
+CFCSymbol_short_sym(CFCSymbol *self, struct CFCClass *klass);
 
 /** Returns the fully qualified C representation for the symbol, e.g.
  * "crust_Lobster_average_lifespan".
  */
-const char*
-CFCSymbol_full_sym(CFCSymbol *self);
-
-/** Get the Symbol's all-lowercase prefix, delegating to `parcel`.
- */
-const char*
-CFCSymbol_get_prefix(CFCSymbol *self);
-
-/** Get the Symbol's Titlecase prefix, delegating to `parcel`.
- */
-const char*
-CFCSymbol_get_Prefix(CFCSymbol *self);
-
-/** Get the Symbol's all-uppercase prefix, delegating to `parcel`.
- */
-const char*
-CFCSymbol_get_PREFIX(CFCSymbol *self);
+char*
+CFCSymbol_full_sym(CFCSymbol *self, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

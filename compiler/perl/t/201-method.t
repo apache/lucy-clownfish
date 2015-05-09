@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 30;
+use Test::More tests => 38;
 
 BEGIN { use_ok('Clownfish::CFC::Model::Method') }
 use Clownfish::CFC::Parser;
@@ -26,12 +26,10 @@ $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
 
 my %args = (
-    parcel         => 'Neato',
-    return_type    => $parser->parse('Obj*'),
-    class_name     => 'Neato::Foo',
-    class_nickname => 'Foo',
-    param_list     => $parser->parse('(Foo *self, int32_t count = 0)'),
-    name           => 'Return_An_Obj',
+    return_type => $parser->parse('Obj*'),
+    class_name  => 'Neato::Foo',
+    param_list  => $parser->parse('(Foo *self, int32_t count = 0)'),
+    name        => 'Return_An_Obj',
 );
 
 my $method = Clownfish::CFC::Model::Method->new(%args);
@@ -49,6 +47,24 @@ eval {
     Clownfish::CFC::Model::Method->new( %args, name => 'return_an_obj' );
 };
 like( $@, qr/name/, "Invalid name kills constructor" );
+
+for (qw( foo 1Foo Foo_Bar 1FOOBAR )) {
+    eval {
+        Clownfish::CFC::Model::Method->new(
+            %args,
+            class_name => $_,
+        );
+    };
+    like( $@, qr/class_name/, "Reject invalid class name $_" );
+    my $bogus_middle = "Foo::" . $_ . "::Bar";
+    eval {
+        Clownfish::CFC::Model::Method->new(
+            %args,
+            class_name => $bogus_middle,
+        );
+    };
+    like( $@, qr/class_name/, "Reject invalid class name $bogus_middle" );
+}
 
 my $dupe = Clownfish::CFC::Model::Method->new(%args);
 ok( $method->compatible($dupe), "compatible()" );
@@ -97,9 +113,8 @@ ok( !$param_type_differs->compatible($method), "... reversed" );
 
 my $self_type_differs = Clownfish::CFC::Model::Method->new(
     %args,
-    class_name     => 'Neato::Bar',
-    class_nickname => 'Bar',
-    param_list     => $parser->parse('(Bar *self, int32_t count = 0)'),
+    class_name => 'Neato::Bar',
+    param_list => $parser->parse('(Bar *self, int32_t count = 0)'),
 );
 ok( $method->compatible($self_type_differs),
     "different self type still compatible(), since can't test inheritance" );
@@ -119,7 +134,6 @@ for my $meth_meth (qw( short_method_sym full_method_sym full_offset_sym)) {
 }
 
 $parser->set_class_name("Neato::Obj");
-$parser->set_class_nickname("Obj");
 isa_ok(
     $parser->parse($_),
     "Clownfish::CFC::Model::Method",

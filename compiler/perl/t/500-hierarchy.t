@@ -61,10 +61,10 @@ for my $file (@files) {
     ok( !$file->get_modified, "start off not modified" );
     my ($class) = grep {
         a_isa_b( $_, "Clownfish::CFC::Model::Class" )
-        && $_->get_class_name ne 'Clownfish::Obj'
+        && $_->get_name ne 'Clownfish::Obj'
     } @{ $file->blocks };
     die "no class" unless $class;
-    $files{ $class->get_class_name } = $file;
+    $files{ $class->get_name } = $file;
 }
 my $animal = $files{'Animal'}       or die "No Animal";
 my $dog    = $files{'Animal::Dog'}  or die "No Dog";

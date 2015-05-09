@@ -162,7 +162,7 @@ CFCPerlPod_get_description(CFCPerlPod *self) {
 
 char*
 CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
-    const char *class_name = CFCClass_get_class_name(klass);
+    const char *class_name = CFCClass_get_name(klass);
     char *abstract_pod = CFCUtil_strdup("");
     char *methods_pod  = CFCUtil_strdup("");
     for (size_t i = 0; i < self->num_methods; i++) {
@@ -173,7 +173,7 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
         }
         if (!method) {
             CFCUtil_die("Can't find method '%s' in class '%s'",
-                        meth_spec.alias, CFCClass_get_class_name(klass));
+                        meth_spec.alias, CFCClass_get_name(klass));
         }
         char *meth_pod;
         if (meth_spec.pod) {
@@ -213,7 +213,7 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
     if (!self->num_constructors) {
         return CFCUtil_strdup("");
     }
-    const char *class_name = CFCClass_get_class_name(klass);
+    const char *class_name = CFCClass_get_name(klass);
     char *pod = CFCUtil_strdup("=head1 CONSTRUCTORS\n\n");
     for (size_t i = 0; i < self->num_constructors; i++) {
         NamePod slot = self->constructors[i];
@@ -565,7 +565,7 @@ S_convert_link(CFCClass *klass, cmark_node *link) {
                 CFCUtil_warn("URI class not found: %s", full_struct_sym);
             }
             else if (uri_class != klass) {
-                const char *class_name = CFCClass_get_class_name(uri_class);
+                const char *class_name = CFCClass_get_name(uri_class);
                 new_uri = CFCUtil_strdup(class_name);
             }
 
@@ -588,7 +588,7 @@ S_convert_link(CFCClass *klass, cmark_node *link) {
                 }
                 else {
                     const char *class_name
-                        = CFCClass_get_class_name(uri_class);
+                        = CFCClass_get_name(uri_class);
                     new_text = CFCUtil_strdup(class_name);
                 }
             }
@@ -620,7 +620,7 @@ S_convert_link(CFCClass *klass, cmark_node *link) {
                 CFCUtil_warn("URI class not found: %s", full_struct_sym);
             }
             else if (uri_class != klass) {
-                const char *class_name = CFCClass_get_class_name(uri_class);
+                const char *class_name = CFCClass_get_name(uri_class);
                 new_uri = CFCUtil_strdup(class_name);
             }
 

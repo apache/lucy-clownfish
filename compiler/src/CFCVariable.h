@@ -39,21 +39,16 @@ struct CFCParcel;
 struct CFCType;
 
 /**
- * @param type A Clownfish::CFC::Model::Type.
- * @param name The variable's name, without any namespacing prefixes.
  * @param exposure See Clownfish::CFC::Model::Symbol.
- * @param class_name See Clownfish::CFC::Model::Symbol.
- * @param class_nickname See Clownfish::CFC::Model::Symbol.
+ * @param name The variable's name, without any namespacing prefixes.
+ * @param type A Clownfish::CFC::Model::Type.
  */
 CFCVariable*
-CFCVariable_new(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_nickname,
-                const char *name, struct CFCType *type, int inert);
+CFCVariable_new(const char *exposure, const char *name, struct CFCType *type,
+                int inert);
 
 CFCVariable*
-CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
-                 const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *name,
+CFCVariable_init(CFCVariable *self, const char *exposure, const char *name,
                  struct CFCType *type, int inert);
 
 void
@@ -85,8 +80,8 @@ CFCVariable_local_c(CFCVariable *self);
  *
  *     int32_t crust_Lobster_average_lifespan
  */
-const char*
-CFCVariable_global_c(CFCVariable *self);
+char*
+CFCVariable_global_c(CFCVariable *self, struct CFCClass *klass);
 
 /** Returns C code appropriate for declaring the variable in a local scope,
  * such as within a struct definition, or as an automatic variable within a C
@@ -100,11 +95,11 @@ CFCVariable_local_declaration(CFCVariable *self);
 const char*
 CFCVariable_get_name(CFCVariable *self);
 
-const char*
-CFCVariable_short_sym(CFCVariable *self);
+char*
+CFCVariable_short_sym(CFCVariable *self, struct CFCClass *klass);
 
-const char*
-CFCVariable_full_sym(CFCVariable *self);
+char*
+CFCVariable_full_sym(CFCVariable *self, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }

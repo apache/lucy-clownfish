@@ -84,14 +84,14 @@ CFCUri_init(CFCUri *self, const char *uri, CFCClass *klass) {
             }
             else if (self->type == CFC_URI_FUNCTION) {
                 if (!CFCClass_function(klass, self->func_sym)) {
-                    const char *class_name = CFCClass_get_class_name(klass);
+                    const char *class_name = CFCClass_get_name(klass);
                     CFCUtil_warn("No function found for URI %s in %s", uri,
                                  class_name);
                 }
             }
             else if (self->type == CFC_URI_METHOD) {
                 if (!CFCClass_method(klass, self->func_sym)) {
-                    const char *class_name = CFCClass_get_class_name(klass);
+                    const char *class_name = CFCClass_get_name(klass);
                     CFCUtil_warn("No method found for URI %s in %s", uri,
                                  class_name);
                 }

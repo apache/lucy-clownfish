@@ -44,7 +44,7 @@ CFCGoMethod_customize(CFCGoMethod *self, const char *sig);
 /** Retrieve the Go interface method signature.
  */
 const char*
-CFCGoMethod_get_sig(CFCGoMethod *self);
+CFCGoMethod_get_sig(CFCGoMethod *self, struct CFCClass *invoker);
 
 char*
 CFCGoMethod_func_def(CFCGoMethod *self, struct CFCClass *invoker);

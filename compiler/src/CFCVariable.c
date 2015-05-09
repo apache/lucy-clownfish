@@ -23,6 +23,7 @@
 #endif
 
 #define CFC_NEED_SYMBOL_STRUCT_DEF
+#include "CFCClass.h"
 #include "CFCSymbol.h"
 #include "CFCVariable.h"
 #include "CFCParcel.h"
@@ -48,18 +49,14 @@ static void
 S_generate_c_strings(CFCVariable *self);
 
 CFCVariable*
-CFCVariable_new(struct CFCParcel *parcel, const char *exposure,
-                const char *class_name, const char *class_nickname,
-                const char *name, struct CFCType *type, int inert) {
+CFCVariable_new(const char *exposure, const char *name, struct CFCType *type,
+                int inert) {
     CFCVariable *self = (CFCVariable*)CFCBase_allocate(&CFCVARIABLE_META);
-    return CFCVariable_init(self, parcel, exposure, class_name, class_nickname,
-                            name, type, inert);
+    return CFCVariable_init(self, exposure, name, type, inert);
 }
 
 CFCVariable*
-CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
-                 const char *exposure, const char *class_name,
-                 const char *class_nickname, const char *name,
+CFCVariable_init(CFCVariable *self, const char *exposure, const char *name,
                  struct CFCType *type, int inert) {
     // Validate params.
     CFCUTIL_NULL_CHECK(type);
@@ -67,8 +64,7 @@ CFCVariable_init(CFCVariable *self, struct CFCParcel *parcel,
     // Default exposure to "local".
     const char *real_exposure = exposure ? exposure : "local";
 
-    CFCSymbol_init((CFCSymbol*)self, parcel, real_exposure, class_name,
-                   class_nickname, name);
+    CFCSymbol_init((CFCSymbol*)self, real_exposure, name);
 
     // Assign type, inert.
     self->type = (CFCType*)CFCBase_incref((CFCBase*)type);
@@ -114,8 +110,6 @@ S_generate_c_strings(CFCVariable *self) {
     const char *name = CFCVariable_get_name(self);
     self->local_c = CFCUtil_sprintf("%s %s%s", type_str, name, postfix);
     self->local_dec = CFCUtil_sprintf("%s;", self->local_c);
-    const char *full_sym = CFCVariable_full_sym(self);
-    self->global_c = CFCUtil_sprintf("%s %s%s", type_str, full_sym, postfix);
 }
 
 CFCType*
@@ -134,10 +128,21 @@ CFCVariable_local_c(CFCVariable *self) {
     return self->local_c;
 }
 
-const char*
-CFCVariable_global_c(CFCVariable *self) {
-    if (!self->global_c) { S_generate_c_strings(self); }
-    return self->global_c;
+char*
+CFCVariable_global_c(CFCVariable *self, CFCClass *klass) {
+    const char *type_str = CFCType_to_c(self->type);
+    const char *postfix  = "";
+    if (CFCType_is_composite(self->type)
+        && CFCType_get_array(self->type) != NULL
+       ) {
+        postfix = CFCType_get_array(self->type);
+    }
+
+    char *full_sym = CFCVariable_full_sym(self, klass);
+    char *global_c = CFCUtil_sprintf("%s %s%s", type_str, full_sym, postfix);
+
+    FREEMEM(full_sym);
+    return global_c;
 }
 
 const char*
@@ -151,13 +156,13 @@ CFCVariable_get_name(CFCVariable *self) {
     return CFCSymbol_get_name((CFCSymbol*)self);
 }
 
-const char*
-CFCVariable_short_sym(CFCVariable *self) {
-    return CFCSymbol_short_sym((CFCSymbol*)self);
+char*
+CFCVariable_short_sym(CFCVariable *self, CFCClass *klass) {
+    return CFCSymbol_short_sym((CFCSymbol*)self, klass);
 }
 
-const char*
-CFCVariable_full_sym(CFCVariable *self) {
-    return CFCSymbol_full_sym((CFCSymbol*)self);
+char*
+CFCVariable_full_sym(CFCVariable *self, CFCClass *klass) {
+    return CFCSymbol_full_sym((CFCSymbol*)self, klass);
 }
 
