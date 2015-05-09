@@ -117,6 +117,34 @@ TestUtils_get_str(const char *ptr) {
     return Str_new_from_utf8(ptr, strlen(ptr));
 }
 
+/********************************* WINDOWS ********************************/
+#ifdef CHY_HAS_WINDOWS_H
+
+#include <windows.h>
+
+void
+TestUtils_usleep(uint64_t microseconds) {
+    Sleep(microseconds / 1000);
+}
+
+/********************************* UNIXEN *********************************/
+#elif defined(CHY_HAS_UNISTD_H)
+
+#include <unistd.h>
+
+void
+TestUtils_usleep(uint64_t microseconds) {
+    uint32_t seconds = microseconds / 1000000;
+    microseconds %= 1000000;
+    sleep(seconds);
+    usleep(microseconds);
+}
+
+#else
+  #error "Can't find a known sleep API."
+#endif // OS switch.
+
+
 /********************************** Windows ********************************/
 #if !defined(CFISH_NOTHREADS) && defined(CHY_HAS_WINDOWS_H)
 

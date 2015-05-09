@@ -71,6 +71,9 @@ inert class Clownfish::TestHarness::TestUtils  {
     inert incremented String*
     random_string(size_t length);
 
+    inert void
+    usleep(uint64_t microseconds);
+
     inert cfish_Thread*
     thread_create(cfish_thread_routine_t routine, void *arg);
 
