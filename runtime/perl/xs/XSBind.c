@@ -29,7 +29,6 @@
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
-#include "Clownfish/Util/NumberUtils.h"
 #include "Clownfish/Util/Memory.h"
 
 #define XSBIND_REFCOUNT_FLAG   1
@@ -515,6 +514,22 @@ S_extract_from_sv(pTHX_ SV *value, void *target, const char *label,
     return true;
 }
 
+static CFISH_INLINE bool
+S_u1get(const void *array, uint32_t tick) {
+    const uint8_t *const u8bits      = (const uint8_t*)array;
+    const uint32_t       byte_offset = tick >> 3;
+    const uint8_t        mask        = 1 << (tick & 0x7);
+    return (u8bits[byte_offset] & mask) != 0;
+}
+
+static CFISH_INLINE void
+S_u1set(void *array, uint32_t tick) {
+    uint8_t *const u8bits      = (uint8_t*)array;
+    const uint32_t byte_offset = tick >> 3;
+    const uint8_t  mask        = 1 << (tick & 0x7);
+    u8bits[byte_offset] |= mask;
+}
+
 bool
 XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
                     ...) {
@@ -553,7 +568,7 @@ XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
             if (SvCUR(key_sv) == (STRLEN)label_len) {
                 if (memcmp(SvPVX(key_sv), label, label_len) == 0) {
                     found_arg = tick;
-                    cfish_NumUtil_u1set(verified_labels, tick);
+                    S_u1set(verified_labels, tick);
                 }
             }
         }
@@ -584,7 +599,7 @@ XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
 
     // Ensure that all parameter labels were valid.
     for (int32_t tick = start; tick < num_stack_elems; tick += 2) {
-        if (!cfish_NumUtil_u1get(verified_labels, tick)) {
+        if (!S_u1get(verified_labels, tick)) {
             SV *const key_sv = stack[tick];
             char *key = SvPV_nolen(key_sv);
             cfish_String *mess
