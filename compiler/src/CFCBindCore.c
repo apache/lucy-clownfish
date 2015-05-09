@@ -349,7 +349,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "#endif\n"
         "\n";
 
-    const char *extra_defs;
+    char *extra_defs;
     char *extra_includes;
     if (strcmp(prefix, "cfish_") == 0) {
         extra_defs = CFCUtil_sprintf("%s%s", cfish_defs_1, cfish_defs_2);
@@ -424,6 +424,8 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
     FREEMEM(filepath);
 
     FREEMEM(typedefs);
+    FREEMEM(class_decls);
+    FREEMEM(extra_defs);
     FREEMEM(extra_includes);
     FREEMEM(file_content);
 }

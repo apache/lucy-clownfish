@@ -233,10 +233,13 @@ CFCBindMeth_abstract_method_def(CFCMethod *method, CFCClass *klass) {
         strcat(unused, var_name);
         strcat(unused, ");");
     }
-    char *unreachable = CFCUtil_strdup("");
+    char *unreachable;
     if (!CFCType_is_void(ret_type)) {
         unreachable = CFCUtil_sprintf("    CFISH_UNREACHABLE_RETURN(%s);\n",
                                       ret_type_str);
+    }
+    else {
+        unreachable = CFCUtil_strdup("");
     }
 
     char *full_func_sym = CFCMethod_imp_func(method, klass);
@@ -254,6 +257,7 @@ CFCBindMeth_abstract_method_def(CFCMethod *method, CFCClass *klass) {
                           unreachable);
 
     FREEMEM(unused);
+    FREEMEM(unreachable);
     FREEMEM(full_func_sym);
     return abstract_def;
 }

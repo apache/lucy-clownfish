@@ -261,6 +261,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
     FREEMEM(inert_var_defs);
     FREEMEM(method_typedefs);
     FREEMEM(method_defs);
+    FREEMEM(override_decs);
     FREEMEM(short_names);
     return content;
 }
