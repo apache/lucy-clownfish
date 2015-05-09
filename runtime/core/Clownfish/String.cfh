@@ -270,16 +270,6 @@ class Clownfish::String nickname Str
      */
     incremented StringIterator*
     Tail(String *self);
-
-    /** Return a stack iterator to the start of the string.
-     */
-    incremented StackStringIterator*
-    StackTop(String *self, void *allocation);
-
-    /** Return a stack iterator to the end of the string.
-     */
-    incremented StackStringIterator*
-    StackTail(String *self, void *allocation);
 }
 
 class Clownfish::StackString nickname SStr
@@ -406,16 +396,6 @@ class Clownfish::StringIterator nickname StrIter
 
     public void
     Destroy(StringIterator *self);
-}
-
-class Clownfish::StackStringIterator nickname SStrIter
-    inherits Clownfish::StringIterator {
-
-    inert incremented StackStringIterator*
-    new(void *allocation, String *string, size_t byte_offset);
-
-    public void
-    Destroy(StackStringIterator *self);
 }
 
 __C__

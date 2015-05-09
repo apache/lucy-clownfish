@@ -17,7 +17,6 @@
 #define C_CFISH_STRING
 #define C_CFISH_STACKSTRING
 #define C_CFISH_STRINGITERATOR
-#define C_CFISH_STACKSTRINGITERATOR
 #define CFISH_USE_SHORT_NAMES
 
 #include <string.h>
@@ -33,10 +32,8 @@
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/StringHelper.h"
 
-#define STR_STACKTOP(string) \
-    Str_StackTop(string, alloca(sizeof(StackStringIterator)))
-#define STR_STACKTAIL(string) \
-    Str_StackTail(string, alloca(sizeof(StackStringIterator)))
+#define STACK_ITER(string, byte_offset) \
+    S_new_stack_iter(alloca(sizeof(StringIterator)), string, byte_offset)
 
 // Helper function for throwing invalid UTF-8 error. Since THROW uses
 // a String internally, calling THROW with invalid UTF-8 would create an
@@ -47,6 +44,9 @@
 static void
 S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
                    const char *func);
+
+static StringIterator*
+S_new_stack_iter(void *allocation, String *string, size_t byte_offset);
 
 String*
 Str_new_from_utf8(const char *utf8, size_t size) {
@@ -188,10 +188,9 @@ Str_Destroy_IMP(String *self) {
 size_t
 Str_Hash_Sum_IMP(String *self) {
     size_t hashvalue = 5381;
-    StackStringIterator *iter = STR_STACKTOP(self);
+    StringIterator *iter = STACK_ITER(self, 0);
 
-    const SStrIter_Next_t next
-        = METHOD_PTR(STACKSTRINGITERATOR, CFISH_SStrIter_Next);
+    const StrIter_Next_t next = METHOD_PTR(STRINGITERATOR, CFISH_StrIter_Next);
     int32_t code_point;
     while (STRITER_DONE != (code_point = next(iter))) {
         hashvalue = ((hashvalue << 5) + hashvalue) ^ code_point;
@@ -218,10 +217,10 @@ Str_To_String_IMP(String *self) {
 String*
 Str_Swap_Chars_IMP(String *self, int32_t match, int32_t replacement) {
     CharBuf *charbuf = CB_new(self->size);
-    StackStringIterator *iter = STR_STACKTOP(self);
+    StringIterator *iter = STACK_ITER(self, 0);
     int32_t code_point;
 
-    while (STRITER_DONE != (code_point = SStrIter_Next(iter))) {
+    while (STRITER_DONE != (code_point = StrIter_Next(iter))) {
         if (code_point == match) { code_point = replacement; }
         CB_Cat_Char(charbuf, code_point);
     }
@@ -238,14 +237,14 @@ Str_To_I64_IMP(String *self) {
 
 int64_t
 Str_BaseX_To_I64_IMP(String *self, uint32_t base) {
-    StackStringIterator *iter = STR_STACKTOP(self);
+    StringIterator *iter = STACK_ITER(self, 0);
     int64_t retval = 0;
     bool is_negative = false;
-    int32_t code_point = SStrIter_Next(iter);
+    int32_t code_point = StrIter_Next(iter);
 
     // Advance past minus sign.
     if (code_point == '-') {
-        code_point = SStrIter_Next(iter);
+        code_point = StrIter_Next(iter);
         is_negative = true;
     }
 
@@ -262,7 +261,7 @@ Str_BaseX_To_I64_IMP(String *self, uint32_t base) {
         else {
             break;
         }
-        code_point = SStrIter_Next(iter);
+        code_point = StrIter_Next(iter);
     }
 
     // Apply minus sign.
@@ -391,14 +390,14 @@ Str_Find_IMP(String *self, String *substring) {
 
 int64_t
 Str_Find_Utf8_IMP(String *self, const char *ptr, size_t size) {
-    StackStringIterator *iter = STR_STACKTOP(self);
+    StringIterator *iter = STACK_ITER(self, 0);
     int64_t location = 0;
 
     while (iter->byte_offset + size <= self->size) {
         if (memcmp(self->ptr + iter->byte_offset, ptr, size) == 0) {
             return location;
         }
-        SStrIter_Advance(iter, 1);
+        StrIter_Advance(iter, 1);
         location++;
     }
 
@@ -407,13 +406,13 @@ Str_Find_Utf8_IMP(String *self, const char *ptr, size_t size) {
 
 String*
 Str_Trim_IMP(String *self) {
-    StackStringIterator *top = STR_STACKTOP(self);
-    SStrIter_Skip_Next_Whitespace(top);
+    StringIterator *top = STACK_ITER(self, 0);
+    StrIter_Skip_Next_Whitespace(top);
 
-    StackStringIterator *tail = NULL;
+    StringIterator *tail = NULL;
     if (top->byte_offset < self->size) {
-        tail = STR_STACKTAIL(self);
-        SStrIter_Skip_Prev_Whitespace(tail);
+        tail = STACK_ITER(self, self->size);
+        StrIter_Skip_Prev_Whitespace(tail);
     }
 
     return StrIter_substring((StringIterator*)top, (StringIterator*)tail);
@@ -421,49 +420,49 @@ Str_Trim_IMP(String *self) {
 
 String*
 Str_Trim_Top_IMP(String *self) {
-    StackStringIterator *top = STR_STACKTOP(self);
-    SStrIter_Skip_Next_Whitespace(top);
+    StringIterator *top = STACK_ITER(self, 0);
+    StrIter_Skip_Next_Whitespace(top);
     return StrIter_substring((StringIterator*)top, NULL);
 }
 
 String*
 Str_Trim_Tail_IMP(String *self) {
-    StackStringIterator *tail = STR_STACKTAIL(self);
-    SStrIter_Skip_Prev_Whitespace(tail);
+    StringIterator *tail = STACK_ITER(self, self->size);
+    StrIter_Skip_Prev_Whitespace(tail);
     return StrIter_substring(NULL, (StringIterator*)tail);
 }
 
 size_t
 Str_Length_IMP(String *self) {
-    StackStringIterator *iter = STR_STACKTOP(self);
-    return SStrIter_Advance(iter, SIZE_MAX);
+    StringIterator *iter = STACK_ITER(self, 0);
+    return StrIter_Advance(iter, SIZE_MAX);
 }
 
 int32_t
 Str_Code_Point_At_IMP(String *self, size_t tick) {
-    StackStringIterator *iter = STR_STACKTOP(self);
-    SStrIter_Advance(iter, tick);
-    int32_t code_point = SStrIter_Next(iter);
+    StringIterator *iter = STACK_ITER(self, 0);
+    StrIter_Advance(iter, tick);
+    int32_t code_point = StrIter_Next(iter);
     return code_point == STRITER_DONE ? 0 : code_point;
 }
 
 int32_t
 Str_Code_Point_From_IMP(String *self, size_t tick) {
     if (tick == 0) { return 0; }
-    StackStringIterator *iter = STR_STACKTAIL(self);
-    SStrIter_Recede(iter, tick - 1);
-    int32_t code_point = SStrIter_Prev(iter);
+    StringIterator *iter = STACK_ITER(self, self->size);
+    StrIter_Recede(iter, tick - 1);
+    int32_t code_point = StrIter_Prev(iter);
     return code_point == STRITER_DONE ? 0 : code_point;
 }
 
 String*
 Str_SubString_IMP(String *self, size_t offset, size_t len) {
-    StackStringIterator *iter = STR_STACKTOP(self);
+    StringIterator *iter = STACK_ITER(self, 0);
 
-    SStrIter_Advance(iter, offset);
+    StrIter_Advance(iter, offset);
     size_t start_offset = iter->byte_offset;
 
-    SStrIter_Advance(iter, len);
+    StrIter_Advance(iter, len);
     size_t size = iter->byte_offset - start_offset;
 
     return S_new_substring(self, start_offset, size);
@@ -517,16 +516,6 @@ Str_Tail_IMP(String *self) {
     return StrIter_new(self, self->size);
 }
 
-StackStringIterator*
-Str_StackTop_IMP(String *self, void *allocation) {
-    return SStrIter_new(allocation, self, 0);
-}
-
-StackStringIterator*
-Str_StackTail_IMP(String *self, void *allocation) {
-    return SStrIter_new(allocation, self, self->size);
-}
-
 /*****************************************************************/
 
 StackString*
@@ -560,6 +549,17 @@ StringIterator*
 StrIter_new(String *string, size_t byte_offset) {
     StringIterator *self = (StringIterator*)Class_Make_Obj(STRINGITERATOR);
     self->string      = (String*)INCREF(string);
+    self->byte_offset = byte_offset;
+    return self;
+}
+
+static StringIterator*
+S_new_stack_iter(void *allocation, String *string, size_t byte_offset) {
+    StringIterator *self
+        = (StringIterator*)Class_Init_Obj(STRINGITERATOR, allocation);
+    // Assume that the string will be available for the lifetime of the
+    // iterator and don't increase its refcount.
+    self->string      = string;
     self->byte_offset = byte_offset;
     return self;
 }
@@ -877,26 +877,6 @@ void
 StrIter_Destroy_IMP(StringIterator *self) {
     DECREF(self->string);
     SUPER_DESTROY(self, STRINGITERATOR);
-}
-
-/*****************************************************************/
-
-StackStringIterator*
-SStrIter_new(void *allocation, String *string, size_t byte_offset) {
-    StackStringIterator *self
-        = (StackStringIterator*)Class_Init_Obj(STACKSTRINGITERATOR,
-                                                allocation);
-    // Assume that the string will be available for the lifetime of the
-    // iterator and don't increase its refcount.
-    self->string      = string;
-    self->byte_offset = byte_offset;
-    return self;
-}
-
-void
-SStrIter_Destroy_IMP(StackStringIterator *self) {
-    UNUSED_VAR(self);
-    THROW(ERR, "Can't destroy a StackStringIterator");
 }
 
 
