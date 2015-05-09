@@ -8381,7 +8381,6 @@ S_need_libpthread(chaz_CLI *cli) {
     chaz_CFlags *temp_cflags;
 
     if (chaz_CLI_defined(cli, "disable-threads")
-        || strcmp(chaz_CLI_strval(cli, "host"), "c") != 0
         || chaz_HeadCheck_check_header("windows.h")
     ) {
         return 0;
