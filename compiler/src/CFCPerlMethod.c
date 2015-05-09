@@ -233,10 +233,10 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     CFCType     *return_type = CFCMethod_get_return_type(method);
     const char  *self_type_c = CFCType_to_c(self_type);
     const char  *self_name   = CFCVariable_get_name(self_var);
-    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 1);
     char *meth_type_c  = CFCMethod_full_typedef(method, klass);
     char *self_assign  = S_self_assign_statement(self, self_type);
-    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
+    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 1);
     char *body         = S_xsub_body(self, klass);
 
     char *retval_decl;
@@ -294,7 +294,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     const char  *self_type_c = CFCType_to_c(self_type);
     const char **arg_inits = CFCParamList_get_initial_values(param_list);
     unsigned num_vars = (unsigned)CFCParamList_num_vars(param_list);
-    char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 1);
     char *meth_type_c = CFCMethod_full_typedef(method, klass);
     char *self_assign = S_self_assign_statement(self, self_type);
     char *body        = S_xsub_body(self, klass);

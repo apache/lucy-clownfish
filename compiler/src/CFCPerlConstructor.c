@@ -94,8 +94,8 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
     char         *name_list  = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     char *func_sym     = CFCFunction_full_func_sym(self->init_func, klass);
-    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
-    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
+    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 1);
+    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 1);
     CFCVariable *self_var       = arg_vars[0];
     CFCType     *self_type      = CFCVariable_get_type(self_var);
     const char  *self_type_str  = CFCType_to_c(self_type);
