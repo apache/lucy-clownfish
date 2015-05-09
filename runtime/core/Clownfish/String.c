@@ -533,11 +533,6 @@ SStr_wrap(void *allocation, String *source) {
     return SStr_wrap_utf8(allocation, source->ptr, source->size);
 }
 
-size_t
-SStr_size() {
-    return sizeof(StackString);
-}
-
 void
 SStr_Destroy_IMP(StackString *self) {
     THROW(ERR, "Can't destroy a StackString ('%o')", self);

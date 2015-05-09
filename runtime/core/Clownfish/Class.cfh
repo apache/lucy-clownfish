@@ -142,4 +142,10 @@ final class Clownfish::Class inherits Clownfish::Obj {
     Destroy(Class *self);
 }
 
+__C__
+
+#define CFISH_ALLOCA_OBJ(class) \
+    cfish_alloca(CFISH_Class_Get_Obj_Alloc_Size(class))
+
+__END_C__
 

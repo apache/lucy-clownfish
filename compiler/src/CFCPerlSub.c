@@ -154,7 +154,7 @@ S_allot_params_arg(CFCType *type, const char *label, int required) {
             use_sv_buffer = true;
         }
         const char *allocation = use_sv_buffer
-                                 ? "alloca(cfish_SStr_size())"
+                                 ? "CFISH_ALLOCA_OBJ(CFISH_STACKSTRING)"
                                  : "NULL";
         const char pattern[] = "ALLOT_OBJ(&arg_%s, \"%s\", %u, %s, %s, %s)";
         char *arg = CFCUtil_sprintf(pattern, label, label, label_len,

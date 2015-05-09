@@ -162,8 +162,8 @@ cfish_XSBind_enable_overload(pTHX_ void *pobj);
  * a NULL-terminated series of ALLOT_ macros.
  *
  *     cfish_XSBind_allot_params(stack, start, num_stack_elems,
- *          ALLOT_OBJ(&field, "field", 5, CFISH_STRING, true, alloca(cfish_SStr_size()),
- *          ALLOT_OBJ(&term, "term", 4, CFISH_STRING, true, alloca(cfish_SStr_size()),
+ *          ALLOT_OBJ(&field, "field", 5, CFISH_STRING, true, CFISH_ALLOCA_OBJ(CFISH_STACKSTRING),
+ *          ALLOT_OBJ(&term, "term", 4, CFISH_STRING, true, CFISH_ALLOCA_OBJ(CFISH_STACKSTRING),
  *          NULL);
  *
  * The following ALLOT_ macros are available for primitive types:
@@ -202,7 +202,7 @@ cfish_XSBind_enable_overload(pTHX_ void *pobj);
  * The "klass" argument must be the Class corresponding to the class of the
  * desired object.  The "allocation" argument must be a blob of memory
  * allocated on the stack sufficient to hold a StackString.  (Use
- * cfish_SStr_size() to find the allocation size.)
+ * CFISH_ALLOCA_OBJ to allocate the object.)
  *
  * To extract a Perl scalar, use the following ALLOT_ macro:
  *

@@ -281,11 +281,6 @@ class Clownfish::StackString nickname SStr
     inert incremented StackString*
     wrap_utf8(void *allocation, const char *utf8, size_t size);
 
-    /** Return the size for a StackString struct.
-     */
-    inert size_t
-    size();
-
     /** Throws an error.
      */
     public void
@@ -401,13 +396,13 @@ class Clownfish::StringIterator nickname StrIter
 __C__
 
 #define CFISH_SSTR_BLANK() \
-   cfish_SStr_wrap_utf8(cfish_alloca(cfish_SStr_size()), "", 0)
+   cfish_SStr_wrap_utf8(CFISH_ALLOCA_OBJ(CFISH_STACKSTRING), "", 0)
 
 #define CFISH_SSTR_WRAP(source) \
-    cfish_SStr_wrap(cfish_alloca(cfish_SStr_size()), source)
+    cfish_SStr_wrap(CFISH_ALLOCA_OBJ(CFISH_STACKSTRING), source)
 
 #define CFISH_SSTR_WRAP_UTF8(ptr, size) \
-    cfish_SStr_wrap_utf8(cfish_alloca(cfish_SStr_size()), ptr, size)
+    cfish_SStr_wrap_utf8(CFISH_ALLOCA_OBJ(CFISH_STACKSTRING), ptr, size)
 
 #define CFISH_STRITER_DONE  -1
 

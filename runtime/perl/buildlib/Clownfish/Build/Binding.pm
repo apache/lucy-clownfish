@@ -609,7 +609,7 @@ CODE:
     bool args_ok
         = XSBind_allot_params(aTHX_ &(ST(0)), 1, items,
                               ALLOT_OBJ(&class_name, "class_name", 10, true,
-                                        CFISH_STRING, alloca(cfish_SStr_size())),
+                                        CFISH_STRING, CFISH_ALLOCA_OBJ(CFISH_STACKSTRING)),
                               ALLOT_OBJ(&parent, "parent", 6, false,
                                         CFISH_CLASS, NULL),
                               NULL);
