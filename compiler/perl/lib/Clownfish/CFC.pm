@@ -265,7 +265,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         for my $class (@{ $self->ordered_classes }) {
             next if !$class->included || $class->inert;
 
-            my $class_name = $class->get_class_name;
+            my $class_name = $class->get_name;
             my $rt_class = Clownfish::Class->fetch_class($class_name)
                 or die("Class $class_name not found");
 
