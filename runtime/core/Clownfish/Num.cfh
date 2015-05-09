@@ -58,7 +58,7 @@ abstract class Clownfish::IntNum inherits Clownfish::Num {
 
 /** Single precision floating point number.
  */
-class Clownfish::Float32 inherits Clownfish::FloatNum {
+final class Clownfish::Float32 inherits Clownfish::FloatNum {
 
     float value;
 
@@ -92,7 +92,7 @@ class Clownfish::Float32 inherits Clownfish::FloatNum {
 
 /** Double precision floating point number.
  */
-class Clownfish::Float64 inherits Clownfish::FloatNum {
+final class Clownfish::Float64 inherits Clownfish::FloatNum {
 
     double value;
 
@@ -126,7 +126,7 @@ class Clownfish::Float64 inherits Clownfish::FloatNum {
 
 /** 32-bit signed integer.
  */
-class Clownfish::Integer32 nickname Int32
+final class Clownfish::Integer32 nickname Int32
     inherits Clownfish::IntNum {
 
     int32_t value;
@@ -162,7 +162,7 @@ class Clownfish::Integer32 nickname Int32
 /**
  * 64-bit signed integer.
  */
-class Clownfish::Integer64 nickname Int64
+final class Clownfish::Integer64 nickname Int64
     inherits Clownfish::IntNum {
 
     int64_t value;

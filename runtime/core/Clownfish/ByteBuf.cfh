@@ -20,7 +20,7 @@ parcel Clownfish;
  * Growable buffer holding arbitrary bytes.
  */
 
-class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
+final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
 
     char    *buf;
     size_t   size;  /* number of valid bytes */
