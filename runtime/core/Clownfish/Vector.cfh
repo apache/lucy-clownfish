@@ -18,7 +18,7 @@ parcel Clownfish;
 
 /** Variable-sized array.
  */
-public class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
+public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
 
     Obj      **elems;
     size_t     size;

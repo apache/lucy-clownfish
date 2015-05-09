@@ -48,6 +48,7 @@ CFCBindMeth_method_def(CFCMethod *method, CFCClass *klass) {
  * this method may not be overridden. */
 static char*
 S_final_method_def(CFCMethod *method, CFCClass *klass) {
+    const char *PREFIX = CFCClass_get_PREFIX(klass);
     const char *self_type = CFCType_to_c(CFCMethod_self_type(method));
     const char *full_func_sym = CFCMethod_imp_func(method);
     const char *arg_names 
@@ -57,12 +58,12 @@ S_final_method_def(CFCMethod *method, CFCClass *klass) {
     char *full_offset_sym = CFCMethod_full_offset_sym(method, klass);
 
     const char pattern[] =
-        "extern size_t %s;\n"
+        "extern %sVISIBLE size_t %s;\n"
         "#define %s(%s) \\\n"
         "    %s((%s)%s)\n";
     char *method_def
-        = CFCUtil_sprintf(pattern, full_offset_sym, full_meth_sym, arg_names,
-                          full_func_sym, self_type, arg_names);
+        = CFCUtil_sprintf(pattern, PREFIX, full_offset_sym, full_meth_sym,
+                          arg_names, full_func_sym, self_type, arg_names);
 
     FREEMEM(full_offset_sym);
     FREEMEM(full_meth_sym);

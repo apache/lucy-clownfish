@@ -21,7 +21,7 @@ parcel Clownfish;
  *
  * Values are stored by reference and may be any kind of Obj.
  */
-public class Clownfish::Hash inherits Clownfish::Obj {
+public final class Clownfish::Hash inherits Clownfish::Obj {
 
     void   *entries;
     size_t  capacity;
