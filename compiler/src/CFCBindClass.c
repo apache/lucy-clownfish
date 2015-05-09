@@ -675,9 +675,9 @@ S_override_decs(CFCBindClass *self) {
             = CFCUtil_sprintf(pattern, ret_type_str, override_sym, params);
         decs = CFCUtil_cat(decs, callback_dec, NULL);
         FREEMEM(callback_dec);
-        FREEMEM(override_sym);
 
         nulls = CFCUtil_cat(nulls, "#define ", override_sym, " NULL\n", NULL);
+        FREEMEM(override_sym);
     }
 
     char pattern[] =
