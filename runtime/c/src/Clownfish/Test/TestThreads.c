@@ -24,21 +24,9 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/String.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
-
-/**************************** No thread support ****************************/
-#ifdef CFISH_NOTHREADS
+#include "Clownfish/TestHarness/TestUtils.h"
 
 static void
-test_threads(TestBatchRunner *runner) {
-    SKIP(runner, 4, "no thread support");
-}
-
-/********************************** Windows ********************************/
-#elif defined(CHY_HAS_WINDOWS_H)
-
-#include <windows.h>
-
-static DWORD
 S_err_thread(void *arg) {
     TestBatchRunner *runner = (TestBatchRunner*)arg;
 
@@ -46,68 +34,28 @@ S_err_thread(void *arg) {
               "global error in thread initialized to null");
 
     Err_set_error(Err_new(Str_newf("thread")));
-
-    return 0;
 }
 
 static void
 test_threads(TestBatchRunner *runner) {
+    if (!TestUtils_has_threads) {
+        SKIP(runner, 2, "no thread support");
+        return;
+    }
+
     Err_set_error(Err_new(Str_newf("main")));
 
-    HANDLE thread = CreateThread(NULL, 0, S_err_thread, runner, 0, NULL);
-    TEST_TRUE(runner, thread != NULL, "CreateThread succeeds");
-    DWORD event = WaitForSingleObject(thread, INFINITE);
-    TEST_INT_EQ(runner, event, WAIT_OBJECT_0, "WaitForSingleObject succeeds");
-    CloseHandle(thread);
+    Thread *thread = TestUtils_thread_create(S_err_thread, runner);
+    TestUtils_thread_join(thread);
 
     String *mess = Err_Get_Mess(Err_get_error());
     TEST_TRUE(runner, Str_Equals_Utf8(mess, "main", 4),
               "thread doesn't clobber global error");
 }
-
-/******************************** pthreads *********************************/
-#elif defined(CHY_HAS_PTHREAD_H)
-
-#include <pthread.h>
-
-static void*
-S_err_thread(void *arg) {
-    TestBatchRunner *runner = (TestBatchRunner*)arg;
-
-    TEST_TRUE(runner, Err_get_error() == NULL,
-              "global error in thread initialized to null");
-
-    Err_set_error(Err_new(Str_newf("thread")));
-
-    return NULL;
-}
-
-static void
-test_threads(TestBatchRunner *runner) {
-    Err_set_error(Err_new(Str_newf("main")));
-
-    int err;
-    pthread_t thread;
-    err = pthread_create(&thread, NULL, S_err_thread, runner);
-    TEST_INT_EQ(runner, err, 0, "pthread_create succeeds");
-    err = pthread_join(thread, NULL);
-    TEST_INT_EQ(runner, err, 0, "pthread_join succeeds");
-
-    String *mess = Err_Get_Mess(Err_get_error());
-    TEST_TRUE(runner, Str_Equals_Utf8(mess, "main", 4),
-              "thread doesn't clobber global error");
-}
-
-/****************** No support for thread-local storage ********************/
-#else
-
-#error "No support for thread-local storage."
-
-#endif
 
 void
 TestThreads_Run_IMP(TestThreads *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 4);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 2);
     test_threads(runner);
 }
 
