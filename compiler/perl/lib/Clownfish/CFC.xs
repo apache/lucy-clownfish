@@ -2138,10 +2138,11 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-build_allot_params(self)
+build_allot_params(self, first)
     CFCPerlSub *self;
+    size_t first;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlSub_build_allot_params(self));
+    RETVAL = S_sv_eat_c_string(CFCPerlSub_build_allot_params(self, first));
 OUTPUT: RETVAL
 
 

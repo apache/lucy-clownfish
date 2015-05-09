@@ -72,10 +72,11 @@ CFCPerlSub_destroy(CFCPerlSub *self);
 char*
 CFCPerlSub_params_hash_def(CFCPerlSub *self);
 
-/** Generate C declarations for the variables holding the arguments.
+/** Generate C declarations for the variables holding the arguments, from
+ * `first` onwards.
  */
 char*
-CFCPerlSub_arg_declarations(CFCPerlSub *self);
+CFCPerlSub_arg_declarations(CFCPerlSub *self, size_t first);
 
 /** Create a comma-separated list of argument names prefixed by "arg_".
  */
@@ -83,10 +84,11 @@ char*
 CFCPerlSub_arg_name_list(CFCPerlSub *self);
 
 /** Generate code which will invoke XSBind_allot_params() to parse labeled
- * parameters supplied to an XSUB.
+ * parameters supplied to an XSUB.  Parameters from `first` onwards are
+ * included.
  */
 char*
-CFCPerlSub_build_allot_params(CFCPerlSub *self);
+CFCPerlSub_build_allot_params(CFCPerlSub *self, size_t first);
 
 /** Accessor for param list.
  */

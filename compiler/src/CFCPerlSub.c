@@ -179,14 +179,14 @@ S_allot_params_arg(CFCType *type, const char *label, int required) {
 }
 
 char*
-CFCPerlSub_arg_declarations(CFCPerlSub *self) {
+CFCPerlSub_arg_declarations(CFCPerlSub *self, size_t first) {
     CFCParamList *param_list = self->param_list;
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     size_t        num_vars   = CFCParamList_num_vars(param_list);
     char         *decls      = CFCUtil_strdup("");
 
     // Declare variables.
-    for (size_t i = 1; i < num_vars; i++) {
+    for (size_t i = first; i < num_vars; i++) {
         CFCVariable *arg_var  = arg_vars[i];
         CFCType     *type     = CFCVariable_get_type(arg_var);
         const char  *type_str = CFCType_to_c(type);
@@ -203,18 +203,21 @@ CFCPerlSub_arg_name_list(CFCPerlSub *self) {
     CFCParamList  *param_list = self->param_list;
     CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
     size_t         num_vars   = CFCParamList_num_vars(param_list);
-    char          *name_list  = CFCUtil_strdup("arg_self");
+    char          *name_list  = CFCUtil_strdup("");
 
-    for (size_t i = 1; i < num_vars; i++) {
+    for (size_t i = 0; i < num_vars; i++) {
         const char *var_name = CFCVariable_get_name(arg_vars[i]);
-        name_list = CFCUtil_cat(name_list, ", arg_", var_name, NULL);
+        if (i > 0) {
+            name_list = CFCUtil_cat(name_list, ", ", NULL);
+        }
+        name_list = CFCUtil_cat(name_list, "arg_", var_name, NULL);
     }
 
     return name_list;
 }
 
 char*
-CFCPerlSub_build_allot_params(CFCPerlSub *self) {
+CFCPerlSub_build_allot_params(CFCPerlSub *self, size_t first) {
     CFCParamList *param_list = self->param_list;
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     const char  **arg_inits  = CFCParamList_get_initial_values(param_list);
@@ -222,7 +225,7 @@ CFCPerlSub_build_allot_params(CFCPerlSub *self) {
     char *allot_params = CFCUtil_strdup("");
 
     // Declare variables and assign default values.
-    for (size_t i = 1; i < num_vars; i++) {
+    for (size_t i = first; i < num_vars; i++) {
         CFCVariable *arg_var  = arg_vars[i];
         const char  *val      = arg_inits[i];
         const char  *var_name = CFCVariable_get_name(arg_var);
@@ -241,7 +244,7 @@ CFCPerlSub_build_allot_params(CFCPerlSub *self) {
         = CFCUtil_cat(allot_params,
                       "args_ok = XSBind_allot_params(aTHX_\n"
                       "        &(ST(0)), 1, items,\n", NULL);
-    for (size_t i = 1; i < num_vars; i++) {
+    for (size_t i = first; i < num_vars; i++) {
         CFCVariable *var = arg_vars[i];
         const char  *val = arg_inits[i];
         int required = val ? 0 : 1;
