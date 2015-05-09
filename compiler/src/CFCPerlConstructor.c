@@ -94,11 +94,12 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
     char         *name_list  = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     char *func_sym     = CFCFunction_full_func_sym(self->init_func, klass);
-    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 1);
+    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
     char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 1);
     CFCVariable *self_var       = arg_vars[0];
     CFCType     *self_type      = CFCVariable_get_type(self_var);
     const char  *self_type_str  = CFCType_to_c(self_type);
+    const char  *self_name      = CFCVariable_get_name(self_var);
 
     // Compensate for swallowed refcounts.
     char *refcount_mods = CFCUtil_strdup("");
@@ -117,7 +118,6 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
-        "    %s arg_self;\n"
         "%s"
         "    bool args_ok;\n"
         "    %s retval;\n"
@@ -129,7 +129,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    %s\n"
         // Create "self" last, so that earlier exceptions while fetching
         // params don't trigger a bad invocation of DESTROY.
-        "    arg_self = (%s)XSBind_new_blank_obj(aTHX_ ST(0));%s\n"
+        "    arg_%s = (%s)XSBind_new_blank_obj(aTHX_ ST(0));%s\n"
         "\n"
         "    retval = %s(%s);\n"
         "    if (retval) {\n"
@@ -143,8 +143,8 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    XSRETURN(1);\n"
         "}\n\n";
     char *xsub_def
-        = CFCUtil_sprintf(pattern, c_name, c_name, self_type_str, arg_decls,
-                          self_type_str, allot_params, self_type_str,
+        = CFCUtil_sprintf(pattern, c_name, c_name, arg_decls, self_type_str,
+                          allot_params, self_name, self_type_str,
                           refcount_mods, func_sym, name_list);
 
     FREEMEM(refcount_mods);
