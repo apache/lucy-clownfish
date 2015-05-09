@@ -276,9 +276,6 @@ class Clownfish::StackString nickname SStr
     inherits Clownfish::String {
 
     inert incremented StackString*
-    wrap(void *allocation, String *source);
-
-    inert incremented StackString*
     wrap_utf8(void *allocation, const char *utf8, size_t size);
 
     /** Throws an error.
@@ -398,9 +395,6 @@ __C__
 #define CFISH_SSTR_BLANK() \
    cfish_SStr_wrap_utf8(CFISH_ALLOCA_OBJ(CFISH_STACKSTRING), "", 0)
 
-#define CFISH_SSTR_WRAP(source) \
-    cfish_SStr_wrap(CFISH_ALLOCA_OBJ(CFISH_STACKSTRING), source)
-
 #define CFISH_SSTR_WRAP_UTF8(ptr, size) \
     cfish_SStr_wrap_utf8(CFISH_ALLOCA_OBJ(CFISH_STACKSTRING), ptr, size)
 
@@ -408,7 +402,6 @@ __C__
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define SSTR_BLANK             CFISH_SSTR_BLANK
-  #define SSTR_WRAP              CFISH_SSTR_WRAP
   #define SSTR_WRAP_UTF8         CFISH_SSTR_WRAP_UTF8
   #define STRITER_DONE           CFISH_STRITER_DONE
 #endif
