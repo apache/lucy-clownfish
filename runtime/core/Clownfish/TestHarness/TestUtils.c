@@ -24,6 +24,7 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 
 #include "Clownfish/CharBuf.h"
+#include "Clownfish/Err.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 
@@ -115,5 +116,128 @@ String*
 TestUtils_get_str(const char *ptr) {
     return Str_new_from_utf8(ptr, strlen(ptr));
 }
+
+/********************************** Windows ********************************/
+#if !defined(CFISH_NOTHREADS) && defined(CHY_HAS_WINDOWS_H)
+
+#include <windows.h>
+
+struct Thread {
+    HANDLE            handle;
+    thread_routine_t  routine;
+    void             *arg;
+};
+
+bool TestUtils_has_threads = true;
+
+static DWORD
+S_thread(void *arg) {
+    Thread *thread = (Thread*)arg;
+    thread->routine(thread->arg);
+    return 0;
+}
+
+Thread*
+TestUtils_thread_create(thread_routine_t routine, void *arg) {
+    Thread *thread = (Thread*)MALLOCATE(sizeof(Thread));
+    thread->routine = routine;
+    thread->arg     = arg;
+
+    thread->handle = CreateThread(NULL, 0, S_thread, thread, 0, NULL);
+    if (thread->handle == NULL) {
+        FREEMEM(thread);
+        THROW(ERR, "CreateThread failed: %s", Err_win_error());
+    }
+
+    return thread;
+}
+
+void
+TestUtils_thread_yield() {
+    SwitchToThread();
+}
+
+void
+TestUtils_thread_join(Thread *thread) {
+    DWORD event = WaitForSingleObject(thread->handle, INFINITE);
+    FREEMEM(thread);
+    if (event != WAIT_OBJECT_0) {
+        THROW(ERR, "WaitForSingleObject failed: %s", Err_win_error());
+    }
+}
+
+/******************************** pthreads *********************************/
+#elif !defined(CFISH_NOTHREADS) && defined(CHY_HAS_PTHREAD_H)
+
+#include <pthread.h>
+
+struct Thread {
+    pthread_t         pthread;
+    thread_routine_t  routine;
+    void             *arg;
+};
+
+bool TestUtils_has_threads = true;
+
+static void*
+S_thread(void *arg) {
+    Thread *thread = (Thread*)arg;
+    thread->routine(thread->arg);
+    return NULL;
+}
+
+Thread*
+TestUtils_thread_create(thread_routine_t routine, void *arg) {
+    Thread *thread = (Thread*)MALLOCATE(sizeof(Thread));
+    thread->routine = routine;
+    thread->arg     = arg;
+
+    int err = pthread_create(&thread->pthread, NULL, S_thread, thread);
+    if (err != 0) {
+        FREEMEM(thread);
+        THROW(ERR, "pthread_create failed: %s", strerror(err));
+    }
+
+    return thread;
+}
+
+void
+TestUtils_thread_yield() {
+    pthread_yield();
+}
+
+void
+TestUtils_thread_join(Thread *thread) {
+    int err = pthread_join(thread->pthread, NULL);
+    FREEMEM(thread);
+    if (err != 0) {
+        THROW(ERR, "pthread_create failed: %s", strerror(err));
+    }
+}
+
+/**************************** No thread support ****************************/
+#else
+
+bool TestUtils_has_threads = false;
+
+Thread*
+TestUtils_thread_create(thread_routine_t routine, void *arg) {
+    UNUSED_VAR(routine);
+    UNUSED_VAR(arg);
+    THROW(ERR, "No thread support");
+    UNREACHABLE_RETURN(Thread*);
+}
+
+void
+TestUtils_thread_yield() {
+}
+
+void
+TestUtils_thread_join(Thread *thread) {
+    UNUSED_VAR(thread);
+    THROW(ERR, "No thread support");
+}
+
+#endif
 
 

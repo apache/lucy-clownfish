@@ -16,7 +16,17 @@
 
 parcel Clownfish;
 
+__C__
+
+typedef void (*cfish_thread_routine_t)(void *arg);
+
+typedef struct cfish_Thread cfish_Thread;
+
+__END_C__
+
 inert class Clownfish::TestHarness::TestUtils  {
+
+    inert bool has_threads;
 
     /** Testing-only String factory which uses strlen().
      */
@@ -60,6 +70,24 @@ inert class Clownfish::TestHarness::TestUtils  {
      */
     inert incremented String*
     random_string(size_t length);
+
+    inert cfish_Thread*
+    thread_create(cfish_thread_routine_t routine, void *arg);
+
+    inert void
+    thread_yield();
+
+    inert void
+    thread_join(cfish_Thread *thread);
 }
+
+__C__
+
+#ifdef CFISH_USE_SHORT_NAMES
+  #define Thread                cfish_Thread
+  #define thread_routine_t      cfish_thread_routine_t
+#endif
+
+__END_C__
 
 
