@@ -101,7 +101,6 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
             || spec->klass == &METHOD
             || spec->klass == &BOOLNUM
             || spec->klass == &STRING
-            || spec->klass == &STACKSTRING
            ) {
             klass->flags |= CFISH_fREFCOUNTSPECIAL;
         }
@@ -169,9 +168,8 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
         // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
-            StackString *name
-                = SSTR_WRAP_UTF8(mspec->name, strlen(mspec->name));
-            Method *method = Method_new((String*)name, mspec->callback_func,
+            String *name = SSTR_WRAP_UTF8(mspec->name, strlen(mspec->name));
+            Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
             klass->methods[i] = method;
         }
@@ -341,12 +339,12 @@ Class_add_alias_to_registry(Class *klass, const char *alias_ptr,
     if (Class_registry == NULL) {
         Class_init_registry();
     }
-    StackString *alias = SSTR_WRAP_UTF8(alias_ptr, alias_len);
-    if (LFReg_fetch(Class_registry, (String*)alias)) {
+    String *alias = SSTR_WRAP_UTF8(alias_ptr, alias_len);
+    if (LFReg_fetch(Class_registry, alias)) {
         return false;
     }
     else {
-        String *class_name = SStr_Clone(alias);
+        String *class_name = Str_Clone(alias);
         bool retval = LFReg_register(Class_registry, class_name, (Obj*)klass);
         DECREF(class_name);
         return retval;
@@ -366,12 +364,12 @@ void
 Class_Add_Host_Method_Alias_IMP(Class *self, const char *alias,
                              const char *meth_name) {
     Method *method = S_find_method(self, meth_name);
-    StackString *alias_cf = SSTR_WRAP_UTF8(alias, strlen(alias));
     if (!method) {
         fprintf(stderr, "Method %s not found\n", meth_name);
         abort();
     }
-    Method_Set_Host_Alias(method, (String*)alias_cf);
+    String *string = SSTR_WRAP_UTF8(alias, strlen(alias));
+    Method_Set_Host_Alias(method, string);
 }
 
 void

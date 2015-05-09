@@ -149,16 +149,6 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::StackString;
-    our $VERSION = '0.004000';
-    $VERSION = eval $VERSION;
-    use Carp;
-    sub new { confess "StackString objects can only be created from C." }
-    no warnings 'redefine';
-    sub DESTROY { }
-}
-
-{
     package Clownfish::Err;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;

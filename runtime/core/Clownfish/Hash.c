@@ -158,14 +158,14 @@ Hash_Store_IMP(Hash *self, String *key, Obj *value) {
 
 void
 Hash_Store_Utf8_IMP(Hash *self, const char *key, size_t key_len, Obj *value) {
-    StackString *key_buf = SSTR_WRAP_UTF8((char*)key, key_len);
-    S_do_store(self, (String*)key_buf, value, SStr_Hash_Sum(key_buf), true);
+    String *key_buf = SSTR_WRAP_UTF8((char*)key, key_len);
+    S_do_store(self, key_buf, value, Str_Hash_Sum(key_buf), true);
 }
 
 Obj*
 Hash_Fetch_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
-    StackString *key_buf = SSTR_WRAP_UTF8(key, key_len);
-    return Hash_Fetch_IMP(self, (String*)key_buf);
+    String *key_buf = SSTR_WRAP_UTF8(key, key_len);
+    return Hash_Fetch_IMP(self, key_buf);
 }
 
 static CFISH_INLINE HashEntry*
@@ -217,8 +217,8 @@ Hash_Delete_IMP(Hash *self, String *key) {
 
 Obj*
 Hash_Delete_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
-    StackString *key_buf = SSTR_WRAP_UTF8(key, key_len);
-    return Hash_Delete_IMP(self, (String*)key_buf);
+    String *key_buf = SSTR_WRAP_UTF8(key, key_len);
+    return Hash_Delete_IMP(self, key_buf);
 }
 
 String*

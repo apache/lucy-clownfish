@@ -58,7 +58,7 @@ static void
 test_Equals(TestBatchRunner *runner) {
     Vector *array = Vec_new(0);
     Vector *other = Vec_new(0);
-    StackString *stuff = SSTR_WRAP_UTF8("stuff", 5);
+    String *stuff = SSTR_WRAP_UTF8("stuff", 5);
 
     TEST_TRUE(runner, Vec_Equals(array, (Obj*)array),
               "Array equal to self");

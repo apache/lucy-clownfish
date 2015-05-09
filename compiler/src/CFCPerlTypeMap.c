@@ -47,7 +47,7 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var) {
            ) {
             // Share buffers rather than copy between Perl scalars and
             // Clownfish string types.
-            allocation = "CFISH_ALLOCA_OBJ(CFISH_STACKSTRING)";
+            allocation = "CFISH_ALLOCA_OBJ(CFISH_STRING)";
         }
         else {
             allocation = "NULL";
@@ -266,7 +266,7 @@ CFCPerlTypeMap_write_xs_typemap(CFCHierarchy *hierarchy) {
         if (strcmp(full_struct_sym, "cfish_String") == 0) {
             // Share buffers rather than copy between Perl scalars and
             // Clownfish string types.
-            allocation = "CFISH_ALLOCA_OBJ(CFISH_STACKSTRING)";
+            allocation = "CFISH_ALLOCA_OBJ(CFISH_STRING)";
         }
         else {
             allocation = "NULL";

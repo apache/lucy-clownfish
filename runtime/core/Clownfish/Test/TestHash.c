@@ -40,7 +40,7 @@ static void
 test_Equals(TestBatchRunner *runner) {
     Hash *hash  = Hash_new(0);
     Hash *other = Hash_new(0);
-    StackString *stuff = SSTR_WRAP_UTF8("stuff", 5);
+    String *stuff = SSTR_WRAP_UTF8("stuff", 5);
 
     TEST_TRUE(runner, Hash_Equals(hash, (Obj*)other),
               "Empty hashes are equal");
@@ -68,9 +68,9 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     const uint32_t starting_cap = Hash_Get_Capacity(hash);
     Vector        *expected     = Vec_new(100);
     Vector        *got          = Vec_new(100);
-    StackString *twenty       = SSTR_WRAP_UTF8("20", 2);
-    StackString *forty        = SSTR_WRAP_UTF8("40", 2);
-    StackString *foo          = SSTR_WRAP_UTF8("foo", 3);
+    String        *twenty       = SSTR_WRAP_UTF8("20", 2);
+    String        *forty        = SSTR_WRAP_UTF8("40", 2);
+    String        *foo          = SSTR_WRAP_UTF8("foo", 3);
 
     for (int32_t i = 0; i < 100; i++) {
         String *str = Str_newf("%i32", i);
@@ -94,32 +94,32 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
                 "size incremented properly by Hash_Store");
 
-    TEST_TRUE(runner, Hash_Fetch(hash, (String*)foo) == NULL,
+    TEST_TRUE(runner, Hash_Fetch(hash, foo) == NULL,
               "Fetch against non-existent key returns NULL");
 
     Obj *stored_foo = INCREF(foo);
-    Hash_Store(hash, (String*)forty, stored_foo);
-    TEST_TRUE(runner, SStr_Equals(foo, Hash_Fetch(hash, (String*)forty)),
+    Hash_Store(hash, forty, stored_foo);
+    TEST_TRUE(runner, Str_Equals(foo, Hash_Fetch(hash, forty)),
               "Hash_Store replaces existing value");
     TEST_FALSE(runner, Hash_Equals(hash, (Obj*)dupe),
                "replacement value spoils equals");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
                 "size unaffected after value replaced");
 
-    TEST_TRUE(runner, Hash_Delete(hash, (String*)forty) == stored_foo,
+    TEST_TRUE(runner, Hash_Delete(hash, forty) == stored_foo,
               "Delete returns value");
     DECREF(stored_foo);
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
                 "size decremented by successful Delete");
-    TEST_TRUE(runner, Hash_Delete(hash, (String*)forty) == NULL,
+    TEST_TRUE(runner, Hash_Delete(hash, forty) == NULL,
               "Delete returns NULL when key not found");
     TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
                 "size not decremented by unsuccessful Delete");
-    DECREF(Hash_Delete(dupe, (String*)forty));
+    DECREF(Hash_Delete(dupe, forty));
     TEST_TRUE(runner, Vec_Equals(got, (Obj*)expected), "Equals after Delete");
 
     Hash_Clear(hash);
-    TEST_TRUE(runner, Hash_Fetch(hash, (String*)twenty) == NULL, "Clear");
+    TEST_TRUE(runner, Hash_Fetch(hash, twenty) == NULL, "Clear");
     TEST_TRUE(runner, Hash_Get_Size(hash) == 0, "size is 0 after Clear");
 
     DECREF(hash);
@@ -153,11 +153,11 @@ test_Keys_Values(TestBatchRunner *runner) {
     Vec_Clear(values);
 
     {
-        StackString *forty = SSTR_WRAP_UTF8("40", 2);
-        StackString *nope  = SSTR_WRAP_UTF8("nope", 4);
-        String *key = Hash_Find_Key(hash, (String*)forty, SStr_Hash_Sum(forty));
+        String *forty = SSTR_WRAP_UTF8("40", 2);
+        String *nope  = SSTR_WRAP_UTF8("nope", 4);
+        String *key = Hash_Find_Key(hash, forty, Str_Hash_Sum(forty));
         TEST_TRUE(runner, Str_Equals(key, (Obj*)forty), "Find_Key");
-        key = Hash_Find_Key(hash, (String*)nope, SStr_Hash_Sum(nope)),
+        key = Hash_Find_Key(hash, nope, Str_Hash_Sum(nope)),
         TEST_TRUE(runner, key == NULL,
                   "Find_Key returns NULL for non-existent key");
     }
