@@ -19,7 +19,7 @@ parcel Clownfish;
 /** Method metadata.
  */
 
-class Clownfish::Method inherits Clownfish::Obj {
+final class Clownfish::Method inherits Clownfish::Obj {
 
     String         *name;
     String         *name_internal;

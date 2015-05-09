@@ -23,7 +23,7 @@ parcel Clownfish;
  * behavior of Classes.)
  */
 
-class Clownfish::Class inherits Clownfish::Obj {
+final class Clownfish::Class inherits Clownfish::Obj {
 
     Class              *parent;
     String             *name;
