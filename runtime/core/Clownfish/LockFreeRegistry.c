@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-#define C_CFISH_LOCKFREEREGISTRY
 #define CFISH_USE_SHORT_NAMES
 
+#include "Clownfish/Obj.h"
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Class.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
+
+struct cfish_LockFreeRegistry {
+    size_t  capacity;
+    void   *entries;
+};
 
 typedef struct cfish_LFRegEntry {
     String *key;
@@ -34,20 +39,14 @@ typedef struct cfish_LFRegEntry {
 
 LockFreeRegistry*
 LFReg_new(size_t capacity) {
-    LockFreeRegistry *self
-        = (LockFreeRegistry*)Class_Make_Obj(LOCKFREEREGISTRY);
-    return LFReg_init(self, capacity);
-}
-
-LockFreeRegistry*
-LFReg_init(LockFreeRegistry *self, size_t capacity) {
+    LockFreeRegistry *self = CALLOCATE(1, sizeof(LockFreeRegistry));
     self->capacity = capacity;
     self->entries  = CALLOCATE(capacity, sizeof(void*));
     return self;
 }
 
 bool
-LFReg_Register_IMP(LockFreeRegistry *self, String *key, Obj *value) {
+LFReg_register(LockFreeRegistry *self, String *key, Obj *value) {
     LFRegEntry  *new_entry = NULL;
     int32_t      hash_sum  = Str_Hash_Sum(key);
     size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
@@ -89,7 +88,7 @@ FIND_END_OF_LINKED_LIST:
 }
 
 Obj*
-LFReg_Fetch_IMP(LockFreeRegistry *self, String *key) {
+LFReg_fetch(LockFreeRegistry *self, String *key) {
     int32_t      hash_sum  = Str_Hash_Sum(key);
     size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
     LFRegEntry **entries   = (LFRegEntry**)self->entries;
@@ -108,7 +107,7 @@ LFReg_Fetch_IMP(LockFreeRegistry *self, String *key) {
 }
 
 void
-LFReg_Destroy_IMP(LockFreeRegistry *self) {
+LFReg_destroy(LockFreeRegistry *self) {
     LFRegEntry **entries = (LFRegEntry**)self->entries;
 
     for (size_t i = 0; i < self->capacity; i++) {
@@ -123,7 +122,7 @@ LFReg_Destroy_IMP(LockFreeRegistry *self) {
     }
     FREEMEM(self->entries);
 
-    SUPER_DESTROY(self, LOCKFREEREGISTRY);
+    FREEMEM(self);
 }
 
 

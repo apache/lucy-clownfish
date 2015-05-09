@@ -19,7 +19,6 @@
 #define C_CFISH_CLASS
 #define C_CFISH_METHOD
 #define C_CFISH_ERR
-#define C_CFISH_LOCKFREEREGISTRY
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +32,6 @@
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Vector.h"
-#include "Clownfish/LockFreeRegistry.h"
 
 /* These symbols must be assigned real values during Go initialization,
  * which we'll confirm in Err_init().  */
@@ -56,14 +54,6 @@ SI_immortal(cfish_Class *klass) {
 static CFISH_INLINE bool
 SI_is_string_type(cfish_Class *klass) {
     if (klass == CFISH_STRING || klass == CFISH_STACKSTRING) {
-        return true;
-    }
-    return false;
-}
-
-static CFISH_INLINE bool
-SI_threadsafe_but_not_immortal(cfish_Class *klass) {
-    if (klass == CFISH_LOCKFREEREGISTRY) {
         return true;
     }
     return false;
@@ -94,9 +84,6 @@ cfish_inc_refcount(void *vself) {
         else if (SI_immortal(klass)) {
             return self;
         }
-        else if (SI_threadsafe_but_not_immortal(klass)) {
-            // TODO: use atomic operation
-        }
     }
 
     self->refcount++;
@@ -110,9 +97,6 @@ cfish_dec_refcount(void *vself) {
     if (klass->flags & CFISH_fREFCOUNTSPECIAL) {
         if (SI_immortal(klass)) {
             return self->refcount;
-        }
-        else if (SI_threadsafe_but_not_immortal(klass)) {
-            // TODO: use atomic operation
         }
     }
 
@@ -259,14 +243,4 @@ Err*
 Err_trap(Err_Attempt_t routine, void *context) {
     return GoCfish_TrapErr(routine, context);
 }
-
-/************************** LockFreeRegistry *******************************/
-
-void*
-LFReg_To_Host_IMP(LockFreeRegistry *self) {
-    UNUSED_VAR(self);
-    THROW(ERR, "TODO");
-    UNREACHABLE_RETURN(void*);
-}
-
 

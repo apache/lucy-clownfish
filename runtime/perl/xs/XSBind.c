@@ -18,13 +18,11 @@
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
-#define C_CFISH_LOCKFREEREGISTRY
 #define NEED_newRV_noinc
 #include "charmony.h"
 #include "XSBind.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/HashIterator.h"
-#include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Method.h"
 #include "Clownfish/Test/TestThreads.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
@@ -624,14 +622,6 @@ SI_is_string_type(cfish_Class *klass) {
     return false;
 }
 
-static CFISH_INLINE bool
-SI_threadsafe_but_not_immortal(cfish_Class *klass) {
-    if (klass == CFISH_LOCKFREEREGISTRY) {
-        return true;
-    }
-    return false;
-}
-
 static void
 S_lazy_init_host_obj(pTHX_ cfish_Obj *self) {
     SV *inner_obj = newSV(0);
@@ -659,7 +649,7 @@ S_lazy_init_host_obj(pTHX_ cfish_Obj *self) {
 
     // Overwrite refcount with host object.
     cfish_Class *klass = self->klass;
-    if (SI_immortal(klass) || SI_threadsafe_but_not_immortal(klass)) {
+    if (SI_immortal(klass)) {
         SvSHARE(inner_obj);
         if (!cfish_Atomic_cas_ptr((void**)&self->ref, old_ref.host_obj, inner_obj)) {
             // Another thread beat us to it.  Now we have a Perl object to defuse.
@@ -706,9 +696,6 @@ cfish_inc_refcount(void *vself) {
         else if (SI_immortal(klass)) {
             return self;
         }
-        else if (SI_threadsafe_but_not_immortal(klass)) {
-            // TODO: use atomic operation
-        }
     }
 
     if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
@@ -731,9 +718,6 @@ cfish_dec_refcount(void *vself) {
     if (klass->flags & CFISH_fREFCOUNTSPECIAL) {
         if (SI_immortal(klass)) {
             return 1;
-        }
-        else if (SI_threadsafe_but_not_immortal(klass)) {
-            // TODO: use atomic operation
         }
     }
 

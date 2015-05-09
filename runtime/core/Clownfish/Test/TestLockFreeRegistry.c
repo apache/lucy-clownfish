@@ -53,27 +53,27 @@ test_all(TestBatchRunner *runner) {
     StupidHashString *baz = StupidHashString_new("baz");
     StupidHashString *foo_dupe = StupidHashString_new("foo");
 
-    TEST_TRUE(runner, LFReg_Register(registry, (String*)foo, (Obj*)foo),
+    TEST_TRUE(runner, LFReg_register(registry, (String*)foo, (Obj*)foo),
               "Register() returns true on success");
     TEST_FALSE(runner,
-               LFReg_Register(registry, (String*)foo_dupe, (Obj*)foo_dupe),
+               LFReg_register(registry, (String*)foo_dupe, (Obj*)foo_dupe),
                "Can't Register() keys that test equal");
 
-    TEST_TRUE(runner, LFReg_Register(registry, (String*)bar, (Obj*)bar),
+    TEST_TRUE(runner, LFReg_register(registry, (String*)bar, (Obj*)bar),
               "Register() key with the same Hash_Sum but that isn't Equal");
 
-    TEST_TRUE(runner, LFReg_Fetch(registry, (String*)foo_dupe) == (Obj*)foo,
+    TEST_TRUE(runner, LFReg_fetch(registry, (String*)foo_dupe) == (Obj*)foo,
               "Fetch()");
-    TEST_TRUE(runner, LFReg_Fetch(registry, (String*)bar) == (Obj*)bar,
+    TEST_TRUE(runner, LFReg_fetch(registry, (String*)bar) == (Obj*)bar,
               "Fetch() again");
-    TEST_TRUE(runner, LFReg_Fetch(registry, (String*)baz) == NULL,
+    TEST_TRUE(runner, LFReg_fetch(registry, (String*)baz) == NULL,
               "Fetch() non-existent key returns NULL");
 
     DECREF(foo_dupe);
     DECREF(baz);
     DECREF(bar);
     DECREF(foo);
-    DECREF(registry);
+    LFReg_destroy(registry);
 }
 
 void
