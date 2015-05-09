@@ -35,7 +35,8 @@
 
 struct CFCPerlConstructor {
     CFCPerlSub   sub;
-    CFCFunction *init_func;
+    CFCFunction *func;
+    CFCClass    *klass;
 };
 
 static const CFCMeta CFCPERLCONSTRUCTOR_META = {
@@ -57,25 +58,28 @@ CFCPerlConstructor_init(CFCPerlConstructor *self, CFCClass *klass,
                         const char *alias, const char *initializer) {
     CFCUTIL_NULL_CHECK(alias);
     CFCUTIL_NULL_CHECK(klass);
+    self->klass = (CFCClass*)CFCBase_incref((CFCBase*)klass);
     const char *class_name = CFCClass_get_class_name(klass);
-    initializer = initializer ? initializer : "init";
-
-    // Find the implementing function.
-    self->init_func = NULL;
-    CFCFunction **funcs = CFCClass_functions(klass);
-    for (size_t i = 0; funcs[i] != NULL; i++) {
-        CFCFunction *func = funcs[i];
-        const char *func_name = CFCFunction_get_name(func);
-        if (strcmp(initializer, func_name) == 0) {
-            self->init_func = (CFCFunction*)CFCBase_incref((CFCBase*)func);
-            break;
+    if (!initializer) {
+        if (CFCClass_final(klass)) {
+            initializer = "new";
+        }
+        else {
+            initializer = "init";
         }
     }
-    if (!self->init_func) {
+
+    // Find the implementing function.
+    CFCFunction *func = CFCClass_function(klass, initializer);
+    if (func) {
+        self->func = (CFCFunction*)CFCBase_incref((CFCBase*)func);
+    }
+    else {
         CFCUtil_die("Missing or invalid '%s' function for '%s'",
                     initializer, class_name);
     }
-    CFCParamList *param_list = CFCFunction_get_param_list(self->init_func);
+
+    CFCParamList *param_list = CFCFunction_get_param_list(self->func);
     CFCPerlSub_init((CFCPerlSub*)self, param_list, class_name, alias,
                     true);
     return self;
@@ -83,7 +87,8 @@ CFCPerlConstructor_init(CFCPerlConstructor *self, CFCClass *klass,
 
 void
 CFCPerlConstructor_destroy(CFCPerlConstructor *self) {
-    CFCBase_decref((CFCBase*)self->init_func);
+    CFCBase_decref((CFCBase*)self->func);
+    CFCBase_decref((CFCBase*)self->klass);
     CFCPerlSub_destroy((CFCPerlSub*)self);
 }
 
@@ -93,12 +98,18 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
     CFCParamList *param_list = self->sub.param_list;
     char         *name_list  = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
-    const char   *func_sym   = CFCFunction_full_func_sym(self->init_func);
-    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 1);
-    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 1);
-    CFCVariable *self_var       = arg_vars[0];
-    CFCType     *self_type      = CFCVariable_get_type(self_var);
-    const char  *self_type_str  = CFCType_to_c(self_type);
+    const char   *func_sym   = CFCFunction_full_func_sym(self->func);
+    const char   *struct_sym = CFCClass_full_struct_sym(self->klass);
+    char *arg_decls = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
+
+    char declarations_pattern[] =
+        "    dXSARGS;\n"
+        "    bool args_ok;\n"
+        "    %s *retval;\n"
+        "%s"
+        ;
+    char *declarations
+        = CFCUtil_sprintf(declarations_pattern, struct_sym, arg_decls);
 
     // Compensate for swallowed refcounts.
     char *refcount_mods = CFCUtil_strdup("");
@@ -113,23 +124,32 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         }
     }
 
+    char *build_params;
+    if (CFCClass_final(self->klass)) {
+        build_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 0);
+    }
+    else {
+        build_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 1);
+        // Create "self" last, so that earlier exceptions while fetching
+        // params don't trigger a bad invocation of DESTROY.
+        char *temp = CFCUtil_sprintf(
+            "%s\n    arg_self = (%s*)XSBind_new_blank_obj(aTHX_ ST(0));",
+            build_params, struct_sym);
+        FREEMEM(build_params);
+        build_params = temp;
+    }
+
     const char pattern[] =
         "XS(%s);\n"
         "XS(%s) {\n"
-        "    dXSARGS;\n"
-        "    %s arg_self;\n"
-        "%s"
-        "    bool args_ok;\n"
-        "    %s retval;\n"
+        "%s"       // declarations
         "\n"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    if (items < 1) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(class_name, ...)\",  GvNAME(CvGV(cv))); }\n"
         "    SP -= items;\n"
         "\n"
-        "    %s\n"
-        // Create "self" last, so that earlier exceptions while fetching
-        // params don't trigger a bad invocation of DESTROY.
-        "    arg_self = (%s)XSBind_new_blank_obj(aTHX_ ST(0));%s\n"
+        "    %s\n" // build_params
+        "%s"       // refcount_mods
         "\n"
         "    retval = %s(%s);\n"
         "    if (retval) {\n"
@@ -143,13 +163,13 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self) {
         "    XSRETURN(1);\n"
         "}\n\n";
     char *xsub_def
-        = CFCUtil_sprintf(pattern, c_name, c_name, self_type_str, arg_decls,
-                          self_type_str, allot_params, self_type_str,
+        = CFCUtil_sprintf(pattern, c_name, c_name, declarations, build_params,
                           refcount_mods, func_sym, name_list);
 
     FREEMEM(refcount_mods);
+    FREEMEM(declarations);
     FREEMEM(arg_decls);
-    FREEMEM(allot_params);
+    FREEMEM(build_params);
     FREEMEM(name_list);
 
     return xsub_def;

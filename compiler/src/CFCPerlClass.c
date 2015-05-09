@@ -268,8 +268,6 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
     return bound;
 }
 
-static const char NEW[] = "new";
-
 CFCPerlConstructor**
 CFCPerlClass_constructor_bindings(CFCClass *klass) {
     const char    *class_name = CFCClass_get_class_name(klass);
@@ -278,6 +276,8 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
     size_t         num_bound  = 0;
     CFCPerlConstructor **bound 
         = (CFCPerlConstructor**)CALLOCATE(1, sizeof(CFCPerlConstructor*));
+    const char *default_func = CFCClass_final(klass)
+                               ? "new" : "init";
 
     // Iterate over the list of possible initialization functions.
     for (size_t i = 0; functions[i] != NULL; i++) {
@@ -288,10 +288,10 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
         // Find user-specified alias.
         if (perl_class == NULL) {
             // Bind init() to new() when possible.
-            if (strcmp(func_name, "init") == 0
+            if (strcmp(func_name, default_func) == 0
                 && CFCFunction_can_be_bound(function)
                ) {
-                alias = NEW;
+                alias = "new";
             }
         }
         else {
@@ -310,7 +310,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
             // Automatically bind init() to new() when possible.
             if (!alias
                 && !perl_class->exclude_cons
-                && strcmp(func_name, "init") == 0
+                && strcmp(func_name, default_func) == 0
                 && CFCFunction_can_be_bound(function)
                ) {
                 int saw_new = 0;
@@ -320,7 +320,7 @@ CFCPerlClass_constructor_bindings(CFCClass *klass) {
                     }
                 }
                 if (!saw_new) {
-                    alias = NEW;
+                    alias = "new";
                 }
             }
         }
