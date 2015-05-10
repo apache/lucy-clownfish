@@ -60,6 +60,11 @@ FIND_END_OF_LINKED_LIST:
         LFRegEntry *entry = *slot;
         if (entry->hash_sum == hash_sum) {
             if (Str_Equals(key, (Obj*)entry->key)) {
+                if (new_entry) {
+                    DECREF(new_entry->key);
+                    DECREF(new_entry->value);
+                    FREEMEM(new_entry);
+                }
                 return false;
             }
         }
