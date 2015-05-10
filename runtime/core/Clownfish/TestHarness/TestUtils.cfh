@@ -80,13 +80,23 @@ inert class Clownfish::TestHarness::TestUtils  {
     usleep(uint64_t microseconds);
 
     inert cfish_Thread*
-    thread_create(cfish_thread_routine_t routine, void *arg);
+    thread_create(cfish_thread_routine_t routine, void *arg,
+                  void *host_runtime);
 
     inert void
     thread_yield();
 
     inert void
     thread_join(cfish_Thread *thread);
+
+    inert void*
+    clone_host_runtime();
+
+    inert void
+    set_host_runtime(void *runtime);
+
+    inert void
+    destroy_host_runtime(void *runtime);
 }
 
 __C__

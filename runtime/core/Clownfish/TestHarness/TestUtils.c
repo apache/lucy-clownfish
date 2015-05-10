@@ -190,6 +190,7 @@ TestUtils_usleep(uint64_t microseconds) {
 
 struct Thread {
     HANDLE            handle;
+    void             *runtime;
     thread_routine_t  routine;
     void             *arg;
 };
@@ -199,13 +200,21 @@ bool TestUtils_has_threads = true;
 static DWORD
 S_thread(void *arg) {
     Thread *thread = (Thread*)arg;
+
+    if (thread->runtime) {
+        TestUtils_set_host_runtime(thread->runtime);
+    }
+
     thread->routine(thread->arg);
+
     return 0;
 }
 
 Thread*
-TestUtils_thread_create(thread_routine_t routine, void *arg) {
+TestUtils_thread_create(thread_routine_t routine, void *arg,
+                        void *host_runtime) {
     Thread *thread = (Thread*)MALLOCATE(sizeof(Thread));
+    thread->runtime = host_runtime;
     thread->routine = routine;
     thread->arg     = arg;
 
@@ -239,6 +248,7 @@ TestUtils_thread_join(Thread *thread) {
 
 struct Thread {
     pthread_t         pthread;
+    void             *runtime;
     thread_routine_t  routine;
     void             *arg;
 };
@@ -248,13 +258,21 @@ bool TestUtils_has_threads = true;
 static void*
 S_thread(void *arg) {
     Thread *thread = (Thread*)arg;
+
+    if (thread->runtime) {
+        TestUtils_set_host_runtime(thread->runtime);
+    }
+
     thread->routine(thread->arg);
+
     return NULL;
 }
 
 Thread*
-TestUtils_thread_create(thread_routine_t routine, void *arg) {
+TestUtils_thread_create(thread_routine_t routine, void *arg,
+                        void *host_runtime) {
     Thread *thread = (Thread*)MALLOCATE(sizeof(Thread));
+    thread->runtime = host_runtime;
     thread->routine = routine;
     thread->arg     = arg;
 

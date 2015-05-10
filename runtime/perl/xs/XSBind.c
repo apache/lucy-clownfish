@@ -26,7 +26,7 @@
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
 #include "Clownfish/Test/TestThreads.h"
-#include "Clownfish/TestHarness/TestBatchRunner.h"
+#include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Util/Memory.h"
@@ -1048,6 +1048,28 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
+}
+
+/********************* Clownfish::TestHarness::TestUtils ********************/
+
+void*
+cfish_TestUtils_clone_host_runtime() {
+    PerlInterpreter *interp = (PerlInterpreter*)PERL_GET_CONTEXT;
+    PerlInterpreter *clone  = perl_clone(interp, CLONEf_CLONE_HOST);
+    PERL_SET_CONTEXT(interp);
+    return clone;
+}
+
+void
+cfish_TestUtils_set_host_runtime(void *runtime) {
+    PERL_SET_CONTEXT(runtime);
+}
+
+void
+cfish_TestUtils_destroy_host_runtime(void *runtime) {
+    PerlInterpreter *interp = (PerlInterpreter*)runtime;
+    perl_destruct(interp);
+    perl_free(interp);
 }
 
 /*********************** Clownfish::Test::TestThreads ***********************/

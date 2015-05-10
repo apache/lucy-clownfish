@@ -45,7 +45,7 @@ test_threads(TestBatchRunner *runner) {
 
     Err_set_error(Err_new(Str_newf("main")));
 
-    Thread *thread = TestUtils_thread_create(S_err_thread, runner);
+    Thread *thread = TestUtils_thread_create(S_err_thread, runner, NULL);
     TestUtils_thread_join(thread);
 
     String *mess = Err_Get_Mess(Err_get_error());

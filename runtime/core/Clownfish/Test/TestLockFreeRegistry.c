@@ -139,7 +139,8 @@ test_threads(TestBatchRunner *runner) {
 
     for (uint32_t i = 0; i < NUM_THREADS; i++) {
         thread_args[i].target_time = target_time;
-        threads[i] = TestUtils_thread_create(S_register_many, &thread_args[i]);
+        threads[i]
+            = TestUtils_thread_create(S_register_many, &thread_args[i], NULL);
     }
 
     uint32_t total_succeeded = 0;
