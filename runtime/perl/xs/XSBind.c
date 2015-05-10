@@ -191,6 +191,8 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
     cfish_Obj *retval = NULL;
 
     if (XSBind_sv_defined(aTHX_ sv)) {
+        bool is_undef = false;
+
         if (SvROK(sv)) {
             // Deep conversion of references.
             SV *inner = SvRV(sv);
@@ -209,11 +211,17 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
                 retval = INT2PTR(cfish_Obj*, tmp);
                 (void)CFISH_INCREF(retval);
             }
+            else if (!XSBind_sv_defined(aTHX_ inner)) {
+                // Reference to undef. After cloning a Perl interpeter,
+                // most Clownfish objects look like this after they're
+                // CLONE_SKIPped.
+                is_undef = true;
+            }
         }
 
         // It's either a plain scalar or a non-Clownfish Perl object, so
         // stringify.
-        if (!retval) {
+        if (!retval && !is_undef) {
             STRLEN len;
             char *ptr = SvPVutf8(sv, len);
             retval = (cfish_Obj*)cfish_Str_new_from_trusted_utf8(ptr, len);
