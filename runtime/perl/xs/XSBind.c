@@ -25,7 +25,6 @@
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
-#include "Clownfish/Test/TestThreads.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
@@ -935,6 +934,7 @@ cfish_Err_get_error() {
     call_pv("Clownfish::Err::get_error", G_SCALAR);
     SPAGAIN;
     cfish_Err *error = (cfish_Err*)XSBind_perl_to_cfish(aTHX_ POPs);
+    if (error) { CFISH_CERTIFY(error, CFISH_ERR); }
     PUTBACK;
     FREETMPS;
     LEAVE;
@@ -1070,13 +1070,5 @@ cfish_TestUtils_destroy_host_runtime(void *runtime) {
     PerlInterpreter *interp = (PerlInterpreter*)runtime;
     perl_destruct(interp);
     perl_free(interp);
-}
-
-/*********************** Clownfish::Test::TestThreads ***********************/
-
-void
-TESTCFISH_TestThreads_Run_IMP(testcfish_TestThreads *self,
-                              cfish_TestBatchRunner *runner) {
-    CFISH_TestBatchRunner_Plan(runner, (cfish_TestBatch*)self, 0);
 }
 

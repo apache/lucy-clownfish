@@ -23,6 +23,7 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
+#include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Class.h"
 
 TestErr*
@@ -41,10 +42,43 @@ test_To_String(TestBatchRunner *runner) {
     DECREF(error);
 }
 
+static void
+S_err_thread(void *arg) {
+    TestBatchRunner *runner = (TestBatchRunner*)arg;
+
+    TEST_TRUE(runner, Err_get_error() == NULL,
+              "global error in thread initialized to null");
+
+    Err_set_error(Err_new(Str_newf("thread")));
+    String *mess = Err_Get_Mess(Err_get_error());
+    TEST_TRUE(runner, Str_Equals_Utf8(mess, "thread", 6),
+              "set_error in thread works");
+}
+
+static void
+test_threads(TestBatchRunner *runner) {
+    if (!TestUtils_has_threads) {
+        SKIP(runner, 3, "no thread support");
+        return;
+    }
+
+    Err_set_error(Err_new(Str_newf("main")));
+
+    void *runtime = TestUtils_clone_host_runtime();
+    Thread *thread = TestUtils_thread_create(S_err_thread, runner, runtime);
+    TestUtils_thread_join(thread);
+    TestUtils_destroy_host_runtime(runtime);
+
+    String *mess = Err_Get_Mess(Err_get_error());
+    TEST_TRUE(runner, Str_Equals_Utf8(mess, "main", 4),
+              "thread doesn't clobber global error");
+}
+
 void
 TestErr_Run_IMP(TestErr *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 1);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 4);
     test_To_String(runner);
+    test_threads(runner);
 }
 
 
