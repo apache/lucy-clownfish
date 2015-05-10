@@ -71,6 +71,11 @@ inert class Clownfish::TestHarness::TestUtils  {
     inert incremented String*
     random_string(size_t length);
 
+    /** Time in microseconds since the system-dependent epoch.
+     */
+    inert uint64_t
+    time();
+
     inert void
     usleep(uint64_t microseconds);
 

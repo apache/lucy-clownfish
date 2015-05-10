@@ -122,6 +122,44 @@ TestUtils_get_str(const char *ptr) {
 
 #include <windows.h>
 
+uint64_t
+TestUtils_time() {
+    SYSTEMTIME system_time;
+    GetSystemTime(&system_time);
+
+    FILETIME file_time;
+    SystemTimeToFileTime(&system_time, &file_time);
+
+    ULARGE_INTEGER ularge;
+    ularge.LowPart  = file_time.dwLowDateTime;
+    ularge.HighPart = file_time.dwHighDateTime;
+
+    return ularge.QuadPart / 10;
+
+}
+
+/********************************* UNIXEN *********************************/
+#elif defined(CHY_HAS_SYS_TIME_H)
+
+#include <sys/time.h>
+
+uint64_t
+TestUtils_time() {
+    struct timeval t;
+    gettimeofday(&t, NULL);
+
+    return (uint64_t)t.tv_sec * 1000000 + t.tv_usec;
+}
+
+#else
+  #error "Can't find a known time API."
+#endif // OS switch.
+
+/********************************* WINDOWS ********************************/
+#ifdef CHY_HAS_WINDOWS_H
+
+#include <windows.h>
+
 void
 TestUtils_usleep(uint64_t microseconds) {
     Sleep(microseconds / 1000);

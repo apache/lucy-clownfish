@@ -7896,6 +7896,9 @@ int main(int argc, const char **argv) {
     chaz_VariadicMacros_run();
 
     /* Write custom postamble. */
+    if (chaz_HeadCheck_check_header("sys/time.h")) {
+        chaz_ConfWriter_append_conf("#define CHY_HAS_SYS_TIME_H\n\n");
+    }
     if (chaz_HeadCheck_defines_symbol("__sync_bool_compare_and_swap", "")) {
         chaz_ConfWriter_append_conf(
             "#define CHY_HAS___SYNC_BOOL_COMPARE_AND_SWAP\n\n");
