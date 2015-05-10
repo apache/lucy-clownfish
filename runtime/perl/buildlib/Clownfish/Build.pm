@@ -161,6 +161,14 @@ sub ACTION_compile_custom_xs {
         $self->clownfish_params( cflags => $cf_cflags );
     }
 
+    # Add extra linker flags from Charmonizer.
+    my $charm_ldflags = $self->charmony('EXTRA_LDFLAGS');
+    if ($charm_ldflags) {
+        my $extra_ldflags = $self->extra_linker_flags;
+        push @$extra_ldflags, $self->split_like_shell($charm_ldflags);
+        $self->extra_linker_flags(@$extra_ldflags);
+    }
+
     $self->SUPER::ACTION_compile_custom_xs;
 }
 

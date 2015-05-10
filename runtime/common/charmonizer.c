@@ -7828,6 +7828,9 @@ static const char cfish_major_version[] = "0.4";
 static void
 S_add_compiler_flags(struct chaz_CLI *cli);
 
+static chaz_CFlags*
+S_link_flags(chaz_CLI *cli);
+
 static cfish_MakeFile*
 cfish_MakeFile_new(chaz_CLI *cli);
 
@@ -7835,7 +7838,7 @@ static void
 cfish_MakeFile_destroy(cfish_MakeFile *self);
 
 static void
-cfish_MakeFile_write(cfish_MakeFile *self);
+cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags);
 
 static void
 cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self);
@@ -7856,6 +7859,8 @@ static int
 S_need_libpthread(chaz_CLI *cli);
 
 int main(int argc, const char **argv) {
+    chaz_CFlags *link_flags;
+
     /* Initialize. */
     chaz_CLI *cli
         = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
@@ -7895,14 +7900,20 @@ int main(int argc, const char **argv) {
     chaz_Memory_run();
     chaz_VariadicMacros_run();
 
-    /* Write custom postamble. */
+    /* Local definitions. */
+    chaz_ConfWriter_start_module("LocalDefinitions");
     if (chaz_HeadCheck_check_header("sys/time.h")) {
-        chaz_ConfWriter_append_conf("#define CHY_HAS_SYS_TIME_H\n\n");
+        chaz_ConfWriter_add_def("HAS_SYS_TIME_H", NULL);
     }
     if (chaz_HeadCheck_defines_symbol("__sync_bool_compare_and_swap", "")) {
-        chaz_ConfWriter_append_conf(
-            "#define CHY_HAS___SYNC_BOOL_COMPARE_AND_SWAP\n\n");
+        chaz_ConfWriter_add_def("HAS___SYNC_BOOL_COMPARE_AND_SWAP", NULL);
     }
+    link_flags = S_link_flags(cli);
+    chaz_ConfWriter_add_def("EXTRA_LDFLAGS",
+                            chaz_CFlags_get_string(link_flags));
+    chaz_ConfWriter_end_module();
+
+    /* Write custom postamble. */
     chaz_ConfWriter_append_conf(
         "#ifdef CHY_HAS_SYS_TYPES_H\n"
         "  #include <sys/types.h>\n"
@@ -7931,7 +7942,7 @@ int main(int argc, const char **argv) {
 
     if (chaz_CLI_defined(cli, "enable-makefile")) {
         cfish_MakeFile *mf = cfish_MakeFile_new(cli);
-        cfish_MakeFile_write(mf);
+        cfish_MakeFile_write(mf, link_flags);
         /* Export filenames. */
         chaz_ConfWriter_add_def("SHARED_LIB_FILENAME",
                                 mf->shared_lib_filename);
@@ -7941,6 +7952,7 @@ int main(int argc, const char **argv) {
     }
 
     /* Clean up. */
+    chaz_CFlags_destroy(link_flags);
     chaz_CLI_destroy(cli);
     chaz_Probe_clean_up();
 
@@ -7992,6 +8004,24 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
     if (chaz_CLI_defined(cli, "disable-threads")) {
         chaz_CFlags_append(extra_cflags, "-DCFISH_NOTHREADS");
     }
+}
+
+static chaz_CFlags*
+S_link_flags(chaz_CLI *cli) {
+    chaz_CFlags *link_flags   = chaz_CC_new_cflags();
+    const char  *math_library = chaz_Floats_math_library();
+
+    if (math_library) {
+        chaz_CFlags_add_external_library(link_flags, math_library);
+    }
+    if (S_need_libpthread(cli)) {
+        chaz_CFlags_add_external_library(link_flags, "pthread");
+    }
+    if (chaz_CLI_defined(cli, "enable-coverage")) {
+        chaz_CFlags_enable_code_coverage(link_flags);
+    }
+
+    return link_flags;
 }
 
 static cfish_MakeFile*
@@ -8069,7 +8099,7 @@ cfish_MakeFile_destroy(cfish_MakeFile *self) {
 }
 
 static void
-cfish_MakeFile_write(cfish_MakeFile *self) {
+cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
     SourceFileContext sfc;
 
     const char *dir_sep  = chaz_OS_dir_sep();
@@ -8084,7 +8114,6 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
     chaz_CFlags *makefile_cflags;
     chaz_CFlags *link_flags;
 
-    const char *math_library = chaz_Floats_math_library();
     char       *scratch;
     int         i;
 
@@ -8156,15 +8185,7 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
 
     link_flags = chaz_CC_new_cflags();
     chaz_CFlags_enable_debugging(link_flags);
-    if (math_library) {
-        chaz_CFlags_add_external_library(link_flags, math_library);
-    }
-    if (S_need_libpthread(self->cli)) {
-        chaz_CFlags_add_external_library(link_flags, "pthread");
-    }
-    if (chaz_CLI_defined(self->cli, "enable-coverage")) {
-        chaz_CFlags_enable_code_coverage(link_flags);
-    }
+    chaz_CFlags_append(link_flags, chaz_CFlags_get_string(extra_link_flags));
     chaz_MakeFile_add_shared_lib(self->makefile, self->shared_lib,
                                  "$(CLOWNFISH_OBJS)", link_flags);
     chaz_CFlags_destroy(link_flags);
