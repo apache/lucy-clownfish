@@ -70,7 +70,8 @@ FIND_END_OF_LINKED_LIST:
     if (!new_entry) {
         new_entry = (LFRegEntry*)MALLOCATE(sizeof(LFRegEntry));
         new_entry->hash_sum  = hash_sum;
-        new_entry->key       = (String*)INCREF(key);
+        new_entry->key       = Str_new_from_trusted_utf8(Str_Get_Ptr8(key),
+                                                         Str_Get_Size(key));
         new_entry->value     = INCREF(value);
         new_entry->next      = NULL;
     }

@@ -35,7 +35,8 @@ Method_init(Method *self, String *name, cfish_method_t callback_func,
      * a "wrapped" string because that is effectively threadsafe: an INCREF
      * results in a copy and the only reference is owned by an immortal
      * object. */
-    self->name_internal = Str_Clone(name);
+    self->name_internal
+        = Str_new_from_trusted_utf8(Str_Get_Ptr8(name), Str_Get_Size(name));
     self->name
         = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(self->name_internal),
                                     Str_Get_Size(self->name_internal));
@@ -63,7 +64,8 @@ Method_Set_Host_Alias_IMP(Method *self, String *name) {
     if (self->host_alias) {
         THROW(ERR, "Can't Set_Host_Alias more than once");
     }
-    self->host_alias_internal = Str_Clone(name);
+    self->host_alias_internal
+        = Str_new_from_trusted_utf8(Str_Get_Ptr8(name), Str_Get_Size(name));
     self->host_alias
         = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(self->host_alias_internal),
                                     Str_Get_Size(self->host_alias_internal));

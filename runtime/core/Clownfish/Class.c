@@ -44,6 +44,9 @@
 
 size_t Class_offset_of_parent = offsetof(Class, parent);
 
+static void
+S_set_name(Class *self, const char *utf8, size_t size);
+
 static Method*
 S_find_method(Class *self, const char *meth_name);
 
@@ -179,19 +182,12 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
      * Pass 3:
      * - Inititalize name and method array.
      * - Register class.
-     *
-     * We use a "wrapped" String for `name` because it's effectively
-     * threadsafe: the sole reference is owned by an immortal object and any
-     * INCREF spawns a copy.
      */
     for (size_t i = 0; i < num_specs; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass = *spec->klass;
 
-        klass->name_internal = Str_newf("%s", spec->name);
-        klass->name
-            = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(klass->name_internal),
-                                        Str_Get_Size(klass->name_internal));
+        S_set_name(klass, spec->name, strlen(spec->name));
         klass->methods = (Method**)MALLOCATE((spec->num_novel_meths + 1)
                                              * sizeof(Method*));
 
@@ -272,10 +268,7 @@ S_simple_subclass(Class *parent, String *name) {
     subclass->class_alloc_size = parent->class_alloc_size;
     subclass->methods          = (Method**)CALLOCATE(1, sizeof(Method*));
 
-    subclass->name_internal = Str_Clone(name);
-    subclass->name
-        = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(subclass->name_internal),
-                                    Str_Get_Size(subclass->name_internal));
+    S_set_name(subclass, Str_Get_Ptr8(name), Str_Get_Size(name));
 
     memcpy(subclass->vtable, parent->vtable,
            parent->class_alloc_size - offsetof(Class, vtable));
@@ -361,16 +354,13 @@ Class_add_to_registry(Class *klass) {
         return false;
     }
     else {
-        String *class_name = Str_Clone(klass->name);
-        bool retval = LFReg_register(Class_registry, class_name, (Obj*)klass);
-        DECREF(class_name);
-        return retval;
+        return LFReg_register(Class_registry, klass->name, (Obj*)klass);
     }
 }
 
 bool
 Class_add_alias_to_registry(Class *klass, const char *alias_ptr,
-                             size_t alias_len) {
+                            size_t alias_len) {
     if (Class_registry == NULL) {
         Class_init_registry();
     }
@@ -379,10 +369,7 @@ Class_add_alias_to_registry(Class *klass, const char *alias_ptr,
         return false;
     }
     else {
-        String *class_name = Str_Clone(alias);
-        bool retval = LFReg_register(Class_registry, class_name, (Obj*)klass);
-        DECREF(class_name);
-        return retval;
+        return LFReg_register(Class_registry, alias, (Obj*)klass);
     }
 }
 
@@ -415,6 +402,18 @@ Class_Exclude_Host_Method_IMP(Class *self, const char *meth_name) {
         abort();
     }
     method->is_excluded = true;
+}
+
+static void
+S_set_name(Class *self, const char *utf8, size_t size) {
+    /*
+     * We use a "wrapped" String for `name` because it's effectively
+     * threadsafe: the sole reference is owned by an immortal object and any
+     * INCREF spawns a copy.
+     */
+    self->name_internal = Str_new_from_trusted_utf8(utf8, size);
+    self->name = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(self->name_internal),
+                                           Str_Get_Size(self->name_internal));
 }
 
 static Method*
