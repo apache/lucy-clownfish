@@ -58,14 +58,47 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
     int32_t parcel_id = S_claim_parcel_id();
 
     /* Pass 1:
-     * - Initialize IVARS_OFFSET.
      * - Allocate memory.
-     * - Initialize parent, flags, obj_alloc_size, class_alloc_size.
-     * - Assign parcel_id.
-     * - Initialize method pointers.
+     * - Initialize global Class pointers.
      */
     for (size_t i = 0; i < num_specs; ++i) {
         const ClassSpec *spec = &specs[i];
+        Class *parent = spec->parent ? *spec->parent : NULL;
+
+        size_t novel_offset = parent
+                              ? parent->class_alloc_size
+                              : offsetof(Class, vtable);
+        size_t class_alloc_size = novel_offset
+                                  + spec->num_novel_meths
+                                    * sizeof(cfish_method_t);
+
+        Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
+
+        // Needed to calculate size of subclasses.
+        klass->class_alloc_size = class_alloc_size;
+
+        if (spec->klass == &CLASS) {
+            // `obj_alloc_size` is used by Init_Obj to zero the object. In the
+            // next pass, this method is called to initialize the Class
+            // objects. The Class struct is zeroed already, so this isn't
+            // crucial, but let's set the correct value here.
+            klass->obj_alloc_size = offsetof(Class, vtable);
+        }
+
+        // Initialize the global pointer to the Class.
+        *spec->klass = klass;
+    }
+
+    /* Pass 2:
+     * - Initialize IVARS_OFFSET.
+     * - Initialize 'klass' ivar and refcount by calling Init_Obj.
+     * - Initialize parent, flags, obj_alloc_size, class_alloc_size.
+     * - Assign parcel_id.
+     * - Initialize method pointers and offsets.
+     */
+    for (size_t i = 0; i < num_specs; ++i) {
+        const ClassSpec *spec = &specs[i];
+        Class *klass  = *spec->klass;
         Class *parent = spec->parent ? *spec->parent : NULL;
 
         size_t ivars_offset = 0;
@@ -83,24 +116,34 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
             }
         }
 
+        // Init_Obj clears all klass ivars, so `class_alloc_size` must be
+        // recalculated.
+        Class_Init_Obj_IMP(CLASS, klass);
+
         size_t novel_offset = parent
                               ? parent->class_alloc_size
                               : offsetof(Class, vtable);
         size_t class_alloc_size = novel_offset
                                   + spec->num_novel_meths
                                     * sizeof(cfish_method_t);
-        Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
 
         klass->parent           = parent;
         klass->parcel_id        = parcel_id;
-        klass->obj_alloc_size   = ivars_offset + spec->ivars_size;
         klass->class_alloc_size = class_alloc_size;
 
+        if (klass == CLASS) {
+            // Don't account for vtable array.
+            klass->obj_alloc_size = offsetof(Class, vtable);
+        }
+        else {
+            klass->obj_alloc_size = ivars_offset + spec->ivars_size;
+        }
+
         klass->flags = 0;
-        if (spec->klass == &CLASS
-            || spec->klass == &METHOD
-            || spec->klass == &BOOLNUM
-            || spec->klass == &STRING
+        if (klass == CLASS
+            || klass == METHOD
+            || klass == BOOLNUM
+            || klass == STRING
            ) {
             klass->flags |= CFISH_fREFCOUNTSPECIAL;
         }
@@ -129,19 +172,6 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
             novel_offset += sizeof(cfish_method_t);
             Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
-
-        *spec->klass = klass;
-    }
-
-    /* Pass 2:
-     * - Initialize 'klass' instance variable.
-     * - Initialize refcount.
-     */
-    for (size_t i = 0; i < num_specs; ++i) {
-        const ClassSpec *spec = &specs[i];
-        Class *klass = *spec->klass;
-
-        Class_Init_Obj_IMP(CLASS, klass);
     }
 
     /* Now it's safe to call methods.
