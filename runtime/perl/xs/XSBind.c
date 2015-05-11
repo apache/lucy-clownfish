@@ -15,6 +15,7 @@
  */
 
 #include <ctype.h>
+#include <string.h>
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
@@ -768,6 +769,7 @@ CFISH_Class_Make_Obj_IMP(cfish_Class *self) {
 
 cfish_Obj*
 CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
+    memset(allocation, 0, self->obj_alloc_size);
     cfish_Obj *obj = (cfish_Obj*)allocation;
     obj->klass = self;
     obj->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;

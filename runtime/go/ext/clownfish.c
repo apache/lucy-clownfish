@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "charmony.h"
 
@@ -135,6 +136,7 @@ Class_Make_Obj_IMP(Class *self) {
 
 Obj*
 Class_Init_Obj_IMP(Class *self, void *allocation) {
+    memset(allocation, 0, self->obj_alloc_size);
     Obj *obj = (Obj*)allocation;
     obj->klass = self;
     obj->refcount = 1;
