@@ -135,9 +135,6 @@ final class Clownfish::Class inherits Clownfish::Obj {
     Vector*
     Get_Methods(Class *self);
 
-    public incremented Class*
-    Clone(Class *self);
-
     public void
     Destroy(Class *self);
 }

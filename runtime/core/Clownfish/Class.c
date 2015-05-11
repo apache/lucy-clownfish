@@ -215,18 +215,6 @@ Class_Destroy_IMP(Class *self) {
     THROW(ERR, "Insane attempt to destroy Class for class '%o'", self->name);
 }
 
-Class*
-Class_Clone_IMP(Class *self) {
-    Class *twin
-        = (Class*)Memory_wrapped_calloc(self->class_alloc_size, 1);
-
-    memcpy(twin, self, self->class_alloc_size);
-    Class_Init_Obj(self->klass, twin); // Set refcount.
-    twin->name = Str_Clone(self->name);
-
-    return twin;
-}
-
 void
 Class_Override_IMP(Class *self, cfish_method_t method, size_t offset) {
     union { char *char_ptr; cfish_method_t *func_ptr; } pointer;
@@ -271,6 +259,30 @@ Class_init_registry() {
     }
 }
 
+static Class*
+S_simple_subclass(Class *parent, String *name) {
+    Class *subclass
+        = (Class*)Memory_wrapped_calloc(parent->class_alloc_size, 1);
+    Class_Init_Obj(parent->klass, subclass);
+
+    subclass->parent           = parent;
+    subclass->flags            = parent->flags;
+    subclass->parcel_id        = parent->parcel_id;
+    subclass->obj_alloc_size   = parent->obj_alloc_size;
+    subclass->class_alloc_size = parent->class_alloc_size;
+    subclass->methods          = (Method**)CALLOCATE(1, sizeof(Method*));
+
+    subclass->name_internal = Str_Clone(name);
+    subclass->name
+        = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(subclass->name_internal),
+                                    Str_Get_Size(subclass->name_internal));
+
+    memcpy(subclass->vtable, parent->vtable,
+           parent->class_alloc_size - offsetof(Class, vtable));
+
+    return subclass;
+}
+
 Class*
 Class_singleton(String *class_name, Class *parent) {
     if (Class_registry == NULL) {
@@ -294,14 +306,7 @@ Class_singleton(String *class_name, Class *parent) {
             }
         }
 
-        // Copy source class.
-        singleton = Class_Clone(parent);
-
-        // Turn clone into child.
-        singleton->parent = parent;
-        DECREF(singleton->name);
-        singleton->name = Str_Clone(class_name);
-        singleton->methods = (Method**)CALLOCATE(1, sizeof(Method*));
+        singleton = S_simple_subclass(parent, class_name);
 
         // Allow host methods to override.
         fresh_host_methods = Class_fresh_host_methods(class_name);
