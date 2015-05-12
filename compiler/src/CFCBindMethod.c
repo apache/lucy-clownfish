@@ -36,7 +36,9 @@ S_virtual_method_def(CFCMethod *method, CFCClass *klass);
 
 char*
 CFCBindMeth_method_def(CFCMethod *method, CFCClass *klass) {
-    if (CFCMethod_final(method)) {
+    // FIXME: Temporarily disable broken final method optimization.
+    // if (CFCMethod_final(method)) {
+    if (CFCMethod_final(method) && CFCMethod_is_fresh(method, klass)) {
         return S_final_method_def(method, klass);
     }
     else {
