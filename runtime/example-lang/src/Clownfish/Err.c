@@ -36,12 +36,6 @@ cfish_Err_do_throw(cfish_Err *err) {
     THROW(CFISH_ERR, "TODO");
 }
 
-void*
-CFISH_Err_To_Host_IMP(cfish_Err *self) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(void*);
-}
-
 void
 cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
     THROW(CFISH_ERR, "TODO");

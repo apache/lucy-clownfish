@@ -977,16 +977,6 @@ cfish_Err_do_throw(cfish_Err *err) {
     LEAVE;
 }
 
-void*
-CFISH_Err_To_Host_IMP(cfish_Err *self) {
-    dTHX;
-    CFISH_Err_To_Host_t super_to_host
-        = CFISH_SUPER_METHOD_PTR(CFISH_ERR, CFISH_Err_To_Host);
-    SV *perl_obj = (SV*)super_to_host(self);
-    XSBind_enable_overload(aTHX_ perl_obj);
-    return perl_obj;
-}
-
 void
 cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
     CFISH_UNUSED_VAR(klass);
