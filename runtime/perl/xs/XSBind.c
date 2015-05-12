@@ -769,7 +769,12 @@ CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
     if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
         S_lazy_init_host_obj(aTHX_ self);
     }
-    return newRV_inc((SV*)self->ref.host_obj);
+    SV *perl_obj = newRV_inc((SV*)self->ref.host_obj);
+#if PERL_VERSION <= 16
+    // Enable overloading.
+    SvAMAGIC_on(perl_obj);
+#endif
+    return perl_obj;
 }
 
 /*************************** Clownfish::Class ******************************/
