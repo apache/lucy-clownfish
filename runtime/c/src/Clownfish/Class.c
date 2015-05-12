@@ -18,6 +18,8 @@
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
 
+#include <string.h>
+
 #include "charmony.h"
 
 #include "Clownfish/Class.h"
@@ -36,6 +38,7 @@ Class_Make_Obj_IMP(Class *self) {
 
 Obj*
 Class_Init_Obj_IMP(Class *self, void *allocation) {
+    memset(allocation, 0, self->obj_alloc_size);
     Obj *obj = (Obj*)allocation;
     obj->klass = self;
     obj->refcount = 1;

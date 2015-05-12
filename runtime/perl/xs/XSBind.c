@@ -15,6 +15,7 @@
  */
 
 #include <ctype.h>
+#include <string.h>
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
@@ -70,8 +71,8 @@ XSBind_new_blank_obj(pTHX_ SV *either_sv) {
         // Use the supplied class name string to find a Class.
         STRLEN len;
         char *ptr = SvPVutf8(either_sv, len);
-        cfish_StackString *class_name = CFISH_SSTR_WRAP_UTF8(ptr, len);
-        klass = cfish_Class_singleton((cfish_String*)class_name, NULL);
+        cfish_String *class_name = CFISH_SSTR_WRAP_UTF8(ptr, len);
+        klass = cfish_Class_singleton(class_name, NULL);
     }
 
     // Use the Class to allocate a new blank object of the right size.
@@ -103,15 +104,15 @@ XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
             retval = INT2PTR(cfish_Obj*, tmp);
         }
         else if (allocation &&
-                 (klass == CFISH_STACKSTRING
-                  || klass == CFISH_STRING
+                 (klass == CFISH_STRING
                   || klass == CFISH_OBJ)
                 ) {
             // Wrap the string from an ordinary Perl scalar inside a
-            // StackString.
+            // stack String.
             STRLEN size;
             char *ptr = SvPVutf8(sv, size);
-            retval = (cfish_Obj*)cfish_SStr_wrap_utf8(allocation, ptr, size);
+            retval = (cfish_Obj*)cfish_Str_new_stack_string(
+                    allocation, ptr, size);
         }
         else if (SvROK(sv)) {
             // Attempt to convert Perl hashes and arrays into their Clownfish
@@ -616,7 +617,7 @@ SI_immortal(cfish_Class *klass) {
 
 static CFISH_INLINE bool
 SI_is_string_type(cfish_Class *klass) {
-    if (klass == CFISH_STRING || klass == CFISH_STACKSTRING) {
+    if (klass == CFISH_STRING) {
         return true;
     }
     return false;
@@ -768,6 +769,7 @@ CFISH_Class_Make_Obj_IMP(cfish_Class *self) {
 
 cfish_Obj*
 CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
+    memset(allocation, 0, self->obj_alloc_size);
     cfish_Obj *obj = (cfish_Obj*)allocation;
     obj->klass = self;
     obj->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;

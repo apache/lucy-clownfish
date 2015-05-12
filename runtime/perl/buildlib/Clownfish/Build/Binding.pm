@@ -590,9 +590,8 @@ CODE:
 {
     STRLEN size;
     char *ptr = SvPVutf8(class_name_sv, size);
-    cfish_StackString *class_name = CFISH_SSTR_WRAP_UTF8(ptr, size);
-    cfish_Class *klass
-        = cfish_Class_fetch_class((cfish_String*)class_name);
+    cfish_String *class_name = CFISH_SSTR_WRAP_UTF8(ptr, size);
+    cfish_Class *klass = cfish_Class_fetch_class(class_name);
     CFISH_UNUSED_VAR(unused_sv);
     RETVAL = klass ? (SV*)CFISH_Class_To_Host(klass) : &PL_sv_undef;
 }
@@ -609,7 +608,7 @@ CODE:
     bool args_ok
         = XSBind_allot_params(aTHX_ &(ST(0)), 1, items,
                               ALLOT_OBJ(&class_name, "class_name", 10, true,
-                                        CFISH_STRING, alloca(cfish_SStr_size())),
+                                        CFISH_STRING, CFISH_ALLOCA_OBJ(CFISH_STRING)),
                               ALLOT_OBJ(&parent, "parent", 6, false,
                                         CFISH_CLASS, NULL),
                               NULL);

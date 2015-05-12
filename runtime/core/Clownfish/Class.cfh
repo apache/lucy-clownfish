@@ -135,11 +135,14 @@ final class Clownfish::Class inherits Clownfish::Obj {
     Vector*
     Get_Methods(Class *self);
 
-    public incremented Class*
-    Clone(Class *self);
-
     public void
     Destroy(Class *self);
 }
 
+__C__
+
+#define CFISH_ALLOCA_OBJ(class) \
+    cfish_alloca(CFISH_Class_Get_Obj_Alloc_Size(class))
+
+__END_C__
 

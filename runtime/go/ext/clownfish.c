@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "charmony.h"
 
@@ -53,7 +54,7 @@ SI_immortal(cfish_Class *klass) {
 
 static CFISH_INLINE bool
 SI_is_string_type(cfish_Class *klass) {
-    if (klass == CFISH_STRING || klass == CFISH_STACKSTRING) {
+    if (klass == CFISH_STRING) {
         return true;
     }
     return false;
@@ -135,6 +136,7 @@ Class_Make_Obj_IMP(Class *self) {
 
 Obj*
 Class_Init_Obj_IMP(Class *self, void *allocation) {
+    memset(allocation, 0, self->obj_alloc_size);
     Obj *obj = (Obj*)allocation;
     obj->klass = self;
     obj->refcount = 1;

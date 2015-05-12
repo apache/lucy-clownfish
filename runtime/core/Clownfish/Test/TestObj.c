@@ -36,11 +36,11 @@ TestObj_new() {
 
 static Obj*
 S_new_testobj() {
-    StackString *class_name = SSTR_WRAP_UTF8("TestObj", 7);
+    String *class_name = SSTR_WRAP_UTF8("TestObj", 7);
     Obj *obj;
-    Class *klass = Class_fetch_class((String*)class_name);
+    Class *klass = Class_fetch_class(class_name);
     if (!klass) {
-        klass = Class_singleton((String*)class_name, OBJ);
+        klass = Class_singleton(class_name, OBJ);
     }
     obj = Class_Make_Obj(klass);
     return Obj_init(obj);

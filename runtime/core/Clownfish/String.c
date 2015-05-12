@@ -15,7 +15,6 @@
  */
 
 #define C_CFISH_STRING
-#define C_CFISH_STACKSTRING
 #define C_CFISH_STRINGITERATOR
 #define CFISH_USE_SHORT_NAMES
 
@@ -115,6 +114,12 @@ Str_new_wrap_utf8(const char *utf8, size_t size) {
 String*
 Str_new_wrap_trusted_utf8(const char *utf8, size_t size) {
     String *self = (String*)Class_Make_Obj(STRING);
+    return Str_init_wrap_trusted_utf8(self, utf8, size);
+}
+
+String*
+Str_new_stack_string(void *allocation, const char *utf8, size_t size) {
+    String *self = (String*)Class_Init_Obj(STRING, allocation);
     return Str_init_wrap_trusted_utf8(self, utf8, size);
 }
 
@@ -514,33 +519,6 @@ Str_Top_IMP(String *self) {
 StringIterator*
 Str_Tail_IMP(String *self) {
     return StrIter_new(self, self->size);
-}
-
-/*****************************************************************/
-
-StackString*
-SStr_wrap_utf8(void *allocation, const char *ptr, size_t size) {
-    StackString *self
-        = (StackString*)Class_Init_Obj(STACKSTRING, allocation);
-    self->size   = size;
-    self->ptr    = ptr;
-    self->origin = NULL;
-    return self;
-}
-
-StackString*
-SStr_wrap(void *allocation, String *source) {
-    return SStr_wrap_utf8(allocation, source->ptr, source->size);
-}
-
-size_t
-SStr_size() {
-    return sizeof(StackString);
-}
-
-void
-SStr_Destroy_IMP(StackString *self) {
-    THROW(ERR, "Can't destroy a StackString ('%o')", self);
 }
 
 /*****************************************************************/

@@ -38,7 +38,7 @@ SI_immortal(cfish_Class *klass) {
 
 static CFISH_INLINE bool
 SI_is_string_type(cfish_Class *klass) {
-    if (klass == CFISH_STRING || klass == CFISH_STACKSTRING) {
+    if (klass == CFISH_STRING) {
         return true;
     }
     return false;

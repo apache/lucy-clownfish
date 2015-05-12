@@ -58,14 +58,47 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
     int32_t parcel_id = S_claim_parcel_id();
 
     /* Pass 1:
-     * - Initialize IVARS_OFFSET.
      * - Allocate memory.
-     * - Initialize parent, flags, obj_alloc_size, class_alloc_size.
-     * - Assign parcel_id.
-     * - Initialize method pointers.
+     * - Initialize global Class pointers.
      */
     for (size_t i = 0; i < num_specs; ++i) {
         const ClassSpec *spec = &specs[i];
+        Class *parent = spec->parent ? *spec->parent : NULL;
+
+        size_t novel_offset = parent
+                              ? parent->class_alloc_size
+                              : offsetof(Class, vtable);
+        size_t class_alloc_size = novel_offset
+                                  + spec->num_novel_meths
+                                    * sizeof(cfish_method_t);
+
+        Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
+
+        // Needed to calculate size of subclasses.
+        klass->class_alloc_size = class_alloc_size;
+
+        if (spec->klass == &CLASS) {
+            // `obj_alloc_size` is used by Init_Obj to zero the object. In the
+            // next pass, this method is called to initialize the Class
+            // objects. The Class struct is zeroed already, so this isn't
+            // crucial, but let's set the correct value here.
+            klass->obj_alloc_size = offsetof(Class, vtable);
+        }
+
+        // Initialize the global pointer to the Class.
+        *spec->klass = klass;
+    }
+
+    /* Pass 2:
+     * - Initialize IVARS_OFFSET.
+     * - Initialize 'klass' ivar and refcount by calling Init_Obj.
+     * - Initialize parent, flags, obj_alloc_size, class_alloc_size.
+     * - Assign parcel_id.
+     * - Initialize method pointers and offsets.
+     */
+    for (size_t i = 0; i < num_specs; ++i) {
+        const ClassSpec *spec = &specs[i];
+        Class *klass  = *spec->klass;
         Class *parent = spec->parent ? *spec->parent : NULL;
 
         size_t ivars_offset = 0;
@@ -83,25 +116,34 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
             }
         }
 
+        // Init_Obj clears all klass ivars, so `class_alloc_size` must be
+        // recalculated.
+        Class_Init_Obj_IMP(CLASS, klass);
+
         size_t novel_offset = parent
                               ? parent->class_alloc_size
                               : offsetof(Class, vtable);
         size_t class_alloc_size = novel_offset
                                   + spec->num_novel_meths
                                     * sizeof(cfish_method_t);
-        Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
 
         klass->parent           = parent;
         klass->parcel_id        = parcel_id;
-        klass->obj_alloc_size   = ivars_offset + spec->ivars_size;
         klass->class_alloc_size = class_alloc_size;
 
+        if (klass == CLASS) {
+            // Don't account for vtable array.
+            klass->obj_alloc_size = offsetof(Class, vtable);
+        }
+        else {
+            klass->obj_alloc_size = ivars_offset + spec->ivars_size;
+        }
+
         klass->flags = 0;
-        if (spec->klass == &CLASS
-            || spec->klass == &METHOD
-            || spec->klass == &BOOLNUM
-            || spec->klass == &STRING
-            || spec->klass == &STACKSTRING
+        if (klass == CLASS
+            || klass == METHOD
+            || klass == BOOLNUM
+            || klass == STRING
            ) {
             klass->flags |= CFISH_fREFCOUNTSPECIAL;
         }
@@ -130,19 +172,6 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
             novel_offset += sizeof(cfish_method_t);
             Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
-
-        *spec->klass = klass;
-    }
-
-    /* Pass 2:
-     * - Initialize 'klass' instance variable.
-     * - Initialize refcount.
-     */
-    for (size_t i = 0; i < num_specs; ++i) {
-        const ClassSpec *spec = &specs[i];
-        Class *klass = *spec->klass;
-
-        Class_Init_Obj_IMP(CLASS, klass);
     }
 
     /* Now it's safe to call methods.
@@ -169,9 +198,8 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
         // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
-            StackString *name
-                = SSTR_WRAP_UTF8(mspec->name, strlen(mspec->name));
-            Method *method = Method_new((String*)name, mspec->callback_func,
+            String *name = SSTR_WRAP_UTF8(mspec->name, strlen(mspec->name));
+            Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
             klass->methods[i] = method;
         }
@@ -185,18 +213,6 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
 void
 Class_Destroy_IMP(Class *self) {
     THROW(ERR, "Insane attempt to destroy Class for class '%o'", self->name);
-}
-
-Class*
-Class_Clone_IMP(Class *self) {
-    Class *twin
-        = (Class*)Memory_wrapped_calloc(self->class_alloc_size, 1);
-
-    memcpy(twin, self, self->class_alloc_size);
-    Class_Init_Obj(self->klass, twin); // Set refcount.
-    twin->name = Str_Clone(self->name);
-
-    return twin;
 }
 
 void
@@ -243,6 +259,30 @@ Class_init_registry() {
     }
 }
 
+static Class*
+S_simple_subclass(Class *parent, String *name) {
+    Class *subclass
+        = (Class*)Memory_wrapped_calloc(parent->class_alloc_size, 1);
+    Class_Init_Obj(parent->klass, subclass);
+
+    subclass->parent           = parent;
+    subclass->flags            = parent->flags;
+    subclass->parcel_id        = parent->parcel_id;
+    subclass->obj_alloc_size   = parent->obj_alloc_size;
+    subclass->class_alloc_size = parent->class_alloc_size;
+    subclass->methods          = (Method**)CALLOCATE(1, sizeof(Method*));
+
+    subclass->name_internal = Str_Clone(name);
+    subclass->name
+        = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(subclass->name_internal),
+                                    Str_Get_Size(subclass->name_internal));
+
+    memcpy(subclass->vtable, parent->vtable,
+           parent->class_alloc_size - offsetof(Class, vtable));
+
+    return subclass;
+}
+
 Class*
 Class_singleton(String *class_name, Class *parent) {
     if (Class_registry == NULL) {
@@ -266,14 +306,7 @@ Class_singleton(String *class_name, Class *parent) {
             }
         }
 
-        // Copy source class.
-        singleton = Class_Clone(parent);
-
-        // Turn clone into child.
-        singleton->parent = parent;
-        DECREF(singleton->name);
-        singleton->name = Str_Clone(class_name);
-        singleton->methods = (Method**)CALLOCATE(1, sizeof(Method*));
+        singleton = S_simple_subclass(parent, class_name);
 
         // Allow host methods to override.
         fresh_host_methods = Class_fresh_host_methods(class_name);
@@ -341,12 +374,12 @@ Class_add_alias_to_registry(Class *klass, const char *alias_ptr,
     if (Class_registry == NULL) {
         Class_init_registry();
     }
-    StackString *alias = SSTR_WRAP_UTF8(alias_ptr, alias_len);
-    if (LFReg_fetch(Class_registry, (String*)alias)) {
+    String *alias = SSTR_WRAP_UTF8(alias_ptr, alias_len);
+    if (LFReg_fetch(Class_registry, alias)) {
         return false;
     }
     else {
-        String *class_name = SStr_Clone(alias);
+        String *class_name = Str_Clone(alias);
         bool retval = LFReg_register(Class_registry, class_name, (Obj*)klass);
         DECREF(class_name);
         return retval;
@@ -366,12 +399,12 @@ void
 Class_Add_Host_Method_Alias_IMP(Class *self, const char *alias,
                              const char *meth_name) {
     Method *method = S_find_method(self, meth_name);
-    StackString *alias_cf = SSTR_WRAP_UTF8(alias, strlen(alias));
     if (!method) {
         fprintf(stderr, "Method %s not found\n", meth_name);
         abort();
     }
-    Method_Set_Host_Alias(method, (String*)alias_cf);
+    String *string = SSTR_WRAP_UTF8(alias, strlen(alias));
+    Method_Set_Host_Alias(method, string);
 }
 
 void

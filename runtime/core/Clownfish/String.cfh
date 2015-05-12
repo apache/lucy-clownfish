@@ -77,6 +77,9 @@ class Clownfish::String nickname Str
     inert incremented String*
     new_wrap_trusted_utf8(const char *utf8, size_t size);
 
+    inert incremented String*
+    new_stack_string(void *allocation, const char *utf8, size_t size);
+
     /** Initialize the String which wraps an external buffer containing
      * UTF-8.  Do not check validity of supplied UTF-8.
      */
@@ -272,26 +275,6 @@ class Clownfish::String nickname Str
     Tail(String *self);
 }
 
-class Clownfish::StackString nickname SStr
-    inherits Clownfish::String {
-
-    inert incremented StackString*
-    wrap(void *allocation, String *source);
-
-    inert incremented StackString*
-    wrap_utf8(void *allocation, const char *utf8, size_t size);
-
-    /** Return the size for a StackString struct.
-     */
-    inert size_t
-    size();
-
-    /** Throws an error.
-     */
-    public void
-    Destroy(StackString *self);
-}
-
 class Clownfish::StringIterator nickname StrIter
     inherits Clownfish::Obj {
 
@@ -401,19 +384,15 @@ class Clownfish::StringIterator nickname StrIter
 __C__
 
 #define CFISH_SSTR_BLANK() \
-   cfish_SStr_wrap_utf8(cfish_alloca(cfish_SStr_size()), "", 0)
-
-#define CFISH_SSTR_WRAP(source) \
-    cfish_SStr_wrap(cfish_alloca(cfish_SStr_size()), source)
+    cfish_Str_new_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), "", 0)
 
 #define CFISH_SSTR_WRAP_UTF8(ptr, size) \
-    cfish_SStr_wrap_utf8(cfish_alloca(cfish_SStr_size()), ptr, size)
+    cfish_Str_new_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), ptr, size)
 
 #define CFISH_STRITER_DONE  -1
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define SSTR_BLANK             CFISH_SSTR_BLANK
-  #define SSTR_WRAP              CFISH_SSTR_WRAP
   #define SSTR_WRAP_UTF8         CFISH_SSTR_WRAP_UTF8
   #define STRITER_DONE           CFISH_STRITER_DONE
 #endif

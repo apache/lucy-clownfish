@@ -62,8 +62,8 @@ cfish_XSBind_sv_defined(pTHX_ SV *sv) {
 
 /** If the SV contains a Clownfish object which passes an "isa" test against the
  * passed-in Class, return a pointer to it.  If not, but
- * `allocation` is non-NULL and a StackString would satisfy the
- * "isa" test, stringify the SV, create a StackString using
+ * `allocation` is non-NULL and a String would satisfy the
+ * "isa" test, stringify the SV, create a stack String using
  * `allocation`, assign the SV's string to it, and return that
  * instead.  If all else fails, throw an exception.
  */
@@ -162,8 +162,8 @@ cfish_XSBind_enable_overload(pTHX_ void *pobj);
  * a NULL-terminated series of ALLOT_ macros.
  *
  *     cfish_XSBind_allot_params(stack, start, num_stack_elems,
- *          ALLOT_OBJ(&field, "field", 5, CFISH_STRING, true, alloca(cfish_SStr_size()),
- *          ALLOT_OBJ(&term, "term", 4, CFISH_STRING, true, alloca(cfish_SStr_size()),
+ *          ALLOT_OBJ(&field, "field", 5, CFISH_STRING, true, CFISH_ALLOCA_OBJ(CFISH_STRING),
+ *          ALLOT_OBJ(&term, "term", 4, CFISH_STRING, true, CFISH_ALLOCA_OBJ(CFISH_STRING),
  *          NULL);
  *
  * The following ALLOT_ macros are available for primitive types:
@@ -201,8 +201,8 @@ cfish_XSBind_enable_overload(pTHX_ void *pobj);
  *
  * The "klass" argument must be the Class corresponding to the class of the
  * desired object.  The "allocation" argument must be a blob of memory
- * allocated on the stack sufficient to hold a StackString.  (Use
- * cfish_SStr_size() to find the allocation size.)
+ * allocated on the stack sufficient to hold a String.  (Use
+ * CFISH_ALLOCA_OBJ to allocate the object.)
  *
  * To extract a Perl scalar, use the following ALLOT_ macro:
  *
