@@ -43,7 +43,7 @@ S_xsub_body(CFCPerlMethod *self, CFCClass *klass);
 
 // Create an assignment statement for extracting $self from the Perl stack.
 static char*
-S_self_assign_statement(CFCPerlMethod *self, CFCType *type);
+S_self_assign_statement(CFCPerlMethod *self);
 
 // Return code for an xsub which uses labeled params.
 static char*
@@ -208,16 +208,19 @@ S_xsub_body(CFCPerlMethod *self, CFCClass *klass) {
 
 // Create an assignment statement for extracting $self from the Perl stack.
 static char*
-S_self_assign_statement(CFCPerlMethod *self, CFCType *type) {
-    (void)self; // unused
+S_self_assign_statement(CFCPerlMethod *self) {
+    CFCParamList *param_list = CFCMethod_get_param_list(self->method);
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    CFCType *type = CFCVariable_get_type(vars[0]);
+    const char *self_name = CFCVariable_get_name(vars[0]);
     const char *type_c = CFCType_to_c(type);
     if (!CFCType_is_object(type)) {
         CFCUtil_die("Not an object type: %s", type_c);
     }
     const char *class_var = CFCType_get_class_var(type);
-    char pattern[] = "arg_self = (%s)XSBind_sv_to_cfish_obj("
+    char pattern[] = "arg_%s = (%s)XSBind_sv_to_cfish_obj("
                      "aTHX_ ST(0), %s, NULL);";
-    char *statement = CFCUtil_sprintf(pattern, type_c, class_var);
+    char *statement = CFCUtil_sprintf(pattern, self_name, type_c, class_var);
 
     return statement;
 }
@@ -233,10 +236,10 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     CFCType     *return_type = CFCMethod_get_return_type(method);
     const char  *self_type_c = CFCType_to_c(self_type);
     const char  *self_name   = CFCVariable_get_name(self_var);
-    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
     char *meth_type_c  = CFCMethod_full_typedef(method, klass);
-    char *self_assign  = S_self_assign_statement(self, self_type);
-    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self);
+    char *self_assign  = S_self_assign_statement(self);
+    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 1);
     char *body         = S_xsub_body(self, klass);
 
     char *retval_decl;
@@ -252,7 +255,6 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
-        "    %s arg_self;\n"
         "%s"
         "    %s method;\n"
         "    bool args_ok;\n"
@@ -270,7 +272,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
         "    %s\n"
         "}\n";
     char *xsub_def
-        = CFCUtil_sprintf(pattern, c_name, c_name, self_type_c, arg_decls,
+        = CFCUtil_sprintf(pattern, c_name, c_name, arg_decls,
                           meth_type_c, retval_decl, self_name,
                           allot_params, self_assign, body);
 
@@ -294,9 +296,9 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     const char  *self_type_c = CFCType_to_c(self_type);
     const char **arg_inits = CFCParamList_get_initial_values(param_list);
     unsigned num_vars = (unsigned)CFCParamList_num_vars(param_list);
-    char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self);
+    char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
     char *meth_type_c = CFCMethod_full_typedef(method, klass);
-    char *self_assign = S_self_assign_statement(self, self_type);
+    char *self_assign = S_self_assign_statement(self);
     char *body        = S_xsub_body(self, klass);
 
     // Determine how many args are truly required and build an error check.
@@ -379,7 +381,6 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
-        "    %s arg_self;\n"
         "%s"
         "    %s method;\n"
         "%s"
@@ -397,7 +398,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "}\n";
     char *xsub
         = CFCUtil_sprintf(pattern, self->sub.c_name, self->sub.c_name,
-                          self_type_c, arg_decls, meth_type_c, retval_decl,
+                          arg_decls, meth_type_c, retval_decl,
                           num_args_check, self_assign, var_assignments, body);
 
     FREEMEM(num_args_check);

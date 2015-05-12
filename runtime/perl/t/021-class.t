@@ -16,8 +16,8 @@
 use strict;
 use warnings;
 
-package MyHash;
-use base qw( Clownfish::Hash );
+package MyObj;
+use base qw( Clownfish::Obj );
 
 sub oodle { }
 
@@ -29,29 +29,26 @@ my $stringified;
 my $storage = Clownfish::Hash->new;
 
 {
-    my $subclassed_hash = MyHash->new;
-    $stringified = $subclassed_hash->to_string;
+    my $subclassed_obj = MyObj->new;
+    $stringified = $subclassed_obj->to_string;
 
-    isa_ok( $subclassed_hash, "MyHash", "Perl isa reports correct subclass" );
+    isa_ok( $subclassed_obj, "MyObj", "Perl isa reports correct subclass" );
 
    # Store the subclassed object.  At the end of this block, the Perl object
    # will go out of scope and DESTROY will be called, but the Clownfish object
    # will persist.
-    $storage->store( "test", $subclassed_hash );
+    $storage->store( "test", $subclassed_obj );
 }
 
 my $resurrected = $storage->_fetch("test");
 
-isa_ok( $resurrected, "MyHash", "subclass name survived Perl destruction" );
+isa_ok( $resurrected, "MyObj", "subclass name survived Perl destruction" );
 is( $resurrected->to_string, $stringified,
     "It's the same Hash from earlier (though a different Perl object)" );
 
-my $booga = Clownfish::String->new("booga");
-$resurrected->store( "ooga", $booga );
+is( $resurrected->get_class_name,
+    "MyObj", "subclassed object still performs correctly at the C level" );
 
-is( $resurrected->fetch("ooga"),
-    "booga", "subclassed object still performs correctly at the C level" );
-
-my $methods = Clownfish::Class::_fresh_host_methods('MyHash');
+my $methods = Clownfish::Class::_fresh_host_methods('MyObj');
 is_deeply( $methods->to_perl, ['oodle'], "fresh_host_methods" );
 

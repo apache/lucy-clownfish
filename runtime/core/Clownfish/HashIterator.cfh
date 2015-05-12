@@ -20,7 +20,7 @@ parcel Clownfish;
  * Hashtable Iterator.
  */
 
-class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
+final class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
     Hash   *hash;
     size_t  tick;
     size_t  capacity;
