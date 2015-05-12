@@ -26,15 +26,4 @@ class Clownfish::Test::TestLockFreeRegistry nickname TestLFReg
     Run(TestLockFreeRegistry *self, TestBatchRunner *runner);
 }
 
-/** Private test-only class for stressing LockFreeRegistry.
- */
-class Clownfish::Test::StupidHashString inherits Clownfish::String {
-    inert incremented StupidHashString*
-    new(const char *text);
-
-    /** Always returns 1, guaranteeing collisions. */
-    size_t
-    Hash_Sum(StupidHashString *self);
-}
-
 

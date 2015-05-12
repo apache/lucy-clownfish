@@ -22,6 +22,7 @@
 #include "Clownfish/Test/TestLockFreeRegistry.h"
 
 #include "Clownfish/LockFreeRegistry.h"
+#include "Clownfish/String.h"
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/Class.h"
@@ -31,42 +32,28 @@ TestLFReg_new() {
     return (TestLockFreeRegistry*)Class_Make_Obj(TESTLOCKFREEREGISTRY);
 }
 
-StupidHashString*
-StupidHashString_new(const char *text) {
-    StupidHashString *self
-        = (StupidHashString*)Class_Make_Obj(STUPIDHASHSTRING);
-    return (StupidHashString*)Str_init_from_trusted_utf8((String*)self, text,
-                                                         strlen(text));
-}
-
-size_t
-StupidHashString_Hash_Sum_IMP(StupidHashString *self) {
-    UNUSED_VAR(self);
-    return 1;
-}
-
 static void
 test_all(TestBatchRunner *runner) {
-    LockFreeRegistry *registry = LFReg_new(10);
-    StupidHashString *foo = StupidHashString_new("foo");
-    StupidHashString *bar = StupidHashString_new("bar");
-    StupidHashString *baz = StupidHashString_new("baz");
-    StupidHashString *foo_dupe = StupidHashString_new("foo");
+    LockFreeRegistry *registry = LFReg_new(1);
+    String *foo = Str_newf("foo");
+    String *bar = Str_newf("bar");
+    String *baz = Str_newf("baz");
+    String *foo_dupe = Str_newf("foo");
 
-    TEST_TRUE(runner, LFReg_register(registry, (String*)foo, (Obj*)foo),
+    TEST_TRUE(runner, LFReg_register(registry, foo, (Obj*)foo),
               "Register() returns true on success");
     TEST_FALSE(runner,
-               LFReg_register(registry, (String*)foo_dupe, (Obj*)foo_dupe),
+               LFReg_register(registry, foo_dupe, (Obj*)foo_dupe),
                "Can't Register() keys that test equal");
 
-    TEST_TRUE(runner, LFReg_register(registry, (String*)bar, (Obj*)bar),
+    TEST_TRUE(runner, LFReg_register(registry, bar, (Obj*)bar),
               "Register() key with the same Hash_Sum but that isn't Equal");
 
-    TEST_TRUE(runner, LFReg_fetch(registry, (String*)foo_dupe) == (Obj*)foo,
+    TEST_TRUE(runner, LFReg_fetch(registry, foo_dupe) == (Obj*)foo,
               "Fetch()");
-    TEST_TRUE(runner, LFReg_fetch(registry, (String*)bar) == (Obj*)bar,
+    TEST_TRUE(runner, LFReg_fetch(registry, bar) == (Obj*)bar,
               "Fetch() again");
-    TEST_TRUE(runner, LFReg_fetch(registry, (String*)baz) == NULL,
+    TEST_TRUE(runner, LFReg_fetch(registry, baz) == NULL,
               "Fetch() non-existent key returns NULL");
 
     DECREF(foo_dupe);
