@@ -404,12 +404,6 @@ XSBind_trap(SV *routine, SV *context) {
 void
 XSBind_enable_overload(pTHX_ void *pobj) {
     SV *perl_obj = (SV*)pobj;
-    HV *stash = SvSTASH(SvRV(perl_obj));
-#if (PERL_VERSION > 10)
-    Gv_AMupdate(stash, false);
-#else
-    Gv_AMupdate(stash);
-#endif
     SvAMAGIC_on(perl_obj);
 }
 
