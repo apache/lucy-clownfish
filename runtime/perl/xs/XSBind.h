@@ -153,11 +153,6 @@ cfish_XSBind_str_to_sv(pTHX_ cfish_String *str);
 cfish_Err*
 cfish_XSBind_trap(SV *routine, SV *context);
 
-/** Turn on overloading for the supplied Perl object and its class.
- */
-CFISH_VISIBLE void
-cfish_XSBind_enable_overload(pTHX_ void *pobj);
-
 /** Process hash-style params passed to an XS subroutine.  The varargs must be
  * a NULL-terminated series of ALLOT_ macros.
  *
@@ -328,7 +323,6 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
 #define XSBind_bb_to_sv                cfish_XSBind_bb_to_sv
 #define XSBind_str_to_sv               cfish_XSBind_str_to_sv
 #define XSBind_trap                    cfish_XSBind_trap
-#define XSBind_enable_overload         cfish_XSBind_enable_overload
 #define XSBind_allot_params            cfish_XSBind_allot_params
 #define ALLOT_I8                       XSBIND_ALLOT_I8
 #define ALLOT_I16                      XSBIND_ALLOT_I16

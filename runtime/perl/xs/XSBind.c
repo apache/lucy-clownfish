@@ -401,12 +401,6 @@ XSBind_trap(SV *routine, SV *context) {
     return cfish_Err_trap(S_attempt_perl_call, &args);
 }
 
-void
-XSBind_enable_overload(pTHX_ void *pobj) {
-    SV *perl_obj = (SV*)pobj;
-    SvAMAGIC_on(perl_obj);
-}
-
 static bool
 S_extract_from_sv(pTHX_ SV *value, void *target, const char *label,
                   bool required, int type, cfish_Class *klass,
