@@ -24,6 +24,7 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 
 #include "Clownfish/CharBuf.h"
+#include "Clownfish/Err.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 
@@ -115,5 +116,212 @@ String*
 TestUtils_get_str(const char *ptr) {
     return Str_new_from_utf8(ptr, strlen(ptr));
 }
+
+/********************************* WINDOWS ********************************/
+#ifdef CHY_HAS_WINDOWS_H
+
+#include <windows.h>
+
+uint64_t
+TestUtils_time() {
+    SYSTEMTIME system_time;
+    GetSystemTime(&system_time);
+
+    FILETIME file_time;
+    SystemTimeToFileTime(&system_time, &file_time);
+
+    ULARGE_INTEGER ularge;
+    ularge.LowPart  = file_time.dwLowDateTime;
+    ularge.HighPart = file_time.dwHighDateTime;
+
+    return ularge.QuadPart / 10;
+
+}
+
+/********************************* UNIXEN *********************************/
+#elif defined(CHY_HAS_SYS_TIME_H)
+
+#include <sys/time.h>
+
+uint64_t
+TestUtils_time() {
+    struct timeval t;
+    gettimeofday(&t, NULL);
+
+    return (uint64_t)t.tv_sec * 1000000 + t.tv_usec;
+}
+
+#else
+  #error "Can't find a known time API."
+#endif // OS switch.
+
+/********************************* WINDOWS ********************************/
+#ifdef CHY_HAS_WINDOWS_H
+
+#include <windows.h>
+
+void
+TestUtils_usleep(uint64_t microseconds) {
+    Sleep(microseconds / 1000);
+}
+
+/********************************* UNIXEN *********************************/
+#elif defined(CHY_HAS_UNISTD_H)
+
+#include <unistd.h>
+
+void
+TestUtils_usleep(uint64_t microseconds) {
+    uint32_t seconds = microseconds / 1000000;
+    microseconds %= 1000000;
+    sleep(seconds);
+    usleep(microseconds);
+}
+
+#else
+  #error "Can't find a known sleep API."
+#endif // OS switch.
+
+
+/********************************** Windows ********************************/
+#if !defined(CFISH_NOTHREADS) && defined(CHY_HAS_WINDOWS_H)
+
+#include <windows.h>
+
+struct Thread {
+    HANDLE            handle;
+    void             *runtime;
+    thread_routine_t  routine;
+    void             *arg;
+};
+
+bool TestUtils_has_threads = true;
+
+static DWORD
+S_thread(void *arg) {
+    Thread *thread = (Thread*)arg;
+
+    if (thread->runtime) {
+        TestUtils_set_host_runtime(thread->runtime);
+    }
+
+    thread->routine(thread->arg);
+
+    return 0;
+}
+
+Thread*
+TestUtils_thread_create(thread_routine_t routine, void *arg,
+                        void *host_runtime) {
+    Thread *thread = (Thread*)MALLOCATE(sizeof(Thread));
+    thread->runtime = host_runtime;
+    thread->routine = routine;
+    thread->arg     = arg;
+
+    thread->handle = CreateThread(NULL, 0, S_thread, thread, 0, NULL);
+    if (thread->handle == NULL) {
+        FREEMEM(thread);
+        THROW(ERR, "CreateThread failed: %s", Err_win_error());
+    }
+
+    return thread;
+}
+
+void
+TestUtils_thread_yield() {
+    SwitchToThread();
+}
+
+void
+TestUtils_thread_join(Thread *thread) {
+    DWORD event = WaitForSingleObject(thread->handle, INFINITE);
+    FREEMEM(thread);
+    if (event != WAIT_OBJECT_0) {
+        THROW(ERR, "WaitForSingleObject failed: %s", Err_win_error());
+    }
+}
+
+/******************************** pthreads *********************************/
+#elif !defined(CFISH_NOTHREADS) && defined(CHY_HAS_PTHREAD_H)
+
+#include <pthread.h>
+
+struct Thread {
+    pthread_t         pthread;
+    void             *runtime;
+    thread_routine_t  routine;
+    void             *arg;
+};
+
+bool TestUtils_has_threads = true;
+
+static void*
+S_thread(void *arg) {
+    Thread *thread = (Thread*)arg;
+
+    if (thread->runtime) {
+        TestUtils_set_host_runtime(thread->runtime);
+    }
+
+    thread->routine(thread->arg);
+
+    return NULL;
+}
+
+Thread*
+TestUtils_thread_create(thread_routine_t routine, void *arg,
+                        void *host_runtime) {
+    Thread *thread = (Thread*)MALLOCATE(sizeof(Thread));
+    thread->runtime = host_runtime;
+    thread->routine = routine;
+    thread->arg     = arg;
+
+    int err = pthread_create(&thread->pthread, NULL, S_thread, thread);
+    if (err != 0) {
+        FREEMEM(thread);
+        THROW(ERR, "pthread_create failed: %s", strerror(err));
+    }
+
+    return thread;
+}
+
+void
+TestUtils_thread_yield() {
+    pthread_yield();
+}
+
+void
+TestUtils_thread_join(Thread *thread) {
+    int err = pthread_join(thread->pthread, NULL);
+    FREEMEM(thread);
+    if (err != 0) {
+        THROW(ERR, "pthread_create failed: %s", strerror(err));
+    }
+}
+
+/**************************** No thread support ****************************/
+#else
+
+bool TestUtils_has_threads = false;
+
+Thread*
+TestUtils_thread_create(thread_routine_t routine, void *arg) {
+    UNUSED_VAR(routine);
+    UNUSED_VAR(arg);
+    THROW(ERR, "No thread support");
+    UNREACHABLE_RETURN(Thread*);
+}
+
+void
+TestUtils_thread_yield() {
+}
+
+void
+TestUtils_thread_join(Thread *thread) {
+    UNUSED_VAR(thread);
+    THROW(ERR, "No thread support");
+}
+
+#endif
 
 

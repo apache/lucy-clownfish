@@ -86,9 +86,20 @@ FIND_END_OF_LINKED_LIST:
      * while we were allocating that new node), the compare-and-swap will
      * fail.  If that happens, we have to go back and find the new end of the
      * linked list, then try again. */
+#if 1
     if (!Atomic_cas_ptr((void*volatile*)slot, NULL, new_entry)) {
         goto FIND_END_OF_LINKED_LIST;
     }
+#else
+    // This non-atomic version can be used to check whether the test suite
+    // catches any race conditions.
+    if (*slot == NULL) {
+        *slot = new_entry;
+    }
+    else {
+        goto FIND_END_OF_LINKED_LIST;
+    }
+#endif
 
     return true;
 }

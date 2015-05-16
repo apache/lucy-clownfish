@@ -25,8 +25,7 @@
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
-#include "Clownfish/Test/TestThreads.h"
-#include "Clownfish/TestHarness/TestBatchRunner.h"
+#include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Util/Memory.h"
@@ -191,6 +190,8 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
     cfish_Obj *retval = NULL;
 
     if (XSBind_sv_defined(aTHX_ sv)) {
+        bool is_undef = false;
+
         if (SvROK(sv)) {
             // Deep conversion of references.
             SV *inner = SvRV(sv);
@@ -209,11 +210,17 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
                 retval = INT2PTR(cfish_Obj*, tmp);
                 (void)CFISH_INCREF(retval);
             }
+            else if (!XSBind_sv_defined(aTHX_ inner)) {
+                // Reference to undef. After cloning a Perl interpeter,
+                // most Clownfish objects look like this after they're
+                // CLONE_SKIPped.
+                is_undef = true;
+            }
         }
 
         // It's either a plain scalar or a non-Clownfish Perl object, so
         // stringify.
-        if (!retval) {
+        if (!retval && !is_undef) {
             STRLEN len;
             char *ptr = SvPVutf8(sv, len);
             retval = (cfish_Obj*)cfish_Str_new_from_trusted_utf8(ptr, len);
@@ -927,6 +934,7 @@ cfish_Err_get_error() {
     call_pv("Clownfish::Err::get_error", G_SCALAR);
     SPAGAIN;
     cfish_Err *error = (cfish_Err*)XSBind_perl_to_cfish(aTHX_ POPs);
+    if (error) { CFISH_CERTIFY(error, CFISH_ERR); }
     PUTBACK;
     FREETMPS;
     LEAVE;
@@ -1042,11 +1050,25 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     return error;
 }
 
-/*********************** Clownfish::Test::TestThreads ***********************/
+/********************* Clownfish::TestHarness::TestUtils ********************/
+
+void*
+cfish_TestUtils_clone_host_runtime() {
+    PerlInterpreter *interp = (PerlInterpreter*)PERL_GET_CONTEXT;
+    PerlInterpreter *clone  = perl_clone(interp, CLONEf_CLONE_HOST);
+    PERL_SET_CONTEXT(interp);
+    return clone;
+}
 
 void
-TESTCFISH_TestThreads_Run_IMP(testcfish_TestThreads *self,
-                              cfish_TestBatchRunner *runner) {
-    CFISH_TestBatchRunner_Plan(runner, (cfish_TestBatch*)self, 0);
+cfish_TestUtils_set_host_runtime(void *runtime) {
+    PERL_SET_CONTEXT(runtime);
+}
+
+void
+cfish_TestUtils_destroy_host_runtime(void *runtime) {
+    PerlInterpreter *interp = (PerlInterpreter*)runtime;
+    perl_destruct(interp);
+    perl_free(interp);
 }
 

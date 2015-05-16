@@ -15,14 +15,24 @@
  */
 
 #define CFISH_USE_SHORT_NAMES
-#define TESTCFISH_USE_SHORT_NAMES
 
-#include "Clownfish/Test/TestThreads.h"
+#include "charmony.h"
 
-#include "Clownfish/Class.h"
+#include "Clownfish/TestHarness/TestUtils.h"
 
-TestThreads*
-TestThreads_new() {
-    return (TestThreads*)Class_Make_Obj(TESTTHREADS);
+void*
+cfish_TestUtils_clone_host_runtime() {
+    return NULL;
 }
+
+void
+cfish_TestUtils_set_host_runtime(void *runtime) {
+    UNUSED_VAR(runtime);
+}
+
+void
+cfish_TestUtils_destroy_host_runtime(void *runtime) {
+    UNUSED_VAR(runtime);
+}
+
 
