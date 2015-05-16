@@ -17,7 +17,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Encode qw( _utf8_off );
 use Clownfish;
 
@@ -40,4 +40,29 @@ is( $string->to_perl, $smiley, "round trip UTF-8" );
 $string = Clownfish::String->new($smiley);
 my $clone = $string->clone;
 is( $clone->to_perl, Clownfish::String->new($smiley)->to_perl, "clone" );
+
+{
+    package MyStringCallbackTest;
+    use base qw(Clownfish::Test::StringCallbackTest);
+
+    our $string_ref;
+
+    sub new {
+        $string_ref = \$_[1];
+        return $_[0]->SUPER::new;
+    }
+
+    sub callback {
+        my $self = shift;
+        $$string_ref = 'bar';
+    }
+}
+
+SKIP: {
+    skip( "Known issue CLOWNFISH-44", 1 );
+    my $string = 'foo';
+    my $callback_test = MyStringCallbackTest->new($string);
+    ok( $callback_test->unchanged_by_callback($string),
+        "String unchanged by callback" );
+}
 

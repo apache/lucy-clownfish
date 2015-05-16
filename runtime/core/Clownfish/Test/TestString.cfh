@@ -26,4 +26,11 @@ class Clownfish::Test::TestString nickname TestStr
     Run(TestString *self, TestBatchRunner *runner);
 }
 
+abstract class Clownfish::Test::StringCallbackTest nickname StrCbTest {
+    bool
+    Unchanged_By_Callback(StringCallbackTest *self, String *str);
+
+    abstract void
+    Callback(StringCallbackTest *self);
+}
 

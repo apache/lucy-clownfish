@@ -710,4 +710,12 @@ TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
     test_iterator_substring(runner);
 }
 
+/*************************** StringCallbackTest ***************************/
+
+bool
+StrCbTest_Unchanged_By_Callback_IMP(StringCallbackTest *self, String *str) {
+    String *before = Str_Clone(str);
+    StrCbTest_Callback(self);
+    return Str_Equals(str, (Obj*)before);
+}
 
