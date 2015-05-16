@@ -242,9 +242,12 @@ TestUtils_thread_join(Thread *thread) {
 }
 
 /******************************** pthreads *********************************/
-#elif !defined(CFISH_NOTHREADS) && defined(CHY_HAS_PTHREAD_H)
+#elif !defined(CFISH_NOTHREADS) \
+      && defined(CHY_HAS_PTHREAD_H) \
+      && defined(CHY_HAS_SCHED_H)
 
 #include <pthread.h>
+#include <sched.h>
 
 struct Thread {
     pthread_t         pthread;
@@ -287,7 +290,7 @@ TestUtils_thread_create(thread_routine_t routine, void *arg,
 
 void
 TestUtils_thread_yield() {
-    pthread_yield();
+    sched_yield();
 }
 
 void

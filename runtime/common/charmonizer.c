@@ -6499,7 +6499,9 @@ chaz_Headers_probe_posix(void) {
         "grp.h",
         "pwd.h",
         "regex.h",
+        "sched.h",
         "sys/stat.h",
+        "sys/time.h",
         "sys/times.h",
         "sys/types.h",
         "sys/utsname.h",
@@ -7902,9 +7904,6 @@ int main(int argc, const char **argv) {
 
     /* Local definitions. */
     chaz_ConfWriter_start_module("LocalDefinitions");
-    if (chaz_HeadCheck_check_header("sys/time.h")) {
-        chaz_ConfWriter_add_def("HAS_SYS_TIME_H", NULL);
-    }
     if (chaz_HeadCheck_defines_symbol("__sync_bool_compare_and_swap", "")) {
         chaz_ConfWriter_add_def("HAS___SYNC_BOOL_COMPARE_AND_SWAP", NULL);
     }
