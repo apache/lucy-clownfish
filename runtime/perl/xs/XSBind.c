@@ -1052,6 +1052,9 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
 
 /********************* Clownfish::TestHarness::TestUtils ********************/
 
+
+#ifndef CFISH_NOTHREADS
+
 void*
 cfish_TestUtils_clone_host_runtime() {
     PerlInterpreter *interp = (PerlInterpreter*)PERL_GET_CONTEXT;
@@ -1071,4 +1074,24 @@ cfish_TestUtils_destroy_host_runtime(void *runtime) {
     perl_destruct(interp);
     perl_free(interp);
 }
+
+#else /* CFISH_NOTHREADS */
+
+void*
+cfish_TestUtils_clone_host_runtime() {
+    CFISH_THROW(CFISH_ERR, "No thread support");
+    CFISH_UNREACHABLE_RETURN(void*);
+}
+
+void
+cfish_TestUtils_set_host_runtime(void *runtime) {
+    CFISH_THROW(CFISH_ERR, "No thread support");
+}
+
+void
+cfish_TestUtils_destroy_host_runtime(void *runtime) {
+    CFISH_THROW(CFISH_ERR, "No thread support");
+}
+
+#endif
 
