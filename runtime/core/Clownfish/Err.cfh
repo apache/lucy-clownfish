@@ -55,9 +55,6 @@ public class Clownfish::Err inherits Clownfish::Obj {
     public incremented String*
     To_String(Err *self);
 
-    void*
-    To_Host(Err *self);
-
     /** Concatenate the supplied argument onto the internal "mess".
      */
     public void

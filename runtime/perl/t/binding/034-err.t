@@ -27,10 +27,13 @@ package GloriousDeath;
 use base qw( Clownfish::Err );
 
 package main;
-use Test::More tests => 10;
+use Test::More tests => 12;
 
-isa_ok( Clownfish::Err->new("Bad stuff happened"),
-    'Clownfish::Err', "new" );
+my $err = Clownfish::Err->new("Bad stuff happened");
+isa_ok( $err, 'Clownfish::Err', "new" );
+my $mess = $err->get_mess;
+is( "$err", $mess, "Err stringification works" );
+ok( $err eq $mess, "Err eq overload works" );
 
 my $glorious = GloriousDeath->new("Banzai");
 isa_ok( $glorious, 'GloriousDeath',     "subclass" );

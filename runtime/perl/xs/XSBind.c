@@ -401,18 +401,6 @@ XSBind_trap(SV *routine, SV *context) {
     return cfish_Err_trap(S_attempt_perl_call, &args);
 }
 
-void
-XSBind_enable_overload(pTHX_ void *pobj) {
-    SV *perl_obj = (SV*)pobj;
-    HV *stash = SvSTASH(SvRV(perl_obj));
-#if (PERL_VERSION > 10)
-    Gv_AMupdate(stash, false);
-#else
-    Gv_AMupdate(stash);
-#endif
-    SvAMAGIC_on(perl_obj);
-}
-
 static bool
 S_extract_from_sv(pTHX_ SV *value, void *target, const char *label,
                   bool required, int type, cfish_Class *klass,
@@ -645,50 +633,49 @@ SI_is_string_type(cfish_Class *klass) {
     return false;
 }
 
-static void
+// Returns an incref'd, blessed RV.
+static SV*
 S_lazy_init_host_obj(pTHX_ cfish_Obj *self) {
-    SV *inner_obj = newSV(0);
-    SvOBJECT_on(inner_obj);
-#if (PERL_VERSION <= 16)
-    PL_sv_objcount++;
-#endif
-    (void)SvUPGRADE(inner_obj, SVt_PVMG);
-    sv_setiv(inner_obj, PTR2IV(self));
+    cfish_Class  *klass      = self->klass;
+    cfish_String *class_name = CFISH_Class_Get_Name(klass);
 
-    // Connect class association.
-    cfish_String *class_name = CFISH_Class_Get_Name(self->klass);
-    HV *stash = gv_stashpvn(CFISH_Str_Get_Ptr8(class_name),
-                            CFISH_Str_Get_Size(class_name), TRUE);
-    SvSTASH_set(inner_obj, (HV*)SvREFCNT_inc(stash));
+    SV *outer_obj = newSV(0);
+    sv_setref_pv(outer_obj, CFISH_Str_Get_Ptr8(class_name), self);
+    SV *inner_obj = SvRV(outer_obj);
 
     /* Up till now we've been keeping track of the refcount in
      * self->ref.count.  We're replacing ref.count with ref.host_obj, which
-     * will assume responsibility for maintaining the refcount.  ref.host_obj
-     * starts off with a refcount of 1, so we need to transfer any refcounts
-     * in excess of that. */
+     * will assume responsibility for maintaining the refcount. */
     cfish_ref_t old_ref = self->ref;
-    size_t excess = (old_ref.count >> XSBIND_REFCOUNT_SHIFT) - 1;
+    size_t excess = old_ref.count >> XSBIND_REFCOUNT_SHIFT;
     SvREFCNT(inner_obj) += excess;
 
     // Overwrite refcount with host object.
-    cfish_Class *klass = self->klass;
     if (SI_immortal(klass)) {
         SvSHARE(inner_obj);
-        if (!cfish_Atomic_cas_ptr((void**)&self->ref, old_ref.host_obj, inner_obj)) {
-            // Another thread beat us to it.  Now we have a Perl object to defuse.
+        if (!cfish_Atomic_cas_ptr((void**)&self->ref, old_ref.host_obj,
+                                  inner_obj)) {
+            // Another thread beat us to it.  Now we have a Perl object to
+            // defuse. "Unbless" the object first to make sure the
+            // Clownfish destructor won't be called.
+            HV *stash = SvSTASH(inner_obj);
             SvSTASH_set(inner_obj, NULL);
             SvREFCNT_dec((SV*)stash);
             SvOBJECT_off(inner_obj);
             SvREFCNT(inner_obj) -= excess;
-            SvREFCNT_dec(inner_obj);
 #if (PERL_VERSION <= 16)
             PL_sv_objcount--;
 #endif
+            SvREFCNT_dec(outer_obj);
+
+            return newRV_inc((SV*)self->ref.host_obj);
         }
     }
     else {
         self->ref.host_obj = inner_obj;
     }
+
+    return outer_obj;
 }
 
 uint32_t
@@ -772,10 +759,23 @@ cfish_dec_refcount(void *vself) {
 void*
 CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
     dTHX;
+    SV *perl_obj;
     if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
-        S_lazy_init_host_obj(aTHX_ self);
+        perl_obj = S_lazy_init_host_obj(aTHX_ self);
     }
-    return newRV_inc((SV*)self->ref.host_obj);
+    else {
+        perl_obj = newRV_inc((SV*)self->ref.host_obj);
+    }
+
+    // Enable overloading for Perl 5.8.x
+#if PERL_VERSION <= 8
+    HV *stash = SvSTASH((SV*)self->ref.host_obj);
+    if (Gv_AMG(stash)) {
+        SvAMAGIC_on(perl_obj);
+    }
+#endif
+
+    return perl_obj;
 }
 
 /*************************** Clownfish::Class ******************************/
@@ -976,16 +976,6 @@ cfish_Err_do_throw(cfish_Err *err) {
     call_pv("Clownfish::Err::do_throw", G_DISCARD);
     FREETMPS;
     LEAVE;
-}
-
-void*
-CFISH_Err_To_Host_IMP(cfish_Err *self) {
-    dTHX;
-    CFISH_Err_To_Host_t super_to_host
-        = CFISH_SUPER_METHOD_PTR(CFISH_ERR, CFISH_Err_To_Host);
-    SV *perl_obj = (SV*)super_to_host(self);
-    XSBind_enable_overload(aTHX_ perl_obj);
-    return perl_obj;
 }
 
 void

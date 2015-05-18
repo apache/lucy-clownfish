@@ -177,13 +177,6 @@ Err_do_throw(Err *error) {
     }
 }
 
-void*
-Err_To_Host_IMP(Err *self) {
-    UNUSED_VAR(self);
-    THROW(ERR, "TODO");
-    UNREACHABLE_RETURN(void*);
-}
-
 void
 Err_throw_mess(Class *klass, String *message) {
     UNUSED_VAR(klass);
