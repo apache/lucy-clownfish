@@ -1,0 +1,12 @@
+environment:
+  global:
+    LUCY_DEBUG: 1
+  matrix:
+    - CLOWNFISH_HOST: c
+#    - CLOWNFISH_HOST: perl
+
+build: off
+
+test_script:
+  - 'devel\bin\appveyor-build.bat'
+
