@@ -1,0 +1,14 @@
+parcel hello;
+
+public abstract class Greeter {
+    /** A salutation, such as "Hello" or "Bon jour".
+     */
+    public abstract incremented String*
+    Salutation(Greeter *self);
+
+    /** Say hello to `name`.
+     */
+    public incremented String*
+    Greet(Greeter *self, String *name);
+}
+

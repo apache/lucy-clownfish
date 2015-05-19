@@ -1,0 +1,16 @@
+parcel hello;
+
+public class Dog inherits Greeter {
+    public inert incremented Dog*
+    new();
+
+    public inert Dog*
+    init(Dog *self);
+
+    public incremented String*
+    Greet(Dog *self, String *name);
+
+    public incremented String*
+    Salutation(Dog *self);
+}
+
