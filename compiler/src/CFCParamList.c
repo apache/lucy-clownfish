@@ -20,6 +20,7 @@
 #include "CFCBase.h"
 #include "CFCParamList.h"
 #include "CFCVariable.h"
+#include "CFCType.h"
 #include "CFCSymbol.h"
 #include "CFCUtil.h"
 
@@ -174,5 +175,23 @@ const char*
 CFCParamList_name_list(CFCParamList *self) {
     if (!self->name_list) { S_generate_c_strings(self); }
     return self->name_list;
+}
+
+const char*
+CFCParamList_param_name(CFCParamList *self, int tick) {
+    if (tick >= self->num_vars) {
+        CFCUtil_die("No var at position %d for ParamList (%s)", tick,
+                    CFCParamList_to_c(self));
+    }
+    return CFCVariable_get_name(self->variables[tick]);
+}
+
+CFCType*
+CFCParamList_param_type(CFCParamList *self, int tick) {
+    if (tick >= self->num_vars) {
+        CFCUtil_die("No var at position %d for ParamList (%s)", tick,
+                    CFCParamList_to_c(self));
+    }
+    return CFCVariable_get_type(self->variables[tick]);
 }
 
