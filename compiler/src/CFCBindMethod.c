@@ -38,7 +38,7 @@ S_method_def(CFCMethod *method, CFCClass *klass, int optimized_final_meth);
  * directly, since this method may not be overridden.
  */
 static char*
-S_final_method_def(CFCMethod *method, CFCClass *klass) {
+S_optimized_final_method_def(CFCMethod *method, CFCClass *klass) {
     return S_method_def(method, klass, true);
 }
 
@@ -51,12 +51,20 @@ S_virtual_method_def(CFCMethod *method, CFCClass *klass) {
 
 char*
 CFCBindMeth_method_def(CFCMethod *method, CFCClass *klass) {
+    // If the method is final and the implementing function is in the same
+    // parcel as the invocant, we can optimize the call by resolving to the
+    // implementing function directly.
     if (CFCMethod_final(method)) {
-        return S_final_method_def(method, klass);
+        CFCClass *ancestor = klass;
+        while (ancestor && !CFCMethod_is_fresh(method, ancestor)) {
+            ancestor = CFCClass_get_parent(ancestor);
+        }
+        if (CFCClass_get_parcel(ancestor) == CFCClass_get_parcel(klass)) {
+            return S_optimized_final_method_def(method, klass);
+        }
     }
-    else {
-        return S_virtual_method_def(method, klass);
-    }
+
+    return S_virtual_method_def(method, klass);
 }
 
 static char*
