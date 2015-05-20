@@ -39,7 +39,8 @@ typedef struct cfish_LFRegEntry {
 
 LockFreeRegistry*
 LFReg_new(size_t capacity) {
-    LockFreeRegistry *self = CALLOCATE(1, sizeof(LockFreeRegistry));
+    LockFreeRegistry *self
+        = (LockFreeRegistry*)CALLOCATE(1, sizeof(LockFreeRegistry));
     self->capacity = capacity;
     self->entries  = CALLOCATE(capacity, sizeof(void*));
     return self;

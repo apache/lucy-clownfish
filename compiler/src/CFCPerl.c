@@ -512,16 +512,28 @@ CFCPerl_write_callbacks(CFCPerl *self) {
 
 static void
 S_write_callbacks_c(CFCPerl *self) {
-    CFCClass  **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
-    CFCParcel **parcels  = CFCParcel_all_parcels();
-    char       *includes = CFCUtil_strdup("");
+    CFCClass **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
+    char      *includes = CFCUtil_strdup("");
+    char      *cb_defs  = CFCUtil_strdup("");
 
-    for (int i = 0; parcels[i]; i++) {
-        CFCParcel *parcel = parcels[i];
-        if (!CFCParcel_included(parcel)) {
-            const char *prefix = CFCParcel_get_prefix(parcel);
-            includes = CFCUtil_cat(includes, "#include \"", prefix,
-                                   "parcel.h\"\n", NULL);
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
+
+        const char *include_h = CFCClass_include_h(klass);
+        includes = CFCUtil_cat(includes, "#include \"", include_h,
+                               "\"\n", NULL);
+
+        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
+        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
+            CFCMethod *method = fresh_methods[meth_num];
+
+            // Define callback.
+            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
+                char *cb_def = CFCPerlMethod_callback_def(method, klass);
+                cb_defs = CFCUtil_cat(cb_defs, cb_def, "\n", NULL);
+                FREEMEM(cb_def);
+            }
         }
     }
 
@@ -603,27 +615,12 @@ S_write_callbacks_c(CFCPerl *self) {
         "    }\n"
         "    return retval;\n"
         "}\n"
+	"\n"
+	"%s" // Callback definitions.
+	"%s" // Footer.
         "\n";
-    char *content = CFCUtil_sprintf(pattern, self->c_header, includes);
-
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
-
-        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
-        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
-            CFCMethod *method = fresh_methods[meth_num];
-
-            // Define callback.
-            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-                char *cb_def = CFCPerlMethod_callback_def(method, klass);
-                content = CFCUtil_cat(content, cb_def, "\n", NULL);
-                FREEMEM(cb_def);
-            }
-        }
-    }
-
-    content = CFCUtil_cat(content, self->c_footer, NULL);
+    char *content = CFCUtil_sprintf(pattern, self->c_header, includes, cb_defs,
+                                    self->c_footer);
 
     // Write if changed.
     const char *src_dest = CFCHierarchy_get_source_dest(self->hierarchy);
@@ -633,6 +630,7 @@ S_write_callbacks_c(CFCPerl *self) {
 
     FREEMEM(filepath);
     FREEMEM(content);
+    FREEMEM(cb_defs);
     FREEMEM(includes);
     FREEMEM(ordered);
 }
