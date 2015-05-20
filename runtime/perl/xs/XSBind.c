@@ -1060,9 +1060,21 @@ cfish_TestUtils_set_host_runtime(void *runtime) {
 
 void
 cfish_TestUtils_destroy_host_runtime(void *runtime) {
-    PerlInterpreter *interp = (PerlInterpreter*)runtime;
+    PerlInterpreter *current = (PerlInterpreter*)PERL_GET_CONTEXT;
+    PerlInterpreter *interp  = (PerlInterpreter*)runtime;
+
+    // Switch to the interpreter before destroying it. Required on some
+    // platforms.
+    if (current != interp) {
+        PERL_SET_CONTEXT(interp);
+    }
+
     perl_destruct(interp);
     perl_free(interp);
+
+    if (current != interp) {
+        PERL_SET_CONTEXT(current);
+    }
 }
 
 #else /* CFISH_NOTHREADS */
