@@ -83,22 +83,6 @@ public abstract class Clownfish::Obj {
     public incremented String*
     To_String(Obj *self);
 
-    /** Convert the object to a 64-bit integer.
-     */
-    public abstract int64_t
-    To_I64(Obj *self);
-
-    /** Convert the object to a double precision floating point number.
-     */
-    public abstract double
-    To_F64(Obj *self);
-
-    /** Evaluate the object in a boolean context.  By default, invokes
-     * [](cfish:.To_I64) and returns true if it is non-zero.
-     */
-    public bool
-    To_Bool(Obj *self);
-
     /** Update the internal state of the object to mimic that of
      * `other`.
      */

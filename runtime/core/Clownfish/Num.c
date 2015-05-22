@@ -47,6 +47,11 @@ Num_Equals_IMP(Num *self, Obj *other) {
     return true;
 }
 
+bool
+Num_To_Bool_IMP(Num *self) {
+    return !!Num_To_I64(self);
+}
+
 /***************************************************************************/
 
 FloatNum*

@@ -25,6 +25,22 @@ abstract class Clownfish::Num inherits Clownfish::Obj {
 
     public bool
     Equals(Num *self, Obj *other);
+
+    /** Convert the number to a 64-bit integer.
+     */
+    public abstract int64_t
+    To_I64(Num *self);
+
+    /** Convert the number to a double precision floating point number.
+     */
+    public abstract double
+    To_F64(Num *self);
+
+    /** Evaluate the number in a boolean context.  By default, invokes
+     * [](cfish:.To_I64) and returns true if it is non-zero.
+     */
+    public bool
+    To_Bool(Num *self);
 }
 
 /** Abstract base class for floating point numbers.

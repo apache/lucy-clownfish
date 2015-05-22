@@ -94,8 +94,8 @@ ok( !$object->is_a("thing"),             "custom is_a wrong" );
 eval { my $another_obj = TestObj->new( kill_me_now => 1 ) };
 like( $@, qr/kill_me_now/, "reject bad param" );
 
-eval { $object->to_i64 };
-like( $@, qr/Abstract method 'To_I64' not defined by TestObj/,
+eval { $object->clone };
+like( $@, qr/Abstract method 'Clone' not defined by TestObj/,
       "calling an abstract method throws" );
 
 my $stringified_perl_obj = "$object";

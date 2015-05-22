@@ -77,11 +77,6 @@ Obj_To_String_IMP(Obj *self) {
 #endif
 }
 
-bool
-Obj_To_Bool_IMP(Obj *self) {
-    return !!Obj_To_I64(self);
-}
-
 Class*
 Obj_Get_Class_IMP(Obj *self) {
     return self->klass;

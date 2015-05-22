@@ -390,8 +390,6 @@ END_XS_CODE
 sub bind_obj {
     my @exposed = qw(
         To_String
-        To_I64
-        To_F64
         Equals
     );
     my @hand_rolled = qw(
