@@ -83,7 +83,7 @@ IntNum_Compare_To_IMP(IntNum *self, Obj *other) {
         return -Obj_Compare_To(other, (Obj*)self);
     }
     int64_t self_value  = IntNum_To_I64(self);
-    int64_t other_value = Obj_To_I64(other);
+    int64_t other_value = IntNum_To_I64((IntNum*)other);
     if (self_value < other_value)      { return -1; }
     else if (self_value > other_value) { return 1;  }
     return 0;

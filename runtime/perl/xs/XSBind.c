@@ -25,6 +25,7 @@
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
+#include "Clownfish/Num.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
@@ -160,7 +161,7 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
         return S_cfish_hash_to_perl_hash(aTHX_ (cfish_Hash*)obj);
     }
     else if (CFISH_Obj_Is_A(obj, CFISH_FLOATNUM)) {
-        return newSVnv(CFISH_Obj_To_F64(obj));
+        return newSVnv(CFISH_FloatNum_To_F64((cfish_FloatNum*)obj));
     }
     else if (obj == (cfish_Obj*)CFISH_TRUE) {
         return newSViv(1);
@@ -169,15 +170,15 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
         return newSViv(0);
     }
     else if (sizeof(IV) == 8 && CFISH_Obj_Is_A(obj, CFISH_INTNUM)) {
-        int64_t num = CFISH_Obj_To_I64(obj);
+        int64_t num = CFISH_IntNum_To_I64((cfish_IntNum*)obj);
         return newSViv((IV)num);
     }
     else if (sizeof(IV) == 4 && CFISH_Obj_Is_A(obj, CFISH_INTEGER32)) {
-        int32_t num = (int32_t)CFISH_Obj_To_I64(obj);
+        int32_t num = (int32_t)CFISH_Int32_To_I64((cfish_Integer32*)obj);
         return newSViv((IV)num);
     }
     else if (sizeof(IV) == 4 && CFISH_Obj_Is_A(obj, CFISH_INTEGER64)) {
-        int64_t num = CFISH_Obj_To_I64(obj);
+        int64_t num = CFISH_Int64_To_I64((cfish_Integer64*)obj);
         return newSVnv((double)num); // lossy
     }
     else {
