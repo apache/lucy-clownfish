@@ -101,3 +101,49 @@ CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
     return content;
 }
 
+char*
+CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
+                           const char *cf_retval) {
+    char *statement = NULL;
+    if (CFCType_is_void(return_type)) {
+        return CFCUtil_strdup("");
+    }
+    else {
+        char *ret_type_str = CFCGoTypeMap_go_type_name(return_type, parcel);
+        if (ret_type_str == NULL) {
+            CFCUtil_die("Can't convert type to Go: %s",
+                        CFCType_to_c(return_type));
+        }
+
+        if (CFCType_is_primitive(return_type)) {
+            statement = CFCUtil_sprintf("\treturn %s(retvalCF)\n", ret_type_str);
+        }
+        else if (CFCType_is_object(return_type)) {
+            char *go_type_name = CFCGoTypeMap_go_type_name(return_type, parcel);
+            char *struct_name  = go_type_name;
+            char *go_package   = CFCUtil_strdup(go_type_name);
+            for (int i = strlen(go_package) - 1; i >= 0; i--) {
+                if (go_package[i] == '.') {
+                    struct_name += i + 1;
+                    break;
+                }
+                go_package[i] = '\0';
+            }
+            char *pattern;
+            if (CFCType_incremented(return_type)) {
+                pattern = "\treturn %sWRAP%s(unsafe.Pointer(retvalCF))\n";
+            }
+            else {
+                pattern = "\treturn %sWRAP%s(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(retvalCF))))\n";
+            }
+            statement = CFCUtil_sprintf(pattern, go_package, struct_name);
+            FREEMEM(go_type_name);
+            FREEMEM(go_package);
+        }
+        else {
+            CFCUtil_die("Unexpected type: %s", CFCType_to_c(return_type));
+        }
+    }
+
+    return statement;
+}

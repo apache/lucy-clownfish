@@ -37,6 +37,19 @@ CFCGoFunc_func_start(struct CFCParcel *parcel, const char *name,
                      struct CFCParamList *param_list,
                      struct CFCType *return_type, int is_method);
 
+/** Generate a Go return statement which maps from a CGO Clownfish type to a
+ * Go type.
+ *
+ * @param parcel The parcel in which the code is being generated.
+ * @param type The type of return value, which must be convertible.
+ * @param cf_retval A Go expression representing the return value of a
+ * Clownfish subroutine.
+ */
+char*
+CFCGoFunc_return_statement(struct CFCParcel *parcel,
+                           struct CFCType *return_type,
+                           const char *cf_retval);
+
 #ifdef __cplusplus
 }
 #endif

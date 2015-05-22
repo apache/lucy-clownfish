@@ -199,49 +199,16 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
 
     char *cfargs = S_prep_cfargs(invoker, param_list);
 
-    char *ret_type_str;
     char *maybe_retval;
     char *maybe_return;
     if (CFCType_is_void(ret_type)) {
-        ret_type_str = CFCUtil_strdup("");
         maybe_retval = CFCUtil_strdup("");
         maybe_return = CFCUtil_strdup("");
     }
     else {
-        ret_type_str = CFCGoTypeMap_go_type_name(ret_type, parcel);
-        if (ret_type_str == NULL) {
-            CFCUtil_die("Can't convert invalid type in method %s", name);
-        }
         maybe_retval = CFCUtil_strdup("retvalCF := ");
-
-        if (CFCType_is_primitive(ret_type)) {
-            maybe_return = CFCUtil_sprintf("\treturn %s(retvalCF)\n", ret_type_str);
-        }
-        else if (CFCType_is_object(ret_type)) {
-            char *go_type_name = CFCGoTypeMap_go_type_name(ret_type, parcel);
-            char *struct_name  = go_type_name;
-            char *go_package   = CFCUtil_strdup(go_type_name);
-            for (int i = strlen(go_package) - 1; i >= 0; i--) {
-                if (go_package[i] == '.') {
-                    struct_name += i + 1;
-                    break;
-                }
-                go_package[i] = '\0';
-            }
-            char *pattern;
-            if (CFCType_incremented(ret_type)) {
-                pattern = "\treturn %sWRAP%s(unsafe.Pointer(retvalCF))\n";
-            }
-            else {
-                pattern = "\treturn %sWRAP%s(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(retvalCF))))\n";
-            }
-            maybe_return = CFCUtil_sprintf(pattern, go_package, struct_name);
-            FREEMEM(go_type_name);
-            FREEMEM(go_package);
-        }
-        else {
-            CFCUtil_die("Unexpected type: %s", CFCType_to_c(ret_type));
-        }
+        maybe_return = CFCGoFunc_return_statement(parcel, ret_type,
+                                                  "retvalCF");
     }
 
     char pattern[] =
@@ -255,7 +222,6 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
 
     FREEMEM(maybe_retval);
     FREEMEM(maybe_return);
-    FREEMEM(ret_type_str);
     FREEMEM(cfunc);
     FREEMEM(cfargs);
     FREEMEM(first_line);
