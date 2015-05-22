@@ -82,11 +82,5 @@ public abstract class Clownfish::Obj {
      */
     public incremented String*
     To_String(Obj *self);
-
-    /** Update the internal state of the object to mimic that of
-     * `other`.
-     */
-    public abstract void
-    Mimic(Obj *self, Obj *other);
 }
 

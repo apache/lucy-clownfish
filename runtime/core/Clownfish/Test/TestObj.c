@@ -116,11 +116,6 @@ S_attempt_Compare_To(void *context) {
 }
 
 static void
-S_attempt_Mimic(void *context) {
-    Obj_Mimic((Obj*)context, (Obj*)context);
-}
-
-static void
 S_verify_abstract_error(TestBatchRunner *runner, Err_Attempt_t routine,
                         void *context, const char *name) {
     char message[100];
@@ -141,13 +136,12 @@ test_abstract_routines(TestBatchRunner *runner) {
     Obj *obj = S_new_testobj();
     S_verify_abstract_error(runner, S_attempt_Clone,      obj, "Clone");
     S_verify_abstract_error(runner, S_attempt_Compare_To, obj, "Compare_To");
-    S_verify_abstract_error(runner, S_attempt_Mimic,      obj, "Mimic");
     DECREF(obj);
 }
 
 void
 TestObj_Run_IMP(TestObj *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 14);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 13);
     test_refcounts(runner);
     test_To_String(runner);
     test_Equals(runner);
