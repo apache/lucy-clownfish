@@ -154,3 +154,22 @@ func TrapErr(routine func()) (trapped error) {
 	routine()
 	return trapped
 }
+
+func (s *StringIMP) CodePointAt(tick uintptr) rune {
+	self := ((*C.cfish_String)(unsafe.Pointer(s.TOPTR())))
+	retvalCF := C.CFISH_Str_Code_Point_At(self, C.size_t(tick))
+	return rune(retvalCF)
+}
+
+func (s *StringIMP) CodePointFrom(tick uintptr) rune {
+	self := ((*C.cfish_String)(unsafe.Pointer(s.TOPTR())))
+	retvalCF := C.CFISH_Str_Code_Point_From(self, C.size_t(tick))
+	return rune(retvalCF)
+}
+
+func (s *StringIMP) SwapChars(match, replacement rune) string {
+	self := ((*C.cfish_String)(unsafe.Pointer(s.TOPTR())))
+	retvalCF := C.CFISH_Str_Swap_Chars(self, C.int32_t(match), C.int32_t(replacement))
+	defer C.cfish_dec_refcount(unsafe.Pointer(retvalCF))
+	return CFStringToGo(unsafe.Pointer(retvalCF))
+}
