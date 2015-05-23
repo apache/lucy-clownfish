@@ -16,6 +16,13 @@
 
 parcel Clownfish;
 
+__C__
+
+// For CFISH_ALLOCA_OBJ.
+#include "Clownfish/Class.h"
+
+__END_C__
+
 /**
  * Immutable string holding Unicode characters.
  */
