@@ -118,6 +118,22 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
         if (CFCType_is_primitive(return_type)) {
             statement = CFCUtil_sprintf("\treturn %s(retvalCF)\n", ret_type_str);
         }
+        else if (CFCType_is_string_type(return_type)) {
+            const char *clownfish_dot = CFCParcel_is_cfish(parcel)
+                                        ? "" : "clownfish.";
+            if (CFCType_incremented(return_type)) {
+                char pattern[] =
+                    "\tdefer C.cfish_dec_refcount(unsafe.Pointer(retvalCF))\n"
+                    "\treturn %sCFStringToGo(unsafe.Pointer(retvalCF))\n"
+                    ;
+                statement = CFCUtil_sprintf(pattern, clownfish_dot);
+            }
+            else {
+                char pattern[] =
+                    "\treturn %sCFStringToGo(unsafe.Pointer(retvalCF))\n";
+                statement = CFCUtil_sprintf(pattern, clownfish_dot);
+            }
+        }
         else if (CFCType_is_object(return_type)) {
             char *go_type_name = CFCGoTypeMap_go_type_name(return_type, parcel);
             char *struct_name  = go_type_name;
