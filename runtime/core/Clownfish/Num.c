@@ -157,6 +157,9 @@ Float64_To_F64_IMP(Float64 *self) {
 
 int64_t
 Float64_To_I64_IMP(Float64 *self) {
+    if (self->value < -POW_2_63 || self->value >= POW_2_63) {
+        THROW(ERR, "Float64 out of range: %f64", self->value);
+    }
     return (int64_t)self->value;
 }
 
