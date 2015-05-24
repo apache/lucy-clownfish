@@ -21,6 +21,8 @@
 #define C_CFISH_FLOAT64
 #define CFISH_USE_SHORT_NAMES
 
+#include <float.h>
+
 #include "charmony.h"
 
 #include "Clownfish/Num.h"
@@ -28,20 +30,38 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/Class.h"
 
+#if FLT_RADIX != 2
+  #error Unsupported FLT_RADIX
+#endif
+
+#if DBL_MANT_DIG != 53
+  #error Unsupported DBL_MANT_DIG
+#endif
+
+#define MAX_PRECISE_I64 (INT64_C(1) << DBL_MANT_DIG)
+#define MIN_PRECISE_I64 -MAX_PRECISE_I64
+
+// For floating point range checks, it's important to use constants that
+// can be exactly represented as doubles. `f64 > INT64_MAX` can produce
+// wrong results.
+#define POW_2_63 9223372036854775808.0
+
+static int32_t
+S_compare_f64(double a, double b);
+
+static int32_t
+S_compare_i64(int64_t a, int64_t b);
+
+static int32_t
+S_compare_i64_f64(int64_t i64, double f64);
+
+static bool
+S_equals_i64_f64(int64_t i64, double f64);
+
 Num*
 Num_init(Num *self) {
     ABSTRACT_CLASS_CHECK(self, NUM);
     return self;
-}
-
-bool
-Num_Equals_IMP(Num *self, Obj *other) {
-    Num *twin = (Num*)other;
-    if (twin == self) { return true; }
-    if (!Obj_is_a(other, NUM)) { return false; }
-    if (Num_To_F64(self) != Num_To_F64(twin)) { return false; }
-    if (Num_To_I64(self) != Num_To_I64(twin)) { return false; }
-    return true;
 }
 
 bool
@@ -57,15 +77,6 @@ FloatNum_init(FloatNum *self) {
     return (FloatNum*)Num_init((Num*)self);
 }
 
-int32_t
-FloatNum_Compare_To_IMP(FloatNum *self, Obj *other) {
-    Num *twin = (Num*)CERTIFY(other, NUM);
-    double f64_diff = FloatNum_To_F64(self) - Num_To_F64(twin);
-    if (f64_diff < 0)      { return -1; }
-    else if (f64_diff > 0) { return 1;  }
-    return 0;
-}
-
 String*
 FloatNum_To_String_IMP(FloatNum *self) {
     return Str_newf("%f64", FloatNum_To_F64(self));
@@ -77,18 +88,6 @@ IntNum*
 IntNum_init(IntNum *self) {
     ABSTRACT_CLASS_CHECK(self, INTNUM);
     return (IntNum*)Num_init((Num*)self);
-}
-
-int32_t
-IntNum_Compare_To_IMP(IntNum *self, Obj *other) {
-    if (!Obj_is_a(other, INTNUM)) {
-        return -Obj_Compare_To(other, (Obj*)self);
-    }
-    int64_t self_value  = IntNum_To_I64(self);
-    int64_t other_value = IntNum_To_I64((IntNum*)other);
-    if (self_value < other_value)      { return -1; }
-    else if (self_value > other_value) { return 1;  }
-    return 0;
 }
 
 String*
@@ -108,6 +107,37 @@ Float64*
 Float64_init(Float64 *self, double value) {
     self->value = value;
     return (Float64*)FloatNum_init((FloatNum*)self);
+}
+
+bool
+Float64_Equals_IMP(Float64 *self, Obj *other) {
+    if (Obj_is_a(other, FLOAT64)) {
+        Float64 *twin = (Float64*)other;
+        return self->value == twin->value;
+    }
+    else if (Obj_is_a(other, INTEGER64)) {
+        Integer64 *twin = (Integer64*)other;
+        return S_equals_i64_f64(twin->value, self->value);
+    }
+    else {
+        return false;
+    }
+}
+
+int32_t
+Float64_Compare_To_IMP(Float64 *self, Obj *other) {
+    if (Obj_is_a(other, FLOAT64)) {
+        Float64 *twin = (Float64*)other;
+        return S_compare_f64(self->value, twin->value);
+    }
+    else if (Obj_is_a(other, INTEGER64)) {
+        Integer64 *twin = (Integer64*)other;
+        return -S_compare_i64_f64(twin->value, self->value);
+    }
+    else {
+        THROW(ERR, "Can't compare Float64 to %o", Obj_get_class_name(other));
+        UNREACHABLE_RETURN(int32_t);
+    }
 }
 
 double
@@ -155,6 +185,37 @@ Int64_init(Integer64 *self, int64_t value) {
     return (Integer64*)IntNum_init((IntNum*)self);
 }
 
+bool
+Int64_Equals_IMP(Integer64 *self, Obj *other) {
+    if (Obj_is_a(other, INTEGER64)) {
+        Integer64 *twin = (Integer64*)other;
+        return self->value == twin->value;
+    }
+    else if (Obj_is_a(other, FLOAT64)) {
+        Float64 *twin = (Float64*)other;
+        return S_equals_i64_f64(self->value, twin->value);
+    }
+    else {
+        return false;
+    }
+}
+
+int32_t
+Int64_Compare_To_IMP(Integer64 *self, Obj *other) {
+    if (Obj_is_a(other, INTEGER64)) {
+        Integer64 *twin = (Integer64*)other;
+        return S_compare_i64(self->value, twin->value);
+    }
+    else if (Obj_is_a(other, FLOAT64)) {
+        Float64 *twin = (Float64*)other;
+        return S_compare_i64_f64(self->value, twin->value);
+    }
+    else {
+        THROW(ERR, "Can't compare Int64 to %o", Obj_get_class_name(other));
+        UNREACHABLE_RETURN(int32_t);
+    }
+}
+
 int64_t
 Int64_Get_Value_IMP(Integer64 *self) {
     return self->value;
@@ -186,20 +247,55 @@ Int64_Mimic_IMP(Integer64 *self, Obj *other) {
     self->value = twin->value;
 }
 
-bool
-Int64_Equals_IMP(Integer64 *self, Obj *other) {
-    Num *twin = (Num*)other;
-    if (twin == (Num*)self)         { return true; }
-    if (!Obj_is_a(other, NUM)) { return false; }
-    if (Obj_is_a(other, FLOATNUM)) {
-        double  floating_val = Num_To_F64(twin);
-        int64_t int_val      = (int64_t)floating_val;
-        if ((double)int_val != floating_val) { return false; }
-        if (int_val != self->value)          { return false; }
+static int32_t
+S_compare_f64(double a, double b) {
+    return a == b ? 0 : a < b ? -1 : 1;
+}
+
+static int32_t
+S_compare_i64(int64_t a, int64_t b) {
+    return a == b ? 0 : a < b ? -1 : 1;
+}
+
+static int32_t
+S_compare_i64_f64(int64_t i64, double f64) {
+    int f64_comparison = S_compare_f64((double)i64, f64);
+
+    // If the integer can be represented precisely as a double or the numbers
+    // compare as unequal when converted to double, the result is correct.
+    if ((i64 >= MIN_PRECISE_I64 && i64 <= MAX_PRECISE_I64)
+        || f64_comparison != 0
+       ) {
+        return f64_comparison;
     }
-    else {
-        if (self->value != Num_To_I64(twin)) { return false; }
+
+    // Otherwise, the double is an integer.
+
+    // Corner case. 2^63 can compare equal to an int64_t although it is
+    // out of range.
+    if (f64 == POW_2_63) { return -1; }
+
+    return S_compare_i64(i64, (int64_t)f64);
+}
+
+static bool
+S_equals_i64_f64(int64_t i64, double f64) {
+    bool equal = ((double)i64 == f64);
+
+    // If the integer can be represented precisely as a double or the numbers
+    // compare as unequal when converted to double, the result is correct.
+    if ((i64 >= MIN_PRECISE_I64 && i64 <= MAX_PRECISE_I64)
+        || !equal
+       ) {
+        return equal;
     }
-    return true;
+
+    // Otherwise, the double is an integer.
+
+    // Corner case. 2^63 can compare equal to an int64_t although it is
+    // out of range.
+    if (f64 == POW_2_63) { return false; }
+
+    return i64 == (int64_t)f64;
 }
 

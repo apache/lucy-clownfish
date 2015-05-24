@@ -23,9 +23,6 @@ abstract class Clownfish::Num inherits Clownfish::Obj {
     inert Num*
     init(Num *self);
 
-    public bool
-    Equals(Num *self, Obj *other);
-
     /** Convert the number to a 64-bit integer.
      */
     public abstract int64_t
@@ -50,9 +47,6 @@ abstract class Clownfish::FloatNum inherits Clownfish::Num {
     inert FloatNum*
     init(FloatNum *self);
 
-    public int32_t
-    Compare_To(FloatNum *self, Obj *other);
-
     public incremented String*
     To_String(FloatNum *self);
 }
@@ -64,9 +58,6 @@ abstract class Clownfish::IntNum inherits Clownfish::Num {
 
     inert IntNum*
     init(IntNum *self);
-
-    public int32_t
-    Compare_To(IntNum *self, Obj *other);
 
     public incremented String*
     To_String(IntNum *self);
@@ -101,6 +92,12 @@ final class Clownfish::Float64 inherits Clownfish::FloatNum {
 
     public double
     To_F64(Float64 *self);
+
+    public bool
+    Equals(Float64 *self, Obj *other);
+
+    public int32_t
+    Compare_To(Float64 *self, Obj *other);
 
     public incremented Float64*
     Clone(Float64 *self);
@@ -143,6 +140,9 @@ final class Clownfish::Integer64 nickname Int64
 
     public bool
     Equals(Integer64 *self, Obj *other);
+
+    public int32_t
+    Compare_To(Integer64 *self, Obj *other);
 
     public incremented Integer64*
     Clone(Integer64 *self);

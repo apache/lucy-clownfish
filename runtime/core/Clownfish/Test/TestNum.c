@@ -17,6 +17,10 @@
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
 
+#include <math.h>
+
+#include "charmony.h"
+
 #include "Clownfish/Test/TestNum.h"
 
 #include "Clownfish/String.h"
@@ -79,6 +83,41 @@ test_accessors(TestBatchRunner *runner) {
 }
 
 static void
+S_test_compare_float_int(TestBatchRunner *runner, double f64_val,
+                         int64_t i64_val, int32_t result) {
+    Float64 *f64;
+    Integer64 *i64;
+
+    f64 = Float64_new(f64_val);
+    i64 = Int64_new(i64_val);
+    TEST_INT_EQ(runner, Float64_Compare_To(f64, (Obj*)i64), result,
+                "Float64_Compare_To %f %" PRId64, f64_val, i64_val);
+    TEST_INT_EQ(runner, Int64_Compare_To(i64, (Obj*)f64), -result,
+                "Int64_Compare_To %" PRId64" %f", i64_val, f64_val);
+    TEST_INT_EQ(runner, Float64_Equals(f64, (Obj*)i64), result == 0,
+                "Float64_Equals %f %" PRId64, f64_val, i64_val);
+    TEST_INT_EQ(runner, Int64_Equals(i64, (Obj*)f64), result == 0,
+                "Int64_Equals %" PRId64 " %f", i64_val, f64_val);
+    DECREF(f64);
+    DECREF(i64);
+
+    if (i64_val == INT64_MIN) { return; }
+
+    f64 = Float64_new(-f64_val);
+    i64 = Int64_new(-i64_val);
+    TEST_INT_EQ(runner, Float64_Compare_To(f64, (Obj*)i64), -result,
+                "Float64_Compare_To %f %" PRId64, -f64_val, -i64_val);
+    TEST_INT_EQ(runner, Int64_Compare_To(i64, (Obj*)f64), result,
+                "Int64_Compare_To %" PRId64" %f", -i64_val, -f64_val);
+    TEST_INT_EQ(runner, Float64_Equals(f64, (Obj*)i64), result == 0,
+                "Float64_Equals %f %" PRId64, -f64_val, -i64_val);
+    TEST_INT_EQ(runner, Int64_Equals(i64, (Obj*)f64), result == 0,
+                "Int64_Equals %" PRId64 " %f", -i64_val, -f64_val);
+    DECREF(f64);
+    DECREF(i64);
+}
+
+static void
 test_Equals_and_Compare_To(TestBatchRunner *runner) {
     Float64   *f1 = Float64_new(1.0);
     Float64   *f2 = Float64_new(1.0);
@@ -116,6 +155,19 @@ test_Equals_and_Compare_To(TestBatchRunner *runner) {
     DECREF(i64);
     DECREF(f1);
     DECREF(f2);
+
+    // NOTICE: When running these tests on x86/x64, it's best to compile
+    // with -ffloat-store to avoid excess FPU precision which can hide
+    // implementation bugs.
+    S_test_compare_float_int(runner, pow(2.0, 60.0), INT64_C(1) << 60, 0);
+    S_test_compare_float_int(runner, pow(2.0, 60.0), (INT64_C(1) << 60) - 1,
+                             1);
+    S_test_compare_float_int(runner, pow(2.0, 60.0), (INT64_C(1) << 60) + 1,
+                             -1);
+    S_test_compare_float_int(runner, pow(2.0, 63.0), INT64_MAX, 1);
+    S_test_compare_float_int(runner, -pow(2.0, 63.0), INT64_MIN, 0);
+    // -9223372036854777856.0 == nextafter(-pow(2, 63), -INFINITY)
+    S_test_compare_float_int(runner, -9223372036854777856.0, INT64_MIN, -1);
 }
 
 static void
@@ -154,7 +206,7 @@ test_Mimic(TestBatchRunner *runner) {
 
 void
 TestNum_Run_IMP(TestNum *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 20);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 60);
     test_To_String(runner);
     test_accessors(runner);
     test_Equals_and_Compare_To(runner);
