@@ -64,13 +64,13 @@ Obj_Equals_IMP(Obj *self, Obj *other) {
 String*
 Obj_To_String_IMP(Obj *self) {
 #if (CHY_SIZEOF_PTR == 4)
-    return Str_newf("%o@0x%x32", Obj_Get_Class_Name(self), self);
+    return Str_newf("%o@0x%x32", Obj_get_class_name(self), self);
 #elif (CHY_SIZEOF_PTR == 8)
     int64_t   iaddress   = CHY_PTR_TO_I64(self);
     uint64_t  address    = (uint64_t)iaddress;
     uint32_t  address_hi = address >> 32;
     uint32_t  address_lo = address & 0xFFFFFFFF;
-    return Str_newf("%o@0x%x32%x32", Obj_Get_Class_Name(self), address_hi,
+    return Str_newf("%o@0x%x32%x32", Obj_get_class_name(self), address_hi,
                     address_lo);
 #else
   #error "Unexpected pointer size."
@@ -83,7 +83,7 @@ Obj_get_class(Obj *self) {
 }
 
 String*
-Obj_Get_Class_Name_IMP(Obj *self) {
+Obj_get_class_name(Obj *self) {
     return Class_Get_Name(self->klass);
 }
 

@@ -494,6 +494,14 @@ CODE:
     RETVAL = (SV*)CFISH_Class_To_Host(klass);
 OUTPUT: RETVAL
 
+SV*
+get_class_name(self)
+    cfish_Obj *self
+CODE:
+    cfish_String *class_name = cfish_Obj_get_class_name(self);
+    RETVAL = cfish_XSBind_str_to_sv(aTHX_ class_name);
+OUTPUT: RETVAL
+
 bool
 is_a(self, class_name)
     cfish_Obj *self;

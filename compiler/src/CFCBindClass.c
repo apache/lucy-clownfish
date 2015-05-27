@@ -664,9 +664,16 @@ S_wrapper_defs(CFCBindClass *self) {
         "static CFISH_INLINE cfish_Class*\n"
         "%s%s_get_class(%s *self) {\n"
         "    return cfish_Obj_get_class((cfish_Obj*)self);\n"
+        "}\n"
+        "\n"
+        "static CFISH_INLINE cfish_String*\n"
+        "%s%s_get_class_name(%s *self) {\n"
+        "    return cfish_Obj_get_class_name((cfish_Obj*)self);\n"
         "}\n";
 
-    return CFCUtil_sprintf(pattern, prefix, nickname, struct_sym);
+    return CFCUtil_sprintf(pattern,
+                           prefix, nickname, struct_sym,
+                           prefix, nickname, struct_sym);
 }
 
 // Define method invocation inline functions.
@@ -769,7 +776,8 @@ S_short_names(CFCBindClass *self) {
     // Wrappers.
     if (strcmp(CFCClass_get_name(client), "Clownfish::Obj") != 0) {
         static const char *wrapped_funcs[] = {
-            "get_class"
+            "get_class",
+            "get_class_name"
         };
         static int num_wrapped_funcs
             = sizeof(wrapped_funcs) / sizeof(wrapped_funcs[0]);

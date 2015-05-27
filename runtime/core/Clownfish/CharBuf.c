@@ -352,7 +352,7 @@ CB_Mimic_IMP(CharBuf *self, Obj *other) {
         size = twin->size;
     }
     else {
-        THROW(ERR, "CharBuf can't mimic %o", Obj_Get_Class_Name(other));
+        THROW(ERR, "CharBuf can't mimic %o", Obj_get_class_name(other));
         return; // unreachable
     }
     SI_mimic_utf8(self, ptr, size);

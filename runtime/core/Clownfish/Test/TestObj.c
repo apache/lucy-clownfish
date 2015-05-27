@@ -89,13 +89,13 @@ static void
 test_Is_A(TestBatchRunner *runner) {
     String *string     = Str_new_from_trusted_utf8("", 0);
     Class  *str_class  = Str_get_class(string);
-    String *class_name = Str_Get_Class_Name(string);
+    String *class_name = Str_get_class_name(string);
 
     TEST_TRUE(runner, Str_Is_A(string, STRING), "String Is_A String.");
     TEST_TRUE(runner, Str_Is_A(string, OBJ), "String Is_A Obj.");
     TEST_TRUE(runner, str_class == STRING, "get_class");
     TEST_TRUE(runner, Str_Equals(Class_Get_Name(STRING), (Obj*)class_name),
-              "Get_Class_Name");
+              "get_class_name");
 
     DECREF(string);
 }
