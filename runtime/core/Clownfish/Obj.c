@@ -78,7 +78,7 @@ Obj_To_String_IMP(Obj *self) {
 }
 
 Class*
-Obj_Get_Class_IMP(Obj *self) {
+Obj_get_class(Obj *self) {
     return self->klass;
 }
 

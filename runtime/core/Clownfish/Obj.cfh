@@ -65,8 +65,8 @@ public abstract class Clownfish::Obj {
 
     /** Return the object's Class.
      */
-    public Class*
-    Get_Class(Obj *self);
+    public inert Class*
+    get_class(Obj *self);
 
     /** Return the name of the class that the object belongs to.
      */

@@ -70,6 +70,10 @@ S_sub_declarations(CFCBindClass *self);
 static char*
 S_inert_var_declarations(CFCBindClass *self);
 
+// Define type-safe wrappers for Obj functions.
+static char*
+S_wrapper_defs(CFCBindClass *self);
+
 // Define method invocation inline functions.
 static char*
 S_method_defs(CFCBindClass *self);
@@ -198,6 +202,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
     char *sub_declarations      = S_sub_declarations(self);
     char *inert_var_defs        = S_inert_var_declarations(self);
     char *method_typedefs       = S_method_typedefs(self);
+    char *wrapper_defs          = S_wrapper_defs(self);
     char *method_defs           = S_method_defs(self);
     char *override_decs         = S_override_decs(self);
     char *short_names           = S_short_names(self);
@@ -233,6 +238,11 @@ S_to_c_header_dynamic(CFCBindClass *self) {
         "\n"
         "%s\n"
         "\n"
+        "/* Define type-safe wrappers for inert functions of Obj.\n"
+        " */\n"
+        "\n"
+        "%s\n"
+        "\n"
         "/* Define the inline functions which implement this class's virtual methods.\n"
         " */\n"
         "\n"
@@ -251,8 +261,8 @@ S_to_c_header_dynamic(CFCBindClass *self) {
     char *content
         = CFCUtil_sprintf(pattern, parent_include, privacy_symbol, ivars,
                           struct_def, privacy_symbol, inert_var_defs,
-                          sub_declarations, method_typedefs, method_defs,
-                          override_decs, short_names);
+                          sub_declarations, method_typedefs, wrapper_defs,
+                          method_defs, override_decs, short_names);
 
     FREEMEM(ivars);
     FREEMEM(struct_def);
@@ -637,6 +647,28 @@ S_inert_var_declarations(CFCBindClass *self) {
     return declarations;
 }
 
+// Define type-safe wrappers for Obj functions.
+static char*
+S_wrapper_defs(CFCBindClass *self) {
+    CFCClass *client = self->client;
+
+    if (strcmp(CFCClass_get_name(client), "Clownfish::Obj") == 0) {
+        return CFCUtil_strdup("");
+    }
+
+    const char *prefix     = CFCClass_get_prefix(client);
+    const char *nickname   = CFCClass_get_nickname(client);
+    const char *struct_sym = CFCClass_full_struct_sym(client);
+
+    const char *pattern =
+        "static CFISH_INLINE cfish_Class*\n"
+        "%s%s_get_class(%s *self) {\n"
+        "    return cfish_Obj_get_class((cfish_Obj*)self);\n"
+        "}\n";
+
+    return CFCUtil_sprintf(pattern, prefix, nickname, struct_sym);
+}
+
 // Define method invocation inline functions.
 static char*
 S_method_defs(CFCBindClass *self) {
@@ -732,6 +764,23 @@ S_short_names(CFCBindClass *self) {
                                   full_sym, "\n", NULL);
         FREEMEM(short_sym);
         FREEMEM(full_sym);
+    }
+
+    // Wrappers.
+    if (strcmp(CFCClass_get_name(client), "Clownfish::Obj") != 0) {
+        static const char *wrapped_funcs[] = {
+            "get_class"
+        };
+        static int num_wrapped_funcs
+            = sizeof(wrapped_funcs) / sizeof(wrapped_funcs[0]);
+        const char *prefix   = CFCClass_get_prefix(client);
+        const char *nickname = CFCClass_get_nickname(client);
+        for (int i = 0; i < num_wrapped_funcs; i++) {
+            const char *func = wrapped_funcs[i];
+            short_names
+                = CFCUtil_cat(short_names, "  #define ", nickname, "_", func,
+                              " ", prefix, nickname, "_", func, "\n", NULL);
+        }
     }
 
     if (!CFCClass_inert(client)) {
