@@ -486,6 +486,14 @@ END_DESCRIPTION
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::Obj
 
+SV*
+get_class(self)
+    cfish_Obj *self
+CODE:
+    cfish_Class *klass = cfish_Obj_get_class(self);
+    RETVAL = (SV*)CFISH_Class_To_Host(klass);
+OUTPUT: RETVAL
+
 bool
 is_a(self, class_name)
     cfish_Obj *self;

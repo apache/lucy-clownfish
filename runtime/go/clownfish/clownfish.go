@@ -92,6 +92,12 @@ func (o *ObjIMP) TOPTR() uintptr {
 	return o.ref
 }
 
+func (o *ObjIMP) GetClass() Class {
+	cfObj := (*C.cfish_Obj)(unsafe.Pointer(o.ref))
+	class := C.cfish_Obj_get_class(cfObj)
+	return WRAPClass(unsafe.Pointer(class))
+}
+
 func CFStringToGo(ptr unsafe.Pointer) string {
 	cfString := (*C.cfish_String)(ptr)
 	if cfString == nil {
