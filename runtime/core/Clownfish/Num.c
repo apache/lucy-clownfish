@@ -41,7 +41,7 @@ bool
 Num_Equals_IMP(Num *self, Obj *other) {
     Num *twin = (Num*)other;
     if (twin == self) { return true; }
-    if (!Obj_Is_A(other, NUM)) { return false; }
+    if (!Obj_is_a(other, NUM)) { return false; }
     if (Num_To_F64(self) != Num_To_F64(twin)) { return false; }
     if (Num_To_I64(self) != Num_To_I64(twin)) { return false; }
     return true;
@@ -84,7 +84,7 @@ IntNum_init(IntNum *self) {
 
 int32_t
 IntNum_Compare_To_IMP(IntNum *self, Obj *other) {
-    if (!Obj_Is_A(other, INTNUM)) {
+    if (!Obj_is_a(other, INTNUM)) {
         return -Obj_Compare_To(other, (Obj*)self);
     }
     int64_t self_value  = IntNum_To_I64(self);
@@ -283,8 +283,8 @@ bool
 Int64_Equals_IMP(Integer64 *self, Obj *other) {
     Num *twin = (Num*)other;
     if (twin == (Num*)self)         { return true; }
-    if (!Obj_Is_A(other, NUM)) { return false; }
-    if (Num_Is_A(twin, FLOATNUM)) {
+    if (!Obj_is_a(other, NUM)) { return false; }
+    if (Obj_is_a(other, FLOATNUM)) {
         double  floating_val = Num_To_F64(twin);
         int64_t int_val      = (int64_t)floating_val;
         if ((double)int_val != floating_val) { return false; }

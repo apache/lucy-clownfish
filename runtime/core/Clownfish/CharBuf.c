@@ -182,7 +182,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                         if (!obj) {
                             CB_Cat_Trusted_Utf8(self, "[NULL]", 6);
                         }
-                        else if (Obj_Is_A(obj, STRING)) {
+                        else if (Obj_is_a(obj, STRING)) {
                             CB_Cat(self, (String*)obj);
                         }
                         else {
@@ -341,12 +341,12 @@ void
 CB_Mimic_IMP(CharBuf *self, Obj *other) {
     const char *ptr;
     size_t size;
-    if (Obj_Is_A(other, CHARBUF)) {
+    if (Obj_is_a(other, CHARBUF)) {
         CharBuf *twin = (CharBuf*)other;
         ptr  = twin->ptr;
         size = twin->size;
     }
-    else if (Obj_Is_A(other, STRING)) {
+    else if (Obj_is_a(other, STRING)) {
         String *twin = (String*)other;
         ptr  = twin->ptr;
         size = twin->size;

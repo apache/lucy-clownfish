@@ -353,7 +353,7 @@ bool
 Str_Equals_IMP(String *self, Obj *other) {
     String *const twin = (String*)other;
     if (twin == self)              { return true; }
-    if (!Obj_Is_A(other, STRING)) { return false; }
+    if (!Obj_is_a(other, STRING)) { return false; }
     return Str_Equals_Utf8_IMP(self, twin->ptr, twin->size);
 }
 
@@ -602,7 +602,7 @@ bool
 StrIter_Equals_IMP(StringIterator *self, Obj *other) {
     StringIterator *const twin = (StringIterator*)other;
     if (twin == self)                     { return true; }
-    if (!Obj_Is_A(other, STRINGITERATOR)) { return false; }
+    if (!Obj_is_a(other, STRINGITERATOR)) { return false; }
     return self->string == twin->string
            && self->byte_offset == twin->byte_offset;
 }

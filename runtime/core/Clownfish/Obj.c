@@ -43,7 +43,7 @@ Obj_Destroy_IMP(Obj *self) {
 }
 
 bool
-Obj_Is_A_IMP(Obj *self, Class *ancestor) {
+Obj_is_a(Obj *self, Class *ancestor) {
     Class *klass = self ? self->klass : NULL;
 
     while (klass != NULL) {

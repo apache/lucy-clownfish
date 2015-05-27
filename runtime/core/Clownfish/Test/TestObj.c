@@ -86,13 +86,13 @@ test_Equals(TestBatchRunner *runner) {
 }
 
 static void
-test_Is_A(TestBatchRunner *runner) {
+test_is_a(TestBatchRunner *runner) {
     String *string     = Str_new_from_trusted_utf8("", 0);
     Class  *str_class  = Obj_get_class((Obj*)string);
     String *class_name = Obj_get_class_name((Obj*)string);
 
-    TEST_TRUE(runner, Str_Is_A(string, STRING), "String Is_A String.");
-    TEST_TRUE(runner, Str_Is_A(string, OBJ), "String Is_A Obj.");
+    TEST_TRUE(runner, Obj_is_a((Obj*)string, STRING), "String is_a String.");
+    TEST_TRUE(runner, Obj_is_a((Obj*)string, OBJ), "String is_a Obj.");
     TEST_TRUE(runner, str_class == STRING, "get_class");
     TEST_TRUE(runner, Str_Equals(Class_Get_Name(STRING), (Obj*)class_name),
               "get_class_name");
@@ -122,7 +122,7 @@ S_verify_abstract_error(TestBatchRunner *runner, Err_Attempt_t routine,
     sprintf(message, "%s() is abstract", name);
     Err *error = Err_trap(routine, context);
     TEST_TRUE(runner, error != NULL
-              && Err_Is_A(error, ERR) 
+              && Obj_is_a((Obj*)error, ERR)
               && Str_Find_Utf8(Err_Get_Mess(error), "bstract", 7) != -1,
               message);
     DECREF(error);
@@ -145,7 +145,7 @@ TestObj_Run_IMP(TestObj *self, TestBatchRunner *runner) {
     test_refcounts(runner);
     test_To_String(runner);
     test_Equals(runner);
-    test_Is_A(runner);
+    test_is_a(runner);
     test_abstract_routines(runner);
 }
 
