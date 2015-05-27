@@ -67,7 +67,7 @@ TestSuite_Run_Batch_IMP(TestSuite *self, String *class_name,
     for (uint32_t i = 0; i < size; ++i) {
         TestBatch *batch = (TestBatch*)Vec_Fetch(self->batches, i);
 
-        if (Str_Equals(TestBatch_Get_Class_Name(batch), (Obj*)class_name)) {
+        if (Str_Equals(Obj_get_class_name((Obj*)batch), (Obj*)class_name)) {
             TestBatchRunner *runner = TestBatchRunner_new(formatter);
             bool result = TestBatchRunner_Run_Batch(runner, batch);
             DECREF(runner);

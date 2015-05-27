@@ -98,6 +98,12 @@ func (o *ObjIMP) GetClass() Class {
 	return WRAPClass(unsafe.Pointer(class))
 }
 
+func (o *ObjIMP) GetClassName() string {
+	cfObj := (*C.cfish_Obj)(unsafe.Pointer(o.ref))
+	className := C.cfish_Obj_get_class_name(cfObj)
+	return CFStringToGo(unsafe.Pointer(className))
+}
+
 func CFStringToGo(ptr unsafe.Pointer) string {
 	cfString := (*C.cfish_String)(ptr)
 	if cfString == nil {

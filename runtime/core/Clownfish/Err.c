@@ -212,7 +212,7 @@ Err_downcast(Obj *obj, Class *klass, const char *file, int line,
              const char *func) {
     if (obj && !SI_obj_is_a(obj, klass)) {
         Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
-                     Obj_Get_Class_Name(obj), Class_Get_Name(klass));
+                     Obj_get_class_name(obj), Class_Get_Name(klass));
     }
     return obj;
 }
@@ -226,14 +226,14 @@ Err_certify(Obj *obj, Class *klass, const char *file, int line,
     }
     else if (!SI_obj_is_a(obj, klass)) {
         Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
-                     Obj_Get_Class_Name(obj), Class_Get_Name(klass));
+                     Obj_get_class_name(obj), Class_Get_Name(klass));
     }
     return obj;
 }
 
 void
 Err_abstract_method_call(Obj *obj, Class *klass, const char *method_name) {
-    String *class_name = obj ? Obj_Get_Class_Name(obj) : Class_Get_Name(klass);
+    String *class_name = obj ? Obj_get_class_name(obj) : Class_Get_Name(klass);
     THROW(ERR, "Abstract method '%s' not defined by %o", method_name,
           class_name);
 }

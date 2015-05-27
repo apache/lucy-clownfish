@@ -138,6 +138,7 @@ func specMethods(parcel *cfc.Parcel) {
 	objBinding := cfc.NewGoClass(parcel, "Clownfish::Obj")
 	objBinding.SpecMethod("", "TOPTR() uintptr")
 	objBinding.SpecMethod("", "GetClass() Class")
+	objBinding.SpecMethod("", "GetClassName() string")
 	objBinding.Register()
 
 	errBinding := cfc.NewGoClass(parcel, "Clownfish::Err")
