@@ -669,9 +669,15 @@ S_wrapper_defs(CFCBindClass *self) {
         "static CFISH_INLINE cfish_String*\n"
         "%s%s_get_class_name(%s *self) {\n"
         "    return cfish_Obj_get_class_name((cfish_Obj*)self);\n"
+        "}\n"
+        "\n"
+        "static CFISH_INLINE bool\n"
+        "%s%s_is_a(%s *self, cfish_Class *ancestor) {\n"
+        "    return cfish_Obj_is_a((cfish_Obj*)self, ancestor);\n"
         "}\n";
 
     return CFCUtil_sprintf(pattern,
+                           prefix, nickname, struct_sym,
                            prefix, nickname, struct_sym,
                            prefix, nickname, struct_sym);
 }
@@ -777,7 +783,8 @@ S_short_names(CFCBindClass *self) {
     if (strcmp(CFCClass_get_name(client), "Clownfish::Obj") != 0) {
         static const char *wrapped_funcs[] = {
             "get_class",
-            "get_class_name"
+            "get_class_name",
+            "is_a"
         };
         static int num_wrapped_funcs
             = sizeof(wrapped_funcs) / sizeof(wrapped_funcs[0]);

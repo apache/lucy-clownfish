@@ -392,9 +392,6 @@ sub bind_obj {
         To_String
         Equals
     );
-    my @hand_rolled = qw(
-        Is_A
-    );
 
     my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
     my $synopsis = <<'END_SYNOPSIS';
@@ -509,7 +506,7 @@ is_a(self, class_name)
 CODE:
 {
     cfish_Class *target = cfish_Class_fetch_class(class_name);
-    RETVAL = CFISH_Obj_Is_A(self, target);
+    RETVAL = cfish_Obj_is_a(self, target);
 }
 OUTPUT: RETVAL
 END_XS_CODE
@@ -522,7 +519,6 @@ END_XS_CODE
         alias  => 'DESTROY',
         method => 'Destroy',
     );
-    $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
     $binding->set_pod_spec($pod_spec);
 

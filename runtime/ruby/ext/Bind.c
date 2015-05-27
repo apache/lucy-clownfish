@@ -20,10 +20,10 @@
 
 VALUE
 Bind_cfish_to_ruby(cfish_Obj *obj) {
-  if (CFISH_Obj_Is_A(obj, CFISH_STRING)) {
+  if (cfish_Obj_is_a(obj, CFISH_STRING)) {
       return Bind_str_to_ruby((cfish_String*)obj);
   }
-  else if (CFISH_Obj_Is_A(obj, CFISH_VECTOR)) {
+  else if (cfish_Obj_is_a(obj, CFISH_VECTOR)) {
       return S_cfish_array_to_ruby_array((cfish_Vector*)obj);
   }
 }

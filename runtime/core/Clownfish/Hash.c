@@ -262,7 +262,7 @@ Hash_Equals_IMP(Hash *self, Obj *other) {
     Hash    *twin = (Hash*)other;
 
     if (twin == self)             { return true; }
-    if (!Obj_Is_A(other, HASH))   { return false; }
+    if (!Obj_is_a(other, HASH))   { return false; }
     if (self->size != twin->size) { return false; }
 
     HashEntry *entry       = (HashEntry*)self->entries;

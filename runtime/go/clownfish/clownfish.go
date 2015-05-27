@@ -97,7 +97,7 @@ func CFStringToGo(ptr unsafe.Pointer) string {
 	if cfString == nil {
 		return ""
 	}
-	if !C.CFISH_Str_Is_A(cfString, C.CFISH_STRING) {
+	if !C.cfish_Str_is_a(cfString, C.CFISH_STRING) {
 		cfString := C.CFISH_Str_To_String(cfString)
 		defer C.cfish_dec_refcount(unsafe.Pointer(cfString))
 	}

@@ -103,7 +103,7 @@ bool
 Blob_Equals_IMP(Blob *self, Obj *other) {
     Blob *const twin = (Blob*)other;
     if (twin == self)           { return true; }
-    if (!Obj_Is_A(other, BLOB)) { return false; }
+    if (!Obj_is_a(other, BLOB)) { return false; }
     return SI_equals_bytes(self, twin->buf, twin->size);
 }
 
