@@ -26,73 +26,67 @@
 #include "CFCSymbol.h"
 #include "CFCClass.h"
 
-/* Create a macro definition that aliases to a function name directly, since
- * this method may not be overridden. */
-static char*
-S_final_method_def(CFCMethod *method, CFCClass *klass);
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
 
 static char*
-S_virtual_method_def(CFCMethod *method, CFCClass *klass);
+S_method_def(CFCMethod *method, CFCClass *klass, int optimized_final_meth);
+
+/* Create a method invocation routine that resolves to a function name
+ * directly, since this method may not be overridden.
+ */
+static char*
+S_optimized_final_method_def(CFCMethod *method, CFCClass *klass) {
+    return S_method_def(method, klass, true);
+}
+
+/* Create a method invocation routine which uses vtable dispatch.
+ */
+static char*
+S_virtual_method_def(CFCMethod *method, CFCClass *klass) {
+    return S_method_def(method, klass, false);
+}
 
 char*
 CFCBindMeth_method_def(CFCMethod *method, CFCClass *klass) {
+    // If the method is final and the implementing function is in the same
+    // parcel as the invocant, we can optimize the call by resolving to the
+    // implementing function directly.
     if (CFCMethod_final(method)) {
-        return S_final_method_def(method, klass);
+        CFCClass *ancestor = klass;
+        while (ancestor && !CFCMethod_is_fresh(method, ancestor)) {
+            ancestor = CFCClass_get_parent(ancestor);
+        }
+        if (CFCClass_get_parcel(ancestor) == CFCClass_get_parcel(klass)) {
+            return S_optimized_final_method_def(method, klass);
+        }
     }
-    else {
-        return S_virtual_method_def(method, klass);
-    }
-}
 
-/* Create a macro definition that aliases to a function name directly, since
- * this method may not be overridden. */
-static char*
-S_final_method_def(CFCMethod *method, CFCClass *klass) {
-    const char *PREFIX = CFCClass_get_PREFIX(klass);
-    const char *self_type = CFCType_to_c(CFCMethod_self_type(method));
-    const char *arg_names 
-        = CFCParamList_name_list(CFCMethod_get_param_list(method));
-
-    char *full_func_sym   = CFCMethod_imp_func(method, klass);
-    char *full_meth_sym   = CFCMethod_full_method_sym(method, klass);
-    char *full_offset_sym = CFCMethod_full_offset_sym(method, klass);
-
-    const char pattern[] =
-        "extern %sVISIBLE size_t %s;\n"
-        "#define %s(%s) \\\n"
-        "    %s((%s)%s)\n";
-    char *method_def
-        = CFCUtil_sprintf(pattern, PREFIX, full_offset_sym, full_meth_sym,
-                          arg_names, full_func_sym, self_type, arg_names);
-
-    FREEMEM(full_offset_sym);
-    FREEMEM(full_meth_sym);
-    FREEMEM(full_func_sym);
-    return method_def;
+    return S_virtual_method_def(method, klass);
 }
 
 static char*
-S_virtual_method_def(CFCMethod *method, CFCClass *klass) {
+S_method_def(CFCMethod *method, CFCClass *klass, int optimized_final_meth) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     const char *PREFIX         = CFCClass_get_PREFIX(klass);
     const char *invoker_struct = CFCClass_full_struct_sym(klass);
+    const char *self_name      = CFCParamList_param_name(param_list, 0);
 
     char *full_meth_sym   = CFCMethod_full_method_sym(method, klass);
     char *full_offset_sym = CFCMethod_full_offset_sym(method, klass);
     char *full_typedef    = CFCMethod_full_typedef(method, klass);
+    char *full_imp_sym    = CFCMethod_imp_func(method, klass);
 
-    // Prepare parameter lists, minus invoker.  The invoker gets forced to
-    // "self" later.
+    // Prepare parameter lists, minus the type of the invoker.
     if (CFCParamList_variadic(param_list)) {
         CFCUtil_die("Variadic methods not supported");
     }
-    const char *arg_names_minus_invoker = CFCParamList_name_list(param_list);
-    const char *params_minus_invoker    = CFCParamList_to_c(param_list);
-    while (*arg_names_minus_invoker && *arg_names_minus_invoker != ',') {
-        arg_names_minus_invoker++;
-    }
-    while (*params_minus_invoker && *params_minus_invoker != ',') {
-        params_minus_invoker++;
+    const char *arg_names  = CFCParamList_name_list(param_list);
+    const char *params_end = CFCParamList_to_c(param_list);
+    while (*params_end && *params_end != '*') {
+        params_end++;
     }
 
     // Prepare a return statement... or not.
@@ -100,19 +94,41 @@ S_virtual_method_def(CFCMethod *method, CFCClass *klass) {
     const char *ret_type_str = CFCType_to_c(return_type);
     const char *maybe_return = CFCType_is_void(return_type) ? "" : "return ";
 
+    char *innards;
+    if (optimized_final_meth) {
+        char *invoker_cast = CFCUtil_strdup("");
+        if (!CFCMethod_is_fresh(method, klass)) {
+            CFCType *self_type = CFCMethod_self_type(method);
+            invoker_cast = CFCUtil_cat(invoker_cast, "(",
+                                       CFCType_to_c(self_type), ")", NULL);
+        }
+        const char pattern[] = "    %s%s(%s%s);\n";
+        innards = CFCUtil_sprintf(pattern, maybe_return, full_imp_sym,
+                                  invoker_cast, arg_names);
+        FREEMEM(invoker_cast);
+    }
+    else {
+        const char pattern[] =
+            "    const %s method = (%s)cfish_obj_method(%s, %s);\n"
+            "    %smethod(%s);\n"
+            ;
+        innards = CFCUtil_sprintf(pattern, full_typedef, full_typedef,
+                                  self_name, full_offset_sym, maybe_return,
+                                  arg_names);
+    }
+
     const char pattern[] =
         "extern %sVISIBLE size_t %s;\n"
         "static CFISH_INLINE %s\n"
-        "%s(%s *self%s) {\n"
-        "    const %s method = (%s)cfish_obj_method(self, %s);\n"
-        "    %smethod(self%s);\n"
+        "%s(%s%s) {\n"
+        "%s"
         "}\n";
     char *method_def
         = CFCUtil_sprintf(pattern, PREFIX, full_offset_sym, ret_type_str,
-                          full_meth_sym, invoker_struct, params_minus_invoker,
-                          full_typedef, full_typedef, full_offset_sym,
-                          maybe_return, arg_names_minus_invoker);
+                          full_meth_sym, invoker_struct, params_end, innards);
 
+    FREEMEM(innards);
+    FREEMEM(full_imp_sym);
     FREEMEM(full_offset_sym);
     FREEMEM(full_meth_sym);
     FREEMEM(full_typedef);
@@ -121,17 +137,17 @@ S_virtual_method_def(CFCMethod *method, CFCClass *klass) {
 
 char*
 CFCBindMeth_typedef_dec(struct CFCMethod *method, CFCClass *klass) {
-    const char *params_minus_invoker
+    const char *params_end
         = CFCParamList_to_c(CFCMethod_get_param_list(method));
-    while (*params_minus_invoker && *params_minus_invoker != ',') {
-        params_minus_invoker++;
+    while (*params_end && *params_end != '*') {
+        params_end++;
     }
     const char *self_struct = CFCClass_full_struct_sym(klass);
     const char *ret_type = CFCType_to_c(CFCMethod_get_return_type(method));
     char *full_typedef = CFCMethod_full_typedef(method, klass);
-    char *buf = CFCUtil_sprintf("typedef %s\n(*%s)(%s *self%s);\n", ret_type,
+    char *buf = CFCUtil_sprintf("typedef %s\n(*%s)(%s%s);\n", ret_type,
                                 full_typedef, self_struct,
-                                params_minus_invoker);
+                                params_end);
     FREEMEM(full_typedef);
     return buf;
 }
