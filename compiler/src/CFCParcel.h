@@ -177,6 +177,11 @@ CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym);
 CFCParcel*
 CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym);
 
+/** Indicate whether the parcel is "clownfish", the main Clownfish runtime.
+ */
+int
+CFCParcel_is_cfish(CFCParcel *self);
+
 /**************************************************************************/
 
 CFCPrereq*

@@ -351,7 +351,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
 
     char *extra_defs;
     char *extra_includes;
-    if (strcmp(prefix, "cfish_") == 0) {
+    if (CFCParcel_is_cfish(parcel)) {
         extra_defs = CFCUtil_sprintf("%s%s", cfish_defs_1, cfish_defs_2);
         extra_includes = CFCUtil_strdup(cfish_includes);
     }

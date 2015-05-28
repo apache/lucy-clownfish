@@ -601,6 +601,11 @@ CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
     return parcel;
 }
 
+int
+CFCParcel_is_cfish(CFCParcel *self) {
+    return !strcmp(self->prefix, "cfish_");
+}
+
 /**************************************************************************/
 
 struct CFCPrereq {

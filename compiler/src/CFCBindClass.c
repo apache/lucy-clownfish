@@ -436,8 +436,8 @@ S_struct_definition(CFCBindClass *self) {
     const char *struct_sym;
     char       *member_decs = CFCUtil_strdup("");
 
-    const char *prefix = CFCClass_get_prefix(client);
-    if (strcmp(prefix, "cfish_") == 0) {
+    CFCParcel *parcel = CFCClass_get_parcel(client);
+    if (CFCParcel_is_cfish(parcel)) {
         struct_sym = CFCClass_full_struct_sym(client);
         member_decs = CFCUtil_cat(member_decs, "\n    CFISH_OBJ_HEAD", NULL);
     }
@@ -473,12 +473,12 @@ char*
 CFCBindClass_spec_def(CFCBindClass *self) {
     CFCClass *client = self->client;
 
+    CFCParcel  *parcel       = CFCClass_get_parcel(client);
     CFCClass   *parent       = CFCClass_get_parent(client);
     const char *class_name   = CFCClass_get_name(client);
     const char *class_var    = CFCClass_full_class_var(client);
     const char *struct_sym   = CFCClass_full_struct_sym(client);
     const char *ivars_struct = CFCClass_full_ivars_struct(client);
-    const char *prefix       = CFCClass_get_prefix(client);
 
     // Create a pointer to the parent Class object.
     char *parent_ref;
@@ -525,7 +525,7 @@ CFCBindClass_spec_def(CFCBindClass *self) {
 
     char *ivars_size = NULL;
 
-    if (strcmp(prefix, "cfish_") == 0) {
+    if (CFCParcel_is_cfish(parcel)) {
         ivars_size = CFCUtil_sprintf("sizeof(%s)", struct_sym);
     }
     else {
