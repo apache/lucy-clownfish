@@ -145,22 +145,22 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     if (obj == NULL) {
         return newSV(0);
     }
-    else if (CFISH_Obj_Is_A(obj, CFISH_STRING)) {
+    else if (cfish_Obj_is_a(obj, CFISH_STRING)) {
         return XSBind_str_to_sv(aTHX_ (cfish_String*)obj);
     }
-    else if (CFISH_Obj_Is_A(obj, CFISH_BLOB)) {
+    else if (cfish_Obj_is_a(obj, CFISH_BLOB)) {
         return XSBind_blob_to_sv(aTHX_ (cfish_Blob*)obj);
     }
-    else if (CFISH_Obj_Is_A(obj, CFISH_BYTEBUF)) {
+    else if (cfish_Obj_is_a(obj, CFISH_BYTEBUF)) {
         return XSBind_bb_to_sv(aTHX_ (cfish_ByteBuf*)obj);
     }
-    else if (CFISH_Obj_Is_A(obj, CFISH_VECTOR)) {
+    else if (cfish_Obj_is_a(obj, CFISH_VECTOR)) {
         return S_cfish_array_to_perl_array(aTHX_ (cfish_Vector*)obj);
     }
-    else if (CFISH_Obj_Is_A(obj, CFISH_HASH)) {
+    else if (cfish_Obj_is_a(obj, CFISH_HASH)) {
         return S_cfish_hash_to_perl_hash(aTHX_ (cfish_Hash*)obj);
     }
-    else if (CFISH_Obj_Is_A(obj, CFISH_FLOATNUM)) {
+    else if (cfish_Obj_is_a(obj, CFISH_FLOATNUM)) {
         return newSVnv(CFISH_FloatNum_To_F64((cfish_FloatNum*)obj));
     }
     else if (obj == (cfish_Obj*)CFISH_TRUE) {
@@ -169,15 +169,15 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     else if (obj == (cfish_Obj*)CFISH_FALSE) {
         return newSViv(0);
     }
-    else if (sizeof(IV) == 8 && CFISH_Obj_Is_A(obj, CFISH_INTNUM)) {
+    else if (sizeof(IV) == 8 && cfish_Obj_is_a(obj, CFISH_INTNUM)) {
         int64_t num = CFISH_IntNum_To_I64((cfish_IntNum*)obj);
         return newSViv((IV)num);
     }
-    else if (sizeof(IV) == 4 && CFISH_Obj_Is_A(obj, CFISH_INTEGER32)) {
+    else if (sizeof(IV) == 4 && cfish_Obj_is_a(obj, CFISH_INTEGER32)) {
         int32_t num = (int32_t)CFISH_Int32_To_I64((cfish_Integer32*)obj);
         return newSViv((IV)num);
     }
-    else if (sizeof(IV) == 4 && CFISH_Obj_Is_A(obj, CFISH_INTEGER64)) {
+    else if (sizeof(IV) == 4 && cfish_Obj_is_a(obj, CFISH_INTEGER64)) {
         int64_t num = CFISH_Int64_To_I64((cfish_Integer64*)obj);
         return newSVnv((double)num); // lossy
     }

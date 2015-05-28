@@ -92,12 +92,31 @@ func (o *ObjIMP) TOPTR() uintptr {
 	return o.ref
 }
 
+func (o *ObjIMP) GetClass() Class {
+	cfObj := (*C.cfish_Obj)(unsafe.Pointer(o.ref))
+	class := C.cfish_Obj_get_class(cfObj)
+	return WRAPClass(unsafe.Pointer(class))
+}
+
+func (o *ObjIMP) GetClassName() string {
+	cfObj := (*C.cfish_Obj)(unsafe.Pointer(o.ref))
+	className := C.cfish_Obj_get_class_name(cfObj)
+	return CFStringToGo(unsafe.Pointer(className))
+}
+
+func (o *ObjIMP) IsA(class Class) bool {
+	cfObj := (*C.cfish_Obj)(unsafe.Pointer(o.ref))
+	cfClass := (*C.cfish_Class)(unsafe.Pointer(class.ref))
+	retvalCF := C.cfish_Obj_is_a(cfObj, cfClass)
+	return bool(retvalCF)
+}
+
 func CFStringToGo(ptr unsafe.Pointer) string {
 	cfString := (*C.cfish_String)(ptr)
 	if cfString == nil {
 		return ""
 	}
-	if !C.CFISH_Str_Is_A(cfString, C.CFISH_STRING) {
+	if !C.cfish_Obj_is_a((*C.cfish_Obj)(ptr), C.CFISH_STRING) {
 		cfString := C.CFISH_Str_To_String(cfString)
 		defer C.cfish_dec_refcount(unsafe.Pointer(cfString))
 	}

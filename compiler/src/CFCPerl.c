@@ -610,7 +610,7 @@ S_write_callbacks_c(CFCPerl *self) {
         "    LEAVE;\n"
         "    if (!nullable && !retval) {\n"
         "        CFISH_THROW(CFISH_ERR, \"%%o#%%s cannot return NULL\",\n"
-        "                    CFISH_Obj_Get_Class_Name((cfish_Obj*)vself),\n"
+        "                    cfish_Obj_get_class_name((cfish_Obj*)vself),\n"
         "                    meth_name);\n"
         "    }\n"
         "    return retval;\n"

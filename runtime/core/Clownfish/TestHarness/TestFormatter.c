@@ -76,7 +76,7 @@ TestFormatterCF_Batch_Prologue_IMP(TestFormatterCF *self, TestBatch *batch,
                                    uint32_t num_planned) {
     UNUSED_VAR(self);
     UNUSED_VAR(num_planned);
-    String *class_name = TestBatch_Get_Class_Name(batch);
+    String *class_name = Obj_get_class_name((Obj*)batch);
     char *utf8 = Str_To_Utf8(class_name);
     printf("Running %s...\n", utf8);
     FREEMEM(utf8);

@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 24;
 
 package TestObj;
 use base qw( Clownfish::Obj );
@@ -84,6 +84,14 @@ my $frozen = freeze($fake);
 eval { thaw($frozen) };
 like( $@, qr/implement/,
     "thawing an Obj throws an exception rather than segfaults" );
+
+my $obj_class = $object->get_class;
+isa_ok( $obj_class, "Clownfish::Class",
+        "get_class returns a Clownfish::Class" );
+my $testobj_class = Clownfish::Class->fetch_class('TestObj');
+isa_ok( $testobj_class, "Clownfish::Class",
+        "fetch_class returns a Clownfish::Class" );
+is( $$obj_class, $$testobj_class, "get_class returns correct class" );
 
 ok( $object->is_a("Clownfish::Obj"),     "custom is_a correct" );
 ok( !$object->is_a("Clownfish::Object"), "custom is_a too long" );

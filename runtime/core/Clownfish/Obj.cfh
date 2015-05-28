@@ -65,18 +65,18 @@ public abstract class Clownfish::Obj {
 
     /** Return the object's Class.
      */
-    public Class*
-    Get_Class(Obj *self);
+    public inert Class*
+    get_class(Obj *self);
 
     /** Return the name of the class that the object belongs to.
      */
-    public String*
-    Get_Class_Name(Obj *self);
+    public inert String*
+    get_class_name(Obj *self);
 
     /** Indicate whether the object is a descendent of `ancestor`.
      */
-    public bool
-    Is_A(Obj *self, Class *ancestor);
+    public inert bool
+    is_a(Obj *self, Class *ancestor);
 
     /** Generic stringification: "ClassName@hex_mem_address".
      */
