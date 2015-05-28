@@ -27,6 +27,7 @@ extern "C" {
 typedef struct CFCParamList CFCParamList;
 struct CFCClass;
 struct CFCVariable;
+struct CFCType;
 
 /**
  * @param variadic Should be true if the function is variadic.
@@ -86,6 +87,16 @@ CFCParamList_to_c(CFCParamList *self);
  */
 const char*
 CFCParamList_name_list(CFCParamList *self);
+
+/** Return the name of the parameter at position `tick`.
+ */
+const char*
+CFCParamList_param_name(CFCParamList *self, int tick);
+
+/** Return the type of the parameter at position `tick`.
+ */
+struct CFCType*
+CFCParamList_param_type(CFCParamList *self, int tick);
 
 #ifdef __cplusplus
 }
