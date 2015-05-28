@@ -182,7 +182,9 @@ CFCType_new_object(int flags, CFCParcel *parcel, const char *specifier,
 
     // Add flags.
     flags |= CFCTYPE_OBJECT;
-    if (strstr(specifier, "String")) {
+    if (strcmp(specifier, "String") == 0
+        || strcmp(specifier, "cfish_String") == 0
+       ) {
         // Determine whether this type is a string type.
         flags |= CFCTYPE_STRING_TYPE;
     }
