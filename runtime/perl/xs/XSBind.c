@@ -144,9 +144,6 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     else if (cfish_Obj_is_a(obj, CFISH_STRING)) {
         return XSBind_str_to_sv(aTHX_ (cfish_String*)obj);
     }
-    else if (cfish_Obj_is_a(obj, CFISH_BLOB)) {
-        return XSBind_blob_to_sv(aTHX_ (cfish_Blob*)obj);
-    }
     else {
         return (SV*)CFISH_Obj_To_Host(obj);
     }
@@ -204,13 +201,6 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
     }
 
     return retval;
-}
-
-SV*
-XSBind_blob_to_sv(pTHX_ cfish_Blob *blob) {
-    return blob
-           ? newSVpvn(CFISH_Blob_Get_Buf(blob), CFISH_Blob_Get_Size(blob))
-           : newSV(0);
 }
 
 SV*
@@ -957,6 +947,14 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
+}
+
+/***************************** Clownfish::Blob ******************************/
+
+void*
+CFISH_Blob_To_Host_IMP(cfish_Blob *self) {
+    dTHX;
+    return newSVpvn(CFISH_Blob_Get_Buf(self), CFISH_Blob_Get_Size(self));
 }
 
 /**************************** Clownfish::ByteBuf ****************************/

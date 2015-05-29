@@ -131,11 +131,6 @@ cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
 CFISH_VISIBLE cfish_Obj*
 cfish_XSBind_perl_to_cfish(pTHX_ SV *sv);
 
-/** Convert a Blob into a new string SV.
- */
-CFISH_VISIBLE SV*
-cfish_XSBind_blob_to_sv(pTHX_ cfish_Blob *blob);
-
 /** Convert a String into a new UTF-8 string SV.
  */
 CFISH_VISIBLE SV*
@@ -313,7 +308,6 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
 #define XSBind_perl_to_cfish           cfish_XSBind_perl_to_cfish
-#define XSBind_blob_to_sv              cfish_XSBind_blob_to_sv
 #define XSBind_str_to_sv               cfish_XSBind_str_to_sv
 #define XSBind_trap                    cfish_XSBind_trap
 #define XSBind_allot_params            cfish_XSBind_allot_params
