@@ -116,13 +116,12 @@ cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
 #define CFISH_OBJ_TO_SV_NOINC(_obj) \
     cfish_XSBind_cfish_obj_to_sv_noinc(aTHX_ (cfish_Obj*)_obj)
 
-/** Deep conversion of Clownfish objects to Perl objects -- Strings to UTF-8
- * SVs, Blobs to SVs, ByteBufs to SVs, Vectors to Perl array refs, Hashes to
- * Perl hashrefs, and any other object to a Perl object wrapping the Clownfish
- * Obj.
+/** Null-safe invocation of Obj_To_Host.
  */
-CFISH_VISIBLE SV*
-cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
+static CFISH_INLINE SV*
+cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
+    return obj ? (SV*)CFISH_Obj_To_Host(obj) : newSV(0);
+}
 
 /** Deep conversion of Perl data structures to Clownfish objects -- Perl hash
  * to Hash, Perl array to Vector, Clownfish objects stripped of their

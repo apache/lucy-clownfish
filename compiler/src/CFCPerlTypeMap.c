@@ -121,10 +121,8 @@ CFCPerlTypeMap_to_perl(CFCType *type, const char *cf_var) {
     char *result = NULL;
 
     if (CFCType_is_object(type)) {
-        const char pattern[] =
-            "(%s == NULL ?"
-            " newSV(0) : XSBind_cfish_to_perl(aTHX_ (cfish_Obj*)%s))";
-        result = CFCUtil_sprintf(pattern, cf_var, cf_var);
+        const char pattern[] = "XSBind_cfish_to_perl(aTHX_ (cfish_Obj*)%s)";
+        result = CFCUtil_sprintf(pattern, cf_var);
     }
     else if (CFCType_is_primitive(type)) {
         // Convert from a primitive type to a Perl scalar.

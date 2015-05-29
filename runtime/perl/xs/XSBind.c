@@ -136,16 +136,6 @@ XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
     return retval;
 }
 
-SV*
-XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
-    if (obj == NULL) {
-        return newSV(0);
-    }
-    else {
-        return (SV*)CFISH_Obj_To_Host(obj);
-    }
-}
-
 cfish_Obj*
 XSBind_perl_to_cfish(pTHX_ SV *sv) {
     cfish_Obj *retval = NULL;
@@ -978,7 +968,7 @@ CFISH_Vec_To_Host_IMP(cfish_Vector *self) {
             }
             else {
                 // Recurse for each value.
-                SV *const val_sv = XSBind_cfish_to_perl(aTHX_ val);
+                SV *const val_sv = (SV*)CFISH_Obj_To_Host(val);
                 av_store(perl_array, i, val_sv);
             }
         }
