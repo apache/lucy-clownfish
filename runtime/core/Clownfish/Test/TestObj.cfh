@@ -26,6 +26,16 @@ class Clownfish::Test::TestObj
     Run(TestObj *self, TestBatchRunner *runner);
 }
 
+class Clownfish::Test::CallbackTestObj {
+    /** A method that can't be overridden from the host language.
+     */
+    abstract void*
+    Invalid_Callback(CallbackTestObj *self);
+
+    void
+    Invoke_Callback(CallbackTestObj *self);
+}
+
 class Clownfish::Test::AliasTestObj {
     incremented String*
     Aliased(AliasTestObj *self);
