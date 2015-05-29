@@ -80,15 +80,14 @@ cfish_XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
 
 
 /** Derive an SV from a Clownfish object.  If the Clownfish object is NULL, the SV
- * will be undef.
+ * will be undef.  Doesn't invoke To_Host and always returns a reference to a
+ * Clownfish::Obj.
  *
  * The new SV has single refcount for which the caller must take
  * responsibility.
  */
-static CFISH_INLINE SV*
-cfish_XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj) {
-    return obj ? (SV*)CFISH_Obj_To_Host(obj) : newSV(0);
-}
+CFISH_VISIBLE SV*
+cfish_XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj);
 
 /** XSBind_cfish_obj_to_sv, with a cast.
  */
@@ -103,7 +102,7 @@ static CFISH_INLINE SV*
 cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
     SV *retval;
     if (obj) {
-        retval = (SV*)CFISH_Obj_To_Host(obj);
+        retval = cfish_XSBind_cfish_obj_to_sv(aTHX_ obj);
         CFISH_DECREF_NN(obj);
     }
     else {

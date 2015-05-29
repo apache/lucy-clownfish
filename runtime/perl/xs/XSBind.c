@@ -130,7 +130,7 @@ XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
                 // Mortalize the converted object -- which is somewhat
                 // dangerous, but is the only way to avoid requiring that the
                 // caller take responsibility for a refcount.
-                SV *mortal = (SV*)CFISH_Obj_To_Host(retval);
+                SV *mortal = XSBind_cfish_obj_to_sv(aTHX_ retval);
                 CFISH_DECREF(retval);
                 sv_2mortal(mortal);
             }
@@ -757,26 +757,33 @@ cfish_dec_refcount(void *vself) {
     return modified_refcount;
 }
 
-void*
-CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
-    dTHX;
+SV*
+XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj) {
+    if (obj == NULL) { return newSV(0); }
+
     SV *perl_obj;
-    if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
-        perl_obj = S_lazy_init_host_obj(aTHX_ self);
+    if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
+        perl_obj = S_lazy_init_host_obj(aTHX_ obj);
     }
     else {
-        perl_obj = newRV_inc((SV*)self->ref.host_obj);
+        perl_obj = newRV_inc((SV*)obj->ref.host_obj);
     }
 
     // Enable overloading for Perl 5.8.x
 #if PERL_VERSION <= 8
-    HV *stash = SvSTASH((SV*)self->ref.host_obj);
+    HV *stash = SvSTASH((SV*)obj->ref.host_obj);
     if (Gv_AMG(stash)) {
         SvAMAGIC_on(perl_obj);
     }
 #endif
 
     return perl_obj;
+}
+
+void*
+CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
+    dTHX;
+    return XSBind_cfish_obj_to_sv(aTHX_ self);
 }
 
 /*************************** Clownfish::Class ******************************/
