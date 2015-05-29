@@ -19,6 +19,11 @@
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
+#define C_CFISH_FLOAT32
+#define C_CFISH_FLOAT64
+#define C_CFISH_INTEGER32
+#define C_CFISH_INTEGER64
+#define C_CFISH_BOOLNUM
 #define NEED_newRV_noinc
 #include "charmony.h"
 #include "XSBind.h"
@@ -159,27 +164,6 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     }
     else if (cfish_Obj_is_a(obj, CFISH_HASH)) {
         return S_cfish_hash_to_perl_hash(aTHX_ (cfish_Hash*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_FLOATNUM)) {
-        return newSVnv(CFISH_FloatNum_To_F64((cfish_FloatNum*)obj));
-    }
-    else if (obj == (cfish_Obj*)CFISH_TRUE) {
-        return newSViv(1);
-    }
-    else if (obj == (cfish_Obj*)CFISH_FALSE) {
-        return newSViv(0);
-    }
-    else if (sizeof(IV) == 8 && cfish_Obj_is_a(obj, CFISH_INTNUM)) {
-        int64_t num = CFISH_IntNum_To_I64((cfish_IntNum*)obj);
-        return newSViv((IV)num);
-    }
-    else if (sizeof(IV) == 4 && cfish_Obj_is_a(obj, CFISH_INTEGER32)) {
-        int32_t num = (int32_t)CFISH_Int32_To_I64((cfish_Integer32*)obj);
-        return newSViv((IV)num);
-    }
-    else if (sizeof(IV) == 4 && cfish_Obj_is_a(obj, CFISH_INTEGER64)) {
-        int64_t num = CFISH_Int64_To_I64((cfish_Integer64*)obj);
-        return newSVnv((double)num); // lossy
     }
     else {
         return (SV*)CFISH_Obj_To_Host(obj);
@@ -1046,6 +1030,47 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
+}
+
+/****************************** Clownfish::Num ******************************/
+
+void*
+CFISH_Float32_To_Host_IMP(cfish_Float32 *self) {
+    dTHX;
+    return newSVnv(self->value);
+}
+
+void*
+CFISH_Float64_To_Host_IMP(cfish_Float64 *self) {
+    dTHX;
+    return newSVnv(self->value);
+}
+
+void*
+CFISH_Int32_To_Host_IMP(cfish_Integer32 *self) {
+    dTHX;
+    return newSViv((IV)self->value);
+}
+
+void*
+CFISH_Int64_To_Host_IMP(cfish_Integer64 *self) {
+    dTHX;
+    SV *sv = NULL;
+
+    if (sizeof(IV) >= 8) {
+        sv = newSViv((IV)self->value);
+    }
+    else {
+        sv = newSVnv((double)self->value); // lossy
+    }
+
+    return sv;
+}
+
+void*
+CFISH_Bool_To_Host_IMP(cfish_BoolNum *self) {
+    dTHX;
+    return newSViv((IV)self->value);
 }
 
 /********************* Clownfish::TestHarness::TestUtils ********************/

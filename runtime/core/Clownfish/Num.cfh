@@ -87,6 +87,9 @@ final class Clownfish::Float32 inherits Clownfish::FloatNum {
     inert Float32*
     new(float value);
 
+    void*
+    To_Host(Float32 *self);
+
     void
     Set_Value(Float32 *self, float value);
 
@@ -120,6 +123,9 @@ final class Clownfish::Float64 inherits Clownfish::FloatNum {
 
     inert Float64*
     new(double value);
+
+    void*
+    To_Host(Float64 *self);
 
     void
     Set_Value(Float64 *self, double value);
@@ -156,6 +162,9 @@ final class Clownfish::Integer32 nickname Int32
     inert Integer32*
     new(int32_t value);
 
+    void*
+    To_Host(Integer32 *self);
+
     void
     Set_Value(Integer32 *self, int32_t value);
 
@@ -191,6 +200,9 @@ final class Clownfish::Integer64 nickname Int64
 
     inert Integer64*
     new(int64_t value);
+
+    void*
+    To_Host(Integer64 *self);
 
     void
     Set_Value(Integer64 *self, int64_t value);
@@ -239,6 +251,9 @@ class Clownfish::BoolNum nickname Bool inherits Clownfish::IntNum {
 
     public void
     Destroy(BoolNum *self);
+
+    void*
+    To_Host(BoolNum *self);
 
     bool
     Get_Value(BoolNum *self);
