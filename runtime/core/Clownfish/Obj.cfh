@@ -76,7 +76,7 @@ public abstract class Clownfish::Obj {
     /** Indicate whether the object is a descendent of `ancestor`.
      */
     public inert bool
-    is_a(Obj *self, Class *ancestor);
+    is_a(nullable Obj *self, nullable Class *ancestor);
 
     /** Generic stringification: "ClassName@hex_mem_address".
      */

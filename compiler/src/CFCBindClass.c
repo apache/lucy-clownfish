@@ -270,6 +270,7 @@ S_to_c_header_dynamic(CFCBindClass *self) {
     FREEMEM(sub_declarations);
     FREEMEM(inert_var_defs);
     FREEMEM(method_typedefs);
+    FREEMEM(wrapper_defs);
     FREEMEM(method_defs);
     FREEMEM(override_decs);
     FREEMEM(short_names);
@@ -780,7 +781,9 @@ S_short_names(CFCBindClass *self) {
     }
 
     // Wrappers.
-    if (strcmp(CFCClass_get_name(client), "Clownfish::Obj") != 0) {
+    if (!CFCClass_inert(client)
+        && strcmp(CFCClass_get_name(client), "Clownfish::Obj") != 0
+       ) {
         static const char *wrapped_funcs[] = {
             "get_class",
             "get_class_name",
