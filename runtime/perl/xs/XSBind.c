@@ -49,11 +49,6 @@ S_perl_hash_to_cfish_hash(pTHX_ HV *phash);
 static cfish_Vector*
 S_perl_array_to_cfish_array(pTHX_ AV *parray);
 
-// Convert a Vector to a Perl array.  Caller takes responsibility for a
-// refcount.
-static SV*
-S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray);
-
 cfish_Obj*
 XSBind_new_blank_obj(pTHX_ SV *either_sv) {
     cfish_Class *klass;
@@ -154,9 +149,6 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     }
     else if (cfish_Obj_is_a(obj, CFISH_BYTEBUF)) {
         return XSBind_bb_to_sv(aTHX_ (cfish_ByteBuf*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_VECTOR)) {
-        return S_cfish_array_to_perl_array(aTHX_ (cfish_Vector*)obj);
     }
     else {
         return (SV*)CFISH_Obj_To_Host(obj);
@@ -301,30 +293,6 @@ S_perl_array_to_cfish_array(pTHX_ AV *parray) {
     CFISH_Vec_Resize(retval, size); // needed if last elem is NULL
 
     return retval;
-}
-
-static SV*
-S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray) {
-    AV *perl_array = newAV();
-    uint32_t num_elems = CFISH_Vec_Get_Size(varray);
-
-    // Iterate over array elems.
-    if (num_elems) {
-        av_fill(perl_array, num_elems - 1);
-        for (uint32_t i = 0; i < num_elems; i++) {
-            cfish_Obj *val = CFISH_Vec_Fetch(varray, i);
-            if (val == NULL) {
-                continue;
-            }
-            else {
-                // Recurse for each value.
-                SV *const val_sv = XSBind_cfish_to_perl(aTHX_ val);
-                av_store(perl_array, i, val_sv);
-            }
-        }
-    }
-
-    return newRV_noinc((SV*)perl_array);
 }
 
 struct trap_context {
@@ -999,6 +967,33 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
+}
+
+/**************************** Clownfish::Vector *****************************/
+
+void*
+CFISH_Vec_To_Host_IMP(cfish_Vector *self) {
+    dTHX;
+    AV *perl_array = newAV();
+    uint32_t num_elems = CFISH_Vec_Get_Size(self);
+
+    // Iterate over array elems.
+    if (num_elems) {
+        av_fill(perl_array, num_elems - 1);
+        for (uint32_t i = 0; i < num_elems; i++) {
+            cfish_Obj *val = CFISH_Vec_Fetch(self, i);
+            if (val == NULL) {
+                continue;
+            }
+            else {
+                // Recurse for each value.
+                SV *const val_sv = XSBind_cfish_to_perl(aTHX_ val);
+                av_store(perl_array, i, val_sv);
+            }
+        }
+    }
+
+    return newRV_noinc((SV*)perl_array);
 }
 
 /***************************** Clownfish::Hash ******************************/

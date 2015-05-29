@@ -34,6 +34,9 @@ public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     public inert Vector*
     init(Vector *self, size_t capacity = 0);
 
+    void*
+    To_Host(Vector *self);
+
     /** Push an item onto the end of a Vector.
      */
     public void
