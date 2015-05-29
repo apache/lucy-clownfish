@@ -256,7 +256,7 @@ bool
 Vec_Equals_IMP(Vector *self, Obj *other) {
     Vector *twin = (Vector*)other;
     if (twin == self)             { return true; }
-    if (!Obj_Is_A(other, VECTOR)) { return false; }
+    if (!Obj_is_a(other, VECTOR)) { return false; }
     if (twin->size != self->size) {
         return false;
     }
