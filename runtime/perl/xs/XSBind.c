@@ -54,10 +54,6 @@ S_perl_array_to_cfish_array(pTHX_ AV *parray);
 static SV*
 S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray);
 
-// Convert a Hash to a Perl hash.  Caller takes responsibility for a refcount.
-static SV*
-S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash);
-
 cfish_Obj*
 XSBind_new_blank_obj(pTHX_ SV *either_sv) {
     cfish_Class *klass;
@@ -161,9 +157,6 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     }
     else if (cfish_Obj_is_a(obj, CFISH_VECTOR)) {
         return S_cfish_array_to_perl_array(aTHX_ (cfish_Vector*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_HASH)) {
-        return S_cfish_hash_to_perl_hash(aTHX_ (cfish_Hash*)obj);
     }
     else {
         return (SV*)CFISH_Obj_To_Host(obj);
@@ -332,30 +325,6 @@ S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray) {
     }
 
     return newRV_noinc((SV*)perl_array);
-}
-
-static SV*
-S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash) {
-    HV *perl_hash = newHV();
-    cfish_HashIterator *iter = cfish_HashIter_new(hash);
-
-    // Iterate over key-value pairs.
-    while (CFISH_HashIter_Next(iter)) {
-        cfish_String *key      = CFISH_HashIter_Get_Key(iter);
-        const char   *key_ptr  = CFISH_Str_Get_Ptr8(key);
-        I32           key_size = CFISH_Str_Get_Size(key);
-
-        // Recurse for each value.
-        cfish_Obj *val    = CFISH_HashIter_Get_Value(iter);
-        SV        *val_sv = XSBind_cfish_to_perl(aTHX_ val);
-
-        // Using a negative `klen` argument to signal UTF-8 is undocumented
-        // in older Perl versions but works since 5.8.0.
-        hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
-    }
-
-    CFISH_DECREF(iter);
-    return newRV_noinc((SV*)perl_hash);
 }
 
 struct trap_context {
@@ -1030,6 +999,33 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
+}
+
+/***************************** Clownfish::Hash ******************************/
+
+void*
+CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
+    dTHX;
+    HV *perl_hash = newHV();
+    cfish_HashIterator *iter = cfish_HashIter_new(self);
+
+    // Iterate over key-value pairs.
+    while (CFISH_HashIter_Next(iter)) {
+        cfish_String *key      = CFISH_HashIter_Get_Key(iter);
+        const char   *key_ptr  = CFISH_Str_Get_Ptr8(key);
+        I32           key_size = CFISH_Str_Get_Size(key);
+
+        // Recurse for each value.
+        cfish_Obj *val    = CFISH_HashIter_Get_Value(iter);
+        SV        *val_sv = XSBind_cfish_to_perl(aTHX_ val);
+
+        // Using a negative `klen` argument to signal UTF-8 is undocumented
+        // in older Perl versions but works since 5.8.0.
+        hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
+    }
+
+    CFISH_DECREF(iter);
+    return newRV_noinc((SV*)perl_hash);
 }
 
 /****************************** Clownfish::Num ******************************/
