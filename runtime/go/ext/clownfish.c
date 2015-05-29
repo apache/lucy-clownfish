@@ -239,3 +239,76 @@ Err_trap(Err_Attempt_t routine, void *context) {
     return GoCfish_TrapErr(routine, context);
 }
 
+/***************************** To_Host methods *****************************/
+
+void*
+Str_To_Host_IMP(String *self) {
+    Str_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(STRING, CFISH_Str_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Blob_To_Host_IMP(Blob *self) {
+    Blob_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(BLOB, CFISH_Blob_To_Host);
+    return super_to_host(self);
+}
+
+void*
+BB_To_Host_IMP(ByteBuf *self) {
+    BB_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(BYTEBUF, CFISH_BB_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Vec_To_Host_IMP(Vector *self) {
+    Vec_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(VECTOR, CFISH_Vec_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Hash_To_Host_IMP(Hash *self) {
+    Hash_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(HASH, CFISH_Hash_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Float32_To_Host_IMP(Float32 *self) {
+    Float32_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(FLOAT32, CFISH_Float32_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Float64_To_Host_IMP(Float64 *self) {
+    Float64_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(FLOAT64, CFISH_Float64_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Int32_To_Host_IMP(Integer32 *self) {
+    Int32_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(INTEGER32, CFISH_Int32_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Int64_To_Host_IMP(Integer64 *self) {
+    Int64_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(INTEGER64, CFISH_Int64_To_Host);
+    return super_to_host(self);
+}
+
+void*
+Bool_To_Host_IMP(BoolNum *self) {
+    Bool_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(BOOLNUM, CFISH_Bool_To_Host);
+    return super_to_host(self);
+}
+
+
