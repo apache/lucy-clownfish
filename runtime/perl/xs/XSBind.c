@@ -141,9 +141,6 @@ XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     if (obj == NULL) {
         return newSV(0);
     }
-    else if (cfish_Obj_is_a(obj, CFISH_STRING)) {
-        return XSBind_str_to_sv(aTHX_ (cfish_String*)obj);
-    }
     else {
         return (SV*)CFISH_Obj_To_Host(obj);
     }
@@ -201,18 +198,6 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
     }
 
     return retval;
-}
-
-SV*
-XSBind_str_to_sv(pTHX_ cfish_String *str) {
-    if (!str) {
-        return newSV(0);
-    }
-    else {
-        SV *sv = newSVpvn(CFISH_Str_Get_Ptr8(str), CFISH_Str_Get_Size(str));
-        SvUTF8_on(sv);
-        return sv;
-    }
 }
 
 static cfish_Hash*
@@ -743,7 +728,7 @@ cfish_Class_fresh_host_methods(cfish_String *class_name) {
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs(XSBind_str_to_sv(aTHX_ class_name));
+    mPUSHs((SV*)CFISH_Str_To_Host(class_name));
     PUTBACK;
     call_pv("Clownfish::Class::_fresh_host_methods", G_SCALAR);
     SPAGAIN;
@@ -762,7 +747,7 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs(XSBind_str_to_sv(aTHX_ class_name));
+    mPUSHs((SV*)CFISH_Str_To_Host(class_name));
     PUTBACK;
     call_pv("Clownfish::Class::_find_parent_class", G_SCALAR);
     SPAGAIN;
@@ -897,7 +882,7 @@ cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
 void
 cfish_Err_warn_mess(cfish_String *message) {
     dTHX;
-    SV *error_sv = XSBind_str_to_sv(aTHX_ message);
+    SV *error_sv = (SV*)CFISH_Str_To_Host(message);
     CFISH_DECREF(message);
     warn("%s", SvPV_nolen(error_sv));
     SvREFCNT_dec(error_sv);
@@ -947,6 +932,16 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
+}
+
+/**************************** Clownfish::String *****************************/
+
+void*
+CFISH_Str_To_Host_IMP(cfish_String *self) {
+    dTHX;
+    SV *sv = newSVpvn(CFISH_Str_Get_Ptr8(self), CFISH_Str_Get_Size(self));
+    SvUTF8_on(sv);
+    return sv;
 }
 
 /***************************** Clownfish::Blob ******************************/

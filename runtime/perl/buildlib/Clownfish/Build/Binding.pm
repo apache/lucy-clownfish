@@ -226,13 +226,6 @@ _clone(self)
 CODE:
     RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Str_Clone_IMP(self));
 OUTPUT: RETVAL
-
-SV*
-to_perl(self)
-    cfish_String *self;
-CODE:
-    RETVAL = XSBind_str_to_sv(aTHX_ self);
-OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
@@ -496,7 +489,7 @@ get_class_name(self)
     cfish_Obj *self
 CODE:
     cfish_String *class_name = cfish_Obj_get_class_name(self);
-    RETVAL = cfish_XSBind_str_to_sv(aTHX_ class_name);
+    RETVAL = (SV*)CFISH_Str_To_Host(class_name);
 OUTPUT: RETVAL
 
 bool
