@@ -14,21 +14,33 @@
  * limitations under the License.
  */
 
-#define C_CFISH_OBJ
 #define C_CFISH_CLASS
+#define C_CFISH_METHOD
+#define C_CFISH_OBJ
 #define CFISH_USE_SHORT_NAMES
+
+#include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "charmony.h"
 
+#include "tls.h"
 #include "Clownfish/Obj.h"
 #include "Clownfish/Class.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/ByteBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
+#include "Clownfish/Method.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/String.h"
+#include "Clownfish/TestHarness/TestUtils.h"
+#include "Clownfish/Util/Memory.h"
 #include "Clownfish/Vector.h"
+
+/**** Obj ******************************************************************/
 
 static CFISH_INLINE bool
 SI_immortal(cfish_Class *klass) {
@@ -112,6 +124,151 @@ Obj_To_Host_IMP(Obj *self) {
     THROW(ERR, "TODO");
     UNREACHABLE_RETURN(void*);
 }
+
+/**** Class ****************************************************************/
+
+Obj*
+Class_Make_Obj_IMP(Class *self) {
+    Obj *obj = (Obj*)Memory_wrapped_calloc(self->obj_alloc_size, 1);
+    obj->klass = self;
+    obj->refcount = 1;
+    return obj;
+}
+
+Obj*
+Class_Init_Obj_IMP(Class *self, void *allocation) {
+    memset(allocation, 0, self->obj_alloc_size);
+    Obj *obj = (Obj*)allocation;
+    obj->klass = self;
+    obj->refcount = 1;
+    return obj;
+}
+
+Obj*
+Class_Foster_Obj_IMP(Class *self, void *host_obj) {
+    UNUSED_VAR(self);
+    UNUSED_VAR(host_obj);
+    THROW(ERR, "TODO");
+    UNREACHABLE_RETURN(Obj*);
+}
+
+void
+Class_register_with_host(Class *singleton, Class *parent) {
+    UNUSED_VAR(singleton);
+    UNUSED_VAR(parent);
+}
+
+Vector*
+Class_fresh_host_methods(String *class_name) {
+    UNUSED_VAR(class_name);
+    return Vec_new(0);
+}
+
+String*
+Class_find_parent_class(String *class_name) {
+    UNUSED_VAR(class_name);
+    THROW(ERR, "TODO");
+    UNREACHABLE_RETURN(String*);
+}
+
+/**** Method ***************************************************************/
+
+String*
+Method_Host_Name_IMP(Method *self) {
+    return (String*)INCREF(self->name);
+}
+
+/**** Err ******************************************************************/
+
+void
+Err_init_class() {
+    Tls_init();
+}
+
+Err*
+Err_get_error() {
+    return Tls_get_err_context()->current_error;
+}
+
+void
+Err_set_error(Err *error) {
+    ErrContext *context = Tls_get_err_context();
+
+    if (context->current_error) {
+        DECREF(context->current_error);
+    }
+    context->current_error = error;
+}
+
+void
+Err_do_throw(Err *error) {
+    ErrContext *context = Tls_get_err_context();
+
+    if (context->current_env) {
+        context->thrown_error = error;
+        longjmp(*context->current_env, 1);
+    }
+    else {
+        String *message = Err_Get_Mess(error);
+        char *utf8 = Str_To_Utf8(message);
+        fprintf(stderr, "%s", utf8);
+        FREEMEM(utf8);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void
+Err_throw_mess(Class *klass, String *message) {
+    UNUSED_VAR(klass);
+    Err *err = Err_new(message);
+    Err_do_throw(err);
+}
+
+void
+Err_warn_mess(String *message) {
+    char *utf8 = Str_To_Utf8(message);
+    fprintf(stderr, "%s", utf8);
+    FREEMEM(utf8);
+    DECREF(message);
+}
+
+Err*
+Err_trap(Err_Attempt_t routine, void *routine_context) {
+    ErrContext *err_context = Tls_get_err_context();
+
+    jmp_buf  env;
+    jmp_buf *prev_env = err_context->current_env;
+    err_context->current_env = &env;
+
+    if (!setjmp(env)) {
+        routine(routine_context);
+    }
+
+    err_context->current_env = prev_env;
+
+    Err *error = err_context->thrown_error;
+    err_context->thrown_error = NULL;
+    return error;
+}
+
+/**** TestUtils ************************************************************/
+
+void*
+cfish_TestUtils_clone_host_runtime() {
+    return NULL;
+}
+
+void
+cfish_TestUtils_set_host_runtime(void *runtime) {
+    UNUSED_VAR(runtime);
+}
+
+void
+cfish_TestUtils_destroy_host_runtime(void *runtime) {
+    UNUSED_VAR(runtime);
+}
+
+/**** To_Host methods ******************************************************/
 
 void*
 Str_To_Host_IMP(String *self) {
