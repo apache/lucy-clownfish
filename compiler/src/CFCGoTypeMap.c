@@ -90,7 +90,32 @@ static const char* go_keywords[] = {
     "struct",
     "switch",
     "type",
-    "var"
+    "var",
+    "true",
+    "false",
+    "bool",
+    "int",
+    "uint",
+    "uintptr",
+    "int8",
+    "int16",
+    "int32",
+    "int32",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "float32",
+    "float64",
+    "complex64",
+    "complex128",
+    "byte",
+    "rune",
+    "string"
 };
 
 static int num_go_keywords = sizeof(go_keywords) / sizeof(go_keywords[0]);
@@ -101,7 +126,10 @@ static int num_go_keywords = sizeof(go_keywords) / sizeof(go_keywords[0]);
 
 char*
 CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
-    if (CFCType_is_object(type)) {
+    if (CFCType_is_string_type(type)) {
+        return CFCUtil_strdup("string");
+    }
+    else if (CFCType_is_object(type)) {
         // Divide the specifier into prefix and struct name.
         const char *specifier  = CFCType_get_specifier(type);
         size_t      prefix_len = 0;
