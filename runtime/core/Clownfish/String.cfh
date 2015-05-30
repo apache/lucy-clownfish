@@ -120,6 +120,9 @@ final class Clownfish::String nickname Str
     inert bool
     less_than(const void *va, const void *vb);
 
+    void*
+    To_Host(String *self);
+
     /** Return the concatenation of the String and `other`.
      */
     incremented String*

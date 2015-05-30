@@ -50,6 +50,9 @@ final class Clownfish::Blob inherits Clownfish::Obj {
     inert int
     compare(const void *va, const void *vb);
 
+    void*
+    To_Host(Blob *self);
+
     /** Accessor for "size" member.
      */
     public size_t

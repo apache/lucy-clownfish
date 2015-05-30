@@ -80,15 +80,14 @@ cfish_XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
 
 
 /** Derive an SV from a Clownfish object.  If the Clownfish object is NULL, the SV
- * will be undef.
+ * will be undef.  Doesn't invoke To_Host and always returns a reference to a
+ * Clownfish::Obj.
  *
  * The new SV has single refcount for which the caller must take
  * responsibility.
  */
-static CFISH_INLINE SV*
-cfish_XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj) {
-    return obj ? (SV*)CFISH_Obj_To_Host(obj) : newSV(0);
-}
+CFISH_VISIBLE SV*
+cfish_XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj);
 
 /** XSBind_cfish_obj_to_sv, with a cast.
  */
@@ -103,7 +102,7 @@ static CFISH_INLINE SV*
 cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
     SV *retval;
     if (obj) {
-        retval = (SV*)CFISH_Obj_To_Host(obj);
+        retval = cfish_XSBind_cfish_obj_to_sv(aTHX_ obj);
         CFISH_DECREF_NN(obj);
     }
     else {
@@ -117,13 +116,12 @@ cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
 #define CFISH_OBJ_TO_SV_NOINC(_obj) \
     cfish_XSBind_cfish_obj_to_sv_noinc(aTHX_ (cfish_Obj*)_obj)
 
-/** Deep conversion of Clownfish objects to Perl objects -- Strings to UTF-8
- * SVs, Blobs to SVs, ByteBufs to SVs, Vectors to Perl array refs, Hashes to
- * Perl hashrefs, and any other object to a Perl object wrapping the Clownfish
- * Obj.
+/** Null-safe invocation of Obj_To_Host.
  */
-CFISH_VISIBLE SV*
-cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
+static CFISH_INLINE SV*
+cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
+    return obj ? (SV*)CFISH_Obj_To_Host(obj) : newSV(0);
+}
 
 /** Deep conversion of Perl data structures to Clownfish objects -- Perl hash
  * to Hash, Perl array to Vector, Clownfish objects stripped of their
@@ -131,21 +129,6 @@ cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj);
  */
 CFISH_VISIBLE cfish_Obj*
 cfish_XSBind_perl_to_cfish(pTHX_ SV *sv);
-
-/** Convert a Blob into a new string SV.
- */
-CFISH_VISIBLE SV*
-cfish_XSBind_blob_to_sv(pTHX_ cfish_Blob *blob);
-
-/** Convert a ByteBuf into a new string SV.
- */
-CFISH_VISIBLE SV*
-cfish_XSBind_bb_to_sv(pTHX_ cfish_ByteBuf *bb);
-
-/** Convert a String into a new UTF-8 string SV.
- */
-CFISH_VISIBLE SV*
-cfish_XSBind_str_to_sv(pTHX_ cfish_String *str);
 
 /** Perl-specific wrapper for Err#trap.  The "routine" must be either a
  * subroutine reference or the name of a subroutine.
@@ -319,9 +302,6 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
 #define XSBind_perl_to_cfish           cfish_XSBind_perl_to_cfish
-#define XSBind_blob_to_sv              cfish_XSBind_blob_to_sv
-#define XSBind_bb_to_sv                cfish_XSBind_bb_to_sv
-#define XSBind_str_to_sv               cfish_XSBind_str_to_sv
 #define XSBind_trap                    cfish_XSBind_trap
 #define XSBind_allot_params            cfish_XSBind_allot_params
 #define ALLOT_I8                       XSBIND_ALLOT_I8

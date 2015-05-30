@@ -44,6 +44,9 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     inert String*
     get_tombstone();
 
+    void*
+    To_Host(Hash *self);
+
     /** Empty the hash of all key-value pairs.
      */
     public void

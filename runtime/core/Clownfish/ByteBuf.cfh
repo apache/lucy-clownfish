@@ -59,6 +59,9 @@ final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     inert int
     compare(const void *va, const void *vb);
 
+    void*
+    To_Host(ByteBuf *self);
+
     /** Set the object's size member.  If greater than the object's capacity,
      * throws an error.
      */

@@ -151,6 +151,13 @@ TestObj_Run_IMP(TestObj *self, TestBatchRunner *runner) {
 
 /*********************************************************************/
 
+void
+CallbackTestObj_Invoke_Callback_IMP(CallbackTestObj *self) {
+    CallbackTestObj_Invalid_Callback(self);
+}
+
+/*********************************************************************/
+
 String*
 AliasTestObj_Aliased_IMP(AliasTestObj *self) {
     UNUSED_VAR(self);

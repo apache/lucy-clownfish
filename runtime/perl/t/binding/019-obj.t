@@ -46,9 +46,9 @@ use base qw( Clownfish::Obj );
 }
 
 package InvalidCallbackTestObj;
-use base qw( Clownfish::Obj );
+use base qw( Clownfish::Test::CallbackTestObj );
 {
-    sub to_host {}
+    sub invalid_callback {}
 }
 
 package OverriddenAliasTestObj;
@@ -138,8 +138,8 @@ SKIP: {
     like( $@, qr/NULL/,
         "Don't allow methods without nullable return values to return NULL" );
 
-    eval { InvalidCallbackTestObj->new; };
-    like( $@, qr/Can't override to_host via binding/ );
+    eval { InvalidCallbackTestObj->new->invoke_callback; };
+    like( $@, qr/Can't override invalid_callback via binding/ );
 }
 
 my $alias_test = Clownfish::Test::AliasTestObj->new;

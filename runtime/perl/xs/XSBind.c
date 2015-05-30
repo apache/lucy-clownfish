@@ -19,6 +19,11 @@
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
+#define C_CFISH_FLOAT32
+#define C_CFISH_FLOAT64
+#define C_CFISH_INTEGER32
+#define C_CFISH_INTEGER64
+#define C_CFISH_BOOLNUM
 #define NEED_newRV_noinc
 #include "charmony.h"
 #include "XSBind.h"
@@ -43,15 +48,6 @@ S_perl_hash_to_cfish_hash(pTHX_ HV *phash);
 // for a refcount.
 static cfish_Vector*
 S_perl_array_to_cfish_array(pTHX_ AV *parray);
-
-// Convert a Vector to a Perl array.  Caller takes responsibility for a
-// refcount.
-static SV*
-S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray);
-
-// Convert a Hash to a Perl hash.  Caller takes responsibility for a refcount.
-static SV*
-S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash);
 
 cfish_Obj*
 XSBind_new_blank_obj(pTHX_ SV *either_sv) {
@@ -130,7 +126,7 @@ XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
                 // Mortalize the converted object -- which is somewhat
                 // dangerous, but is the only way to avoid requiring that the
                 // caller take responsibility for a refcount.
-                SV *mortal = (SV*)CFISH_Obj_To_Host(retval);
+                SV *mortal = XSBind_cfish_obj_to_sv(aTHX_ retval);
                 CFISH_DECREF(retval);
                 sv_2mortal(mortal);
             }
@@ -138,52 +134,6 @@ XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
     }
 
     return retval;
-}
-
-SV*
-XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
-    if (obj == NULL) {
-        return newSV(0);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_STRING)) {
-        return XSBind_str_to_sv(aTHX_ (cfish_String*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_BLOB)) {
-        return XSBind_blob_to_sv(aTHX_ (cfish_Blob*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_BYTEBUF)) {
-        return XSBind_bb_to_sv(aTHX_ (cfish_ByteBuf*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_VECTOR)) {
-        return S_cfish_array_to_perl_array(aTHX_ (cfish_Vector*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_HASH)) {
-        return S_cfish_hash_to_perl_hash(aTHX_ (cfish_Hash*)obj);
-    }
-    else if (cfish_Obj_is_a(obj, CFISH_FLOATNUM)) {
-        return newSVnv(CFISH_FloatNum_To_F64((cfish_FloatNum*)obj));
-    }
-    else if (obj == (cfish_Obj*)CFISH_TRUE) {
-        return newSViv(1);
-    }
-    else if (obj == (cfish_Obj*)CFISH_FALSE) {
-        return newSViv(0);
-    }
-    else if (sizeof(IV) == 8 && cfish_Obj_is_a(obj, CFISH_INTNUM)) {
-        int64_t num = CFISH_IntNum_To_I64((cfish_IntNum*)obj);
-        return newSViv((IV)num);
-    }
-    else if (sizeof(IV) == 4 && cfish_Obj_is_a(obj, CFISH_INTEGER32)) {
-        int32_t num = (int32_t)CFISH_Int32_To_I64((cfish_Integer32*)obj);
-        return newSViv((IV)num);
-    }
-    else if (sizeof(IV) == 4 && cfish_Obj_is_a(obj, CFISH_INTEGER64)) {
-        int64_t num = CFISH_Int64_To_I64((cfish_Integer64*)obj);
-        return newSVnv((double)num); // lossy
-    }
-    else {
-        return (SV*)CFISH_Obj_To_Host(obj);
-    }
 }
 
 cfish_Obj*
@@ -238,32 +188,6 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
     }
 
     return retval;
-}
-
-SV*
-XSBind_blob_to_sv(pTHX_ cfish_Blob *blob) {
-    return blob
-           ? newSVpvn(CFISH_Blob_Get_Buf(blob), CFISH_Blob_Get_Size(blob))
-           : newSV(0);
-}
-
-SV*
-XSBind_bb_to_sv(pTHX_ cfish_ByteBuf *bb) {
-    return bb
-           ? newSVpvn(CFISH_BB_Get_Buf(bb), CFISH_BB_Get_Size(bb))
-           : newSV(0);
-}
-
-SV*
-XSBind_str_to_sv(pTHX_ cfish_String *str) {
-    if (!str) {
-        return newSV(0);
-    }
-    else {
-        SV *sv = newSVpvn(CFISH_Str_Get_Ptr8(str), CFISH_Str_Get_Size(str));
-        SvUTF8_on(sv);
-        return sv;
-    }
 }
 
 static cfish_Hash*
@@ -324,54 +248,6 @@ S_perl_array_to_cfish_array(pTHX_ AV *parray) {
     CFISH_Vec_Resize(retval, size); // needed if last elem is NULL
 
     return retval;
-}
-
-static SV*
-S_cfish_array_to_perl_array(pTHX_ cfish_Vector *varray) {
-    AV *perl_array = newAV();
-    uint32_t num_elems = CFISH_Vec_Get_Size(varray);
-
-    // Iterate over array elems.
-    if (num_elems) {
-        av_fill(perl_array, num_elems - 1);
-        for (uint32_t i = 0; i < num_elems; i++) {
-            cfish_Obj *val = CFISH_Vec_Fetch(varray, i);
-            if (val == NULL) {
-                continue;
-            }
-            else {
-                // Recurse for each value.
-                SV *const val_sv = XSBind_cfish_to_perl(aTHX_ val);
-                av_store(perl_array, i, val_sv);
-            }
-        }
-    }
-
-    return newRV_noinc((SV*)perl_array);
-}
-
-static SV*
-S_cfish_hash_to_perl_hash(pTHX_ cfish_Hash *hash) {
-    HV *perl_hash = newHV();
-    cfish_HashIterator *iter = cfish_HashIter_new(hash);
-
-    // Iterate over key-value pairs.
-    while (CFISH_HashIter_Next(iter)) {
-        cfish_String *key      = CFISH_HashIter_Get_Key(iter);
-        const char   *key_ptr  = CFISH_Str_Get_Ptr8(key);
-        I32           key_size = CFISH_Str_Get_Size(key);
-
-        // Recurse for each value.
-        cfish_Obj *val    = CFISH_HashIter_Get_Value(iter);
-        SV        *val_sv = XSBind_cfish_to_perl(aTHX_ val);
-
-        // Using a negative `klen` argument to signal UTF-8 is undocumented
-        // in older Perl versions but works since 5.8.0.
-        hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
-    }
-
-    CFISH_DECREF(iter);
-    return newRV_noinc((SV*)perl_hash);
 }
 
 struct trap_context {
@@ -757,26 +633,33 @@ cfish_dec_refcount(void *vself) {
     return modified_refcount;
 }
 
-void*
-CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
-    dTHX;
+SV*
+XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj) {
+    if (obj == NULL) { return newSV(0); }
+
     SV *perl_obj;
-    if (self->ref.count & XSBIND_REFCOUNT_FLAG) {
-        perl_obj = S_lazy_init_host_obj(aTHX_ self);
+    if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
+        perl_obj = S_lazy_init_host_obj(aTHX_ obj);
     }
     else {
-        perl_obj = newRV_inc((SV*)self->ref.host_obj);
+        perl_obj = newRV_inc((SV*)obj->ref.host_obj);
     }
 
     // Enable overloading for Perl 5.8.x
 #if PERL_VERSION <= 8
-    HV *stash = SvSTASH((SV*)self->ref.host_obj);
+    HV *stash = SvSTASH((SV*)obj->ref.host_obj);
     if (Gv_AMG(stash)) {
         SvAMAGIC_on(perl_obj);
     }
 #endif
 
     return perl_obj;
+}
+
+void*
+CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
+    dTHX;
+    return XSBind_cfish_obj_to_sv(aTHX_ self);
 }
 
 /*************************** Clownfish::Class ******************************/
@@ -835,7 +718,7 @@ cfish_Class_fresh_host_methods(cfish_String *class_name) {
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs(XSBind_str_to_sv(aTHX_ class_name));
+    mPUSHs((SV*)CFISH_Str_To_Host(class_name));
     PUTBACK;
     call_pv("Clownfish::Class::_fresh_host_methods", G_SCALAR);
     SPAGAIN;
@@ -854,7 +737,7 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs(XSBind_str_to_sv(aTHX_ class_name));
+    mPUSHs((SV*)CFISH_Str_To_Host(class_name));
     PUTBACK;
     call_pv("Clownfish::Class::_find_parent_class", G_SCALAR);
     SPAGAIN;
@@ -989,7 +872,7 @@ cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
 void
 cfish_Err_warn_mess(cfish_String *message) {
     dTHX;
-    SV *error_sv = XSBind_str_to_sv(aTHX_ message);
+    SV *error_sv = (SV*)CFISH_Str_To_Host(message);
     CFISH_DECREF(message);
     warn("%s", SvPV_nolen(error_sv));
     SvREFCNT_dec(error_sv);
@@ -1039,6 +922,127 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     LEAVE;
 
     return error;
+}
+
+/**************************** Clownfish::String *****************************/
+
+void*
+CFISH_Str_To_Host_IMP(cfish_String *self) {
+    dTHX;
+    SV *sv = newSVpvn(CFISH_Str_Get_Ptr8(self), CFISH_Str_Get_Size(self));
+    SvUTF8_on(sv);
+    return sv;
+}
+
+/***************************** Clownfish::Blob ******************************/
+
+void*
+CFISH_Blob_To_Host_IMP(cfish_Blob *self) {
+    dTHX;
+    return newSVpvn(CFISH_Blob_Get_Buf(self), CFISH_Blob_Get_Size(self));
+}
+
+/**************************** Clownfish::ByteBuf ****************************/
+
+void*
+CFISH_BB_To_Host_IMP(cfish_ByteBuf *self) {
+    dTHX;
+    return newSVpvn(CFISH_BB_Get_Buf(self), CFISH_BB_Get_Size(self));
+}
+
+/**************************** Clownfish::Vector *****************************/
+
+void*
+CFISH_Vec_To_Host_IMP(cfish_Vector *self) {
+    dTHX;
+    AV *perl_array = newAV();
+    uint32_t num_elems = CFISH_Vec_Get_Size(self);
+
+    // Iterate over array elems.
+    if (num_elems) {
+        av_fill(perl_array, num_elems - 1);
+        for (uint32_t i = 0; i < num_elems; i++) {
+            cfish_Obj *val = CFISH_Vec_Fetch(self, i);
+            if (val == NULL) {
+                continue;
+            }
+            else {
+                // Recurse for each value.
+                SV *const val_sv = (SV*)CFISH_Obj_To_Host(val);
+                av_store(perl_array, i, val_sv);
+            }
+        }
+    }
+
+    return newRV_noinc((SV*)perl_array);
+}
+
+/***************************** Clownfish::Hash ******************************/
+
+void*
+CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
+    dTHX;
+    HV *perl_hash = newHV();
+    cfish_HashIterator *iter = cfish_HashIter_new(self);
+
+    // Iterate over key-value pairs.
+    while (CFISH_HashIter_Next(iter)) {
+        cfish_String *key      = CFISH_HashIter_Get_Key(iter);
+        const char   *key_ptr  = CFISH_Str_Get_Ptr8(key);
+        I32           key_size = CFISH_Str_Get_Size(key);
+
+        // Recurse for each value.
+        cfish_Obj *val    = CFISH_HashIter_Get_Value(iter);
+        SV        *val_sv = XSBind_cfish_to_perl(aTHX_ val);
+
+        // Using a negative `klen` argument to signal UTF-8 is undocumented
+        // in older Perl versions but works since 5.8.0.
+        hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
+    }
+
+    CFISH_DECREF(iter);
+    return newRV_noinc((SV*)perl_hash);
+}
+
+/****************************** Clownfish::Num ******************************/
+
+void*
+CFISH_Float32_To_Host_IMP(cfish_Float32 *self) {
+    dTHX;
+    return newSVnv(self->value);
+}
+
+void*
+CFISH_Float64_To_Host_IMP(cfish_Float64 *self) {
+    dTHX;
+    return newSVnv(self->value);
+}
+
+void*
+CFISH_Int32_To_Host_IMP(cfish_Integer32 *self) {
+    dTHX;
+    return newSViv((IV)self->value);
+}
+
+void*
+CFISH_Int64_To_Host_IMP(cfish_Integer64 *self) {
+    dTHX;
+    SV *sv = NULL;
+
+    if (sizeof(IV) >= 8) {
+        sv = newSViv((IV)self->value);
+    }
+    else {
+        sv = newSVnv((double)self->value); // lossy
+    }
+
+    return sv;
+}
+
+void*
+CFISH_Bool_To_Host_IMP(cfish_BoolNum *self) {
+    dTHX;
+    return newSViv((IV)self->value);
 }
 
 /********************* Clownfish::TestHarness::TestUtils ********************/
