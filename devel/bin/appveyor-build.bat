@@ -8,7 +8,15 @@ exit /b 1
 
 :test_c
 
+if "%MSVC_VERSION%" == "10" goto msvc_10
+
+call "C:\Program Files (x86)\Microsoft Visual Studio %MSVC_VERSION%.0\VC\vcvarsall.bat" amd64
+goto msvc_build
+
+:msvc_10
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
+
+:msvc_build
 
 cd compiler\c
 call configure && nmake && nmake test || exit /b
