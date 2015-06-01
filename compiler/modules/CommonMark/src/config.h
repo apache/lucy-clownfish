@@ -13,3 +13,5 @@ typedef char bool;
 #ifndef CHY_HAS_VA_COPY
   #define va_copy(dest, src) ((dest) = (src))
 #endif
+
+#define inline CHY_INLINE
