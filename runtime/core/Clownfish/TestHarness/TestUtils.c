@@ -197,7 +197,7 @@ struct Thread {
 
 bool TestUtils_has_threads = true;
 
-static DWORD
+static DWORD __stdcall
 S_thread(void *arg) {
     Thread *thread = (Thread*)arg;
 
