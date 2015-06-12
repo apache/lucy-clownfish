@@ -454,26 +454,25 @@ CFCTest_get_file_mtime(const char *path) {
     return buf.st_mtime;
 }
 
-#if defined(CHY_HAS_UTIME_H)
-
-#include <utime.h>
-
-void
-CFCTest_set_file_times(const char *path, time_t time) {
-    struct utimbuf buf;
-    buf.actime  = time;
-    buf.modtime = time;
-    if (utime(path, &buf)) {
-        CFCUtil_die("Can't set file time of '%s': %s", path, strerror(errno));
-    }
-}
-
-#elif defined(CHY_HAS_WINDOWS_H)
+#if defined(CHY_HAS_WINDOWS_H)
 
 #include <windows.h>
 
 void
 CFCTest_set_file_times(const char *path, time_t time) {
+    // Strawberry Perl may unpack the distribution's files as read-only.
+    DWORD attrs = GetFileAttributes(path);
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        CFCUtil_die("Can't get file attrs of '%s': %u", path, GetLastError());
+    }
+    if (attrs & FILE_ATTRIBUTE_READONLY) {
+        attrs &= ~FILE_ATTRIBUTE_READONLY;
+        if (!SetFileAttributes(path, attrs)) {
+                CFCUtil_die("Can't make '%s' writable: %u", path,
+                            GetLastError());
+        }
+    }
+
     HANDLE handle = CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ, NULL,
                                OPEN_EXISTING, 0, NULL);
     if (handle == INVALID_HANDLE_VALUE) {
@@ -487,6 +486,20 @@ CFCTest_set_file_times(const char *path, time_t time) {
         CFCUtil_die("Can't set file time of '%s': %u", path, GetLastError());
     }
     CloseHandle(handle);
+}
+
+#elif defined(CHY_HAS_UTIME_H)
+
+#include <utime.h>
+
+void
+CFCTest_set_file_times(const char *path, time_t time) {
+    struct utimbuf buf;
+    buf.actime  = time;
+    buf.modtime = time;
+    if (utime(path, &buf)) {
+        CFCUtil_die("Can't set file time of '%s': %s", path, strerror(errno));
+    }
 }
 
 #else

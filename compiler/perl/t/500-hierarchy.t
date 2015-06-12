@@ -91,6 +91,11 @@ for my $file (@files) {
 }
 
 my $path_to_animal_cf = $animal->cfh_path( $base_dir );
+# Strawberry Perl may unpack the distribution's files as read-only.
+if ( ! -w $path_to_animal_cf ) {
+    chmod( 0644, $path_to_animal_cf )
+        or die "chmod for '$path_to_animal_cf' failed";
+}
 utime( undef, undef, $path_to_animal_cf )
     or die "utime for '$path_to_animal_cf' failed";    # touch
 
