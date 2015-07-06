@@ -495,6 +495,16 @@ CFCUtil_walk(const char *path, CFCUtil_walk_callback_t callback,
     CFCUtil_closedir(dirhandle, path);
 }
 
+void
+CFCUtil_free_string_array(char **strings) {
+    if (strings == NULL) { return; }
+
+    for (size_t i = 0; strings[i] != NULL; i++) {
+        FREEMEM(strings[i]);
+    }
+    FREEMEM(strings);
+}
+
 int
 CFCUtil_make_dir(const char *dir) {
     return !chy_makedir(dir, 0777);

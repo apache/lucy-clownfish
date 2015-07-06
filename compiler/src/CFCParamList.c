@@ -85,12 +85,11 @@ CFCParamList_add_param(CFCParamList *self, CFCVariable *variable,
 
 void
 CFCParamList_destroy(CFCParamList *self) {
+    CFCUtil_free_string_array(self->values);
     for (size_t i = 0; i < self->num_vars; i++) {
         CFCBase_decref((CFCBase*)self->variables[i]);
-        FREEMEM(self->values[i]);
     }
     FREEMEM(self->variables);
-    FREEMEM(self->values);
     FREEMEM(self->c_string);
     FREEMEM(self->name_list);
     CFCBase_destroy((CFCBase*)self);

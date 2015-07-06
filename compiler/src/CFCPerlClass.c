@@ -103,10 +103,7 @@ CFCPerlClass_destroy(CFCPerlClass *self) {
     }
     FREEMEM(self->cons_aliases);
     FREEMEM(self->cons_inits);
-    for (size_t i = 0; i < self->num_class_aliases; i++) {
-        FREEMEM(self->class_aliases[i]);
-    }
-    FREEMEM(self->class_aliases);
+    CFCUtil_free_string_array(self->class_aliases);
     CFCBase_destroy((CFCBase*)self);
 }
 

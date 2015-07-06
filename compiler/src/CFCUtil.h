@@ -209,6 +209,11 @@ void
 CFCUtil_walk(const char *dir, CFCUtil_walk_callback_t callback,
              void *context);
 
+/* Free an array of strings.
+ */
+void
+CFCUtil_free_string_array(char **strings);
+
 /* Print an error message to stderr and exit.
  */
 void

@@ -214,18 +214,8 @@ CFCDocuComment_parse(const char *raw_text) {
 
 void
 CFCDocuComment_destroy(CFCDocuComment *self) {
-    if (self->param_names) {
-        for (size_t i = 0; self->param_names[i] != NULL; i++) {
-            FREEMEM(self->param_names[i]);
-        }
-        FREEMEM(self->param_names);
-    }
-    if (self->param_docs) {
-        for (size_t i = 0; self->param_docs[i] != NULL; i++) {
-            FREEMEM(self->param_docs[i]);
-        }
-        FREEMEM(self->param_docs);
-    }
+    CFCUtil_free_string_array(self->param_names);
+    CFCUtil_free_string_array(self->param_docs);
     FREEMEM(self->description);
     FREEMEM(self->brief);
     FREEMEM(self->long_des);

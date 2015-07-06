@@ -172,10 +172,7 @@ S_parse_uri(CFCUri *self, const char *uri, CFCClass *klass) {
         CFCUtil_die("Invalid clownfish URI: %s", uri);
     }
 
-    for (i = 0; i < num_components; ++i) {
-        FREEMEM(components[i]);
-    }
-    FREEMEM(components);
+    CFCUtil_free_string_array(components);
 }
 
 static char**

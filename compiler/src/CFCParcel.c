@@ -364,18 +364,12 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->Prefix);
     FREEMEM(self->PREFIX);
     FREEMEM(self->privacy_sym);
-    for (size_t i = 0; self->inherited_parcels[i]; ++i) {
-        FREEMEM(self->inherited_parcels[i]);
-    }
-    FREEMEM(self->inherited_parcels);
+    CFCUtil_free_string_array(self->inherited_parcels);
+    CFCUtil_free_string_array(self->struct_syms);
     for (size_t i = 0; self->prereqs[i]; ++i) {
         CFCBase_decref((CFCBase*)self->prereqs[i]);
     }
     FREEMEM(self->prereqs);
-    for (size_t i = 0; self->struct_syms[i]; ++i) {
-        FREEMEM(self->struct_syms[i]);
-    }
-    FREEMEM(self->struct_syms);
     CFCBase_destroy((CFCBase*)self);
 }
 

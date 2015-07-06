@@ -82,9 +82,6 @@ static void
 S_find_files(const char *path, void *arg);
 
 static void
-S_free_find_files_context(CFCFindFilesContext *context);
-
-static void
 S_connect_classes(CFCHierarchy *self);
 
 static void
@@ -153,21 +150,12 @@ CFCHierarchy_destroy(CFCHierarchy *self) {
     for (size_t i = 0; self->classes[i] != NULL; i++) {
         CFCBase_decref((CFCBase*)self->classes[i]);
     }
-    for (size_t i = 0; self->sources[i] != NULL; i++) {
-        FREEMEM(self->sources[i]);
-    }
-    for (size_t i = 0; self->includes[i] != NULL; i++) {
-        FREEMEM(self->includes[i]);
-    }
-    for (size_t i = 0; self->prereqs[i] != NULL; i++) {
-        FREEMEM(self->prereqs[i]);
-    }
+    CFCUtil_free_string_array(self->sources);
+    CFCUtil_free_string_array(self->includes);
+    CFCUtil_free_string_array(self->prereqs);
     FREEMEM(self->trees);
     FREEMEM(self->files);
     FREEMEM(self->classes);
-    FREEMEM(self->sources);
-    FREEMEM(self->includes);
-    FREEMEM(self->prereqs);
     FREEMEM(self->dest);
     FREEMEM(self->inc_dest);
     FREEMEM(self->src_dest);
@@ -307,7 +295,7 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
         CFCBase_decref((CFCBase*)file_spec);
     }
 
-    S_free_find_files_context(&context);
+    CFCUtil_free_string_array(context.paths);
 }
 
 static void
@@ -412,7 +400,7 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
     }
     self->classes[self->num_classes] = NULL;
 
-    S_free_find_files_context(&context);
+    CFCUtil_free_string_array(context.paths);
     FREEMEM(path_part);
 }
 
@@ -434,14 +422,6 @@ S_find_files(const char *path, void *arg) {
         context->num_paths++;
         context->paths = paths;
     }
-}
-
-static void
-S_free_find_files_context(CFCFindFilesContext *context) {
-    for (int i = 0; context->paths[i] != NULL; i++) {
-        FREEMEM(context->paths[i]);
-    }
-    FREEMEM(context->paths);
 }
 
 static void
