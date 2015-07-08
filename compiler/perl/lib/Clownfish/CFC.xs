@@ -2414,17 +2414,15 @@ PPCODE:
 
 
 SV*
-_md_to_pod(self, klass, source)
-    CFCPerlPod *self;
+_md_to_pod(source, klass)
     CFCClass   *klass;
     const char *source;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlPod_md_to_pod(self, klass, source));
+    RETVAL = S_sv_eat_c_string(CFCPerlPod_md_to_pod(source, klass));
 OUTPUT: RETVAL
 
 SV*
-_gen_subroutine_pod(self, func, alias, klass, code_sample, class_name, is_constructor)
-    CFCPerlPod *self;
+_gen_subroutine_pod(func, alias, klass, code_sample, class_name, is_constructor)
     CFCFunction *func;
     const char *alias;
     CFCClass *klass;
@@ -2432,7 +2430,7 @@ _gen_subroutine_pod(self, func, alias, klass, code_sample, class_name, is_constr
     const char *class_name;
     int is_constructor;
 CODE:
-    char *value = CFCPerlPod_gen_subroutine_pod(self, func, alias, klass,
+    char *value = CFCPerlPod_gen_subroutine_pod(func, alias, klass,
                                                 code_sample, class_name,
                                                 is_constructor);
     RETVAL = S_sv_eat_c_string(value);

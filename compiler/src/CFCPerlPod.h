@@ -99,8 +99,7 @@ const char*
 CFCPerlPod_get_description(CFCPerlPod *self);
 
 char*
-CFCPerlPod_md_to_pod(CFCPerlPod *self, struct CFCClass *klass,
-                     const char *source);
+CFCPerlPod_md_to_pod(const char *md, struct CFCClass *klass);
 
 /** Autogenerate pod for either a Clownfish::CFC::Model::Method or a
  * Clownfish::CFC::Model::Function.
@@ -113,7 +112,7 @@ CFCPerlPod_md_to_pod(CFCPerlPod *self, struct CFCClass *klass,
  * argument handling is different for constructors.
  */
 char*
-CFCPerlPod_gen_subroutine_pod(CFCPerlPod *self, struct CFCFunction *func,
+CFCPerlPod_gen_subroutine_pod(struct CFCFunction *func,
                               const char *alias, struct CFCClass *klass,
                               const char *code_sample,
                               const char *class_name, int is_constructor);
