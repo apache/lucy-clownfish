@@ -2414,11 +2414,13 @@ PPCODE:
 
 
 SV*
-_md_to_pod(source, klass)
+_md_to_pod(source, klass, header_level)
     CFCClass   *klass;
     const char *source;
+    int         header_level;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlPod_md_to_pod(source, klass));
+    RETVAL = S_sv_eat_c_string(CFCPerlPod_md_to_pod(source, klass,
+                                                    header_level));
 OUTPUT: RETVAL
 
 SV*

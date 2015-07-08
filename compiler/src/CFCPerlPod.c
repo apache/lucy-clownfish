@@ -60,13 +60,13 @@ static const CFCMeta CFCPERLPOD_META = {
 };
 
 static char*
-S_nodes_to_pod(cmark_node *node, CFCClass *klass);
+S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level);
 
 static char*
 S_pod_escape(const char *content);
 
 static char*
-S_convert_link(cmark_node *link, CFCClass *klass);
+S_convert_link(cmark_node *link, CFCClass *klass, int header_level);
 
 static char*
 S_pod_link(const char *text, const char *name);
@@ -287,7 +287,7 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     // Incorporate "description" text from DocuComment.
     const char *long_doc = CFCDocuComment_get_description(docucomment);
     if (long_doc && strlen(long_doc)) {
-        char *perlified = CFCPerlPod_md_to_pod(long_doc, klass);
+        char *perlified = CFCPerlPod_md_to_pod(long_doc, klass, 3);
         pod = CFCUtil_cat(pod, perlified, NULL);
         FREEMEM(perlified);
     }
@@ -298,7 +298,7 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     if (param_names[0]) {
         pod = CFCUtil_cat(pod, "=over\n\n", NULL);
         for (size_t i = 0; param_names[i] != NULL; i++) {
-            char *perlified = CFCPerlPod_md_to_pod(param_docs[i], klass);
+            char *perlified = CFCPerlPod_md_to_pod(param_docs[i], klass, 3);
             pod = CFCUtil_cat(pod, "=item *\n\nB<", param_names[i], "> - ",
                               perlified, NULL);
             FREEMEM(perlified);
@@ -309,7 +309,7 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     // Add return value description, if any.
     const char *retval_doc = CFCDocuComment_get_retval(docucomment);
     if (retval_doc && strlen(retval_doc)) {
-        char *perlified = CFCPerlPod_md_to_pod(retval_doc, klass);
+        char *perlified = CFCPerlPod_md_to_pod(retval_doc, klass, 3);
         pod = CFCUtil_cat(pod, "Returns: ", perlified, NULL);
         FREEMEM(perlified);
     }
@@ -318,16 +318,16 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
 }
 
 char*
-CFCPerlPod_md_to_pod(const char *md, CFCClass *klass) {
+CFCPerlPod_md_to_pod(const char *md, CFCClass *klass, int header_level) {
     cmark_node *doc = cmark_parse_document(md, strlen(md));
-    char *pod = S_nodes_to_pod(doc, klass);
+    char *pod = S_nodes_to_pod(doc, klass, header_level);
     cmark_node_free(doc);
 
     return pod;
 }
 
 static char*
-S_nodes_to_pod(cmark_node *node, CFCClass *klass) {
+S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
     char *result = CFCUtil_strdup("");
     if (node == NULL) {
         return result;
@@ -369,9 +369,9 @@ S_nodes_to_pod(cmark_node *node, CFCClass *klass) {
 
             case CMARK_NODE_HEADER:
                 if (ev_type == CMARK_EVENT_ENTER) {
-                    int header_level = cmark_node_get_header_level(node);
+                    int extra_level = cmark_node_get_header_level(node) - 1;
                     char *header = CFCUtil_sprintf("=head%d ",
-                                                   header_level + 2);
+                                                   header_level + extra_level);
                     result = CFCUtil_cat(result, header, NULL);
                     FREEMEM(header);
                 }
@@ -439,7 +439,7 @@ S_nodes_to_pod(cmark_node *node, CFCClass *klass) {
 
             case CMARK_NODE_LINK:
                 if (ev_type == CMARK_EVENT_ENTER) {
-                    char *pod = S_convert_link(node, klass);
+                    char *pod = S_convert_link(node, klass, header_level);
                     result = CFCUtil_cat(result, pod, NULL);
                     FREEMEM(pod);
                     cmark_iter_reset(iter, node, CMARK_EVENT_EXIT);
@@ -531,10 +531,10 @@ S_pod_escape(const char *content) {
 }
 
 static char*
-S_convert_link(cmark_node *link, CFCClass *klass) {
+S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
     cmark_node *child = cmark_node_first_child(link);
     const char *uri   = cmark_node_get_url(link);
-    char       *text  = S_nodes_to_pod(child, klass);
+    char       *text  = S_nodes_to_pod(child, klass, header_level);
     char       *retval;
 
     if (!CFCUri_is_clownfish_uri(uri)) {

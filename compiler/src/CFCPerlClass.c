@@ -357,7 +357,7 @@ CFCPerlClass_create_pod(CFCPerlClass *self) {
 
     // Get the class's brief description.
     const char *raw_brief = CFCDocuComment_get_brief(docucom);
-    char *brief = CFCPerlPod_md_to_pod(raw_brief, client);
+    char *brief = CFCPerlPod_md_to_pod(raw_brief, client, 2);
 
     // Get the class's long description.
     char *description;
@@ -367,7 +367,7 @@ CFCPerlClass_create_pod(CFCPerlClass *self) {
     }
     else {
         const char *raw_description = CFCDocuComment_get_long(docucom);
-        description = CFCPerlPod_md_to_pod(raw_description, client);
+        description = CFCPerlPod_md_to_pod(raw_description, client, 2);
     }
 
     // Create SYNOPSIS.

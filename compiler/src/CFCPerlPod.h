@@ -99,7 +99,7 @@ const char*
 CFCPerlPod_get_description(CFCPerlPod *self);
 
 char*
-CFCPerlPod_md_to_pod(const char *md, struct CFCClass *klass);
+CFCPerlPod_md_to_pod(const char *md, struct CFCClass *klass, int header_level);
 
 /** Autogenerate pod for either a Clownfish::CFC::Model::Method or a
  * Clownfish::CFC::Model::Function.

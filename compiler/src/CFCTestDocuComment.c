@@ -243,7 +243,7 @@ S_test_generator(CFCTest *test) {
         "\n"
         "=head1 DESCRIPTION\n"
         "\n"
-        "=head3 Heading 1\n"
+        "=head2 Heading 1\n"
         "\n"
         "Paragraph: I<emphasized>, B<strong>, C<code>.\n"
         "\n"
