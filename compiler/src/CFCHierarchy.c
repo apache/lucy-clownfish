@@ -38,6 +38,7 @@
 #include "CFCSymbol.h"
 #include "CFCUtil.h"
 #include "CFCParser.h"
+#include "CFCDocument.h"
 
 struct CFCHierarchy {
     CFCBase base;
@@ -77,6 +78,9 @@ S_check_prereqs(CFCHierarchy *self);
 
 static void
 S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included);
+
+static void
+S_find_doc_files(const char *source_dir);
 
 static void
 S_find_files(const char *path, void *arg);
@@ -228,9 +232,10 @@ CFCHierarchy_build(CFCHierarchy *self) {
 
     S_check_prereqs(self);
 
-    // Read .cfh files.
+    // Read .cfh and .md files.
     for (size_t i = 0; self->sources[i] != NULL; i++) {
         S_parse_cf_files(self, self->sources[i], false);
+        S_find_doc_files(self->sources[i]);
     }
     for (size_t i = 0; self->includes[i] != NULL; i++) {
         S_parse_cf_files(self, self->includes[i], true);
@@ -367,6 +372,26 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
         FREEMEM(path_part);
     }
     self->classes[self->num_classes] = NULL;
+
+    CFCUtil_free_string_array(context.paths);
+}
+
+static void
+S_find_doc_files(const char *source_dir) {
+    CFCFindFilesContext context;
+    context.ext       = ".md";
+    context.paths     = (char**)CALLOCATE(1, sizeof(char*));
+    context.num_paths = 0;
+    CFCUtil_walk(source_dir, S_find_files, &context);
+
+    for (int i = 0; context.paths[i] != NULL; i++) {
+        char *path = context.paths[i];
+        char *path_part = S_extract_path_part(path, source_dir, ".md");
+        CFCDocument *doc = CFCDocument_create(path, path_part);
+
+        CFCBase_decref((CFCBase*)doc);
+        FREEMEM(path_part);
+    }
 
     CFCUtil_free_string_array(context.paths);
 }
