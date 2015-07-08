@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "charmony.h"
+
 #include <string.h>
 #include <ctype.h>
 
@@ -30,6 +32,7 @@
 #include "CFCFunction.h"
 #include "CFCDocuComment.h"
 #include "CFCUri.h"
+#include "CFCDocument.h"
 
 #ifndef true
   #define true 1
@@ -557,14 +560,29 @@ S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
         case CFC_URI_CLASS: {
             const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
             CFCClass *uri_class
-                = CFCClass_fetch_by_struct_sym(full_struct_sym);
+                = full_struct_sym
+                ? CFCClass_fetch_by_struct_sym(full_struct_sym)
+                : NULL;
 
-            if (!uri_class) {
-                CFCUtil_warn("URI class not found: %s", full_struct_sym);
+            if (uri_class) {
+                if (uri_class != klass) {
+                    const char *class_name = CFCClass_get_name(uri_class);
+                    new_uri = CFCUtil_strdup(class_name);
+                }
             }
-            else if (uri_class != klass) {
-                const char *class_name = CFCClass_get_name(uri_class);
-                new_uri = CFCUtil_strdup(class_name);
+            else {
+                const char *doc_name = CFCUri_get_struct_sym(uri_obj);
+                CFCDocument *doc = CFCDocument_fetch(doc_name);
+
+                if (!doc) {
+                    CFCUtil_warn("No class or document found for URI '%s'",
+                                 uri);
+                }
+                else {
+                    const char *path_part = CFCDocument_get_path_part(doc);
+                    new_uri = CFCUtil_global_replace(path_part, CHY_DIR_SEP,
+                                                     "::");
+                }
             }
 
             if (text[0] != '\0') {
@@ -572,8 +590,10 @@ S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
                 break;
             }
 
-            if (strcmp(CFCUri_get_prefix(uri_obj),
-                       CFCClass_get_prefix(klass)) == 0
+            if (!uri_class
+                || !klass
+                || strcmp(CFCUri_get_prefix(uri_obj),
+                          CFCClass_get_prefix(klass)) == 0
             ) {
                 // Same parcel.
                 const char *struct_sym = CFCUri_get_struct_sym(uri_obj);
@@ -581,14 +601,9 @@ S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
             }
             else {
                 // Other parcel.
-                if (!uri_class) {
-                    new_text = CFCUtil_strdup(full_struct_sym);
-                }
-                else {
-                    const char *class_name
-                        = CFCClass_get_name(uri_class);
-                    new_text = CFCUtil_strdup(class_name);
-                }
+                const char *class_name
+                    = CFCClass_get_name(uri_class);
+                new_text = CFCUtil_strdup(class_name);
             }
 
             break;

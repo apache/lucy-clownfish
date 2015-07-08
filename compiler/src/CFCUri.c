@@ -124,10 +124,7 @@ S_parse_uri(CFCUri *self, const char *uri, CFCClass *klass) {
         self->prefix = CFCUtil_sprintf("%s_", components[i]);
         ++i;
     }
-    else {
-        if (!klass) {
-            CFCUtil_die("Class needed to complete URI: %s", uri);
-        }
+    else if (klass) {
         self->prefix = CFCUtil_strdup(CFCClass_get_prefix(klass));
     }
 
