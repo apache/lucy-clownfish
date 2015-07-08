@@ -382,17 +382,17 @@ S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
 
             case CMARK_NODE_CODE_BLOCK: {
                 const char *content = cmark_node_get_literal(node);
-                char *escaped = S_pod_escape(content);
+                char *copy = CFCUtil_strdup(content);
                 // Chomp trailing newline.
-                size_t len = strlen(escaped);
-                if (len > 0 && escaped[len-1] == '\n') {
-                    escaped[len-1] = '\0';
+                size_t len = strlen(copy);
+                if (len > 0 && copy[len-1] == '\n') {
+                    copy[len-1] = '\0';
                 }
                 char *indented
-                    = CFCUtil_global_replace(escaped, "\n", "\n    ");
+                    = CFCUtil_global_replace(copy, "\n", "\n    ");
                 result = CFCUtil_cat(result, "    ", indented, "\n\n", NULL);
                 FREEMEM(indented);
-                FREEMEM(escaped);
+                FREEMEM(copy);
                 break;
             }
 
