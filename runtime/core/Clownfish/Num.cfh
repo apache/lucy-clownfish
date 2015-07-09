@@ -18,23 +18,23 @@ parcel Clownfish;
 
 /** Immutable double precision floating point number.
  */
-final class Clownfish::Float {
+public final class Clownfish::Float {
 
     double value;
 
     /**
      * @param value Initial value.
      */
-    inert Float*
+    public inert Float*
     init(Float* self, double value);
 
-    inert Float*
+    public inert Float*
     new(double value);
 
     void*
     To_Host(Float *self);
 
-    double
+    public double
     Get_Value(Float *self);
 
     public int64_t
@@ -62,23 +62,23 @@ final class Clownfish::Float {
 /**
  * Immutable 64-bit signed integer.
  */
-final class Clownfish::Integer nickname Int {
+public final class Clownfish::Integer nickname Int {
 
     int64_t value;
 
     /**
      * @param value Initial value.
      */
-    inert Integer*
+    public inert Integer*
     init(Integer* self, int64_t value);
 
-    inert Integer*
+    public inert Integer*
     new(int64_t value);
 
     void*
     To_Host(Integer *self);
 
-    int64_t
+    public int64_t
     Get_Value(Integer *self);
 
     public double
