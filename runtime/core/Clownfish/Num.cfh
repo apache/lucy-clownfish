@@ -18,101 +18,101 @@ parcel Clownfish;
 
 /** Double precision floating point number.
  */
-final class Clownfish::Float64 {
+final class Clownfish::Float {
 
     double value;
 
     /**
      * @param value Initial value.
      */
-    inert Float64*
-    init(Float64* self, double value);
+    inert Float*
+    init(Float* self, double value);
 
-    inert Float64*
+    inert Float*
     new(double value);
 
     void*
-    To_Host(Float64 *self);
+    To_Host(Float *self);
 
     void
-    Set_Value(Float64 *self, double value);
+    Set_Value(Float *self, double value);
 
     double
-    Get_Value(Float64 *self);
+    Get_Value(Float *self);
 
     public int64_t
-    To_I64(Float64 *self);
+    To_I64(Float *self);
 
     /** Evaluate the number in a boolean context.  Returns true if it is
      * non-zero.
      */
     public bool
-    To_Bool(Float64 *self);
+    To_Bool(Float *self);
 
     public incremented String*
-    To_String(Float64 *self);
+    To_String(Float *self);
 
     public bool
-    Equals(Float64 *self, Obj *other);
+    Equals(Float *self, Obj *other);
 
     public int32_t
-    Compare_To(Float64 *self, Obj *other);
+    Compare_To(Float *self, Obj *other);
 
-    public incremented Float64*
-    Clone(Float64 *self);
+    public incremented Float*
+    Clone(Float *self);
 
     public void
-    Mimic(Float64 *self, Obj *other);
+    Mimic(Float *self, Obj *other);
 }
 
 /**
  * 64-bit signed integer.
  */
-final class Clownfish::Integer64 nickname Int64 {
+final class Clownfish::Integer nickname Int {
 
     int64_t value;
 
     /**
      * @param value Initial value.
      */
-    inert Integer64*
-    init(Integer64* self, int64_t value);
+    inert Integer*
+    init(Integer* self, int64_t value);
 
-    inert Integer64*
+    inert Integer*
     new(int64_t value);
 
     void*
-    To_Host(Integer64 *self);
+    To_Host(Integer *self);
 
     void
-    Set_Value(Integer64 *self, int64_t value);
+    Set_Value(Integer *self, int64_t value);
 
     int64_t
-    Get_Value(Integer64 *self);
+    Get_Value(Integer *self);
 
     public double
-    To_F64(Integer64 *self);
+    To_F64(Integer *self);
 
     /** Evaluate the number in a boolean context.  Returns true if it is
      * non-zero.
      */
     public bool
-    To_Bool(Integer64 *self);
+    To_Bool(Integer *self);
 
     public incremented String*
-    To_String(Integer64 *self);
+    To_String(Integer *self);
 
     public bool
-    Equals(Integer64 *self, Obj *other);
+    Equals(Integer *self, Obj *other);
 
     public int32_t
-    Compare_To(Integer64 *self, Obj *other);
+    Compare_To(Integer *self, Obj *other);
 
-    public incremented Integer64*
-    Clone(Integer64 *self);
+    public incremented Integer*
+    Clone(Integer *self);
 
     public void
-    Mimic(Integer64 *self, Obj *other);
+    Mimic(Integer *self, Obj *other);
 }
 
 

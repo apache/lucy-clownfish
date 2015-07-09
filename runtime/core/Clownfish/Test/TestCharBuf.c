@@ -205,9 +205,9 @@ test_vcatf_str(TestBatchRunner *runner) {
 
 static void
 test_vcatf_obj(TestBatchRunner *runner) {
-    String    *wanted = S_get_str("ooga 20 booga");
-    Integer64 *i64 = Int64_new(20);
-    CharBuf   *got = S_get_cb("ooga");
+    String  *wanted = S_get_str("ooga 20 booga");
+    Integer *i64    = Int_new(20);
+    CharBuf *got    = S_get_cb("ooga");
     CB_catf(got, " %o booga", i64);
     TEST_TRUE(runner, S_cb_equals(got, wanted), "%%o Obj");
     DECREF(i64);

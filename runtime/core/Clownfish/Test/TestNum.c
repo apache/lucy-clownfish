@@ -37,15 +37,15 @@ TestNum_new() {
 
 static void
 test_To_String(TestBatchRunner *runner) {
-    Float64   *f64 = Float64_new(1.33);
-    Integer64 *i64 = Int64_new(INT64_MAX);
-    String *f64_string = Float64_To_String(f64);
-    String *i64_string = Int64_To_String(i64);
+    Float   *f64 = Float_new(1.33);
+    Integer *i64 = Int_new(INT64_MAX);
+    String *f64_string = Float_To_String(f64);
+    String *i64_string = Int_To_String(i64);
 
     TEST_TRUE(runner, Str_Starts_With_Utf8(f64_string, "1.3", 3),
-              "Float64_To_String");
+              "Float_To_String");
     TEST_TRUE(runner, Str_Equals_Utf8(i64_string, "9223372036854775807", 19),
-              "Int64_To_String");
+              "Int_To_String");
 
     DECREF(i64_string);
     DECREF(f64_string);
@@ -55,24 +55,24 @@ test_To_String(TestBatchRunner *runner) {
 
 static void
 test_accessors(TestBatchRunner *runner) {
-    Float64   *f64 = Float64_new(1.0);
-    Integer64 *i64 = Int64_new(1);
+    Float   *f64 = Float_new(1.0);
+    Integer *i64 = Int_new(1);
     double wanted64 = 1.33;
     double got64;
 
-    Float64_Set_Value(f64, 1.33);
-    got64 = Float64_Get_Value(f64);
+    Float_Set_Value(f64, 1.33);
+    got64 = Float_Get_Value(f64);
     TEST_TRUE(runner, *(int64_t*)&got64 == *(int64_t*)&wanted64,
               "F64 Set_Value Get_Value");
 
-    TEST_TRUE(runner, Float64_To_I64(f64) == 1, "Float64_To_I64");
+    TEST_TRUE(runner, Float_To_I64(f64) == 1, "Float_To_Int");
 
-    Int64_Set_Value(i64, INT64_MIN);
-    TEST_TRUE(runner, Int64_Get_Value(i64) == INT64_MIN,
+    Int_Set_Value(i64, INT64_MIN);
+    TEST_TRUE(runner, Int_Get_Value(i64) == INT64_MIN,
               "I64 Set_Value Get_Value");
 
-    Int64_Set_Value(i64, -1);
-    TEST_TRUE(runner, Int64_To_F64(i64) == -1, "Int64_To_F64");
+    Int_Set_Value(i64, -1);
+    TEST_TRUE(runner, Int_To_F64(i64) == -1, "Int_To_Float");
 
     DECREF(i64);
     DECREF(f64);
@@ -81,71 +81,71 @@ test_accessors(TestBatchRunner *runner) {
 static void
 S_test_compare_float_int(TestBatchRunner *runner, double f64_val,
                          int64_t i64_val, int32_t result) {
-    Float64 *f64;
-    Integer64 *i64;
+    Float *f64;
+    Integer *i64;
 
-    f64 = Float64_new(f64_val);
-    i64 = Int64_new(i64_val);
-    TEST_INT_EQ(runner, Float64_Compare_To(f64, (Obj*)i64), result,
-                "Float64_Compare_To %f %" PRId64, f64_val, i64_val);
-    TEST_INT_EQ(runner, Int64_Compare_To(i64, (Obj*)f64), -result,
-                "Int64_Compare_To %" PRId64" %f", i64_val, f64_val);
-    TEST_INT_EQ(runner, Float64_Equals(f64, (Obj*)i64), result == 0,
-                "Float64_Equals %f %" PRId64, f64_val, i64_val);
-    TEST_INT_EQ(runner, Int64_Equals(i64, (Obj*)f64), result == 0,
-                "Int64_Equals %" PRId64 " %f", i64_val, f64_val);
+    f64 = Float_new(f64_val);
+    i64 = Int_new(i64_val);
+    TEST_INT_EQ(runner, Float_Compare_To(f64, (Obj*)i64), result,
+                "Float_Compare_To %f %" PRId64, f64_val, i64_val);
+    TEST_INT_EQ(runner, Int_Compare_To(i64, (Obj*)f64), -result,
+                "Int_Compare_To %" PRId64" %f", i64_val, f64_val);
+    TEST_INT_EQ(runner, Float_Equals(f64, (Obj*)i64), result == 0,
+                "Float_Equals %f %" PRId64, f64_val, i64_val);
+    TEST_INT_EQ(runner, Int_Equals(i64, (Obj*)f64), result == 0,
+                "Int_Equals %" PRId64 " %f", i64_val, f64_val);
     DECREF(f64);
     DECREF(i64);
 
     if (i64_val == INT64_MIN) { return; }
 
-    f64 = Float64_new(-f64_val);
-    i64 = Int64_new(-i64_val);
-    TEST_INT_EQ(runner, Float64_Compare_To(f64, (Obj*)i64), -result,
-                "Float64_Compare_To %f %" PRId64, -f64_val, -i64_val);
-    TEST_INT_EQ(runner, Int64_Compare_To(i64, (Obj*)f64), result,
-                "Int64_Compare_To %" PRId64" %f", -i64_val, -f64_val);
-    TEST_INT_EQ(runner, Float64_Equals(f64, (Obj*)i64), result == 0,
-                "Float64_Equals %f %" PRId64, -f64_val, -i64_val);
-    TEST_INT_EQ(runner, Int64_Equals(i64, (Obj*)f64), result == 0,
-                "Int64_Equals %" PRId64 " %f", -i64_val, -f64_val);
+    f64 = Float_new(-f64_val);
+    i64 = Int_new(-i64_val);
+    TEST_INT_EQ(runner, Float_Compare_To(f64, (Obj*)i64), -result,
+                "Float_Compare_To %f %" PRId64, -f64_val, -i64_val);
+    TEST_INT_EQ(runner, Int_Compare_To(i64, (Obj*)f64), result,
+                "Int_Compare_To %" PRId64" %f", -i64_val, -f64_val);
+    TEST_INT_EQ(runner, Float_Equals(f64, (Obj*)i64), result == 0,
+                "Float_Equals %f %" PRId64, -f64_val, -i64_val);
+    TEST_INT_EQ(runner, Int_Equals(i64, (Obj*)f64), result == 0,
+                "Int_Equals %" PRId64 " %f", -i64_val, -f64_val);
     DECREF(f64);
     DECREF(i64);
 }
 
 static void
 test_Equals_and_Compare_To(TestBatchRunner *runner) {
-    Float64   *f1 = Float64_new(1.0);
-    Float64   *f2 = Float64_new(1.0);
-    Integer64 *i64 = Int64_new(INT64_MAX);
+    Float   *f1 = Float_new(1.0);
+    Float   *f2 = Float_new(1.0);
+    Integer *i64 = Int_new(INT64_MAX);
 
-    TEST_TRUE(runner, Float64_Compare_To(f1, (Obj*)f2) == 0,
+    TEST_TRUE(runner, Float_Compare_To(f1, (Obj*)f2) == 0,
               "F64_Compare_To equal");
-    TEST_TRUE(runner, Float64_Equals(f1, (Obj*)f2),
+    TEST_TRUE(runner, Float_Equals(f1, (Obj*)f2),
               "F64_Equals equal");
 
-    Float64_Set_Value(f2, 2.0);
-    TEST_TRUE(runner, Float64_Compare_To(f1, (Obj*)f2) < 0,
+    Float_Set_Value(f2, 2.0);
+    TEST_TRUE(runner, Float_Compare_To(f1, (Obj*)f2) < 0,
               "F64_Compare_To less than");
-    TEST_FALSE(runner, Float64_Equals(f1, (Obj*)f2),
+    TEST_FALSE(runner, Float_Equals(f1, (Obj*)f2),
                "F64_Equals less than");
 
-    Float64_Set_Value(f2, 0.0);
-    TEST_TRUE(runner, Float64_Compare_To(f1, (Obj*)f2) > 0,
+    Float_Set_Value(f2, 0.0);
+    TEST_TRUE(runner, Float_Compare_To(f1, (Obj*)f2) > 0,
               "F64_Compare_To greater than");
-    TEST_FALSE(runner, Float64_Equals(f1, (Obj*)f2),
+    TEST_FALSE(runner, Float_Equals(f1, (Obj*)f2),
                "F64_Equals greater than");
 
-    Float64_Set_Value(f1, INT64_MAX * 2.0);
-    TEST_TRUE(runner, Float64_Compare_To(f1, (Obj*)i64) > 0,
-              "Float64 comparison to Integer64");
-    TEST_TRUE(runner, Int64_Compare_To(i64, (Obj*)f1) < 0,
-              "Integer64 comparison to Float64");
+    Float_Set_Value(f1, INT64_MAX * 2.0);
+    TEST_TRUE(runner, Float_Compare_To(f1, (Obj*)i64) > 0,
+              "Float comparison to Integer");
+    TEST_TRUE(runner, Int_Compare_To(i64, (Obj*)f1) < 0,
+              "Integer comparison to Float");
 
-    Int64_Set_Value(i64, INT64_C(0x6666666666666666));
-    Integer64 *i64_copy = Int64_new(INT64_C(0x6666666666666666));
-    TEST_TRUE(runner, Int64_Compare_To(i64, (Obj*)i64_copy) == 0,
-              "Integer64 comparison to same number");
+    Int_Set_Value(i64, INT64_C(0x6666666666666666));
+    Integer *i64_copy = Int_new(INT64_C(0x6666666666666666));
+    TEST_TRUE(runner, Int_Compare_To(i64, (Obj*)i64_copy) == 0,
+              "Integer comparison to same number");
 
     DECREF(i64_copy);
     DECREF(i64);
@@ -168,14 +168,14 @@ test_Equals_and_Compare_To(TestBatchRunner *runner) {
 
 static void
 test_Clone(TestBatchRunner *runner) {
-    Float64   *f64 = Float64_new(1.33);
-    Integer64 *i64 = Int64_new(INT64_MAX);
-    Float64   *f64_dupe = Float64_Clone(f64);
-    Integer64 *i64_dupe = Int64_Clone(i64);
-    TEST_TRUE(runner, Float64_Equals(f64, (Obj*)f64_dupe),
-              "Float64 Clone");
-    TEST_TRUE(runner, Int64_Equals(i64, (Obj*)i64_dupe),
-              "Integer64 Clone");
+    Float   *f64 = Float_new(1.33);
+    Integer *i64 = Int_new(INT64_MAX);
+    Float   *f64_dupe = Float_Clone(f64);
+    Integer *i64_dupe = Int_Clone(i64);
+    TEST_TRUE(runner, Float_Equals(f64, (Obj*)f64_dupe),
+              "Float Clone");
+    TEST_TRUE(runner, Int_Equals(i64, (Obj*)i64_dupe),
+              "Integer Clone");
     DECREF(i64_dupe);
     DECREF(f64_dupe);
     DECREF(i64);
@@ -184,16 +184,16 @@ test_Clone(TestBatchRunner *runner) {
 
 static void
 test_Mimic(TestBatchRunner *runner) {
-    Float64   *f64 = Float64_new(1.33);
-    Integer64 *i64 = Int64_new(INT64_MAX);
-    Float64   *f64_dupe = Float64_new(0.0);
-    Integer64 *i64_dupe = Int64_new(0);
-    Float64_Mimic(f64_dupe, (Obj*)f64);
-    Int64_Mimic(i64_dupe, (Obj*)i64);
-    TEST_TRUE(runner, Float64_Equals(f64, (Obj*)f64_dupe),
-              "Float64 Mimic");
-    TEST_TRUE(runner, Int64_Equals(i64, (Obj*)i64_dupe),
-              "Integer64 Mimic");
+    Float   *f64 = Float_new(1.33);
+    Integer *i64 = Int_new(INT64_MAX);
+    Float   *f64_dupe = Float_new(0.0);
+    Integer *i64_dupe = Int_new(0);
+    Float_Mimic(f64_dupe, (Obj*)f64);
+    Int_Mimic(i64_dupe, (Obj*)i64);
+    TEST_TRUE(runner, Float_Equals(f64, (Obj*)f64_dupe),
+              "Float Mimic");
+    TEST_TRUE(runner, Int_Equals(i64, (Obj*)i64_dupe),
+              "Integer Mimic");
     DECREF(i64_dupe);
     DECREF(f64_dupe);
     DECREF(i64);

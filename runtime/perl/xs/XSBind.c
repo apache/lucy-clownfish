@@ -19,8 +19,8 @@
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
-#define C_CFISH_FLOAT64
-#define C_CFISH_INTEGER64
+#define C_CFISH_FLOAT
+#define C_CFISH_INTEGER
 #define C_CFISH_BOOLEAN
 #define NEED_newRV_noinc
 #include "charmony.h"
@@ -1006,13 +1006,13 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
 /****************************** Clownfish::Num ******************************/
 
 void*
-CFISH_Float64_To_Host_IMP(cfish_Float64 *self) {
+CFISH_Float_To_Host_IMP(cfish_Float *self) {
     dTHX;
     return newSVnv(self->value);
 }
 
 void*
-CFISH_Int64_To_Host_IMP(cfish_Integer64 *self) {
+CFISH_Int_To_Host_IMP(cfish_Integer *self) {
     dTHX;
     SV *sv = NULL;
 

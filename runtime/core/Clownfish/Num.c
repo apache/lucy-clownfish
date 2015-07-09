@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#define C_CFISH_INTEGER64
-#define C_CFISH_FLOAT64
+#define C_CFISH_INTEGER
+#define C_CFISH_FLOAT
 #define CFISH_USE_SHORT_NAMES
 
 #include <float.h>
@@ -55,26 +55,26 @@ S_compare_i64_f64(int64_t i64, double f64);
 static bool
 S_equals_i64_f64(int64_t i64, double f64);
 
-Float64*
-Float64_new(double value) {
-    Float64 *self = (Float64*)Class_Make_Obj(FLOAT64);
-    return Float64_init(self, value);
+Float*
+Float_new(double value) {
+    Float *self = (Float*)Class_Make_Obj(FLOAT);
+    return Float_init(self, value);
 }
 
-Float64*
-Float64_init(Float64 *self, double value) {
+Float*
+Float_init(Float *self, double value) {
     self->value = value;
     return self;
 }
 
 bool
-Float64_Equals_IMP(Float64 *self, Obj *other) {
-    if (Obj_is_a(other, FLOAT64)) {
-        Float64 *twin = (Float64*)other;
+Float_Equals_IMP(Float *self, Obj *other) {
+    if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
         return self->value == twin->value;
     }
-    else if (Obj_is_a(other, INTEGER64)) {
-        Integer64 *twin = (Integer64*)other;
+    else if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
         return S_equals_i64_f64(twin->value, self->value);
     }
     else {
@@ -83,82 +83,82 @@ Float64_Equals_IMP(Float64 *self, Obj *other) {
 }
 
 int32_t
-Float64_Compare_To_IMP(Float64 *self, Obj *other) {
-    if (Obj_is_a(other, FLOAT64)) {
-        Float64 *twin = (Float64*)other;
+Float_Compare_To_IMP(Float *self, Obj *other) {
+    if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
         return S_compare_f64(self->value, twin->value);
     }
-    else if (Obj_is_a(other, INTEGER64)) {
-        Integer64 *twin = (Integer64*)other;
+    else if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
         return -S_compare_i64_f64(twin->value, self->value);
     }
     else {
-        THROW(ERR, "Can't compare Float64 to %o", Obj_get_class_name(other));
+        THROW(ERR, "Can't compare Float to %o", Obj_get_class_name(other));
         UNREACHABLE_RETURN(int32_t);
     }
 }
 
 double
-Float64_Get_Value_IMP(Float64 *self) {
+Float_Get_Value_IMP(Float *self) {
     return self->value;
 }
 
 void
-Float64_Set_Value_IMP(Float64 *self, double value) {
+Float_Set_Value_IMP(Float *self, double value) {
     self->value = value;
 }
 
 int64_t
-Float64_To_I64_IMP(Float64 *self) {
+Float_To_I64_IMP(Float *self) {
     if (self->value < -POW_2_63 || self->value >= POW_2_63) {
-        THROW(ERR, "Float64 out of range: %f64", self->value);
+        THROW(ERR, "Float out of range: %f64", self->value);
     }
     return (int64_t)self->value;
 }
 
 bool
-Float64_To_Bool_IMP(Float64 *self) {
+Float_To_Bool_IMP(Float *self) {
     return self->value != 0.0;
 }
 
 String*
-Float64_To_String_IMP(Float64 *self) {
+Float_To_String_IMP(Float *self) {
     return Str_newf("%f64", self->value);
 }
 
-Float64*
-Float64_Clone_IMP(Float64 *self) {
-    return Float64_new(self->value);
+Float*
+Float_Clone_IMP(Float *self) {
+    return Float_new(self->value);
 }
 
 void
-Float64_Mimic_IMP(Float64 *self, Obj *other) {
-    Float64 *twin = (Float64*)CERTIFY(other, FLOAT64);
+Float_Mimic_IMP(Float *self, Obj *other) {
+    Float *twin = (Float*)CERTIFY(other, FLOAT);
     self->value = twin->value;
 }
 
 /***************************************************************************/
 
-Integer64*
-Int64_new(int64_t value) {
-    Integer64 *self = (Integer64*)Class_Make_Obj(INTEGER64);
-    return Int64_init(self, value);
+Integer*
+Int_new(int64_t value) {
+    Integer *self = (Integer*)Class_Make_Obj(INTEGER);
+    return Int_init(self, value);
 }
 
-Integer64*
-Int64_init(Integer64 *self, int64_t value) {
+Integer*
+Int_init(Integer *self, int64_t value) {
     self->value = value;
     return self;
 }
 
 bool
-Int64_Equals_IMP(Integer64 *self, Obj *other) {
-    if (Obj_is_a(other, INTEGER64)) {
-        Integer64 *twin = (Integer64*)other;
+Int_Equals_IMP(Integer *self, Obj *other) {
+    if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
         return self->value == twin->value;
     }
-    else if (Obj_is_a(other, FLOAT64)) {
-        Float64 *twin = (Float64*)other;
+    else if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
         return S_equals_i64_f64(self->value, twin->value);
     }
     else {
@@ -167,54 +167,54 @@ Int64_Equals_IMP(Integer64 *self, Obj *other) {
 }
 
 int32_t
-Int64_Compare_To_IMP(Integer64 *self, Obj *other) {
-    if (Obj_is_a(other, INTEGER64)) {
-        Integer64 *twin = (Integer64*)other;
+Int_Compare_To_IMP(Integer *self, Obj *other) {
+    if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
         return S_compare_i64(self->value, twin->value);
     }
-    else if (Obj_is_a(other, FLOAT64)) {
-        Float64 *twin = (Float64*)other;
+    else if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
         return S_compare_i64_f64(self->value, twin->value);
     }
     else {
-        THROW(ERR, "Can't compare Int64 to %o", Obj_get_class_name(other));
+        THROW(ERR, "Can't compare Integer to %o", Obj_get_class_name(other));
         UNREACHABLE_RETURN(int32_t);
     }
 }
 
 int64_t
-Int64_Get_Value_IMP(Integer64 *self) {
+Int_Get_Value_IMP(Integer *self) {
     return self->value;
 }
 
 void
-Int64_Set_Value_IMP(Integer64 *self, int64_t value) {
+Int_Set_Value_IMP(Integer *self, int64_t value) {
     self->value = value;
 }
 
 double
-Int64_To_F64_IMP(Integer64 *self) {
+Int_To_F64_IMP(Integer *self) {
     return (double)self->value;
 }
 
 bool
-Int64_To_Bool_IMP(Integer64 *self) {
+Int_To_Bool_IMP(Integer *self) {
     return self->value != 0;
 }
 
 String*
-Int64_To_String_IMP(Integer64 *self) {
+Int_To_String_IMP(Integer *self) {
     return Str_newf("%i64", self->value);
 }
 
-Integer64*
-Int64_Clone_IMP(Integer64 *self) {
-    return Int64_new(self->value);
+Integer*
+Int_Clone_IMP(Integer *self) {
+    return Int_new(self->value);
 }
 
 void
-Int64_Mimic_IMP(Integer64 *self, Obj *other) {
-    Integer64 *twin = (Integer64*)CERTIFY(other, INTEGER64);
+Int_Mimic_IMP(Integer *self, Obj *other) {
+    Integer *twin = (Integer*)CERTIFY(other, INTEGER);
     self->value = twin->value;
 }
 

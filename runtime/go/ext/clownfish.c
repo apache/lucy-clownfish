@@ -277,16 +277,16 @@ Hash_To_Host_IMP(Hash *self) {
 }
 
 void*
-Float64_To_Host_IMP(Float64 *self) {
-    Float64_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(FLOAT64, CFISH_Float64_To_Host);
+Float_To_Host_IMP(Float *self) {
+    Float_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(FLOAT, CFISH_Float_To_Host);
     return super_to_host(self);
 }
 
 void*
-Int64_To_Host_IMP(Integer64 *self) {
-    Int64_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(INTEGER64, CFISH_Int64_To_Host);
+Int_To_Host_IMP(Integer *self) {
+    Int_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(INTEGER, CFISH_Int_To_Host);
     return super_to_host(self);
 }
 
