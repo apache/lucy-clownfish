@@ -16,44 +16,9 @@
 
 parcel Clownfish;
 
-/** Abstract base class for numbers.
- */
-abstract class Clownfish::Num inherits Clownfish::Obj {
-
-    inert Num*
-    init(Num *self);
-
-    /** Convert the number to a 64-bit integer.
-     */
-    public abstract int64_t
-    To_I64(Num *self);
-
-    /** Convert the number to a double precision floating point number.
-     */
-    public abstract double
-    To_F64(Num *self);
-}
-
-/** Abstract base class for floating point numbers.
- */
-abstract class Clownfish::FloatNum inherits Clownfish::Num {
-
-    inert FloatNum*
-    init(FloatNum *self);
-}
-
-
-/** Abstract base class for Integers.
- */
-abstract class Clownfish::IntNum inherits Clownfish::Num {
-
-    inert IntNum*
-    init(IntNum *self);
-}
-
 /** Double precision floating point number.
  */
-final class Clownfish::Float64 inherits Clownfish::FloatNum {
+final class Clownfish::Float64 {
 
     double value;
 
@@ -106,8 +71,7 @@ final class Clownfish::Float64 inherits Clownfish::FloatNum {
 /**
  * 64-bit signed integer.
  */
-final class Clownfish::Integer64 nickname Int64
-    inherits Clownfish::IntNum {
+final class Clownfish::Integer64 nickname Int64 {
 
     int64_t value;
 

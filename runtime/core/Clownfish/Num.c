@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-#define C_CFISH_NUM
-#define C_CFISH_INTNUM
-#define C_CFISH_FLOATNUM
 #define C_CFISH_INTEGER64
 #define C_CFISH_FLOAT64
 #define CFISH_USE_SHORT_NAMES
@@ -58,30 +55,6 @@ S_compare_i64_f64(int64_t i64, double f64);
 static bool
 S_equals_i64_f64(int64_t i64, double f64);
 
-Num*
-Num_init(Num *self) {
-    ABSTRACT_CLASS_CHECK(self, NUM);
-    return self;
-}
-
-/***************************************************************************/
-
-FloatNum*
-FloatNum_init(FloatNum *self) {
-    ABSTRACT_CLASS_CHECK(self, FLOATNUM);
-    return (FloatNum*)Num_init((Num*)self);
-}
-
-/***************************************************************************/
-
-IntNum*
-IntNum_init(IntNum *self) {
-    ABSTRACT_CLASS_CHECK(self, INTNUM);
-    return (IntNum*)Num_init((Num*)self);
-}
-
-/***************************************************************************/
-
 Float64*
 Float64_new(double value) {
     Float64 *self = (Float64*)Class_Make_Obj(FLOAT64);
@@ -91,7 +64,7 @@ Float64_new(double value) {
 Float64*
 Float64_init(Float64 *self, double value) {
     self->value = value;
-    return (Float64*)FloatNum_init((FloatNum*)self);
+    return self;
 }
 
 bool
@@ -180,7 +153,7 @@ Int64_new(int64_t value) {
 Integer64*
 Int64_init(Integer64 *self, int64_t value) {
     self->value = value;
-    return (Integer64*)IntNum_init((IntNum*)self);
+    return self;
 }
 
 bool
