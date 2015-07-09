@@ -43,9 +43,6 @@ final class Clownfish::Float64 {
     public int64_t
     To_I64(Float64 *self);
 
-    public double
-    To_F64(Float64 *self);
-
     /** Evaluate the number in a boolean context.  Returns true if it is
      * non-zero.
      */
@@ -92,9 +89,6 @@ final class Clownfish::Integer64 nickname Int64 {
 
     int64_t
     Get_Value(Integer64 *self);
-
-    public int64_t
-    To_I64(Integer64 *self);
 
     public double
     To_F64(Integer64 *self);

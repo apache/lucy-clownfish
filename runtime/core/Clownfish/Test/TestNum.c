@@ -67,10 +67,6 @@ test_accessors(TestBatchRunner *runner) {
 
     TEST_TRUE(runner, Float64_To_I64(f64) == 1, "Float64_To_I64");
 
-    got64 = Float64_To_F64(f64);
-    TEST_TRUE(runner, *(int64_t*)&got64 == *(int64_t*)&wanted64,
-              "Float64_To_F64");
-
     Int64_Set_Value(i64, INT64_MIN);
     TEST_TRUE(runner, Int64_Get_Value(i64) == INT64_MIN,
               "I64 Set_Value Get_Value");
@@ -206,7 +202,7 @@ test_Mimic(TestBatchRunner *runner) {
 
 void
 TestNum_Run_IMP(TestNum *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 60);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 59);
     test_To_String(runner);
     test_accessors(runner);
     test_Equals_and_Compare_To(runner);

@@ -108,11 +108,6 @@ Float64_Set_Value_IMP(Float64 *self, double value) {
     self->value = value;
 }
 
-double
-Float64_To_F64_IMP(Float64 *self) {
-    return self->value;
-}
-
 int64_t
 Float64_To_I64_IMP(Float64 *self) {
     if (self->value < -POW_2_63 || self->value >= POW_2_63) {
@@ -200,11 +195,6 @@ Int64_Set_Value_IMP(Integer64 *self, int64_t value) {
 double
 Int64_To_F64_IMP(Integer64 *self) {
     return (double)self->value;
-}
-
-int64_t
-Int64_To_I64_IMP(Integer64 *self) {
-    return self->value;
 }
 
 bool
