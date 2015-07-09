@@ -307,23 +307,9 @@ Hash_To_Host_IMP(Hash *self) {
 }
 
 void*
-Float32_To_Host_IMP(Float32 *self) {
-    Float32_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(FLOAT32, CFISH_Float32_To_Host);
-    return super_to_host(self);
-}
-
-void*
 Float64_To_Host_IMP(Float64 *self) {
     Float64_To_Host_t super_to_host
         = SUPER_METHOD_PTR(FLOAT64, CFISH_Float64_To_Host);
-    return super_to_host(self);
-}
-
-void*
-Int32_To_Host_IMP(Integer32 *self) {
-    Int32_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(INTEGER32, CFISH_Int32_To_Host);
     return super_to_host(self);
 }
 

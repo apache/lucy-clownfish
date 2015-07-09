@@ -29,7 +29,6 @@ sub bind_all {
     $class->bind_string;
     $class->bind_err;
     $class->bind_hash;
-    $class->bind_float32;
     $class->bind_float64;
     $class->bind_obj;
     $class->bind_varray;
@@ -320,34 +319,6 @@ END_XS_CODE
     );
     $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
-
-    Clownfish::CFC::Binding::Perl::Class->register($binding);
-}
-
-sub bind_float32 {
-    my $float32_xs_code = <<'END_XS_CODE';
-MODULE = Clownfish   PACKAGE = Clownfish::Float32
-
-SV*
-new(either_sv, value)
-    SV    *either_sv;
-    float  value;
-CODE:
-{
-    cfish_Float32 *self
-        = (cfish_Float32*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_Float32_init(self, value);
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
-}
-OUTPUT: RETVAL
-END_XS_CODE
-
-    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
-        class_name => "Clownfish::Float32",
-    );
-    $binding->append_xs($float32_xs_code);
-    $binding->exclude_constructor;
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }

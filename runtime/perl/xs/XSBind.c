@@ -19,9 +19,7 @@
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
-#define C_CFISH_FLOAT32
 #define C_CFISH_FLOAT64
-#define C_CFISH_INTEGER32
 #define C_CFISH_INTEGER64
 #define C_CFISH_BOOLEAN
 #define NEED_newRV_noinc
@@ -1008,21 +1006,9 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
 /****************************** Clownfish::Num ******************************/
 
 void*
-CFISH_Float32_To_Host_IMP(cfish_Float32 *self) {
-    dTHX;
-    return newSVnv(self->value);
-}
-
-void*
 CFISH_Float64_To_Host_IMP(cfish_Float64 *self) {
     dTHX;
     return newSVnv(self->value);
-}
-
-void*
-CFISH_Int32_To_Host_IMP(cfish_Integer32 *self) {
-    dTHX;
-    return newSViv((IV)self->value);
 }
 
 void*

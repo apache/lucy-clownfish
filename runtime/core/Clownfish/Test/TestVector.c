@@ -347,7 +347,7 @@ test_Clone(TestBatchRunner *runner) {
     uint32_t i;
 
     for (i = 0; i < 10; i++) {
-        Vec_Push(array, (Obj*)Int32_new(i));
+        Vec_Push(array, (Obj*)Int64_new(i));
     }
     Vec_Push(array, NULL);
     twin = Vec_Clone(array);

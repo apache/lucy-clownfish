@@ -72,43 +72,6 @@ abstract class Clownfish::IntNum inherits Clownfish::Num {
     To_String(IntNum *self);
 }
 
-/** Single precision floating point number.
- */
-final class Clownfish::Float32 inherits Clownfish::FloatNum {
-
-    float value;
-
-    /**
-     * @param value Initial value.
-     */
-    inert Float32*
-    init(Float32* self, float value);
-
-    inert Float32*
-    new(float value);
-
-    void*
-    To_Host(Float32 *self);
-
-    void
-    Set_Value(Float32 *self, float value);
-
-    float
-    Get_Value(Float32 *self);
-
-    public int64_t
-    To_I64(Float32 *self);
-
-    public double
-    To_F64(Float32 *self);
-
-    public incremented Float32*
-    Clone(Float32 *self);
-
-    public void
-    Mimic(Float32 *self, Obj *other);
-}
-
 /** Double precision floating point number.
  */
 final class Clownfish::Float64 inherits Clownfish::FloatNum {
@@ -144,44 +107,6 @@ final class Clownfish::Float64 inherits Clownfish::FloatNum {
 
     public void
     Mimic(Float64 *self, Obj *other);
-}
-
-/** 32-bit signed integer.
- */
-final class Clownfish::Integer32 nickname Int32
-    inherits Clownfish::IntNum {
-
-    int32_t value;
-
-    /**
-     * @param value Initial value.
-     */
-    inert Integer32*
-    init(Integer32* self, int32_t value);
-
-    inert Integer32*
-    new(int32_t value);
-
-    void*
-    To_Host(Integer32 *self);
-
-    void
-    Set_Value(Integer32 *self, int32_t value);
-
-    int32_t
-    Get_Value(Integer32 *self);
-
-    public int64_t
-    To_I64(Integer32 *self);
-
-    public double
-    To_F64(Integer32 *self);
-
-    public incremented Integer32*
-    Clone(Integer32 *self);
-
-    public void
-    Mimic(Integer32 *self, Obj *other);
 }
 
 /**

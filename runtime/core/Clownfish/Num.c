@@ -17,9 +17,7 @@
 #define C_CFISH_NUM
 #define C_CFISH_INTNUM
 #define C_CFISH_FLOATNUM
-#define C_CFISH_INTEGER32
 #define C_CFISH_INTEGER64
-#define C_CFISH_FLOAT32
 #define C_CFISH_FLOAT64
 #define CFISH_USE_SHORT_NAMES
 
@@ -100,51 +98,6 @@ IntNum_To_String_IMP(IntNum *self) {
 
 /***************************************************************************/
 
-Float32*
-Float32_new(float value) {
-    Float32 *self = (Float32*)Class_Make_Obj(FLOAT32);
-    return Float32_init(self, value);
-}
-
-Float32*
-Float32_init(Float32 *self, float value) {
-    self->value = value;
-    return (Float32*)FloatNum_init((FloatNum*)self);
-}
-
-float
-Float32_Get_Value_IMP(Float32 *self) {
-    return self->value;
-}
-
-void
-Float32_Set_Value_IMP(Float32 *self, float value) {
-    self->value = value;
-}
-
-double
-Float32_To_F64_IMP(Float32 *self) {
-    return self->value;
-}
-
-int64_t
-Float32_To_I64_IMP(Float32 *self) {
-    return (int64_t)self->value;
-}
-
-Float32*
-Float32_Clone_IMP(Float32 *self) {
-    return Float32_new(self->value);
-}
-
-void
-Float32_Mimic_IMP(Float32 *self, Obj *other) {
-    Float32 *twin = (Float32*)CERTIFY(other, FLOAT32);
-    self->value = twin->value;
-}
-
-/***************************************************************************/
-
 Float64*
 Float64_new(double value) {
     Float64 *self = (Float64*)Class_Make_Obj(FLOAT64);
@@ -185,51 +138,6 @@ Float64_Clone_IMP(Float64 *self) {
 void
 Float64_Mimic_IMP(Float64 *self, Obj *other) {
     Float64 *twin = (Float64*)CERTIFY(other, FLOAT64);
-    self->value = twin->value;
-}
-
-/***************************************************************************/
-
-Integer32*
-Int32_new(int32_t value) {
-    Integer32 *self = (Integer32*)Class_Make_Obj(INTEGER32);
-    return Int32_init(self, value);
-}
-
-Integer32*
-Int32_init(Integer32 *self, int32_t value) {
-    self->value = value;
-    return (Integer32*)IntNum_init((IntNum*)self);
-}
-
-int32_t
-Int32_Get_Value_IMP(Integer32 *self) {
-    return self->value;
-}
-
-void
-Int32_Set_Value_IMP(Integer32 *self, int32_t value) {
-    self->value = value;
-}
-
-double
-Int32_To_F64_IMP(Integer32 *self) {
-    return self->value;
-}
-
-int64_t
-Int32_To_I64_IMP(Integer32 *self) {
-    return self->value;
-}
-
-Integer32*
-Int32_Clone_IMP(Integer32 *self) {
-    return Int32_new(self->value);
-}
-
-void
-Int32_Mimic_IMP(Integer32 *self, Obj *other) {
-    Integer32 *twin = (Integer32*)CERTIFY(other, INTEGER32);
     self->value = twin->value;
 }
 
