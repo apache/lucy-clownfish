@@ -22,7 +22,7 @@ parcel Clownfish;
  * There are only two singleton instances of this class: CFISH_TRUE and
  * CFISH_FALSE.
  */
-class Clownfish::Boolean nickname Bool {
+public final class Clownfish::Boolean nickname Bool {
     bool value;
     String *string;
 
@@ -35,7 +35,7 @@ class Clownfish::Boolean nickname Bool {
     /** Return either CFISH_TRUE or CFISH_FALSE depending on the supplied
      * value.
      */
-    inert Boolean*
+    public inert Boolean*
     singleton(bool value);
 
     public void
@@ -44,7 +44,7 @@ class Clownfish::Boolean nickname Bool {
     void*
     To_Host(Boolean *self);
 
-    bool
+    public bool
     Get_Value(Boolean *self);
 
     public int64_t
