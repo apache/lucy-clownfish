@@ -64,11 +64,6 @@ Num_init(Num *self) {
     return self;
 }
 
-bool
-Num_To_Bool_IMP(Num *self) {
-    return !!Num_To_I64(self);
-}
-
 /***************************************************************************/
 
 FloatNum*
@@ -77,22 +72,12 @@ FloatNum_init(FloatNum *self) {
     return (FloatNum*)Num_init((Num*)self);
 }
 
-String*
-FloatNum_To_String_IMP(FloatNum *self) {
-    return Str_newf("%f64", FloatNum_To_F64(self));
-}
-
 /***************************************************************************/
 
 IntNum*
 IntNum_init(IntNum *self) {
     ABSTRACT_CLASS_CHECK(self, INTNUM);
     return (IntNum*)Num_init((Num*)self);
-}
-
-String*
-IntNum_To_String_IMP(IntNum *self) {
-    return Str_newf("%i64", IntNum_To_I64(self));
 }
 
 /***************************************************************************/
@@ -161,6 +146,16 @@ Float64_To_I64_IMP(Float64 *self) {
         THROW(ERR, "Float64 out of range: %f64", self->value);
     }
     return (int64_t)self->value;
+}
+
+bool
+Float64_To_Bool_IMP(Float64 *self) {
+    return self->value != 0.0;
+}
+
+String*
+Float64_To_String_IMP(Float64 *self) {
+    return Str_newf("%f64", self->value);
 }
 
 Float64*
@@ -237,6 +232,16 @@ Int64_To_F64_IMP(Integer64 *self) {
 int64_t
 Int64_To_I64_IMP(Integer64 *self) {
     return self->value;
+}
+
+bool
+Int64_To_Bool_IMP(Integer64 *self) {
+    return self->value != 0;
+}
+
+String*
+Int64_To_String_IMP(Integer64 *self) {
+    return Str_newf("%i64", self->value);
 }
 
 Integer64*

@@ -32,12 +32,6 @@ abstract class Clownfish::Num inherits Clownfish::Obj {
      */
     public abstract double
     To_F64(Num *self);
-
-    /** Evaluate the number in a boolean context.  By default, invokes
-     * [](cfish:.To_I64) and returns true if it is non-zero.
-     */
-    public bool
-    To_Bool(Num *self);
 }
 
 /** Abstract base class for floating point numbers.
@@ -46,9 +40,6 @@ abstract class Clownfish::FloatNum inherits Clownfish::Num {
 
     inert FloatNum*
     init(FloatNum *self);
-
-    public incremented String*
-    To_String(FloatNum *self);
 }
 
 
@@ -58,9 +49,6 @@ abstract class Clownfish::IntNum inherits Clownfish::Num {
 
     inert IntNum*
     init(IntNum *self);
-
-    public incremented String*
-    To_String(IntNum *self);
 }
 
 /** Double precision floating point number.
@@ -92,6 +80,15 @@ final class Clownfish::Float64 inherits Clownfish::FloatNum {
 
     public double
     To_F64(Float64 *self);
+
+    /** Evaluate the number in a boolean context.  Returns true if it is
+     * non-zero.
+     */
+    public bool
+    To_Bool(Float64 *self);
+
+    public incremented String*
+    To_String(Float64 *self);
 
     public bool
     Equals(Float64 *self, Obj *other);
@@ -137,6 +134,15 @@ final class Clownfish::Integer64 nickname Int64
 
     public double
     To_F64(Integer64 *self);
+
+    /** Evaluate the number in a boolean context.  Returns true if it is
+     * non-zero.
+     */
+    public bool
+    To_Bool(Integer64 *self);
+
+    public incremented String*
+    To_String(Integer64 *self);
 
     public bool
     Equals(Integer64 *self, Obj *other);
