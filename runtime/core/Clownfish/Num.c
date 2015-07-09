@@ -103,11 +103,6 @@ Float_Get_Value_IMP(Float *self) {
     return self->value;
 }
 
-void
-Float_Set_Value_IMP(Float *self, double value) {
-    self->value = value;
-}
-
 int64_t
 Float_To_I64_IMP(Float *self) {
     if (self->value < -POW_2_63 || self->value >= POW_2_63) {
@@ -128,13 +123,7 @@ Float_To_String_IMP(Float *self) {
 
 Float*
 Float_Clone_IMP(Float *self) {
-    return Float_new(self->value);
-}
-
-void
-Float_Mimic_IMP(Float *self, Obj *other) {
-    Float *twin = (Float*)CERTIFY(other, FLOAT);
-    self->value = twin->value;
+    return (Float*)INCREF(self);
 }
 
 /***************************************************************************/
@@ -187,11 +176,6 @@ Int_Get_Value_IMP(Integer *self) {
     return self->value;
 }
 
-void
-Int_Set_Value_IMP(Integer *self, int64_t value) {
-    self->value = value;
-}
-
 double
 Int_To_F64_IMP(Integer *self) {
     return (double)self->value;
@@ -209,13 +193,7 @@ Int_To_String_IMP(Integer *self) {
 
 Integer*
 Int_Clone_IMP(Integer *self) {
-    return Int_new(self->value);
-}
-
-void
-Int_Mimic_IMP(Integer *self, Obj *other) {
-    Integer *twin = (Integer*)CERTIFY(other, INTEGER);
-    self->value = twin->value;
+    return (Integer*)INCREF(self);
 }
 
 static int32_t
