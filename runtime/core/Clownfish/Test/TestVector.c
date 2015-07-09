@@ -24,6 +24,7 @@
 #include "Clownfish/Test/TestVector.h"
 
 #include "Clownfish/String.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/Test.h"

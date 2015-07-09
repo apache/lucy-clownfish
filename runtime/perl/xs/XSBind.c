@@ -23,10 +23,11 @@
 #define C_CFISH_FLOAT64
 #define C_CFISH_INTEGER32
 #define C_CFISH_INTEGER64
-#define C_CFISH_BOOLNUM
+#define C_CFISH_BOOLEAN
 #define NEED_newRV_noinc
 #include "charmony.h"
 #include "XSBind.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
@@ -495,7 +496,7 @@ static CFISH_INLINE bool
 SI_immortal(cfish_Class *klass) {
     if (klass == CFISH_CLASS
         || klass == CFISH_METHOD
-        || klass == CFISH_BOOLNUM
+        || klass == CFISH_BOOLEAN
        ){
         return true;
     }
@@ -1040,7 +1041,7 @@ CFISH_Int64_To_Host_IMP(cfish_Integer64 *self) {
 }
 
 void*
-CFISH_Bool_To_Host_IMP(cfish_BoolNum *self) {
+CFISH_Bool_To_Host_IMP(cfish_Boolean *self) {
     dTHX;
     return newSViv((IV)self->value);
 }

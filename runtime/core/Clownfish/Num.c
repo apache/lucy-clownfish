@@ -21,7 +21,6 @@
 #define C_CFISH_INTEGER64
 #define C_CFISH_FLOAT32
 #define C_CFISH_FLOAT64
-#define C_CFISH_BOOLNUM
 #define CFISH_USE_SHORT_NAMES
 
 #include "charmony.h"
@@ -294,68 +293,5 @@ Int64_Equals_IMP(Integer64 *self, Obj *other) {
         if (self->value != Num_To_I64(twin)) { return false; }
     }
     return true;
-}
-
-/***************************************************************************/
-
-
-BoolNum *Bool_true_singleton;
-BoolNum *Bool_false_singleton;
-
-void
-Bool_init_class() {
-    Bool_true_singleton          = (BoolNum*)Class_Make_Obj(BOOLNUM);
-    Bool_true_singleton->value   = true;
-    Bool_true_singleton->string  = Str_newf("true");
-    Bool_false_singleton         = (BoolNum*)Class_Make_Obj(BOOLNUM);
-    Bool_false_singleton->value  = false;
-    Bool_false_singleton->string = Str_newf("false");
-}
-
-BoolNum*
-Bool_singleton(bool value) {
-    return value ? CFISH_TRUE : CFISH_FALSE;
-}
-
-void
-Bool_Destroy_IMP(BoolNum *self) {
-    if (self && self != CFISH_TRUE && self != CFISH_FALSE) {
-        SUPER_DESTROY(self, BOOLNUM);
-    }
-}
-
-bool
-Bool_Get_Value_IMP(BoolNum *self) {
-    return self->value;
-}
-
-double
-Bool_To_F64_IMP(BoolNum *self) {
-    return (double)self->value;
-}
-
-int64_t
-Bool_To_I64_IMP(BoolNum *self) {
-    return self->value;
-}
-
-bool
-Bool_To_Bool_IMP(BoolNum *self) {
-    return self->value;
-}
-
-BoolNum*
-Bool_Clone_IMP(BoolNum *self) {
-    return self;
-}
-
-String*
-Bool_To_String_IMP(BoolNum *self) {
-    return (String*)INCREF(self->string);
-}
-
-bool
-Bool_Equals_IMP(BoolNum *self, Obj *other) {
-    return self == (BoolNum*)other;
 }
 

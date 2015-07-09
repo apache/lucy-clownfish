@@ -23,8 +23,8 @@
 #include "Clownfish/Test/TestString.h"
 
 #include "Clownfish/String.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/CharBuf.h"
-#include "Clownfish/Num.h"
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"

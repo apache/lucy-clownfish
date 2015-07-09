@@ -27,12 +27,12 @@
 
 #include "Clownfish/Class.h"
 #include "Clownfish/String.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
 #include "Clownfish/LockFreeRegistry.h"
 #include "Clownfish/Method.h"
-#include "Clownfish/Num.h"
 #include "Clownfish/Vector.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
@@ -145,7 +145,7 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
         klass->flags = 0;
         if (klass == CLASS
             || klass == METHOD
-            || klass == BOOLNUM
+            || klass == BOOLEAN
             || klass == STRING
            ) {
             klass->flags |= CFISH_fREFCOUNTSPECIAL;

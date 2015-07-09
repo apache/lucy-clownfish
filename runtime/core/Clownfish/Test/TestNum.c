@@ -41,8 +41,6 @@ test_To_String(TestBatchRunner *runner) {
     String *f64_string = Float64_To_String(f64);
     String *i32_string = Int32_To_String(i32);
     String *i64_string = Int64_To_String(i64);
-    String *true_string  = Bool_To_String(CFISH_TRUE);
-    String *false_string = Bool_To_String(CFISH_FALSE);
 
     TEST_TRUE(runner, Str_Starts_With_Utf8(f32_string, "1.3", 3),
               "Float32_To_String");
@@ -52,13 +50,7 @@ test_To_String(TestBatchRunner *runner) {
               "Int32_To_String");
     TEST_TRUE(runner, Str_Equals_Utf8(i64_string, "9223372036854775807", 19),
               "Int64_To_String");
-    TEST_TRUE(runner, Str_Equals_Utf8(true_string, "true", 4),
-              "Bool_To_String [true]");
-    TEST_TRUE(runner, Str_Equals_Utf8(false_string, "false", 5),
-              "Bool_To_String [false]");
 
-    DECREF(false_string);
-    DECREF(true_string);
     DECREF(i64_string);
     DECREF(i32_string);
     DECREF(f64_string);
@@ -112,19 +104,6 @@ test_accessors(TestBatchRunner *runner) {
     Int64_Set_Value(i64, -1);
     TEST_TRUE(runner, Int32_To_F64(i32) == -1, "Int32_To_F64");
     TEST_TRUE(runner, Int64_To_F64(i64) == -1, "Int64_To_F64");
-
-    TEST_INT_EQ(runner, Bool_Get_Value(CFISH_TRUE), true,
-                "Bool_Get_Value [true]");
-    TEST_INT_EQ(runner, Bool_Get_Value(CFISH_FALSE), false,
-                "Bool_Get_Value [false]");
-    TEST_TRUE(runner, Bool_To_I64(CFISH_TRUE) == true,
-              "Bool_To_I64 [true]");
-    TEST_TRUE(runner, Bool_To_I64(CFISH_FALSE) == false,
-              "Bool_To_I64 [false]");
-    TEST_TRUE(runner, Bool_To_F64(CFISH_TRUE) == 1.0,
-              "Bool_To_F64 [true]");
-    TEST_TRUE(runner, Bool_To_F64(CFISH_FALSE) == 0.0,
-              "Bool_To_F64 [false]");
 
     DECREF(i64);
     DECREF(i32);
@@ -192,17 +171,6 @@ test_Equals_and_Compare_To(TestBatchRunner *runner) {
     TEST_TRUE(runner, Int64_Compare_To(i64, (Obj*)i64_copy) == 0,
               "Integer64 comparison to same number");
 
-    TEST_TRUE(runner, Bool_Equals(CFISH_TRUE, (Obj*)CFISH_TRUE),
-              "CFISH_TRUE Equals itself");
-    TEST_TRUE(runner, Bool_Equals(CFISH_FALSE, (Obj*)CFISH_FALSE),
-              "CFISH_FALSE Equals itself");
-    TEST_FALSE(runner, Bool_Equals(CFISH_FALSE, (Obj*)CFISH_TRUE),
-               "CFISH_FALSE not Equals CFISH_TRUE ");
-    TEST_FALSE(runner, Bool_Equals(CFISH_TRUE, (Obj*)CFISH_FALSE),
-               "CFISH_TRUE not Equals CFISH_FALSE ");
-    TEST_FALSE(runner, Bool_Equals(CFISH_TRUE, (Obj*)STRING),
-               "CFISH_TRUE not Equals random other object ");
-
     DECREF(i64_copy);
     DECREF(i64);
     DECREF(i32);
@@ -228,8 +196,6 @@ test_Clone(TestBatchRunner *runner) {
               "Integer32 Clone");
     TEST_TRUE(runner, Int64_Equals(i64, (Obj*)i64_dupe),
               "Integer64 Clone");
-    TEST_TRUE(runner, Bool_Equals(CFISH_TRUE, (Obj*)Bool_Clone(CFISH_TRUE)),
-              "BoolNum Clone");
     DECREF(i64_dupe);
     DECREF(i32_dupe);
     DECREF(f64_dupe);
@@ -274,7 +240,7 @@ test_Mimic(TestBatchRunner *runner) {
 
 void
 TestNum_Run_IMP(TestNum *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 53);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 39);
     test_To_String(runner);
     test_accessors(runner);
     test_Equals_and_Compare_To(runner);
