@@ -19,7 +19,7 @@
 set -e
 
 # Print all commands before executing.
-set -v
+set -x
 
 test_c() {
     cd compiler/c
