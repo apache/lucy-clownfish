@@ -29,8 +29,7 @@ sub bind_all {
     $class->bind_string;
     $class->bind_err;
     $class->bind_hash;
-    $class->bind_float32;
-    $class->bind_float64;
+    $class->bind_float;
     $class->bind_obj;
     $class->bind_varray;
     $class->bind_class;
@@ -324,37 +323,9 @@ END_XS_CODE
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
 
-sub bind_float32 {
-    my $float32_xs_code = <<'END_XS_CODE';
-MODULE = Clownfish   PACKAGE = Clownfish::Float32
-
-SV*
-new(either_sv, value)
-    SV    *either_sv;
-    float  value;
-CODE:
-{
-    cfish_Float32 *self
-        = (cfish_Float32*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_Float32_init(self, value);
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
-}
-OUTPUT: RETVAL
-END_XS_CODE
-
-    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
-        class_name => "Clownfish::Float32",
-    );
-    $binding->append_xs($float32_xs_code);
-    $binding->exclude_constructor;
-
-    Clownfish::CFC::Binding::Perl::Class->register($binding);
-}
-
-sub bind_float64 {
-    my $float64_xs_code = <<'END_XS_CODE';
-MODULE = Clownfish   PACKAGE = Clownfish::Float64
+sub bind_float {
+    my $float_xs_code = <<'END_XS_CODE';
+MODULE = Clownfish   PACKAGE = Clownfish::Float
 
 SV*
 new(either_sv, value)
@@ -362,9 +333,9 @@ new(either_sv, value)
     double  value;
 CODE:
 {
-    cfish_Float64 *self
-        = (cfish_Float64*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_Float64_init(self, value);
+    cfish_Float *self
+        = (cfish_Float*)XSBind_new_blank_obj(aTHX_ either_sv);
+    cfish_Float_init(self, value);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
 OUTPUT: RETVAL
@@ -372,9 +343,9 @@ END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         parcel     => "Clownfish",
-        class_name => "Clownfish::Float64",
+        class_name => "Clownfish::Float",
     );
-    $binding->append_xs($float64_xs_code);
+    $binding->append_xs($float_xs_code);
     $binding->exclude_constructor;
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);

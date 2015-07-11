@@ -30,6 +30,7 @@
 #include "Clownfish/Obj.h"
 #include "Clownfish/Class.h"
 #include "Clownfish/Blob.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/ByteBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
@@ -46,7 +47,7 @@ static CFISH_INLINE bool
 SI_immortal(cfish_Class *klass) {
     if (klass == CFISH_CLASS
         || klass == CFISH_METHOD
-        || klass == CFISH_BOOLNUM
+        || klass == CFISH_BOOLEAN
        ){
         return true;
     }
@@ -306,37 +307,23 @@ Hash_To_Host_IMP(Hash *self) {
 }
 
 void*
-Float32_To_Host_IMP(Float32 *self) {
-    Float32_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(FLOAT32, CFISH_Float32_To_Host);
+Float_To_Host_IMP(Float *self) {
+    Float_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(FLOAT, CFISH_Float_To_Host);
     return super_to_host(self);
 }
 
 void*
-Float64_To_Host_IMP(Float64 *self) {
-    Float64_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(FLOAT64, CFISH_Float64_To_Host);
+Int_To_Host_IMP(Integer *self) {
+    Int_To_Host_t super_to_host
+        = SUPER_METHOD_PTR(INTEGER, CFISH_Int_To_Host);
     return super_to_host(self);
 }
 
 void*
-Int32_To_Host_IMP(Integer32 *self) {
-    Int32_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(INTEGER32, CFISH_Int32_To_Host);
-    return super_to_host(self);
-}
-
-void*
-Int64_To_Host_IMP(Integer64 *self) {
-    Int64_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(INTEGER64, CFISH_Int64_To_Host);
-    return super_to_host(self);
-}
-
-void*
-Bool_To_Host_IMP(BoolNum *self) {
+Bool_To_Host_IMP(Boolean *self) {
     Bool_To_Host_t super_to_host
-        = SUPER_METHOD_PTR(BOOLNUM, CFISH_Bool_To_Host);
+        = SUPER_METHOD_PTR(BOOLEAN, CFISH_Bool_To_Host);
     return super_to_host(self);
 }
 

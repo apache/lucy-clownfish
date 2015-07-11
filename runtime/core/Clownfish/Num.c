@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-#define C_CFISH_NUM
-#define C_CFISH_INTNUM
-#define C_CFISH_FLOATNUM
-#define C_CFISH_INTEGER32
-#define C_CFISH_INTEGER64
-#define C_CFISH_FLOAT32
-#define C_CFISH_FLOAT64
-#define C_CFISH_BOOLNUM
+#define C_CFISH_INTEGER
+#define C_CFISH_FLOAT
 #define CFISH_USE_SHORT_NAMES
+
+#include <float.h>
 
 #include "charmony.h"
 
@@ -31,331 +27,224 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/Class.h"
 
-Num*
-Num_init(Num *self) {
-    ABSTRACT_CLASS_CHECK(self, NUM);
+#if FLT_RADIX != 2
+  #error Unsupported FLT_RADIX
+#endif
+
+#if DBL_MANT_DIG != 53
+  #error Unsupported DBL_MANT_DIG
+#endif
+
+#define MAX_PRECISE_I64 (INT64_C(1) << DBL_MANT_DIG)
+#define MIN_PRECISE_I64 -MAX_PRECISE_I64
+
+// For floating point range checks, it's important to use constants that
+// can be exactly represented as doubles. `f64 > INT64_MAX` can produce
+// wrong results.
+#define POW_2_63 9223372036854775808.0
+
+static int32_t
+S_compare_f64(double a, double b);
+
+static int32_t
+S_compare_i64(int64_t a, int64_t b);
+
+static int32_t
+S_compare_i64_f64(int64_t i64, double f64);
+
+static bool
+S_equals_i64_f64(int64_t i64, double f64);
+
+Float*
+Float_new(double value) {
+    Float *self = (Float*)Class_Make_Obj(FLOAT);
+    return Float_init(self, value);
+}
+
+Float*
+Float_init(Float *self, double value) {
+    self->value = value;
     return self;
 }
 
 bool
-Num_Equals_IMP(Num *self, Obj *other) {
-    Num *twin = (Num*)other;
-    if (twin == self) { return true; }
-    if (!Obj_is_a(other, NUM)) { return false; }
-    if (Num_To_F64(self) != Num_To_F64(twin)) { return false; }
-    if (Num_To_I64(self) != Num_To_I64(twin)) { return false; }
-    return true;
-}
-
-bool
-Num_To_Bool_IMP(Num *self) {
-    return !!Num_To_I64(self);
-}
-
-/***************************************************************************/
-
-FloatNum*
-FloatNum_init(FloatNum *self) {
-    ABSTRACT_CLASS_CHECK(self, FLOATNUM);
-    return (FloatNum*)Num_init((Num*)self);
-}
-
-int32_t
-FloatNum_Compare_To_IMP(FloatNum *self, Obj *other) {
-    Num *twin = (Num*)CERTIFY(other, NUM);
-    double f64_diff = FloatNum_To_F64(self) - Num_To_F64(twin);
-    if (f64_diff < 0)      { return -1; }
-    else if (f64_diff > 0) { return 1;  }
-    return 0;
-}
-
-String*
-FloatNum_To_String_IMP(FloatNum *self) {
-    return Str_newf("%f64", FloatNum_To_F64(self));
-}
-
-/***************************************************************************/
-
-IntNum*
-IntNum_init(IntNum *self) {
-    ABSTRACT_CLASS_CHECK(self, INTNUM);
-    return (IntNum*)Num_init((Num*)self);
-}
-
-int32_t
-IntNum_Compare_To_IMP(IntNum *self, Obj *other) {
-    if (!Obj_is_a(other, INTNUM)) {
-        return -Obj_Compare_To(other, (Obj*)self);
+Float_Equals_IMP(Float *self, Obj *other) {
+    if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
+        return self->value == twin->value;
     }
-    int64_t self_value  = IntNum_To_I64(self);
-    int64_t other_value = IntNum_To_I64((IntNum*)other);
-    if (self_value < other_value)      { return -1; }
-    else if (self_value > other_value) { return 1;  }
-    return 0;
-}
-
-String*
-IntNum_To_String_IMP(IntNum *self) {
-    return Str_newf("%i64", IntNum_To_I64(self));
-}
-
-/***************************************************************************/
-
-Float32*
-Float32_new(float value) {
-    Float32 *self = (Float32*)Class_Make_Obj(FLOAT32);
-    return Float32_init(self, value);
-}
-
-Float32*
-Float32_init(Float32 *self, float value) {
-    self->value = value;
-    return (Float32*)FloatNum_init((FloatNum*)self);
-}
-
-float
-Float32_Get_Value_IMP(Float32 *self) {
-    return self->value;
-}
-
-void
-Float32_Set_Value_IMP(Float32 *self, float value) {
-    self->value = value;
-}
-
-double
-Float32_To_F64_IMP(Float32 *self) {
-    return self->value;
-}
-
-int64_t
-Float32_To_I64_IMP(Float32 *self) {
-    return (int64_t)self->value;
-}
-
-Float32*
-Float32_Clone_IMP(Float32 *self) {
-    return Float32_new(self->value);
-}
-
-void
-Float32_Mimic_IMP(Float32 *self, Obj *other) {
-    Float32 *twin = (Float32*)CERTIFY(other, FLOAT32);
-    self->value = twin->value;
-}
-
-/***************************************************************************/
-
-Float64*
-Float64_new(double value) {
-    Float64 *self = (Float64*)Class_Make_Obj(FLOAT64);
-    return Float64_init(self, value);
-}
-
-Float64*
-Float64_init(Float64 *self, double value) {
-    self->value = value;
-    return (Float64*)FloatNum_init((FloatNum*)self);
-}
-
-double
-Float64_Get_Value_IMP(Float64 *self) {
-    return self->value;
-}
-
-void
-Float64_Set_Value_IMP(Float64 *self, double value) {
-    self->value = value;
-}
-
-double
-Float64_To_F64_IMP(Float64 *self) {
-    return self->value;
-}
-
-int64_t
-Float64_To_I64_IMP(Float64 *self) {
-    return (int64_t)self->value;
-}
-
-Float64*
-Float64_Clone_IMP(Float64 *self) {
-    return Float64_new(self->value);
-}
-
-void
-Float64_Mimic_IMP(Float64 *self, Obj *other) {
-    Float64 *twin = (Float64*)CERTIFY(other, FLOAT64);
-    self->value = twin->value;
-}
-
-/***************************************************************************/
-
-Integer32*
-Int32_new(int32_t value) {
-    Integer32 *self = (Integer32*)Class_Make_Obj(INTEGER32);
-    return Int32_init(self, value);
-}
-
-Integer32*
-Int32_init(Integer32 *self, int32_t value) {
-    self->value = value;
-    return (Integer32*)IntNum_init((IntNum*)self);
-}
-
-int32_t
-Int32_Get_Value_IMP(Integer32 *self) {
-    return self->value;
-}
-
-void
-Int32_Set_Value_IMP(Integer32 *self, int32_t value) {
-    self->value = value;
-}
-
-double
-Int32_To_F64_IMP(Integer32 *self) {
-    return self->value;
-}
-
-int64_t
-Int32_To_I64_IMP(Integer32 *self) {
-    return self->value;
-}
-
-Integer32*
-Int32_Clone_IMP(Integer32 *self) {
-    return Int32_new(self->value);
-}
-
-void
-Int32_Mimic_IMP(Integer32 *self, Obj *other) {
-    Integer32 *twin = (Integer32*)CERTIFY(other, INTEGER32);
-    self->value = twin->value;
-}
-
-/***************************************************************************/
-
-Integer64*
-Int64_new(int64_t value) {
-    Integer64 *self = (Integer64*)Class_Make_Obj(INTEGER64);
-    return Int64_init(self, value);
-}
-
-Integer64*
-Int64_init(Integer64 *self, int64_t value) {
-    self->value = value;
-    return (Integer64*)IntNum_init((IntNum*)self);
-}
-
-int64_t
-Int64_Get_Value_IMP(Integer64 *self) {
-    return self->value;
-}
-
-void
-Int64_Set_Value_IMP(Integer64 *self, int64_t value) {
-    self->value = value;
-}
-
-double
-Int64_To_F64_IMP(Integer64 *self) {
-    return (double)self->value;
-}
-
-int64_t
-Int64_To_I64_IMP(Integer64 *self) {
-    return self->value;
-}
-
-Integer64*
-Int64_Clone_IMP(Integer64 *self) {
-    return Int64_new(self->value);
-}
-
-void
-Int64_Mimic_IMP(Integer64 *self, Obj *other) {
-    Integer64 *twin = (Integer64*)CERTIFY(other, INTEGER64);
-    self->value = twin->value;
-}
-
-bool
-Int64_Equals_IMP(Integer64 *self, Obj *other) {
-    Num *twin = (Num*)other;
-    if (twin == (Num*)self)         { return true; }
-    if (!Obj_is_a(other, NUM)) { return false; }
-    if (Obj_is_a(other, FLOATNUM)) {
-        double  floating_val = Num_To_F64(twin);
-        int64_t int_val      = (int64_t)floating_val;
-        if ((double)int_val != floating_val) { return false; }
-        if (int_val != self->value)          { return false; }
+    else if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
+        return S_equals_i64_f64(twin->value, self->value);
     }
     else {
-        if (self->value != Num_To_I64(twin)) { return false; }
+        return false;
     }
-    return true;
+}
+
+int32_t
+Float_Compare_To_IMP(Float *self, Obj *other) {
+    if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
+        return S_compare_f64(self->value, twin->value);
+    }
+    else if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
+        return -S_compare_i64_f64(twin->value, self->value);
+    }
+    else {
+        THROW(ERR, "Can't compare Float to %o", Obj_get_class_name(other));
+        UNREACHABLE_RETURN(int32_t);
+    }
+}
+
+double
+Float_Get_Value_IMP(Float *self) {
+    return self->value;
+}
+
+int64_t
+Float_To_I64_IMP(Float *self) {
+    if (self->value < -POW_2_63 || self->value >= POW_2_63) {
+        THROW(ERR, "Float out of range: %f64", self->value);
+    }
+    return (int64_t)self->value;
+}
+
+bool
+Float_To_Bool_IMP(Float *self) {
+    return self->value != 0.0;
+}
+
+String*
+Float_To_String_IMP(Float *self) {
+    return Str_newf("%f64", self->value);
+}
+
+Float*
+Float_Clone_IMP(Float *self) {
+    return (Float*)INCREF(self);
 }
 
 /***************************************************************************/
 
-
-BoolNum *Bool_true_singleton;
-BoolNum *Bool_false_singleton;
-
-void
-Bool_init_class() {
-    Bool_true_singleton          = (BoolNum*)Class_Make_Obj(BOOLNUM);
-    Bool_true_singleton->value   = true;
-    Bool_true_singleton->string  = Str_newf("true");
-    Bool_false_singleton         = (BoolNum*)Class_Make_Obj(BOOLNUM);
-    Bool_false_singleton->value  = false;
-    Bool_false_singleton->string = Str_newf("false");
+Integer*
+Int_new(int64_t value) {
+    Integer *self = (Integer*)Class_Make_Obj(INTEGER);
+    return Int_init(self, value);
 }
 
-BoolNum*
-Bool_singleton(bool value) {
-    return value ? CFISH_TRUE : CFISH_FALSE;
-}
-
-void
-Bool_Destroy_IMP(BoolNum *self) {
-    if (self && self != CFISH_TRUE && self != CFISH_FALSE) {
-        SUPER_DESTROY(self, BOOLNUM);
-    }
+Integer*
+Int_init(Integer *self, int64_t value) {
+    self->value = value;
+    return self;
 }
 
 bool
-Bool_Get_Value_IMP(BoolNum *self) {
+Int_Equals_IMP(Integer *self, Obj *other) {
+    if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
+        return self->value == twin->value;
+    }
+    else if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
+        return S_equals_i64_f64(self->value, twin->value);
+    }
+    else {
+        return false;
+    }
+}
+
+int32_t
+Int_Compare_To_IMP(Integer *self, Obj *other) {
+    if (Obj_is_a(other, INTEGER)) {
+        Integer *twin = (Integer*)other;
+        return S_compare_i64(self->value, twin->value);
+    }
+    else if (Obj_is_a(other, FLOAT)) {
+        Float *twin = (Float*)other;
+        return S_compare_i64_f64(self->value, twin->value);
+    }
+    else {
+        THROW(ERR, "Can't compare Integer to %o", Obj_get_class_name(other));
+        UNREACHABLE_RETURN(int32_t);
+    }
+}
+
+int64_t
+Int_Get_Value_IMP(Integer *self) {
     return self->value;
 }
 
 double
-Bool_To_F64_IMP(BoolNum *self) {
+Int_To_F64_IMP(Integer *self) {
     return (double)self->value;
 }
 
-int64_t
-Bool_To_I64_IMP(BoolNum *self) {
-    return self->value;
-}
-
 bool
-Bool_To_Bool_IMP(BoolNum *self) {
-    return self->value;
-}
-
-BoolNum*
-Bool_Clone_IMP(BoolNum *self) {
-    return self;
+Int_To_Bool_IMP(Integer *self) {
+    return self->value != 0;
 }
 
 String*
-Bool_To_String_IMP(BoolNum *self) {
-    return (String*)INCREF(self->string);
+Int_To_String_IMP(Integer *self) {
+    return Str_newf("%i64", self->value);
 }
 
-bool
-Bool_Equals_IMP(BoolNum *self, Obj *other) {
-    return self == (BoolNum*)other;
+Integer*
+Int_Clone_IMP(Integer *self) {
+    return (Integer*)INCREF(self);
+}
+
+static int32_t
+S_compare_f64(double a, double b) {
+    return a == b ? 0 : a < b ? -1 : 1;
+}
+
+static int32_t
+S_compare_i64(int64_t a, int64_t b) {
+    return a == b ? 0 : a < b ? -1 : 1;
+}
+
+static int32_t
+S_compare_i64_f64(int64_t i64, double f64) {
+    int f64_comparison = S_compare_f64((double)i64, f64);
+
+    // If the integer can be represented precisely as a double or the numbers
+    // compare as unequal when converted to double, the result is correct.
+    if ((i64 >= MIN_PRECISE_I64 && i64 <= MAX_PRECISE_I64)
+        || f64_comparison != 0
+       ) {
+        return f64_comparison;
+    }
+
+    // Otherwise, the double is an integer.
+
+    // Corner case. 2^63 can compare equal to an int64_t although it is
+    // out of range.
+    if (f64 == POW_2_63) { return -1; }
+
+    return S_compare_i64(i64, (int64_t)f64);
+}
+
+static bool
+S_equals_i64_f64(int64_t i64, double f64) {
+    bool equal = ((double)i64 == f64);
+
+    // If the integer can be represented precisely as a double or the numbers
+    // compare as unequal when converted to double, the result is correct.
+    if ((i64 >= MIN_PRECISE_I64 && i64 <= MAX_PRECISE_I64)
+        || !equal
+       ) {
+        return equal;
+    }
+
+    // Otherwise, the double is an integer.
+
+    // Corner case. 2^63 can compare equal to an int64_t although it is
+    // out of range.
+    if (f64 == POW_2_63) { return false; }
+
+    return i64 == (int64_t)f64;
 }
 

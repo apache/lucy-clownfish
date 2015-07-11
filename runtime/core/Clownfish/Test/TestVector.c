@@ -24,6 +24,7 @@
 #include "Clownfish/Test/TestVector.h"
 
 #include "Clownfish/String.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/Test.h"
@@ -346,7 +347,7 @@ test_Clone(TestBatchRunner *runner) {
     uint32_t i;
 
     for (i = 0; i < 10; i++) {
-        Vec_Push(array, (Obj*)Int32_new(i));
+        Vec_Push(array, (Obj*)Int_new(i));
     }
     Vec_Push(array, NULL);
     twin = Vec_Clone(array);

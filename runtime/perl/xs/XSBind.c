@@ -19,14 +19,13 @@
 
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
-#define C_CFISH_FLOAT32
-#define C_CFISH_FLOAT64
-#define C_CFISH_INTEGER32
-#define C_CFISH_INTEGER64
-#define C_CFISH_BOOLNUM
+#define C_CFISH_FLOAT
+#define C_CFISH_INTEGER
+#define C_CFISH_BOOLEAN
 #define NEED_newRV_noinc
 #include "charmony.h"
 #include "XSBind.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
@@ -495,7 +494,7 @@ static CFISH_INLINE bool
 SI_immortal(cfish_Class *klass) {
     if (klass == CFISH_CLASS
         || klass == CFISH_METHOD
-        || klass == CFISH_BOOLNUM
+        || klass == CFISH_BOOLEAN
        ){
         return true;
     }
@@ -1007,25 +1006,13 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
 /****************************** Clownfish::Num ******************************/
 
 void*
-CFISH_Float32_To_Host_IMP(cfish_Float32 *self) {
+CFISH_Float_To_Host_IMP(cfish_Float *self) {
     dTHX;
     return newSVnv(self->value);
 }
 
 void*
-CFISH_Float64_To_Host_IMP(cfish_Float64 *self) {
-    dTHX;
-    return newSVnv(self->value);
-}
-
-void*
-CFISH_Int32_To_Host_IMP(cfish_Integer32 *self) {
-    dTHX;
-    return newSViv((IV)self->value);
-}
-
-void*
-CFISH_Int64_To_Host_IMP(cfish_Integer64 *self) {
+CFISH_Int_To_Host_IMP(cfish_Integer *self) {
     dTHX;
     SV *sv = NULL;
 
@@ -1040,7 +1027,7 @@ CFISH_Int64_To_Host_IMP(cfish_Integer64 *self) {
 }
 
 void*
-CFISH_Bool_To_Host_IMP(cfish_BoolNum *self) {
+CFISH_Bool_To_Host_IMP(cfish_Boolean *self) {
     dTHX;
     return newSViv((IV)self->value);
 }
