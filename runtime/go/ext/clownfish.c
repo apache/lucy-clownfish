@@ -26,12 +26,17 @@
 
 #include "charmony.h"
 
-#include "Clownfish/Obj.h"
+#include "Clownfish/Blob.h"
+#include "Clownfish/Boolean.h"
+#include "Clownfish/ByteBuf.h"
 #include "Clownfish/Class.h"
-#include "Clownfish/Method.h"
 #include "Clownfish/Err.h"
-#include "Clownfish/Util/Memory.h"
+#include "Clownfish/Hash.h"
+#include "Clownfish/Method.h"
+#include "Clownfish/Num.h"
+#include "Clownfish/Obj.h"
 #include "Clownfish/String.h"
+#include "Clownfish/Util/Memory.h"
 #include "Clownfish/Vector.h"
 
 /* These symbols must be assigned real values during Go initialization,
