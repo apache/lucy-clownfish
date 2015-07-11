@@ -71,6 +71,9 @@ char*
 CFCGoClass_boilerplate_funcs(CFCGoClass *self);
 
 char*
+CFCGoClass_gen_ctors(CFCGoClass *self);
+
+char*
 CFCGoClass_gen_meth_glue(CFCGoClass *self);
 
 void

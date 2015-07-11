@@ -259,6 +259,11 @@ CFCGoClass_boilerplate_funcs(CFCGoClass *self) {
     return content;
 }
 
+char*
+CFCGoClass_gen_ctors(CFCGoClass *self) {
+    return CFCUtil_strdup("");
+}
+
 static void
 S_lazy_init_method_bindings(CFCGoClass *self) {
     if (self->method_bindings) {
