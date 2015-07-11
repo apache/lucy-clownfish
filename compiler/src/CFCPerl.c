@@ -32,7 +32,14 @@
 #include "CFCPerlConstructor.h"
 #include "CFCPerlMethod.h"
 #include "CFCPerlTypeMap.h"
+#include "CFCPerlPod.h"
 #include "CFCBindCore.h"
+#include "CFCDocument.h"
+
+typedef struct CFCPerlPodFile {
+    char *path;
+    char *contents;
+} CFCPerlPodFile;
 
 struct CFCPerl {
     CFCBase base;
@@ -52,6 +59,12 @@ struct CFCPerl {
 // Modify a string in place, swapping out "::" for the supplied character.
 static void
 S_replace_double_colons(char *text, char replacement);
+
+static CFCPerlPodFile*
+S_write_class_pod(CFCPerl *self);
+
+static CFCPerlPodFile*
+S_write_standalone_pod(CFCPerl *self);
 
 static void
 S_write_callbacks_c(CFCPerl *self);
@@ -136,12 +149,64 @@ S_replace_double_colons(char *text, char replacement) {
 
 char**
 CFCPerl_write_pod(CFCPerl *self) {
+    CFCPerlPodFile *class_pods      = S_write_class_pod(self);
+    CFCPerlPodFile *standalone_pods = S_write_standalone_pod(self);
+
+    size_t max_paths = 0;
+    for (size_t i = 0; class_pods[i].contents; i++)      { max_paths++; }
+    for (size_t i = 0; standalone_pods[i].contents; i++) { max_paths++; }
+    char **pod_paths = (char**)CALLOCATE(max_paths + 1, sizeof(char*));
+
+    // Write out any POD files that have changed.
+    CFCPerlPodFile *file_arrays[2] = {
+        class_pods,
+        standalone_pods
+    };
+    size_t num_written = 0;
+    for (size_t j = 0; j < 2; ++j) {
+        CFCPerlPodFile *pod_files = file_arrays[j];
+
+        for (size_t i = 0; pod_files[i].contents; i++) {
+            char *pod      = pod_files[i].contents;
+            char *pod_path = pod_files[i].path;
+            char *pod_dir  = CFCUtil_strdup(pod_path);
+
+            char *last_dir_sep = strrchr(pod_dir, CHY_DIR_SEP_CHAR);
+            if (last_dir_sep) {
+                *last_dir_sep = '\0';
+                if (!CFCUtil_make_path(pod_dir)) {
+                    CFCUtil_die("Can't make path %s", pod_dir);
+                }
+            }
+
+            if (CFCUtil_write_if_changed(pod_path, pod, strlen(pod))) {
+                pod_paths[num_written] = pod_path;
+                num_written++;
+            }
+            else {
+                FREEMEM(pod_path);
+            }
+
+            FREEMEM(pod);
+            FREEMEM(pod_dir);
+        }
+
+        FREEMEM(pod_files);
+    }
+    pod_paths[num_written] = NULL;
+
+    return pod_paths;
+}
+
+static CFCPerlPodFile*
+S_write_class_pod(CFCPerl *self) {
     CFCPerlClass **registry  = CFCPerlClass_registry();
     size_t num_registered = 0;
     while (registry[num_registered] != NULL) { num_registered++; }
-    char     **pod_paths = (char**)CALLOCATE(num_registered + 1, sizeof(char*));
-    char     **pods      = (char**)CALLOCATE(num_registered + 1, sizeof(char*));
-    size_t     count     = 0;
+    CFCPerlPodFile *pod_files
+        = (CFCPerlPodFile*)CALLOCATE(num_registered + 1,
+                                     sizeof(CFCPerlPodFile));
+    size_t count = 0;
 
     // Generate POD, but don't write.  That way, if there's an error while
     // generating pod, we leak memory but don't clutter up the file system.
@@ -155,30 +220,44 @@ CFCPerl_write_pod(CFCPerl *self) {
                                          self->lib_dir, class_name);
         S_replace_double_colons(pod_path, CHY_DIR_SEP_CHAR);
 
-        pods[count] = pod;
-        pod_paths[count] = pod_path;
+        pod_files[count].contents = pod;
+        pod_files[count].path     = pod_path;
         count++;
 
         FREEMEM(raw_pod);
     }
+    pod_files[count].contents = NULL;
+    pod_files[count].path     = NULL;
 
-    // Write out any POD files that have changed.
-    size_t num_written = 0;
-    for (size_t i = 0; i < count; i++) {
-        char *pod      = pods[i];
-        char *pod_path = pod_paths[i];
-        if (CFCUtil_write_if_changed(pod_path, pod, strlen(pod))) {
-            pod_paths[num_written] = pod_path;
-            num_written++;
-        }
-        else {
-            FREEMEM(pod_path);
-        }
-        FREEMEM(pod);
+    return pod_files;
+}
+
+static CFCPerlPodFile*
+S_write_standalone_pod(CFCPerl *self) {
+    CFCDocument **docs = CFCDocument_get_registry();
+    size_t num_pod_files = 0;
+    while (docs[num_pod_files]) { num_pod_files++; }
+    size_t alloc_size = (num_pod_files + 1) * sizeof(CFCPerlPodFile);
+    CFCPerlPodFile *pod_files = (CFCPerlPodFile*)MALLOCATE(alloc_size);
+
+    for (size_t i = 0; i < num_pod_files; i++) {
+        CFCDocument *doc = docs[i];
+        char *md  = CFCDocument_get_contents(doc);
+        char *pod = CFCPerlPod_md_to_pod(md, NULL, 1);
+        FREEMEM(md);
+
+        const char *path_part = CFCDocument_get_path_part(doc);
+        char *pod_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.pod",
+                                         self->lib_dir, path_part);
+
+        pod_files[i].contents = pod;
+        pod_files[i].path     = pod_path;
     }
-    pod_paths[num_written] = NULL;
 
-    return pod_paths;
+    pod_files[num_pod_files].contents = NULL;
+    pod_files[num_pod_files].path     = NULL;
+
+    return pod_files;
 }
 
 static void

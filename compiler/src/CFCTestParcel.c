@@ -86,7 +86,7 @@ S_run_parcel_tests(CFCTest *test) {
     }
 
     {
-        CFCFileSpec *file_spec = CFCFileSpec_new(".", "Parcel.cfp", true);
+        CFCFileSpec *file_spec = CFCFileSpec_new(".", "Parcel", true);
         CFCParcel *parcel = CFCParcel_new("Foo", NULL, NULL, file_spec);
         OK(test, CFCParcel_included(parcel), "included");
         CFCBase_decref((CFCBase*)parcel);
@@ -163,13 +163,13 @@ S_run_parcel_tests(CFCTest *test) {
     }
 
     {
-        CFCFileSpec *foo_file_spec = CFCFileSpec_new(".", "Foo.cfp", true);
+        CFCFileSpec *foo_file_spec = CFCFileSpec_new(".", "Foo", true);
         CFCParcel *foo = CFCParcel_new("Foo", NULL, NULL, foo_file_spec);
         CFCParcel_register(foo);
 
         CFCVersion *cfish_version = CFCVersion_new("v0.8.7");
         CFCFileSpec *cfish_file_spec
-            = CFCFileSpec_new(".", "Clownfish.cfp", true);
+            = CFCFileSpec_new(".", "Clownfish", true);
         CFCParcel *cfish
             = CFCParcel_new("Clownfish", NULL, cfish_version, cfish_file_spec);
         CFCParcel_register(cfish);
