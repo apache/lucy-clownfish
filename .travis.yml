@@ -14,7 +14,9 @@
 # limitations under the License.
 
 language: perl
-script: "cd ../.. && ./devel/bin/travis-test.sh"
+# Override Travis' default Perl installation script.
+install: 'true'
+script: devel/bin/travis-test.sh
 env:
   - LUCY_DEBUG=1 CLOWNFISH_HOST=c
   - LUCY_DEBUG=1 CLOWNFISH_HOST=go
@@ -27,6 +29,4 @@ env:
   - LUCY_DEBUG=1 CLOWNFISH_HOST=perl PERL_VERSION=5.8
 git:
   depth: 10
-before_install:
-  - cd compiler/perl
 
