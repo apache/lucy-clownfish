@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "Clownfish/Num.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/Hash.h"
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Err.h"
