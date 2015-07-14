@@ -37,6 +37,13 @@ CFCGoFunc_func_start(struct CFCParcel *parcel, const char *name,
                      struct CFCParamList *param_list,
                      struct CFCType *return_type, int is_method);
 
+/** Convert Go method arguments to comma-separated Clownfish-flavored C
+ * arguments, to be passed to a Clownfish method.
+ */
+char*
+CFCGoFunc_meth_cfargs(struct CFCParcel *parcel, struct CFCClass *invoker,
+                      struct CFCParamList *param_list);
+
 /** Generate a Go return statement which maps from a CGO Clownfish type to a
  * Go type.
  *
