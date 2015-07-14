@@ -70,6 +70,7 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
     }
 
     char *params = CFCUtil_strdup("");
+    char *converted = CFCUtil_strdup("");
     int start = targ == IS_METHOD ? 1 : 0;
     for (int i = start; param_vars[i] != NULL; i++) {
         CFCVariable *var = param_vars[i];
@@ -81,6 +82,26 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
         }
         params = CFCUtil_cat(params, go_name, " ", go_type_name, NULL);
         FREEMEM(go_type_name);
+
+        // Convert certain types and defer their destruction until after the
+        // Clownfish call returns.
+        if (CFCType_is_string_type(type)) {
+            const char *cf_prefix = CFCParcel_is_cfish(parcel)
+                                    ? "" : "clownfish.";
+            char pattern[] =
+                "%s\t%sCF := C.cfish_Str_new_steal_utf8("
+                "C.CString(%s), C.size_t(len(%s)))\n"
+                ;
+            char *temp = CFCUtil_sprintf(pattern, converted, go_name, go_name,
+                                         go_name, go_name);
+            FREEMEM(converted);
+            converted = temp;
+            if (!CFCType_decremented(type)) {
+                converted = CFCUtil_cat(converted,
+                    "\tdefer C.cfish_dec_refcount(unsafe.Pointer(", go_name,
+                    "CF))\n", NULL);
+            }
+        }
     }
 
     char *ret_type_str;
@@ -96,11 +117,13 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
 
     char pattern[] =
         "func %s%s(%s) %s {\n"
+        "%s"
     ;
-    char *content
-        = CFCUtil_sprintf(pattern, invocant, name, params, ret_type_str);
+    char *content = CFCUtil_sprintf(pattern, invocant, name, params,
+                                    ret_type_str, converted);
 
     FREEMEM(invocant);
+    FREEMEM(converted);
     FREEMEM(params);
     FREEMEM(ret_type_str);
     return content;
@@ -151,16 +174,7 @@ S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
                  // Don't convert a clownfish.String invocant.
                  && (targ != IS_METHOD || i != 0)
                 ) {
-            const char *format;
-            if (CFCParcel_is_cfish(parcel)) {
-                format = "%s((*C.cfish_String)(unsafe.Pointer(NewString(%s).TOPTR())))";
-            }
-            else {
-                format = "%s((*C.cfish_String)(unsafe.Pointer(clownfish.NewString(%s).TOPTR())))";
-            }
-            char *temp = CFCUtil_sprintf(format, cfargs, go_name);
-            FREEMEM(cfargs);
-            cfargs = temp;
+            cfargs = CFCUtil_cat(cfargs, go_name, "CF", NULL);
         }
         else if (CFCType_is_object(type)) {
 
