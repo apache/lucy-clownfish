@@ -109,38 +109,38 @@ Vec_Pop_IMP(Vector *self) {
 
 void
 Vec_Insert_IMP(Vector *self, size_t tick, Obj *elem) {
+    size_t max_tick = tick > self->size ? tick : self->size;
+    SI_add_grow_and_oversize(self, max_tick, 1);
+
     if (tick < self->size) {
-        SI_add_grow_and_oversize(self, self->size, 1);
         memmove(self->elems + tick + 1, self->elems + tick,
                 (self->size - tick) * sizeof(Obj*));
-        self->size++;
     }
     else {
-        SI_add_grow_and_oversize(self, tick, 1);
         memset(self->elems + self->size, 0,
                (tick - self->size) * sizeof(Obj*));
-        self->size = tick + 1;
     }
 
     self->elems[tick] = elem;
+    self->size = max_tick + 1;
 }
 
 void
 Vec_Insert_All_IMP(Vector *self, size_t tick, Vector *other) {
+    size_t max_tick = tick > self->size ? tick : self->size;
+    SI_add_grow_and_oversize(self, max_tick, other->size);
+
     if (tick < self->size) {
-        SI_add_grow_and_oversize(self, self->size, other->size);
         memmove(self->elems + tick + other->size, self->elems + tick,
                 (self->size - tick) * sizeof(Obj*));
-        self->size += other->size;
     }
     else {
-        SI_add_grow_and_oversize(self, tick, other->size);
         memset(self->elems + self->size, 0,
                (tick - self->size) * sizeof(Obj*));
-        self->size = tick + other->size;
     }
 
     SI_copy_and_incref(self->elems + tick, other->elems, other->size);
+    self->size = max_tick + other->size;
 }
 
 Obj*
