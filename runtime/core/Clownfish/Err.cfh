@@ -43,10 +43,10 @@ public class Clownfish::Err inherits Clownfish::Obj {
     inert void
     init_class();
 
-    inert incremented Err*
+    public inert incremented Err*
     new(decremented String *mess);
 
-    inert Err*
+    public inert Err*
     init(Err *self, decremented String *mess);
 
     public void
