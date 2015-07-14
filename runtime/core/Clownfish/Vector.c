@@ -127,19 +127,20 @@ Vec_Insert_IMP(Vector *self, size_t tick, Obj *elem) {
 
 void
 Vec_Insert_All_IMP(Vector *self, size_t tick, Vector *other) {
-    SI_add_grow_and_oversize(self, tick, other->size);
-
     if (tick < self->size) {
+        SI_add_grow_and_oversize(self, self->size, other->size);
         memmove(self->elems + tick + other->size, self->elems + tick,
                 (self->size - tick) * sizeof(Obj*));
+        self->size += other->size;
     }
     else {
+        SI_add_grow_and_oversize(self, tick, other->size);
         memset(self->elems + self->size, 0,
                (tick - self->size) * sizeof(Obj*));
+        self->size = tick + other->size;
     }
 
     SI_copy_and_incref(self->elems + tick, other->elems, other->size);
-    self->size = tick + other->size;
 }
 
 Obj*

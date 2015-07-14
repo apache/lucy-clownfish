@@ -179,6 +179,49 @@ test_Push_Pop_Insert(TestBatchRunner *runner) {
 }
 
 static void
+test_Insert_All(TestBatchRunner *runner) {
+    size_t i;
+
+    {
+        Vector *dst    = Vec_new(20);
+        Vector *src    = Vec_new(10);
+        Vector *wanted = Vec_new(30);
+
+        for (i = 0; i < 10; i++) { Vec_Push(dst, (Obj*)Int_new(i)); }
+        for (i = 0; i < 10; i++) { Vec_Push(dst, (Obj*)Int_new(i + 20)); }
+        for (i = 0; i < 10; i++) { Vec_Push(src, (Obj*)Int_new(i + 10)); }
+        for (i = 0; i < 30; i++) { Vec_Push(wanted, (Obj*)Int_new(i)); }
+
+        Vec_Insert_All(dst, 10, src);
+        TEST_TRUE(runner, Vec_Equals(dst, (Obj*)wanted), "Insert_All between");
+
+        DECREF(wanted);
+        DECREF(src);
+        DECREF(dst);
+    }
+
+    {
+        Vector *dst    = Vec_new(10);
+        Vector *src    = Vec_new(10);
+        Vector *wanted = Vec_new(30);
+
+        for (i = 0; i < 10; i++) { Vec_Push(dst, (Obj*)Int_new(i)); }
+        for (i = 0; i < 10; i++) { Vec_Push(src, (Obj*)Int_new(i + 20)); }
+        for (i = 0; i < 10; i++) { Vec_Push(wanted, (Obj*)Int_new(i)); }
+        for (i = 0; i < 10; i++) {
+            Vec_Store(wanted, i + 20, (Obj*)Int_new(i + 20));
+        }
+
+        Vec_Insert_All(dst, 20, src);
+        TEST_TRUE(runner, Vec_Equals(dst, (Obj*)wanted), "Insert_All after");
+
+        DECREF(wanted);
+        DECREF(src);
+        DECREF(dst);
+    }
+}
+
+static void
 test_Delete(TestBatchRunner *runner) {
     Vector *wanted = Vec_new(5);
     Vector *got    = Vec_new(5);
@@ -474,10 +517,11 @@ test_Grow(TestBatchRunner *runner) {
 
 void
 TestVector_Run_IMP(TestVector *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 59);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 61);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Insert(runner);
+    test_Insert_All(runner);
     test_Delete(runner);
     test_Resize(runner);
     test_Excise(runner);
