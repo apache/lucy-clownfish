@@ -113,6 +113,13 @@ CFCGoFunc_meth_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
                         IS_METHOD);
 }
 
+char*
+CFCGoFunc_ctor_start(CFCParcel *parcel, const char *name,
+                     CFCParamList *param_list, CFCType *return_type) {
+    return S_prep_start(parcel, name, NULL, param_list, return_type,
+                        IS_CTOR);
+}
+
 static char*
 S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
                       CFCParamList *param_list, int targ) {
@@ -177,6 +184,11 @@ char*
 CFCGoFunc_meth_cfargs(CFCParcel *parcel, CFCClass *invoker,
                       CFCParamList *param_list) {
     return S_prep_cfargs(parcel, invoker, param_list, IS_METHOD);
+}
+
+char*
+CFCGoFunc_ctor_cfargs(CFCParcel *parcel, CFCParamList *param_list) {
+    return S_prep_cfargs(parcel, NULL, param_list, IS_CTOR);
 }
 
 char*

@@ -106,14 +106,6 @@ func CFStringToGo(ptr unsafe.Pointer) string {
 	return C.GoStringN(data, size)
 }
 
-func NewErr(mess string) Err {
-	str := C.CString(mess)
-	len := C.size_t(len(mess))
-	messC := C.cfish_Str_new_steal_utf8(str, len)
-	cfObj := C.cfish_Err_new(messC)
-	return WRAPErr(unsafe.Pointer(cfObj))
-}
-
 func (e *ErrIMP) Error() string {
 	mess := C.CFISH_Err_Get_Mess((*C.cfish_Err)(unsafe.Pointer(e.ref)))
 	return CFStringToGo(unsafe.Pointer(mess))
