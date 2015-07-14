@@ -21,6 +21,8 @@
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
 
+#define MAX_VECTOR_SIZE (SIZE_MAX / sizeof(Obj*))
+
 #include "Clownfish/Test/TestVector.h"
 
 #include "Clownfish/String.h"
@@ -406,7 +408,7 @@ static void
 S_overflow_Push(void *context) {
     UNUSED_VAR(context);
     Vector *array = Vec_new(0);
-    array->cap  = SIZE_MAX;
+    array->cap  = MAX_VECTOR_SIZE;
     array->size = array->cap;
     Vec_Push(array, (Obj*)CFISH_TRUE);
 }
@@ -415,9 +417,7 @@ static void
 S_overflow_Insert(void *context) {
     UNUSED_VAR(context);
     Vector *array = Vec_new(0);
-    array->cap  = SIZE_MAX;
-    array->size = array->cap;
-    Vec_Insert(array, 38911, (Obj*)CFISH_TRUE);
+    Vec_Insert(array, SIZE_MAX, (Obj*)CFISH_TRUE);
 }
 
 static void
@@ -427,9 +427,17 @@ S_overflow_Push_All(void *context) {
     array->cap  = 1000000000;
     array->size = array->cap;
     Vector *other = Vec_new(0);
-    other->cap  = SIZE_MAX - array->cap + 1;
+    other->cap  = MAX_VECTOR_SIZE - array->cap + 1;
     other->size = other->cap;
     Vec_Push_All(array, other);
+}
+
+static void
+S_overflow_Insert_All(void *context) {
+    UNUSED_VAR(context);
+    Vector *array = Vec_new(0);
+    Vector *other = Vec_new(0);
+    Vec_Insert_All(array, SIZE_MAX, other);
 }
 
 static void
@@ -459,6 +467,8 @@ test_exceptions(TestBatchRunner *runner) {
                      "Insert throws on overflow");
     S_test_exception(runner, S_overflow_Push_All,
                      "Push_All throws on overflow");
+    S_test_exception(runner, S_overflow_Insert_All,
+                     "Insert_All throws on overflow");
     S_test_exception(runner, S_overflow_Store,
                      "Store throws on overflow");
 }
@@ -517,7 +527,7 @@ test_Grow(TestBatchRunner *runner) {
 
 void
 TestVector_Run_IMP(TestVector *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 61);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 62);
     test_Equals(runner);
     test_Store_Fetch(runner);
     test_Push_Pop_Insert(runner);

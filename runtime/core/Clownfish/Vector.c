@@ -26,17 +26,16 @@
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/SortUtils.h"
 
+#define MAX_VECTOR_SIZE (SIZE_MAX / sizeof(Obj*))
+
 static CFISH_INLINE void
 SI_copy_and_incref(Obj **dst, Obj **src, size_t num);
 
 static CFISH_INLINE void
-SI_add_grow_and_oversize(Vector *self, size_t addend1, size_t addend2);
+SI_add_grow_and_oversize(Vector *self, size_t size, size_t extra);
 
 static void
 S_grow_and_oversize(Vector *self, size_t min_size);
-
-static CFISH_INLINE void
-SI_grow(Vector *self, size_t capacity);
 
 static void
 S_overflow_error(void);
@@ -110,7 +109,7 @@ Vec_Pop_IMP(Vector *self) {
 void
 Vec_Insert_IMP(Vector *self, size_t tick, Obj *elem) {
     size_t max_tick = tick > self->size ? tick : self->size;
-    SI_add_grow_and_oversize(self, max_tick, 1);
+    SI_add_grow_and_oversize(self, 1, max_tick);
 
     if (tick < self->size) {
         memmove(self->elems + tick + 1, self->elems + tick,
@@ -128,7 +127,7 @@ Vec_Insert_IMP(Vector *self, size_t tick, Obj *elem) {
 void
 Vec_Insert_All_IMP(Vector *self, size_t tick, Vector *other) {
     size_t max_tick = tick > self->size ? tick : self->size;
-    SI_add_grow_and_oversize(self, max_tick, other->size);
+    SI_add_grow_and_oversize(self, other->size, max_tick);
 
     if (tick < self->size) {
         memmove(self->elems + tick + other->size, self->elems + tick,
@@ -158,7 +157,7 @@ Vec_Store_IMP(Vector *self, size_t tick, Obj *elem) {
         DECREF(self->elems[tick]);
     }
     else {
-        SI_add_grow_and_oversize(self, tick, 1);
+        SI_add_grow_and_oversize(self, 1, tick);
         memset(self->elems + self->size, 0,
                (tick - self->size) * sizeof(Obj*));
         self->size = tick + 1;
@@ -169,7 +168,12 @@ Vec_Store_IMP(Vector *self, size_t tick, Obj *elem) {
 void
 Vec_Grow_IMP(Vector *self, size_t capacity) {
     if (capacity > self->cap) {
-        SI_grow(self, capacity);
+        if (capacity > MAX_VECTOR_SIZE) {
+            S_overflow_error();
+            return;
+        }
+        self->elems = (Obj**)REALLOCATE(self->elems, capacity * sizeof(Obj*));
+        self->cap   = capacity;
     }
 }
 
@@ -301,22 +305,24 @@ SI_copy_and_incref(Obj **dst, Obj **src, size_t num) {
     }
 }
 
-// Ensure that the vector's capacity is at least (addend1 + addend2).
+// Ensure that the vector's capacity is at least (size + extra).
+// Assumes that size <= MAX_VECTOR_SIZE.
 // If the vector must be grown, oversize the allocation.
 static CFISH_INLINE void
-SI_add_grow_and_oversize(Vector *self, size_t addend1, size_t addend2) {
-    size_t min_size = addend1 + addend2;
-    // Check for overflow.
-    if (min_size < addend1) {
+SI_add_grow_and_oversize(Vector *self, size_t size, size_t extra) {
+    if (extra > MAX_VECTOR_SIZE - size) {
         S_overflow_error();
         return;
     }
 
+    size_t min_size = size + extra;
     if (min_size > self->cap) {
         S_grow_and_oversize(self, min_size);
     }
 }
 
+// Assumes min_size <= MAX_VECTOR_SIZE.
+// __attribute__((noinline))
 static void
 S_grow_and_oversize(Vector *self, size_t min_size) {
     // Oversize by 25%, but at least four elements.
@@ -324,21 +330,10 @@ S_grow_and_oversize(Vector *self, size_t min_size) {
     if (extra < 4) { extra = 4; }
 
     size_t capacity = min_size + extra;
-    // Check for overflow.
-    if (capacity < min_size) {
-        S_overflow_error();
-        return;
+    if (capacity > MAX_VECTOR_SIZE) {
+        capacity = MAX_VECTOR_SIZE;
     }
 
-    SI_grow(self, capacity);
-}
-
-static CFISH_INLINE void
-SI_grow(Vector *self, size_t capacity) {
-    if (capacity > SIZE_MAX / sizeof(Obj*)) {
-        S_overflow_error();
-        return;
-    }
     self->elems = (Obj**)REALLOCATE(self->elems, capacity * sizeof(Obj*));
     self->cap   = capacity;
 }
