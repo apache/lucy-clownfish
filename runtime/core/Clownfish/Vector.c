@@ -27,6 +27,9 @@
 #include "Clownfish/Util/SortUtils.h"
 
 static CFISH_INLINE void
+SI_copy_and_incref(Obj **dst, Obj **src, size_t num);
+
+static CFISH_INLINE void
 SI_add_grow_and_oversize(Vector *self, size_t addend1, size_t addend2);
 
 static void
@@ -76,13 +79,7 @@ Vector*
 Vec_Clone_IMP(Vector *self) {
     Vector *twin = Vec_new(self->size);
     twin->size = self->size;
-
-    // Copy and incref.
-    Obj **elems      = self->elems;
-    Obj **twin_elems = twin->elems;
-    for (size_t i = 0, max = self->size; i < max; i++) {
-        twin_elems[i] = INCREF(elems[i]);
-    }
+    SI_copy_and_incref(twin->elems, self->elems, self->size);
 
     return twin;
 }
@@ -97,14 +94,7 @@ Vec_Push_IMP(Vector *self, Obj *element) {
 void
 Vec_Push_All_IMP(Vector *self, Vector *other) {
     SI_add_grow_and_oversize(self, self->size, other->size);
-
-    // Copy and incref.
-    Obj **dest        = self->elems + self->size;
-    Obj **other_elems = other->elems;
-    for (size_t i = 0, max = other->size; i < max; i++) {
-        dest[i] = INCREF(other_elems[i]);
-    }
-
+    SI_copy_and_incref(self->elems + self->size, other->elems, other->size);
     self->size += other->size;
 }
 
@@ -144,13 +134,7 @@ Vec_Insert_All_IMP(Vector *self, size_t tick, Vector *other) {
                (tick - self->size) * sizeof(Obj*));
     }
 
-    // Copy and incref.
-    Obj **dest        = self->elems + tick;
-    Obj **other_elems = other->elems;
-    for (size_t i = 0, max = other->size; i < max; i++) {
-        dest[i] = INCREF(other_elems[i]);
-    }
-
+    SI_copy_and_incref(self->elems + tick, other->elems, other->size);
     self->size = tick + other->size;
 }
 
@@ -292,13 +276,16 @@ Vec_Slice_IMP(Vector *self, size_t offset, size_t length) {
     // Copy elements.
     Vector *slice = Vec_new(length);
     slice->size = length;
-    Obj **slice_elems = slice->elems;
-    Obj **my_elems    = self->elems;
-    for (size_t i = 0; i < length; i++) {
-        slice_elems[i] = INCREF(my_elems[offset + i]);
-    }
+    SI_copy_and_incref(slice->elems, self->elems + offset, length);
 
     return slice;
+}
+
+static CFISH_INLINE void
+SI_copy_and_incref(Obj **dst, Obj **src, size_t num) {
+    for (size_t i = 0; i < num; i++) {
+        dst[i] = INCREF(src[i]);
+    }
 }
 
 // Ensure that the vector's capacity is at least (addend1 + addend2).
