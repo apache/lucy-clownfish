@@ -52,15 +52,14 @@ CFCGoFunc_go_meth_name(const char *orig) {
     return go_name;
 }
 
-char*
-CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
-                     CFCParamList *param_list, CFCType *return_type,
-                     int is_method) {
+static char*
+S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
+             CFCParamList *param_list, CFCType *return_type, int targ) {
     CFCVariable **param_vars = CFCParamList_get_variables(param_list);
     char *invocant;
     char go_name[GO_NAME_BUF_SIZE];
 
-    if (is_method) {
+    if (targ == IS_METHOD) {
         const char *struct_sym = CFCClass_get_struct_sym(invoker);
         CFCGoTypeMap_go_meth_receiever(struct_sym, param_list, go_name,
                                        GO_NAME_BUF_SIZE);
@@ -71,7 +70,7 @@ CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
     }
 
     char *params = CFCUtil_strdup("");
-    int start = is_method ? 1 : 0;
+    int start = targ == IS_METHOD ? 1 : 0;
     for (int i = start; param_vars[i] != NULL; i++) {
         CFCVariable *var = param_vars[i];
         CFCType *type = CFCVariable_get_type(var);
@@ -105,6 +104,13 @@ CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
     FREEMEM(params);
     FREEMEM(ret_type_str);
     return content;
+}
+
+char*
+CFCGoFunc_meth_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
+                     CFCParamList *param_list, CFCType *return_type) {
+    return S_prep_start(parcel, name, invoker, param_list, return_type,
+                        IS_METHOD);
 }
 
 static char*

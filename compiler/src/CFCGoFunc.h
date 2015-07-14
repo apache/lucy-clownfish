@@ -32,10 +32,10 @@ char*
 CFCGoFunc_go_meth_name(const char *orig);
 
 char*
-CFCGoFunc_func_start(struct CFCParcel *parcel, const char *name,
+CFCGoFunc_meth_start(struct CFCParcel *parcel, const char *name,
                      struct CFCClass *invoker,
                      struct CFCParamList *param_list,
-                     struct CFCType *return_type, int is_method);
+                     struct CFCType *return_type);
 
 /** Convert Go method arguments to comma-separated Clownfish-flavored C
  * arguments, to be passed to a Clownfish method.
