@@ -109,16 +109,20 @@ Vec_Pop_IMP(Vector *self) {
 
 void
 Vec_Insert_IMP(Vector *self, size_t tick, Obj *elem) {
-    if (tick >= self->size) {
-        Vec_Store(self, tick, elem);
-        return;
+    if (tick < self->size) {
+        SI_add_grow_and_oversize(self, self->size, 1);
+        memmove(self->elems + tick + 1, self->elems + tick,
+                (self->size - tick) * sizeof(Obj*));
+        self->size++;
+    }
+    else {
+        SI_add_grow_and_oversize(self, tick, 1);
+        memset(self->elems + self->size, 0,
+               (tick - self->size) * sizeof(Obj*));
+        self->size = tick + 1;
     }
 
-    SI_add_grow_and_oversize(self, self->size, 1);
-    memmove(self->elems + tick + 1, self->elems + tick,
-            (self->size - tick) * sizeof(Obj*));
     self->elems[tick] = elem;
-    self->size++;
 }
 
 void
@@ -149,11 +153,11 @@ Vec_Fetch_IMP(Vector *self, size_t num) {
 
 void
 Vec_Store_IMP(Vector *self, size_t tick, Obj *elem) {
-    SI_add_grow_and_oversize(self, tick, 1);
     if (tick < self->size) {
         DECREF(self->elems[tick]);
     }
     else {
+        SI_add_grow_and_oversize(self, tick, 1);
         memset(self->elems + self->size, 0,
                (tick - self->size) * sizeof(Obj*));
         self->size = tick + 1;
@@ -202,10 +206,10 @@ Vec_Clear_IMP(Vector *self) {
 void
 Vec_Resize_IMP(Vector *self, size_t size) {
     if (size < self->size) {
-        Vec_Excise(self, size, self->size - size);
+        Vec_Excise_IMP(self, size, self->size - size);
     }
     else if (size > self->size) {
-        Vec_Grow(self, size);
+        Vec_Grow_IMP(self, size);
         memset(self->elems + self->size, 0,
                (size - self->size) * sizeof(Obj*));
     }
@@ -255,8 +259,16 @@ Vec_Equals_IMP(Vector *self, Obj *other) {
         for (size_t i = 0, max = self->size; i < max; i++) {
             Obj *val       = elems[i];
             Obj *other_val = twin_elems[i];
-            if ((val && !other_val) || (other_val && !val)) { return false; }
-            if (val && !Obj_Equals(val, other_val))         { return false; }
+            if (val) {
+                if (!other_val || !Obj_Equals(val, other_val)) {
+                    return false;
+                }
+            }
+            else {
+                if (other_val) {
+                    return false;
+                }
+            }
         }
     }
     return true;
