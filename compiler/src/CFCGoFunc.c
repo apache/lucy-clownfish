@@ -35,6 +35,12 @@
 
 #define GO_NAME_BUF_SIZE 128
 
+enum {
+    IS_METHOD = 1,
+    IS_FUNC   = 2,
+    IS_CTOR   = 3
+};
+
 char*
 CFCGoFunc_go_meth_name(const char *orig) {
     char *go_name = CFCUtil_strdup(orig);
@@ -99,6 +105,72 @@ CFCGoFunc_func_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
     FREEMEM(params);
     FREEMEM(ret_type_str);
     return content;
+}
+
+static char*
+S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
+                      CFCParamList *param_list, int targ) {
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    char go_name[GO_NAME_BUF_SIZE];
+    char *cfargs = CFCUtil_strdup("");
+
+    for (int i = 0; vars[i] != NULL; i++) {
+        CFCVariable *var = vars[i];
+        CFCType *type = CFCVariable_get_type(var);
+        if (targ == IS_METHOD && i == 0) {
+            CFCGoTypeMap_go_meth_receiever(CFCClass_get_struct_sym(invoker),
+                                           param_list, go_name,
+                                           GO_NAME_BUF_SIZE);
+        }
+        else {
+            CFCGoTypeMap_go_arg_name(param_list, i, go_name, GO_NAME_BUF_SIZE);
+        }
+
+        if (i > 0) {
+            cfargs = CFCUtil_cat(cfargs, ", ", NULL);
+        }
+
+        if (CFCType_is_primitive(type)) {
+            cfargs = CFCUtil_cat(cfargs, "C.", CFCType_get_specifier(type),
+                                 "(", go_name, ")", NULL);
+        }
+        else if (CFCType_is_string_type(type)
+                 // Don't convert a clownfish.String invocant.
+                 && (targ != IS_METHOD || i != 0)
+                ) {
+            const char *format;
+            if (CFCParcel_is_cfish(parcel)) {
+                format = "%s((*C.cfish_String)(unsafe.Pointer(NewString(%s).TOPTR())))";
+            }
+            else {
+                format = "%s((*C.cfish_String)(unsafe.Pointer(clownfish.NewString(%s).TOPTR())))";
+            }
+            char *temp = CFCUtil_sprintf(format, cfargs, go_name);
+            FREEMEM(cfargs);
+            cfargs = temp;
+        }
+        else if (CFCType_is_object(type)) {
+
+            char *obj_pattern;
+            if (CFCType_decremented(type)) {
+                obj_pattern = "(*C.%s)(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(%s.TOPTR()))))";
+            }
+            else {
+                obj_pattern = "(*C.%s)(unsafe.Pointer(%s.TOPTR()))";
+            }
+            char *temp = CFCUtil_sprintf(obj_pattern,
+                                         CFCType_get_specifier(type), go_name);
+            cfargs = CFCUtil_cat(cfargs, temp, NULL);
+            FREEMEM(temp);
+        }
+    }
+    return cfargs;
+}
+
+char*
+CFCGoFunc_meth_cfargs(CFCParcel *parcel, CFCClass *invoker,
+                      CFCParamList *param_list) {
+    return S_prep_cfargs(parcel, invoker, param_list, IS_METHOD);
 }
 
 char*

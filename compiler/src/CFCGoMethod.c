@@ -133,63 +133,6 @@ CFCGoMethod_get_sig(CFCGoMethod *self, CFCClass *invoker) {
     }
 }
 
-#define GO_NAME_BUF_SIZE 128
-
-static char*
-S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
-              CFCParamList *param_list) {
-    CFCVariable **vars = CFCParamList_get_variables(param_list);
-    char go_name[GO_NAME_BUF_SIZE];
-    char *cfargs = CFCUtil_strdup("");
-
-    for (int i = 0; vars[i] != NULL; i++) {
-        CFCVariable *var = vars[i];
-        CFCType *type = CFCVariable_get_type(var);
-        if (i == 0) {
-            CFCGoTypeMap_go_meth_receiever(CFCClass_get_struct_sym(invoker),
-                                           param_list, go_name,
-                                           GO_NAME_BUF_SIZE);
-        }
-        else {
-            cfargs = CFCUtil_cat(cfargs, ", ", NULL);
-            CFCGoTypeMap_go_arg_name(param_list, i, go_name, GO_NAME_BUF_SIZE);
-        }
-
-        if (CFCType_is_primitive(type)) {
-            cfargs = CFCUtil_cat(cfargs, "C.", CFCType_get_specifier(type),
-                                 "(", go_name, ")", NULL);
-        }
-        else if (CFCType_is_string_type(type)
-                 && i != 0) { // Don't convert a clownfish.String invocant.
-            const char *format;
-            if (CFCParcel_is_cfish(parcel)) {
-                format = "%s((*C.cfish_String)(unsafe.Pointer(NewString(%s).TOPTR())))";
-            }
-            else {
-                format = "%s((*C.cfish_String)(unsafe.Pointer(clownfish.NewString(%s).TOPTR())))";
-            }
-            char *temp = CFCUtil_sprintf(format, cfargs, go_name);
-            FREEMEM(cfargs);
-            cfargs = temp;
-        }
-        else if (CFCType_is_object(type)) {
-
-            char *obj_pattern;
-            if (CFCType_decremented(type)) {
-                obj_pattern = "(*C.%s)(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(%s.TOPTR()))))";
-            }
-            else {
-                obj_pattern = "(*C.%s)(unsafe.Pointer(%s.TOPTR()))";
-            }
-            char *temp = CFCUtil_sprintf(obj_pattern,
-                                         CFCType_get_specifier(type), go_name);
-            cfargs = CFCUtil_cat(cfargs, temp, NULL);
-            FREEMEM(temp);
-        }
-    }
-    return cfargs;
-}
-
 char*
 CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
     if (!self->method || CFCMethod_excluded_from_host(self->method)) {
@@ -211,7 +154,7 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
         cfunc = CFCMethod_full_method_sym(novel_method, invoker);
     }
 
-    char *cfargs = S_prep_cfargs(parcel, invoker, param_list);
+    char *cfargs = CFCGoFunc_meth_cfargs(parcel, invoker, param_list);
 
     char *maybe_retval;
     char *maybe_return;
