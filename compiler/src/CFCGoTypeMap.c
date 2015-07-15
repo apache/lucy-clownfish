@@ -66,56 +66,23 @@ static struct {
 static int num_conversions = sizeof(conversions) / sizeof(conversions[0]);
 
 static const char* go_keywords[] = {
-    "break",
-    "case",
-    "chan",
-    "const",
-    "continue",
-    "default",
-    "defer",
-    "else",
-    "fallthrough",
-    "for",
-    "func",
-    "go",
-    "goto",
-    "if",
-    "import",
-    "interface",
-    "map",
-    "package",
-    "range",
-    "return",
-    "select",
-    "struct",
-    "switch",
-    "type",
-    "var",
-    "true",
-    "false",
-    "bool",
-    "int",
-    "uint",
-    "uintptr",
-    "int8",
-    "int16",
-    "int32",
-    "int32",
-    "int8",
-    "int16",
-    "int32",
-    "int64",
-    "uint8",
-    "uint16",
-    "uint32",
-    "uint64",
-    "float32",
-    "float64",
-    "complex64",
-    "complex128",
-    "byte",
-    "rune",
-    "string"
+    // Keywords.
+    "break",    "default",     "func",   "interface", "select",
+    "case",     "defer",       "go",     "map",       "struct",
+    "chan",     "else",        "goto",   "package",   "switch",
+    "const",    "fallthrough", "if",     "range",     "type",
+    "continue", "for",         "import", "return",    "var",
+    // Types.
+    "bool", "byte",  "complex64", "complex128", "error",  "float32", "float64",
+    "int",  "int8",  "int16",     "int32",      "int64",  "rune",    "string",
+    "uint", "uint8", "uint16",    "uint32",     "uint64", "uintptr",
+    // Constants.
+    "true", "false", "iota",
+    // Zero value.
+    "nil",
+    // Functions.
+    "append", "cap", "close", "complex", "copy",    "delete", "imag", "len",
+    "make",   "new", "panic", "print",   "println", "real",   "recover"
 };
 
 static int num_go_keywords = sizeof(go_keywords) / sizeof(go_keywords[0]);
