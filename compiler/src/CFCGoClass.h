@@ -71,6 +71,9 @@ char*
 CFCGoClass_boilerplate_funcs(CFCGoClass *self);
 
 char*
+CFCGoClass_gen_ctors(CFCGoClass *self);
+
+char*
 CFCGoClass_gen_meth_glue(CFCGoClass *self);
 
 void
@@ -78,6 +81,9 @@ CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig);
 
 void
 CFCGoClass_set_suppress_struct(CFCGoClass *self, int suppress_struct);
+
+void
+CFCGoClass_set_suppress_ctor(CFCGoClass *self, int suppress_ctor);
 
 #ifdef __cplusplus
 }
