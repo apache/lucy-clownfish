@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
+#ifndef H_CLOWNFISH_LOCKFREEREGISTRY
+#define H_CLOWNFISH_LOCKFREEREGISTRY 1
+
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Specialized lock free hash table for storing Classes.
  */
 
@@ -42,4 +51,10 @@ cfish_LFReg_fetch(cfish_LockFreeRegistry *self, struct cfish_String *key);
   #define LFReg_register   cfish_LFReg_register
   #define LFReg_fetch      cfish_LFReg_fetch
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* H_CLOWNFISH_LOCKFREEREGISTRY */
 
