@@ -626,8 +626,7 @@ S_sub_declarations(CFCBindClass *self) {
     for (int i = 0; fresh_methods[i] != NULL; i++) {
         CFCMethod *method = fresh_methods[i];
         char *dec = CFCBindMeth_imp_declaration(method, self->client);
-        declarations = CFCUtil_cat(declarations, PREFIX, "VISIBLE ", dec,
-                                   "\n\n", NULL);
+        declarations = CFCUtil_cat(declarations, dec, "\n\n", NULL);
         FREEMEM(dec);
     }
     return declarations;
