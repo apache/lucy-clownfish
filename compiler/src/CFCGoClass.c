@@ -17,6 +17,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef true
+#define true 1
+#define false 0
+#endif
+
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCGoClass.h"
@@ -29,6 +34,7 @@
 #include "CFCSymbol.h"
 #include "CFCVariable.h"
 #include "CFCType.h"
+#include "CFCGoFunc.h"
 #include "CFCGoMethod.h"
 #include "CFCGoTypeMap.h"
 
@@ -40,6 +46,7 @@ struct CFCGoClass {
     CFCGoMethod **method_bindings;
     size_t num_bound;
     int suppress_struct;
+    int suppress_ctor;
 };
 
 static CFCGoClass **registry = NULL;
@@ -259,6 +266,45 @@ CFCGoClass_boilerplate_funcs(CFCGoClass *self) {
     return content;
 }
 
+
+char*
+CFCGoClass_gen_ctors(CFCGoClass *self) {
+    CFCFunction *ctor_func = CFCClass_function(self->client, "new");
+    if (self->suppress_ctor
+        || !ctor_func
+        || !CFCFunction_can_be_bound(ctor_func)
+       ) {
+        return CFCUtil_strdup("");
+    }
+    CFCParcel    *parcel     = CFCClass_get_parcel(self->client);
+    CFCParamList *param_list = CFCFunction_get_param_list(ctor_func);
+    CFCType      *ret_type   = CFCFunction_get_return_type(ctor_func);
+    const char   *struct_sym = CFCClass_get_struct_sym(self->client);
+    char         *name       = CFCUtil_sprintf("New%s", struct_sym);
+    char         *cfunc  = CFCFunction_full_func_sym(ctor_func, self->client);
+    char         *cfargs = CFCGoFunc_ctor_cfargs(parcel, param_list);
+    char *first_line
+        = CFCGoFunc_ctor_start(parcel, name, param_list, ret_type);
+    char *ret_statement
+        = CFCGoFunc_return_statement(parcel, ret_type, "retvalCF");
+
+    char pattern[] =
+        "%s"
+        "\tretvalCF := C.%s(%s)\n"
+        "%s"
+        "}\n"
+        ;
+    char *content = CFCUtil_sprintf(pattern, first_line, cfunc,
+                                    cfargs, ret_statement);
+
+    FREEMEM(ret_statement);
+    FREEMEM(cfargs);
+    FREEMEM(cfunc);
+    FREEMEM(first_line);
+    FREEMEM(name);
+    return content;
+}
+
 static void
 S_lazy_init_method_bindings(CFCGoClass *self) {
     if (self->method_bindings) {
@@ -357,5 +403,10 @@ CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig) {
 void
 CFCGoClass_set_suppress_struct(CFCGoClass *self, int suppress_struct) {
     self->suppress_struct = !!suppress_struct;
+}
+
+void
+CFCGoClass_set_suppress_ctor(CFCGoClass *self, int suppress_ctor) {
+    self->suppress_ctor = !!suppress_ctor;
 }
 

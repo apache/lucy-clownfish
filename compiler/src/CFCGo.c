@@ -232,6 +232,7 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
     CFCGoClass **registry = CFCGoClass_registry();
     char *type_decs   = CFCUtil_strdup("");
     char *boilerplate = CFCUtil_strdup("");
+    char *ctors       = CFCUtil_strdup("");
     char *meth_defs   = CFCUtil_strdup("");
 
     for (int i = 0; registry[i] != NULL; i++) {
@@ -250,6 +251,10 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         boilerplate = CFCUtil_cat(boilerplate, boiler_code, "\n", NULL);
         FREEMEM(boiler_code);
 
+        char *ctor_code = CFCGoClass_gen_ctors(class_binding);
+        ctors = CFCUtil_cat(ctors, ctor_code, "\n", NULL);
+        FREEMEM(ctor_code);
+
         char *glue = CFCGoClass_gen_meth_glue(class_binding);
         meth_defs = CFCUtil_cat(meth_defs, glue, "\n", NULL);
         FREEMEM(glue);
@@ -264,15 +269,20 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         "\n"
         "%s\n"
         "\n"
+        "// Constructors.\n"
+        "\n"
+        "%s\n"
+        "\n"
         "// Method bindings.\n"
         "\n"
         "%s\n"
         "\n"
         ;
     char *content
-        = CFCUtil_sprintf(pattern, type_decs, boilerplate, meth_defs);
+        = CFCUtil_sprintf(pattern, type_decs, boilerplate, ctors, meth_defs);
 
     FREEMEM(meth_defs);
+    FREEMEM(ctors);
     FREEMEM(boilerplate);
     FREEMEM(type_decs);
     return content;
