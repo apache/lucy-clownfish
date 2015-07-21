@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package clownfish_test
+package clownfish
 
-import "git-wip-us.apache.org/repos/asf/lucy-clownfish.git/runtime/go/clownfish"
 import "testing"
 import "unsafe"
 
 func TestStuff(t *testing.T) {
-	cfString := clownfish.NewString("foo")
-	goString := clownfish.CFStringToGo(unsafe.Pointer(cfString.TOPTR()))
+	cfString := NewString("foo")
+	goString := CFStringToGo(unsafe.Pointer(cfString.TOPTR()))
 	if goString != "foo" {
 		t.Error("Round-tripping strings failed")
 	}
