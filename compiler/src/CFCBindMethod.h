@@ -44,26 +44,6 @@ CFCBindMeth_method_def(struct CFCMethod *method, struct CFCClass *klass);
 char*
 CFCBindMeth_typedef_dec(struct CFCMethod *method, struct CFCClass *klass);
 
-/** Return C code defining the MethSpec object for a novel method, which
- * is used during Class initialization.
- */
-char*
-CFCBindMeth_novel_spec_def(struct CFCMethod *method, struct CFCClass *klass);
-
-/** Return C code defining the MethSpec object for an overridden method,
- * which is used during Class initialization.
- */
-char*
-CFCBindMeth_overridden_spec_def(struct CFCMethod *method,
-                                struct CFCClass *klass);
-
-/** Return C code defining the MethSpec object for an inherited method,
- * which is used during Class initialization.
- */
-char*
-CFCBindMeth_inherited_spec_def(struct CFCMethod *method,
-                               struct CFCClass *klass);
-
 /** Return C code implementing a version of the method which throws an
  * "abstract method" error at runtime, for methods which are declared as
  * "abstract" in a Clownfish header file.

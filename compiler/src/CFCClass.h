@@ -208,6 +208,12 @@ CFCClass_member_vars(CFCClass *self);
 size_t
 CFCClass_num_member_vars(CFCClass *self);
 
+/** Count the number of member variables declared in ancestor classes
+ * outside this package.
+ */
+size_t
+CFCClass_num_non_package_ivars(CFCClass *self);
+
 /** Return an array of all inert (shared, class) variables.
  */
 struct CFCVariable**

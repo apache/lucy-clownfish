@@ -24,6 +24,7 @@
 #include "CFCBindCore.h"
 #include "CFCBindClass.h"
 #include "CFCBindFile.h"
+#include "CFCBindSpecs.h"
 #include "CFCClass.h"
 #include "CFCFile.h"
 #include "CFCHierarchy.h"
@@ -300,41 +301,6 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "#define CFISH_fREFCOUNTSPECIAL 0x00000001\n"
         ;
     const char *cfish_defs_2 =
-        "/* Structs for Class initialization.\n"
-        " */\n"
-        "\n"
-        "typedef struct cfish_NovelMethSpec {\n"
-        "    size_t         *offset;\n"
-        "    const char     *name;\n"
-        "    cfish_method_t  func;\n"
-        "    cfish_method_t  callback_func;\n"
-        "} cfish_NovelMethSpec;\n"
-        "\n"
-        "typedef struct cfish_OverriddenMethSpec {\n"
-        "    size_t         *offset;\n"
-        "    size_t         *parent_offset;\n"
-        "    cfish_method_t  func;\n"
-        "} cfish_OverriddenMethSpec;\n"
-        "\n"
-        "typedef struct cfish_InheritedMethSpec {\n"
-        "    size_t *offset;\n"
-        "    size_t *parent_offset;\n"
-        "} cfish_InheritedMethSpec;\n"
-        "\n"
-        "typedef struct cfish_ClassSpec {\n"
-        "    cfish_Class **klass;\n"
-        "    cfish_Class **parent;\n"
-        "    const char   *name;\n"
-        "    size_t        ivars_size;\n"
-        "    size_t       *ivars_offset_ptr;\n"
-        "    uint32_t      num_novel_meths;\n"
-        "    uint32_t      num_overridden_meths;\n"
-        "    uint32_t      num_inherited_meths;\n"
-        "    const cfish_NovelMethSpec      *novel_meth_specs;\n"
-        "    const cfish_OverriddenMethSpec *overridden_meth_specs;\n"
-        "    const cfish_InheritedMethSpec  *inherited_meth_specs;\n"
-        "} cfish_ClassSpec;\n"
-        "\n"
         "#ifdef CFISH_USE_SHORT_NAMES\n"
         "  #define UNUSED_VAR               CFISH_UNUSED_VAR\n"
         "  #define UNREACHABLE_RETURN       CFISH_UNREACHABLE_RETURN\n"
@@ -352,7 +318,9 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
     char *extra_defs;
     char *extra_includes;
     if (CFCParcel_is_cfish(parcel)) {
-        extra_defs = CFCUtil_sprintf("%s%s", cfish_defs_1, cfish_defs_2);
+        const char *spec_typedefs = CFCBindSpecs_get_typedefs();
+        extra_defs = CFCUtil_sprintf("%s%s%s", cfish_defs_1, spec_typedefs,
+                                     cfish_defs_2);
         extra_includes = CFCUtil_strdup(cfish_includes);
     }
     else {
@@ -439,10 +407,9 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     char *privacy_syms = CFCUtil_strdup("");
     char *includes     = CFCUtil_strdup("");
     char *c_data       = CFCUtil_strdup("");
-    char *class_specs  = CFCUtil_strdup(
-        "static const cfish_ClassSpec class_specs[] = {\n");
-    int num_specs = 0;
-    CFCClass **ordered  = CFCHierarchy_ordered_classes(hierarchy);
+    CFCBindSpecs *specs = CFCBindSpecs_new();
+    CFCClass **ordered = CFCHierarchy_ordered_classes(hierarchy);
+
     for (int i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
         const char *class_prefix = CFCClass_get_prefix(klass);
@@ -453,24 +420,22 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
                                "\"\n", NULL);
 
         CFCBindClass *class_binding = CFCBindClass_new(klass);
+
         char *class_c_data = CFCBindClass_to_c_data(class_binding);
         c_data = CFCUtil_cat(c_data, class_c_data, "\n", NULL);
         FREEMEM(class_c_data);
-        if (!CFCClass_inert(klass)) {
-            if (num_specs != 0) {
-                class_specs = CFCUtil_cat(class_specs, ",\n", NULL);
-            }
-            char *class_spec = CFCBindClass_spec_def(class_binding);
-            class_specs = CFCUtil_cat(class_specs, class_spec, NULL);
-            FREEMEM(class_spec);
-            ++num_specs;
-        }
-        CFCBase_decref((CFCBase*)class_binding);
+
+        CFCBindSpecs_add_class(specs, klass);
+
         const char *privacy_sym = CFCClass_privacy_symbol(klass);
         privacy_syms = CFCUtil_cat(privacy_syms, "#define ",
                                    privacy_sym, "\n", NULL);
+
+        CFCBase_decref((CFCBase*)class_binding);
     }
-    class_specs = CFCUtil_cat(class_specs, "\n};\n", NULL);
+
+    char *spec_defs      = CFCBindSpecs_defs(specs);
+    char *spec_init_func = CFCBindSpecs_init_func_def(specs);
     FREEMEM(ordered);
 
     // Bootstrapping code for prerequisite parcels.
@@ -514,9 +479,15 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s\n"
         "\n"
-        "/* ClassSpec structs for initialization.\n"
+        "/* ClassSpec and MethSpec structs for initialization.\n"
         " */\n"
-        "%s\n"
+        "\n"
+        "%s" // spec_defs
+        "\n"
+        "/* Code to initialize ClassSpec and MethSpec structs.\n"
+        " */\n"
+        "\n"
+        "%s" // spec_init_func
         "\n"
         "static int bootstrap_state = 0;\n"
         "\n"
@@ -530,7 +501,7 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "    if (bootstrap_state >= 2) { return; }\n"
         "    bootstrap_state = 1;\n"
         "%s" // Bootstrap inherited parcels.
-        "    cfish_Class_bootstrap(class_specs, %d);\n"
+        "    S_bootstrap_specs();\n"
         "    bootstrap_state = 2;\n"
         "}\n"
         "\n"
@@ -546,9 +517,9 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "%s\n";
     char *file_content
         = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, includes,
-                          c_data, class_specs, prefix, inh_bootstrap,
-                          num_specs, prefix, prefix, prereq_bootstrap, prefix,
-                          self->c_footer);
+                          c_data, spec_defs, spec_init_func, prefix,
+                          inh_bootstrap, prefix, prefix, prereq_bootstrap,
+                          prefix, self->c_footer);
 
     // Unlink then open file.
     const char *src_dest = CFCHierarchy_get_source_dest(hierarchy);
@@ -558,10 +529,12 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     CFCUtil_write_file(filepath, file_content, strlen(file_content));
     FREEMEM(filepath);
 
+    CFCBase_decref((CFCBase*)specs);
     FREEMEM(privacy_syms);
     FREEMEM(includes);
     FREEMEM(c_data);
-    FREEMEM(class_specs);
+    FREEMEM(spec_defs);
+    FREEMEM(spec_init_func);
     FREEMEM(inh_bootstrap);
     FREEMEM(prereq_bootstrap);
     FREEMEM(file_content);

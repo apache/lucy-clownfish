@@ -1908,30 +1908,6 @@ CODE:
     RETVAL = S_sv_eat_c_string(CFCBindMeth_method_def(meth, klass));
 OUTPUT: RETVAL
 
-SV*
-_novel_spec_def(meth, klass)
-    CFCMethod *meth;
-    CFCClass  *klass;
-CODE:
-    RETVAL = S_sv_eat_c_string(CFCBindMeth_novel_spec_def(meth, klass));
-OUTPUT: RETVAL
-
-SV*
-_overridden_spec_def(meth, klass)
-    CFCMethod *meth;
-    CFCClass  *klass;
-CODE:
-    RETVAL = S_sv_eat_c_string(CFCBindMeth_overridden_spec_def(meth, klass));
-OUTPUT: RETVAL
-
-SV*
-_inherited_spec_def(meth, klass)
-    CFCMethod *meth;
-    CFCClass  *klass;
-CODE:
-    RETVAL = S_sv_eat_c_string(CFCBindMeth_inherited_spec_def(meth, klass));
-OUTPUT: RETVAL
-
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Binding::Core::Aliases
 
 SV*

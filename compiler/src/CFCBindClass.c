@@ -45,11 +45,6 @@ S_to_c_header_inert(CFCBindClass *self);
 static char*
 S_to_c_header_dynamic(CFCBindClass *self);
 
-// Count the number of member variables declared in ancestor classes
-// outside this package.
-static int
-S_count_non_package_members(CFCBindClass *self);
-
 // Create the definition for the instantiable object struct.
 static char*
 S_struct_definition(CFCBindClass *self);
@@ -286,16 +281,12 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
     }
 
     const char *ivars_offset = CFCClass_full_ivars_offset(client);
-
     const char *class_var    = CFCClass_full_class_var(client);
 
     CFCMethod **methods  = CFCClass_methods(client);
 
     char *offsets           = CFCUtil_strdup("");
     char *method_defs       = CFCUtil_strdup("");
-    char *novel_ms_var      = CFCUtil_strdup("");
-    char *overridden_ms_var = CFCUtil_strdup("");
-    char *inherited_ms_var  = CFCUtil_strdup("");
 
     for (int meth_num = 0; methods[meth_num] != NULL; meth_num++) {
         CFCMethod *method = methods[meth_num];
@@ -314,69 +305,6 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
             method_defs = CFCUtil_cat(method_defs, method_def, "\n", NULL);
             FREEMEM(method_def);
         }
-
-        if (is_fresh && CFCMethod_novel(method)) {
-            if (novel_ms_var[0] == '\0') {
-                // Start an array of cfish_NovelMethSpec structs.  Since C89
-                // doesn't allow us to initialize a pointer to an anonymous
-                // array inside a global struct, we have to give it a real
-                // symbol and then store a pointer to that symbol inside the
-                // ClassSpec struct.
-                novel_ms_var
-                    = CFCUtil_cat(novel_ms_var,
-                                  "static const cfish_NovelMethSpec ",
-                                  class_var, "_NOVEL_METHS[] = {\n", NULL);
-            }
-            else {
-                novel_ms_var = CFCUtil_cat(novel_ms_var, ",\n", NULL);
-            }
-            char *ms_def = CFCBindMeth_novel_spec_def(method, client);
-            novel_ms_var = CFCUtil_cat(novel_ms_var, ms_def, NULL);
-            FREEMEM(ms_def);
-        }
-        else if (is_fresh) {
-            if (overridden_ms_var[0] == '\0') {
-                // Start an array of cfish_OverriddenMethSpec structs.
-                overridden_ms_var
-                    = CFCUtil_cat(overridden_ms_var,
-                                  "static const cfish_OverriddenMethSpec ",
-                                  class_var, "_OVERRIDDEN_METHS[] = {\n",
-                                  NULL);
-            }
-            else {
-                overridden_ms_var
-                    = CFCUtil_cat(overridden_ms_var, ",\n", NULL);
-            }
-            char *ms_def = CFCBindMeth_overridden_spec_def(method, client);
-            overridden_ms_var = CFCUtil_cat(overridden_ms_var, ms_def, NULL);
-            FREEMEM(ms_def);
-        }
-        else {
-            if (inherited_ms_var[0] == '\0') {
-                // Start an array of cfish_InheritedMethSpec structs.
-                inherited_ms_var
-                    = CFCUtil_cat(inherited_ms_var,
-                                  "static const cfish_InheritedMethSpec ",
-                                  class_var, "_INHERITED_METHS[] = {\n", NULL);
-            }
-            else {
-                inherited_ms_var = CFCUtil_cat(inherited_ms_var, ",\n", NULL);
-            }
-            char *ms_def = CFCBindMeth_inherited_spec_def(method, client);
-            inherited_ms_var = CFCUtil_cat(inherited_ms_var, ms_def, NULL);
-            FREEMEM(ms_def);
-        }
-    }
-
-    // Close MethSpec array definitions.
-    if (novel_ms_var[0] != '\0') {
-        novel_ms_var = CFCUtil_cat(novel_ms_var, "\n};\n\n", NULL);
-    }
-    if (overridden_ms_var[0] != '\0') {
-        overridden_ms_var = CFCUtil_cat(overridden_ms_var, "\n};\n\n", NULL);
-    }
-    if (inherited_ms_var[0] != '\0') {
-        inherited_ms_var = CFCUtil_cat(inherited_ms_var, "\n};\n\n", NULL);
     }
 
     const char pattern[] =
@@ -397,12 +325,6 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
         "\n"
         "%s\n"
         "\n"
-        "/* Define the MethSpec structs used during Class initialization.\n"
-        " */\n"
-        "\n"
-        "%s"
-        "%s"
-        "%s"
         "/* Define the pointer to the Class singleton object.\n"
         " */\n"
         "\n"
@@ -410,34 +332,11 @@ CFCBindClass_to_c_data(CFCBindClass *self) {
         "\n";
     char *code
         = CFCUtil_sprintf(pattern, ivars_offset, offsets, method_defs,
-                          novel_ms_var, overridden_ms_var, inherited_ms_var,
                           class_var);
 
     FREEMEM(offsets);
     FREEMEM(method_defs);
-    FREEMEM(novel_ms_var);
-    FREEMEM(overridden_ms_var);
-    FREEMEM(inherited_ms_var);
     return code;
-}
-
-// Count the number of member variables declared in ancestor classes
-// outside this package.
-static int
-S_count_non_package_members(CFCBindClass *self) {
-    CFCClass  *const client = self->client;
-    CFCParcel *parcel       = CFCClass_get_parcel(client);
-    CFCClass  *ancestor     = CFCClass_get_parent(client);
-    int num_non_package_members = 0;
-
-    while (ancestor && CFCClass_get_parcel(ancestor) == parcel) {
-        ancestor = CFCClass_get_parent(ancestor);
-    }
-    if (ancestor) {
-        num_non_package_members = CFCClass_num_member_vars(ancestor);
-    }
-
-    return num_non_package_members;
 }
 
 // Create the definition for the instantiable object struct.
@@ -458,7 +357,7 @@ S_struct_definition(CFCBindClass *self) {
 
     // Add all member variables declared by classes in this package.
     CFCVariable **member_vars = CFCClass_member_vars(client);
-    int num_non_package_members = S_count_non_package_members(self);
+    int num_non_package_members = CFCClass_num_non_package_ivars(client);
     for (int i = num_non_package_members; member_vars[i] != NULL; i++) {
         const char *member_dec = CFCVariable_local_declaration(member_vars[i]);
         member_decs = CFCUtil_cat(member_decs, "\n    ", member_dec, NULL);
@@ -477,108 +376,6 @@ S_struct_definition(CFCBindClass *self) {
 
     FREEMEM(member_decs);
     return struct_def;
-}
-
-// Return C definition of the class's ClassSpec.
-char*
-CFCBindClass_spec_def(CFCBindClass *self) {
-    CFCClass *client = self->client;
-
-    CFCParcel  *parcel       = CFCClass_get_parcel(client);
-    CFCClass   *parent       = CFCClass_get_parent(client);
-    const char *class_name   = CFCClass_get_name(client);
-    const char *class_var    = CFCClass_full_class_var(client);
-    const char *struct_sym   = CFCClass_full_struct_sym(client);
-    const char *ivars_struct = CFCClass_full_ivars_struct(client);
-
-    // Create a pointer to the parent Class object.
-    char *parent_ref;
-    if (parent) {
-        parent_ref = CFCUtil_sprintf("&%s", CFCClass_full_class_var(parent));
-    }
-    else {
-        // No parent, e.g. Obj or inert classes.
-        parent_ref = CFCUtil_strdup("NULL");
-    }
-
-    int num_novel      = 0;
-    int num_overridden = 0;
-    int num_inherited  = 0;
-    CFCMethod **methods = CFCClass_methods(client);
-
-    for (int meth_num = 0; methods[meth_num] != NULL; meth_num++) {
-        CFCMethod *method = methods[meth_num];
-
-        if (CFCMethod_is_fresh(method, client)) {
-            if (CFCMethod_novel(method)) {
-                ++num_novel;
-            }
-            else {
-                ++num_overridden;
-            }
-        }
-        else {
-            ++num_inherited;
-        }
-    }
-
-    char *novel_ms_var      = num_novel
-                              ? CFCUtil_sprintf("%s_NOVEL_METHS", class_var)
-                              : CFCUtil_strdup("NULL");
-    char *overridden_ms_var = num_overridden
-                              ? CFCUtil_sprintf("%s_OVERRIDDEN_METHS",
-                                                class_var)
-                              : CFCUtil_strdup("NULL");
-    char *inherited_ms_var  = num_inherited
-                              ? CFCUtil_sprintf("%s_INHERITED_METHS",
-                                                class_var)
-                              : CFCUtil_strdup("NULL");
-
-    char *ivars_size = NULL;
-
-    if (CFCParcel_is_cfish(parcel)) {
-        ivars_size = CFCUtil_sprintf("sizeof(%s)", struct_sym);
-    }
-    else {
-        int num_non_package_members = S_count_non_package_members(self);
-        int num_members             = CFCClass_num_member_vars(client);
-
-        if (num_non_package_members == num_members) {
-            // No members in this package.
-            ivars_size = CFCUtil_strdup("0");
-        }
-        else {
-            ivars_size = CFCUtil_sprintf("sizeof(%s)", ivars_struct);
-        }
-    }
-    const char *ivars_offset_name = CFCClass_full_ivars_offset(client);
-
-    char pattern[] =
-        "    {\n"
-        "        &%s, /* class */\n"
-        "        %s, /* parent */\n"
-        "        \"%s\", /* name */\n"
-        "        %s, /* ivars_size */\n"
-        "        &%s, /* ivars_offset_ptr */\n"
-        "        %d, /* num_novel */\n"
-        "        %d, /* num_overridden */\n"
-        "        %d, /* num_inherited */\n"
-        "        %s, /* novel_meth_specs */\n"
-        "        %s, /* overridden_meth_specs */\n"
-        "        %s /* inherited_meth_specs */\n"
-        "    }";
-    char *code
-        = CFCUtil_sprintf(pattern, class_var, parent_ref, class_name,
-                          ivars_size, ivars_offset_name, num_novel,
-                          num_overridden, num_inherited, novel_ms_var,
-                          overridden_ms_var, inherited_ms_var);
-
-    FREEMEM(parent_ref);
-    FREEMEM(novel_ms_var);
-    FREEMEM(overridden_ms_var);
-    FREEMEM(inherited_ms_var);
-    FREEMEM(ivars_size);
-    return code;
 }
 
 // Declare typedefs for every method, to ease casting.
