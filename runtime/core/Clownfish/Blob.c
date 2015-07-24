@@ -33,7 +33,9 @@ Blob_new(const char *buf, size_t size) {
 Blob*
 Blob_init(Blob *self, const char *buf, size_t size) {
     char *copy = (char*)MALLOCATE(size);
-    memcpy(copy, buf, size);
+    if (size > 0) {
+        memcpy(copy, buf, size);
+    }
 
     self->buf      = copy;
     self->size     = size;
