@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 24;
+use Test::More tests => 25;
 
 package TestObj;
 use base qw( Clownfish::Obj );
@@ -56,6 +56,9 @@ use base qw( Clownfish::Test::AliasTestObj );
 {
     sub perl_alias {"Perl"}
 }
+
+package SubclassFinalTestObj;
+use base qw( Clownfish::Vector );
 
 package main;
 use Storable qw( freeze thaw );
@@ -151,4 +154,8 @@ like( $@, qr/aliased/, "Original method can't be called" );
 my $overridden_alias_test = OverriddenAliasTestObj->new;
 is( $overridden_alias_test->call_aliased_from_c, 'Perl',
     'Overriding aliased methods works' );
+
+eval { SubclassFinalTestObj->new; };
+like( $@, qr/Can't subclass final class Clownfish::Vector/,
+      "Final class can't be subclassed" );
 

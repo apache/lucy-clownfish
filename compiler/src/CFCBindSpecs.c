@@ -116,6 +116,10 @@ CFCBindSpecs_get_typedefs() {
         "    size_t *parent_offset;\n"
         "} cfish_InheritedMethSpec;\n"
         "\n"
+        "typedef enum {\n"
+        "    cfish_ClassSpec_FINAL = 1\n"
+        "} cfish_ClassSpecFlags;\n"
+        "\n"
         "typedef struct cfish_ClassSpec {\n"
         "    cfish_Class **klass;\n"
         "    cfish_Class **parent;\n"
@@ -125,6 +129,7 @@ CFCBindSpecs_get_typedefs() {
         "    uint32_t      num_novel_meths;\n"
         "    uint32_t      num_overridden_meths;\n"
         "    uint32_t      num_inherited_meths;\n"
+        "    uint32_t      flags;\n"
         "} cfish_ClassSpec;\n"
         "\n";
 }
@@ -136,6 +141,8 @@ CFCBindSpecs_add_class(CFCBindSpecs *self, CFCClass *klass) {
     const char *class_name        = CFCClass_get_name(klass);
     const char *class_var         = CFCClass_full_class_var(klass);
     const char *ivars_offset_name = CFCClass_full_ivars_offset(klass);
+
+    const char *flags = CFCClass_final(klass) ? "cfish_ClassSpec_FINAL" : "0";
 
     char *ivars_size = S_ivars_size(klass);
 
@@ -200,12 +207,13 @@ CFCBindSpecs_add_class(CFCBindSpecs *self, CFCClass *klass) {
         "        &%s, /* ivars_offset_ptr */\n"
         "        %d, /* num_novel */\n"
         "        %d, /* num_overridden */\n"
-        "        %d /* num_inherited */\n"
+        "        %d, /* num_inherited */\n"
+        "        %s /* flags */\n"
         "    }";
     char *class_spec
         = CFCUtil_sprintf(pattern, class_var, parent_ptr, class_name,
                           ivars_size, ivars_offset_name, num_new_novel,
-                          num_new_overridden, num_new_inherited);
+                          num_new_overridden, num_new_inherited, flags);
 
     const char *sep = self->num_specs == 0 ? "" : ",\n";
     self->class_specs = CFCUtil_cat(self->class_specs, sep, class_spec, NULL);

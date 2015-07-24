@@ -299,6 +299,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "/* Flags for internal use. */\n"
         "#define CFISH_fREFCOUNTSPECIAL 0x00000001\n"
+        "#define CFISH_fFINAL           0x00000002\n"
         ;
     const char *cfish_defs_2 =
         "#ifdef CFISH_USE_SHORT_NAMES\n"

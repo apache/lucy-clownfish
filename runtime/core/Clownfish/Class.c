@@ -155,6 +155,9 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
            ) {
             klass->flags |= CFISH_fREFCOUNTSPECIAL;
         }
+        if (spec->flags & cfish_ClassSpec_FINAL) {
+            klass->flags |= CFISH_fFINAL;
+        }
 
         if (parent) {
             // Copy parent vtable.
@@ -266,6 +269,10 @@ Class_init_registry() {
 
 static Class*
 S_simple_subclass(Class *parent, String *name) {
+    if (parent->flags & CFISH_fFINAL) {
+        THROW(ERR, "Can't subclass final class %o", Class_Get_Name(parent));
+    }
+
     Class *subclass
         = (Class*)Memory_wrapped_calloc(parent->class_alloc_size, 1);
     Class_Init_Obj(parent->klass, subclass);
