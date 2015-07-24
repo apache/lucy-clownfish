@@ -43,21 +43,21 @@ struct CFCBindSpecs {
 static char*
 S_ivars_size(CFCClass *klass);
 
-static char*
-S_novel_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
-             int meth_index);
+static void
+S_add_novel_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
+                 int meth_index);
 
 static char*
 S_parent_offset(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
                 const char *meth_type, int meth_index);
 
-static char*
-S_overridden_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
-                  int meth_index);
+static void
+S_add_overridden_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
+                      int meth_index);
 
-static char*
-S_inherited_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
-                 int meth_index);
+static void
+S_add_inherited_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
+                     int meth_index);
 
 static const CFCMeta CFCBINDSPECS_META = {
     "Clownfish::CFC::Binding::Core::Specs",
@@ -125,9 +125,6 @@ CFCBindSpecs_get_typedefs() {
         "    uint32_t      num_novel_meths;\n"
         "    uint32_t      num_overridden_meths;\n"
         "    uint32_t      num_inherited_meths;\n"
-        "    const cfish_NovelMethSpec      *novel_meth_specs;\n"
-        "    const cfish_OverriddenMethSpec *overridden_meth_specs;\n"
-        "    const cfish_InheritedMethSpec  *inherited_meth_specs;\n"
         "} cfish_ClassSpec;\n"
         "\n";
 }
@@ -167,9 +164,6 @@ CFCBindSpecs_add_class(CFCBindSpecs *self, CFCClass *klass) {
         }
     }
 
-    char *novel_specs      = CFCUtil_strdup("");
-    char *overridden_specs = CFCUtil_strdup("");
-    char *inherited_specs  = CFCUtil_strdup("");
     int num_new_novel      = 0;
     int num_new_overridden = 0;
     int num_new_inherited  = 0;
@@ -180,89 +174,21 @@ CFCBindSpecs_add_class(CFCBindSpecs *self, CFCClass *klass) {
 
         if (CFCMethod_is_fresh(method, klass)) {
             if (CFCMethod_novel(method)) {
-                const char *sep = num_new_novel == 0 ? "" : ",\n";
-                char *def = S_novel_meth(self, method, klass, num_new_novel);
-                novel_specs = CFCUtil_cat(novel_specs, sep, def, NULL);
-                FREEMEM(def);
+                int meth_index = self->num_novel + num_new_novel;
+                S_add_novel_meth(self, method, klass, meth_index);
                 ++num_new_novel;
             }
             else {
-                const char *sep = num_new_overridden == 0 ? "" : ",\n";
-                char *def = S_overridden_meth(self, method, klass,
-                                              num_new_overridden);
-                overridden_specs = CFCUtil_cat(overridden_specs, sep, def,
-                                               NULL);
-                FREEMEM(def);
+                int meth_index = self->num_overridden + num_new_overridden;
+                S_add_overridden_meth(self, method, klass, meth_index);
                 ++num_new_overridden;
             }
         }
         else {
-            const char *sep = num_new_inherited == 0 ? "" : ",\n";
-            char *def = S_inherited_meth(self, method, klass,
-                                         num_new_inherited);
-            inherited_specs = CFCUtil_cat(inherited_specs, sep, def, NULL);
-            FREEMEM(def);
+            int meth_index = self->num_inherited + num_new_inherited;
+            S_add_inherited_meth(self, method, klass, meth_index);
             ++num_new_inherited;
         }
-    }
-
-    char *novel_spec_var;
-
-    if (num_new_novel) {
-        novel_spec_var = CFCUtil_sprintf("%s_NOVEL_METHS", class_var);
-
-        const char *pattern =
-            "static cfish_NovelMethSpec %s[] = {\n"
-            "%s\n"
-            "};\n"
-            "\n";
-        char *spec_def = CFCUtil_sprintf(pattern, novel_spec_var, novel_specs);
-        self->novel_specs = CFCUtil_cat(self->novel_specs, spec_def, NULL);
-        FREEMEM(spec_def);
-    }
-    else {
-        novel_spec_var = CFCUtil_strdup("NULL");
-    }
-
-    char *overridden_spec_var;
-
-    if (num_new_overridden) {
-        overridden_spec_var = CFCUtil_sprintf("%s_OVERRIDDEN_METHS",
-                                              class_var);
-
-        const char *pattern =
-            "static cfish_OverriddenMethSpec %s[] = {\n"
-            "%s\n"
-            "};\n"
-            "\n";
-        char *spec_def = CFCUtil_sprintf(pattern, overridden_spec_var,
-                                         overridden_specs);
-        self->overridden_specs = CFCUtil_cat(self->overridden_specs, spec_def,
-                                             NULL);
-        FREEMEM(spec_def);
-    }
-    else {
-        overridden_spec_var = CFCUtil_strdup("NULL");
-    }
-
-    char *inherited_spec_var;
-
-    if (num_new_inherited) {
-        inherited_spec_var = CFCUtil_sprintf("%s_INHERITED_METHS", class_var);
-
-        const char *pattern =
-            "static cfish_InheritedMethSpec %s[] = {\n"
-            "%s\n"
-            "};\n"
-            "\n";
-        char *spec_def = CFCUtil_sprintf(pattern, inherited_spec_var,
-                                         inherited_specs);
-        self->inherited_specs = CFCUtil_cat(self->inherited_specs, spec_def,
-                                            NULL);
-        FREEMEM(spec_def);
-    }
-    else {
-        inherited_spec_var = CFCUtil_strdup("NULL");
     }
 
     char pattern[] =
@@ -274,20 +200,12 @@ CFCBindSpecs_add_class(CFCBindSpecs *self, CFCClass *klass) {
         "        &%s, /* ivars_offset_ptr */\n"
         "        %d, /* num_novel */\n"
         "        %d, /* num_overridden */\n"
-        "        %d, /* num_inherited */\n"
-        "        %s,\n"
-        "        %s,\n"
-        "        %s\n"
+        "        %d /* num_inherited */\n"
         "    }";
     char *class_spec
         = CFCUtil_sprintf(pattern, class_var, parent_ptr, class_name,
-                          ivars_size, ivars_offset_name,
-                          num_new_novel,
-                          num_new_overridden,
-                          num_new_inherited,
-                          novel_spec_var,
-                          overridden_spec_var,
-                          inherited_spec_var);
+                          ivars_size, ivars_offset_name, num_new_novel,
+                          num_new_overridden, num_new_inherited);
 
     const char *sep = self->num_specs == 0 ? "" : ",\n";
     self->class_specs = CFCUtil_cat(self->class_specs, sep, class_spec, NULL);
@@ -298,16 +216,42 @@ CFCBindSpecs_add_class(CFCBindSpecs *self, CFCClass *klass) {
     self->num_specs      += 1;
 
     FREEMEM(class_spec);
-    FREEMEM(inherited_spec_var);
-    FREEMEM(overridden_spec_var);
-    FREEMEM(novel_spec_var);
     FREEMEM(parent_ptr);
     FREEMEM(ivars_size);
 }
 
 char*
 CFCBindSpecs_defs(CFCBindSpecs *self) {
-    if (!self->class_specs[0]) { return CFCUtil_strdup(""); }
+    if (self->num_specs == 0) { return CFCUtil_strdup(""); }
+
+    const char *novel_pattern =
+        "static cfish_NovelMethSpec novel_specs[] = {\n"
+        "%s\n"
+        "};\n"
+        "\n";
+    char *novel_specs = self->num_novel == 0
+                        ? CFCUtil_strdup("")
+                        : CFCUtil_sprintf(novel_pattern, self->novel_specs);
+
+    const char *overridden_pattern =
+        "static cfish_OverriddenMethSpec overridden_specs[] = {\n"
+        "%s\n"
+        "};\n"
+        "\n";
+    char *overridden_specs = self->num_overridden == 0
+                             ? CFCUtil_strdup("")
+                             : CFCUtil_sprintf(overridden_pattern,
+                                               self->overridden_specs);
+
+    const char *inherited_pattern =
+        "static cfish_InheritedMethSpec inherited_specs[] = {\n"
+        "%s\n"
+        "};\n"
+        "\n";
+    char *inherited_specs = self->num_inherited == 0
+                            ? CFCUtil_strdup("")
+                            : CFCUtil_sprintf(inherited_pattern,
+                                              self->inherited_specs);
 
     const char *pattern =
         "%s"
@@ -316,9 +260,13 @@ CFCBindSpecs_defs(CFCBindSpecs *self) {
         "static cfish_ClassSpec class_specs[] = {\n"
         "%s\n"
         "};\n";
-    return CFCUtil_sprintf(pattern, self->novel_specs,
-                           self->overridden_specs, self->inherited_specs,
-                           self->class_specs);
+    char *defs = CFCUtil_sprintf(pattern, novel_specs, overridden_specs,
+                                 inherited_specs, self->class_specs);
+
+    FREEMEM(inherited_specs);
+    FREEMEM(overridden_specs);
+    FREEMEM(novel_specs);
+    return defs;
 }
 
 char*
@@ -328,7 +276,8 @@ CFCBindSpecs_init_func_def(CFCBindSpecs *self) {
         "S_bootstrap_specs() {\n"
         "%s"
         "\n"
-        "    cfish_Class_bootstrap(class_specs, %d);\n"
+        "    cfish_Class_bootstrap(class_specs, %d, novel_specs,\n"
+        "                          overridden_specs, inherited_specs);\n"
         "}\n";
     return CFCUtil_sprintf(pattern, self->init_code, self->num_specs);
 }
@@ -359,12 +308,11 @@ S_ivars_size(CFCClass *klass) {
     return ivars_size;
 }
 
-static char*
-S_novel_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
-             int meth_index) {
-    CHY_UNUSED_VAR(self);
-    CHY_UNUSED_VAR(meth_index);
+static void
+S_add_novel_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
+                 int meth_index) {
     const char *meth_name = CFCMethod_get_name(method);
+    const char *sep = meth_index == 0 ? "" : ",\n";
 
     char *full_override_sym;
     if (!CFCMethod_final(method)) {
@@ -387,11 +335,12 @@ S_novel_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
     char *def
         = CFCUtil_sprintf(pattern, full_offset_sym, meth_name, imp_func,
                           full_override_sym);
+    self->novel_specs = CFCUtil_cat(self->novel_specs, sep, def, NULL);
 
+    FREEMEM(def);
     FREEMEM(full_offset_sym);
     FREEMEM(imp_func);
     FREEMEM(full_override_sym);
-    return def;
 }
 
 static char*
@@ -412,9 +361,8 @@ S_parent_offset(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
     else {
         parent_offset = CFCUtil_strdup("NULL");
 
-        const char *class_var = CFCClass_full_class_var(klass);
-        char pattern[] = "    %s_%s_METHS[%d].parent_offset = &%s;\n";
-        char *code = CFCUtil_sprintf(pattern, class_var, meth_type, meth_index,
+        char pattern[] = "    %s_specs[%d].parent_offset = &%s;\n";
+        char *code = CFCUtil_sprintf(pattern, meth_type, meth_index,
                                      parent_offset_sym);
         self->init_code = CFCUtil_cat(self->init_code, code, NULL);
         FREEMEM(code);
@@ -425,12 +373,14 @@ S_parent_offset(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
     return parent_offset;
 }
 
-static char*
-S_overridden_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
-                  int meth_index) {
+static void
+S_add_overridden_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
+                      int meth_index) {
+    const char *sep = meth_index == 0 ? "" : ",\n";
+
     char *imp_func        = CFCMethod_imp_func(method, klass);
     char *full_offset_sym = CFCMethod_full_offset_sym(method, klass);
-    char *parent_offset   = S_parent_offset(self, method, klass, "OVERRIDDEN",
+    char *parent_offset   = S_parent_offset(self, method, klass, "overridden",
                                             meth_index);
 
     char pattern[] =
@@ -441,18 +391,22 @@ S_overridden_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
         "    }";
     char *def
         = CFCUtil_sprintf(pattern, full_offset_sym, parent_offset, imp_func);
+    self->overridden_specs
+        = CFCUtil_cat(self->overridden_specs, sep, def, NULL);
 
+    FREEMEM(def);
     FREEMEM(parent_offset);
     FREEMEM(full_offset_sym);
     FREEMEM(imp_func);
-    return def;
 }
 
-static char*
-S_inherited_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
-                 int meth_index) {
+static void
+S_add_inherited_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
+                     int meth_index) {
+    const char *sep = meth_index == 0 ? "" : ",\n";
+
     char *full_offset_sym = CFCMethod_full_offset_sym(method, klass);
-    char *parent_offset   = S_parent_offset(self, method, klass, "INHERITED",
+    char *parent_offset   = S_parent_offset(self, method, klass, "inherited",
                                             meth_index);
 
     char pattern[] =
@@ -461,9 +415,10 @@ S_inherited_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
         "        %s /* parent_offset */\n"
         "    }";
     char *def = CFCUtil_sprintf(pattern, full_offset_sym, parent_offset);
+    self->inherited_specs = CFCUtil_cat(self->inherited_specs, sep, def, NULL);
 
+    FREEMEM(def);
     FREEMEM(full_offset_sym);
     FREEMEM(parent_offset);
-    return def;
 }
 

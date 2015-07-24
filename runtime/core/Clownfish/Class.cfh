@@ -38,7 +38,10 @@ final class Clownfish::Class inherits Clownfish::Obj {
     inert size_t offset_of_parent;
 
     inert void
-    bootstrap(const cfish_ClassSpec *specs, size_t num_specs);
+    bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
+              const cfish_NovelMethSpec *novel_specs,
+              const cfish_OverriddenMethSpec *overridden_specs,
+              const cfish_InheritedMethSpec *inherited_specs);
 
     /** Return a singleton.  If a Class can be found in the registry based on
      * the supplied class name, it will be returned.  Otherwise, a new Class

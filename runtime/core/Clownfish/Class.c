@@ -56,8 +56,10 @@ S_claim_parcel_id(void);
 static LockFreeRegistry *Class_registry;
 
 void
-Class_bootstrap(const ClassSpec *specs, size_t num_specs)
-{
+Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
+                const cfish_NovelMethSpec *novel_specs,
+                const cfish_OverriddenMethSpec *overridden_specs,
+                const cfish_InheritedMethSpec *inherited_specs) {
     int32_t parcel_id = S_claim_parcel_id();
 
     /* Pass 1:
@@ -99,6 +101,9 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
      * - Assign parcel_id.
      * - Initialize method pointers and offsets.
      */
+    uint32_t num_novel      = 0;
+    uint32_t num_overridden = 0;
+    uint32_t num_inherited  = 0;
     for (size_t i = 0; i < num_specs; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass  = *spec->klass;
@@ -159,18 +164,19 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
         }
 
         for (size_t i = 0; i < spec->num_inherited_meths; ++i) {
-            const InheritedMethSpec *mspec = &spec->inherited_meth_specs[i];
+            const InheritedMethSpec *mspec = &inherited_specs[num_inherited++];
             *mspec->offset = *mspec->parent_offset;
         }
 
         for (size_t i = 0; i < spec->num_overridden_meths; ++i) {
-            const OverriddenMethSpec *mspec = &spec->overridden_meth_specs[i];
+            const OverriddenMethSpec *mspec
+                = &overridden_specs[num_overridden++];
             *mspec->offset = *mspec->parent_offset;
             Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
 
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
-            const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
+            const NovelMethSpec *mspec = &novel_specs[num_novel++];
             *mspec->offset = novel_offset;
             novel_offset += sizeof(cfish_method_t);
             Class_Override_IMP(klass, mspec->func, *mspec->offset);
@@ -183,6 +189,9 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
      * - Inititalize name and method array.
      * - Register class.
      */
+    num_novel      = 0;
+    num_overridden = 0;
+    num_inherited  = 0;
     for (size_t i = 0; i < num_specs; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass = *spec->klass;
@@ -193,7 +202,7 @@ Class_bootstrap(const ClassSpec *specs, size_t num_specs)
 
         // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
-            const NovelMethSpec *mspec = &spec->novel_meth_specs[i];
+            const NovelMethSpec *mspec = &novel_specs[num_novel++];
             String *name = SSTR_WRAP_UTF8(mspec->name, strlen(mspec->name));
             Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
