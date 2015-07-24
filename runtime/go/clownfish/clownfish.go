@@ -24,9 +24,10 @@ package clownfish
 #include "Clownfish/Err.h"
 #include "Clownfish/Class.h"
 #include "Clownfish/String.h"
+#include "Clownfish/Blob.h"
 #include "Clownfish/Hash.h"
 #include "Clownfish/Vector.h"
-#include "Clownfish/String.h"
+#include "Clownfish/Boolean.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Method.h"
 
@@ -164,4 +165,22 @@ func (s *StringIMP) SwapChars(match, replacement rune) string {
 	retvalCF := C.CFISH_Str_Swap_Chars(self, C.int32_t(match), C.int32_t(replacement))
 	defer C.cfish_dec_refcount(unsafe.Pointer(retvalCF))
 	return CFStringToGo(unsafe.Pointer(retvalCF))
+}
+
+func NewBoolean(val bool) Boolean {
+	if val {
+		return WRAPBoolean(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(C.CFISH_TRUE))))
+	} else {
+		return WRAPBoolean(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(C.CFISH_FALSE))))
+	}
+}
+
+func NewBlob(content []byte) Blob {
+	size := C.size_t(len(content))
+	var buf *C.char = nil
+	if size > 0 {
+		buf = ((*C.char)(unsafe.Pointer(&content[0])))
+	}
+	obj := C.cfish_Blob_new(buf, size)
+	return WRAPBlob(unsafe.Pointer(obj))
 }
