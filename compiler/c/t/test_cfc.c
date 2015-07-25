@@ -17,7 +17,6 @@
 #include <stdlib.h>
 
 #include "CFCBase.h"
-#include "CFCLexHeader.h"
 #include "CFCTest.h"
 
 int

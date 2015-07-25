@@ -18,7 +18,6 @@
 #include "CFCBindCore.h"
 #include "CFCC.h"
 #include "CFCClass.h"
-#include "CFCLexHeader.h"
 #include "CFCHierarchy.h"
 #include "CFCParcel.h"
 #include "CFCUtil.h"
