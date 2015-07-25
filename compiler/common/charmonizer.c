@@ -778,6 +778,16 @@ chaz_MakeRule*
 chaz_MakeFile_add_lemon_grammar(chaz_MakeFile *makefile,
                                 const char *base_name);
 
+/** Override compiler flags for a single object file.
+ *
+ * @param makefile The makefile.
+ * @param obj The object file.
+ * @param cflags Compiler flags.
+ */
+chaz_MakeRule*
+chaz_MakeFile_override_cflags(chaz_MakeFile *makefile, const char *obj,
+                              chaz_CFlags *cflags);
+
 /** Write the makefile to a file named 'Makefile' in the current directory.
  *
  * @param makefile The makefile.
@@ -817,6 +827,16 @@ chaz_MakeRule_add_prereq(chaz_MakeRule *rule, const char *prereq);
  */
 void
 chaz_MakeRule_add_command(chaz_MakeRule *rule, const char *command);
+
+/** Add a command to be executed with a special runtime library path.
+ *
+ * @param rule The rule.
+ * @param command The additional command.
+ * @param ... NULL-terminated list of library directories.
+ */
+void
+chaz_MakeRule_add_command_with_libpath(chaz_MakeRule *rule,
+                                       const char *command, ...);
 
 /** Add a command to remove one or more files.
  *
@@ -986,6 +1006,11 @@ chaz_Util_strdup(const char *string);
  */
 char*
 chaz_Util_join(const char *sep, ...);
+
+/* Join a NULL-terminated list of strings using a separator.
+ */
+char*
+chaz_Util_vjoin(const char *sep, va_list args);
 
 /* Get the length of a file (may overshoot on text files under DOS).
  */
@@ -4856,6 +4881,49 @@ chaz_MakeFile_add_lemon_grammar(chaz_MakeFile *makefile,
     return rule;
 }
 
+chaz_MakeRule*
+chaz_MakeFile_override_cflags(chaz_MakeFile *makefile, const char *obj,
+                              chaz_CFlags *cflags) {
+    const char *obj_ext       = chaz_CC_obj_ext();
+    const char *cflags_string = chaz_CFlags_get_string(cflags);
+    size_t obj_ext_len = strlen(obj_ext);
+    size_t obj_len     = strlen(obj);
+    size_t base_len;
+    char *src;
+    char *command;
+    chaz_MakeRule *rule;
+
+    if (obj_len <= obj_ext_len) {
+       chaz_Util_die("Invalid object file: %s", obj);
+    }
+
+    base_len = obj_len - obj_ext_len;
+
+    if (strcmp(obj + base_len, obj_ext) != 0) {
+       chaz_Util_die("Invalid object file: %s", obj);
+    }
+
+    src = malloc(base_len + sizeof(".c"));
+    memcpy(src, obj, base_len);
+    memcpy(src + base_len, ".c", sizeof(".c"));
+
+    rule = chaz_MakeFile_add_rule(makefile, obj, src);
+    if (chaz_CC_msvc_version_num()) {
+        command = chaz_Util_join(" ", "$(CC) /nologo", cflags_string, "/c",
+                                 src, "/Fo$@", NULL);
+    }
+    else {
+        command = chaz_Util_join(" ", "$(CC)", cflags_string, "-c", src,
+                                 "-o $@", NULL);
+    }
+    chaz_MakeRule_add_command(rule, command);
+
+    free(command);
+    free(src);
+
+    return rule;
+}
+
 void
 chaz_MakeFile_write(chaz_MakeFile *makefile) {
     FILE   *out;
@@ -4997,6 +5065,45 @@ chaz_MakeRule_add_command(chaz_MakeRule *rule, const char *command) {
     }
 
     rule->commands = commands;
+}
+
+void
+chaz_MakeRule_add_command_with_libpath(chaz_MakeRule *rule,
+                                       const char *command, ...) {
+    va_list args;
+    char *path        = NULL;
+    char *lib_command = NULL;
+
+    if (strcmp(chaz_OS_shared_lib_ext(), ".so") == 0) {
+        va_start(args, command);
+        path = chaz_Util_vjoin(":", args);
+        va_end(args);
+
+        lib_command = chaz_Util_join("", "LD_LIBRARY_PATH=", path,
+                                     ":$$LD_LIBRARY_PATH ", command, NULL);
+
+        free(path);
+    }
+    else if (strcmp(chaz_OS_shared_lib_ext(), ".dll") == 0) {
+        va_start(args, command);
+        path = chaz_Util_vjoin(";", args);
+        va_end(args);
+
+        /* It's important to not add a space before `&&`. Otherwise, the
+	 * space is added to the search path.
+	 */
+        lib_command = chaz_Util_join("", "path ", path, ";%path%&& ", command,
+                                     NULL);
+    }
+    else {
+        /* Assume that library paths are compiled into the executable on
+         * Darwin.
+         */
+        lib_command = chaz_Util_strdup(command);
+    }
+
+    chaz_MakeRule_add_command(rule, lib_command);
+    free(lib_command);
 }
 
 void
@@ -5430,6 +5537,13 @@ chaz_OS_rmdir(const char *filepath) {
 /* #include "Charmonizer/Core/Util.h" */
 /* #include "Charmonizer/Core/OperatingSystem.h" */
 
+/* va_copy is not part of C89. Assume that simple assignment works if it
+ * isn't defined.
+ */
+#ifndef va_copy
+  #define va_copy(dst, src) ((dst) = (src))
+#endif
+
 /* Global verbosity setting. */
 int chaz_Util_verbosity = 1;
 
@@ -5529,6 +5643,18 @@ chaz_Util_strdup(const char *string) {
 char*
 chaz_Util_join(const char *sep, ...) {
     va_list args;
+    char *result;
+
+    va_start(args, sep);
+    result = chaz_Util_vjoin(sep, args);
+    va_end(args);
+
+    return result;
+}
+
+char*
+chaz_Util_vjoin(const char *sep, va_list orig_args) {
+    va_list args;
     const char *string;
     char *result, *p;
     size_t sep_len = strlen(sep);
@@ -5536,7 +5662,7 @@ chaz_Util_join(const char *sep, ...) {
     int i;
 
     /* Determine result size. */
-    va_start(args, sep);
+    va_copy(args, orig_args);
     size = 1;
     string = va_arg(args, const char*);
     for (i = 0; string; ++i) {
@@ -5549,7 +5675,7 @@ chaz_Util_join(const char *sep, ...) {
     result = (char*)malloc(size);
 
     /* Create result string. */
-    va_start(args, sep);
+    va_copy(args, orig_args);
     p = result;
     string = va_arg(args, const char*);
     for (i = 0; string; ++i) {
@@ -7861,11 +7987,12 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
         if (getenv("LUCY_VALGRIND")) {
             chaz_CFlags_append(extra_cflags, "-fno-inline-functions");
         }
-        else if (getenv("LUCY_DEBUG")) {
-            chaz_CFlags_append(extra_cflags,
-                "-DLUCY_DEBUG -pedantic -Wall -Wextra -Wno-variadic-macros"
-            );
+        if (getenv("LUCY_DEBUG")) {
+            chaz_CFlags_append(extra_cflags, "-DLUCY_DEBUG");
         }
+
+        chaz_CFlags_append(extra_cflags,
+            "-pedantic -Wall -Wextra -Wno-variadic-macros");
         if (strcmp(chaz_CLI_strval(cli, "host"), "perl") == 0) {
             chaz_CFlags_append(extra_cflags, "-DPERL_GCC_PEDANTIC");
         }
@@ -7879,6 +8006,7 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
             chaz_CFlags_append(extra_cflags, "/TP");
         }
 
+        chaz_CFlags_append(extra_cflags, "/W3");
         /* Thwart stupid warnings. */
         chaz_CFlags_append(extra_cflags, "/D_CRT_SECURE_NO_WARNINGS");
         chaz_CFlags_append(extra_cflags, "/D_SCL_SECURE_NO_WARNINGS");
