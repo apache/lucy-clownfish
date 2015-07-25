@@ -242,7 +242,7 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || CFCClass_public(klass)) {
+        if (CFCClass_included(klass) || !CFCClass_public(klass)) {
             continue;
         }
 
