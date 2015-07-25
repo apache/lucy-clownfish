@@ -159,6 +159,15 @@ S_convert_uri(CFCClass *klass, cmark_node *link);
 static char*
 S_type_to_html(CFCClass *klass, CFCType *type);
 
+static char*
+S_struct_sym_to_url(const char *struct_sym, CFCClass *base);
+
+static char*
+S_class_to_url(CFCClass *klass, CFCClass *base);
+
+static char*
+S_relative_url(const char *url, CFCClass *base);
+
 CFCCHtml*
 CFCCHtml_new(CFCHierarchy *hierarchy, const char *header, const char *footer) {
     CFCCHtml *self = (CFCCHtml*)CFCBase_allocate(&CFCCHTML_META);
@@ -246,23 +255,37 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
             continue;
         }
 
-        const char *full_struct_sym = CFCClass_full_struct_sym(klass);
-        filenames[num_docs] = CFCUtil_sprintf("%s.html", full_struct_sym);
+        const char *class_name = CFCClass_get_name(klass);
+        char *path = CFCUtil_global_replace(class_name, "::", CHY_DIR_SEP);
+        filenames[num_docs] = CFCUtil_sprintf("%s.html", path);
         html_docs[num_docs] = CFCCHtml_create_html_doc(self, klass);
         ++num_docs;
-    }
 
-    if (!CFCUtil_is_dir(doc_path)) {
-        CFCUtil_make_path(doc_path);
-        if (!CFCUtil_is_dir(doc_path)) {
-            CFCUtil_die("Can't make path %s", doc_path);
-        }
+        FREEMEM(path);
     }
 
     for (size_t i = 0; i < num_docs; ++i) {
         char *filename = filenames[i];
         char *path     = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s", doc_path,
                                          filename);
+
+        char *dir  = CFCUtil_strdup(path);
+        for (size_t j = strlen(dir); j--;) {
+            if (dir[j] == CHY_DIR_SEP_CHAR) {
+                do {
+                    dir[j] = '\0';
+                } while (j-- && dir[j] == CHY_DIR_SEP_CHAR);
+                break;
+            }
+        }
+
+        if (dir[0] != '\0' && !CFCUtil_is_dir(dir)) {
+            CFCUtil_make_path(dir);
+            if (!CFCUtil_is_dir(dir)) {
+                CFCUtil_die("Can't make path %s", dir);
+            }
+        }
+
         char *html_doc = html_docs[i];
         CFCUtil_write_if_changed(path, html_doc, strlen(html_doc));
         FREEMEM(html_doc);
@@ -290,11 +313,12 @@ CFCCHtml_create_index_doc(CFCCHtml *self, CFCParcel *parcel,
             continue;
         }
 
-        const char *struct_sym = CFCClass_full_struct_sym(klass);
         const char *class_name = CFCClass_get_name(klass);
+        char *url = S_class_to_url(klass, NULL);
         class_list
-            = CFCUtil_cat(class_list, "<li><a href=\"", struct_sym, ".html\">",
+            = CFCUtil_cat(class_list, "<li><a href=\"", url, "\">",
                           class_name, "</a></li>\n", NULL);
+        FREEMEM(url);
     }
 
     if (class_list[0] == '\0') {
@@ -370,6 +394,7 @@ CFCCHtml_create_html_body(CFCClass *klass) {
     char *inheritance = S_html_create_inheritance(klass);
 
     char *index_filename = S_index_filename(parcel);
+    char *index_url      = S_relative_url(index_filename, klass);
 
     // Put it all together.
     const char pattern[] =
@@ -403,12 +428,13 @@ CFCCHtml_create_html_body(CFCClass *klass) {
         "%s"
         "%s";
     char *html_body
-        = CFCUtil_sprintf(pattern, class_name, index_filename,
+        = CFCUtil_sprintf(pattern, class_name, index_url,
                           parcel_name, PREFIX, class_var, prefix, struct_sym,
                           prefix, class_nickname, include_h, name, synopsis,
                           description, functions_html, methods_html,
                           inheritance);
 
+    FREEMEM(index_url);
     FREEMEM(index_filename);
     FREEMEM(name);
     FREEMEM(synopsis);
@@ -748,9 +774,10 @@ S_html_create_inheritance(CFCClass *klass) {
                          NULL);
     while (ancestor) {
         const char *ancestor_name = CFCClass_get_name(ancestor);
-        const char *ancestor_sym  = CFCClass_full_struct_sym(ancestor);
-        result = CFCUtil_cat(result, " is a <a href=\"", ancestor_sym,
-                             ".html\">", ancestor_name, "</a>", NULL);
+        char *ancestor_url = S_class_to_url(ancestor, klass);
+        result = CFCUtil_cat(result, " is a <a href=\"", ancestor_url, "\">",
+                             ancestor_name, "</a>", NULL);
+        FREEMEM(ancestor_url);
         ancestor = CFCClass_get_parent(ancestor);
     }
     result = CFCUtil_cat(result, ".</p>\n", NULL);
@@ -803,7 +830,7 @@ S_convert_uri(CFCClass *klass, cmark_node *link) {
     switch (type) {
         case CFC_URI_CLASS: {
             const char *struct_sym = CFCUri_full_struct_sym(uri_obj);
-            new_uri = CFCUtil_sprintf("%s.html", struct_sym);
+            new_uri = S_struct_sym_to_url(struct_sym, klass);
             break;
         }
 
@@ -811,7 +838,9 @@ S_convert_uri(CFCClass *klass, cmark_node *link) {
         case CFC_URI_METHOD: {
             const char *struct_sym = CFCUri_full_struct_sym(uri_obj);
             const char *func_sym   = CFCUri_get_func_sym(uri_obj);
-            new_uri = CFCUtil_sprintf("%s.html#func_%s", struct_sym, func_sym);
+            char *url = S_struct_sym_to_url(struct_sym, klass);
+            new_uri = CFCUtil_sprintf("%s#func_%s", url, func_sym);
+            FREEMEM(url);
             break;
         }
     }
@@ -866,13 +895,13 @@ S_type_to_html(CFCClass *klass, CFCType *type) {
                                          prefix, type_c + offset);
             }
             else {
+                char *url = S_struct_sym_to_url(specifier, klass);
                 const char *pattern =
                     "<span class=\"prefix\">%s</span>"
-                    "<a href=\"%s.html\">"
-                    "%s"
-                    "</a>";
-                retval = CFCUtil_sprintf(pattern, prefix, specifier,
+                    "<a href=\"%s\">%s</a>";
+                retval = CFCUtil_sprintf(pattern, prefix, url,
                                          type_c + offset);
+                FREEMEM(url);
             }
 
             FREEMEM(prefix);
@@ -881,5 +910,51 @@ S_type_to_html(CFCClass *klass, CFCType *type) {
     }
 
     return CFCUtil_strdup(type_c);
+}
+
+// Return a relative URL to the class with full struct sym `struct_sym`.
+static char*
+S_struct_sym_to_url(const char *struct_sym, CFCClass *base) {
+    if (!struct_sym) { return CFCUtil_strdup("not_found.html"); }
+
+    CFCClass *klass = CFCClass_fetch_by_struct_sym(struct_sym);
+
+    return S_class_to_url(klass, base);
+}
+
+// Return a relative URL to a class.
+static char*
+S_class_to_url(CFCClass *klass, CFCClass *base) {
+    if (!klass) { return CFCUtil_strdup("not_found.html"); }
+
+    const char *class_name = CFCClass_get_name(klass);
+    char *path    = CFCUtil_global_replace(class_name, "::", CHY_DIR_SEP);
+    char *url     = CFCUtil_sprintf("%s.html", path);
+    char *rel_url = S_relative_url(url, base);
+
+    FREEMEM(url);
+    FREEMEM(path);
+    return rel_url;
+}
+
+static char*
+S_relative_url(const char *url, CFCClass *base) {
+    if (base == NULL) { return CFCUtil_strdup(url); }
+
+    // Create path back to root
+    char *prefix = CFCUtil_strdup("");
+    const char *base_name = CFCClass_get_name(base);
+
+    for (size_t i = 0; base_name[i]; i++) {
+        if (base_name[i] == ':' && base_name[i+1] == ':') {
+            prefix = CFCUtil_cat(prefix, "../", NULL);
+            i++;
+        }
+    }
+
+    char *rel_url = CFCUtil_sprintf("%s%s", prefix, url);
+
+    FREEMEM(prefix);
+    return rel_url;
 }
 
