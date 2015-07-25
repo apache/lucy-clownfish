@@ -347,6 +347,7 @@ CFCCHtml_create_html_body(CFCClass *klass) {
     const char *class_nickname = CFCClass_get_nickname(klass);
     const char *class_var      = CFCClass_full_class_var(klass);
     const char *struct_sym     = CFCClass_full_struct_sym(klass);
+    const char *include_h      = CFCClass_include_h(klass);
 
     // Create NAME.
     char *name = S_html_create_name(klass);
@@ -392,6 +393,10 @@ CFCCHtml_create_html_body(CFCClass *klass) {
         "<td class=\"label\">struct symbol</td>\n"
         "<td><code>%s</code></td>\n"
         "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">header file</td>\n"
+        "<td><code>%s</code></td>\n"
+        "</tr>\n"
         "</table>\n"
         "%s"
         "%s"
@@ -402,7 +407,7 @@ CFCCHtml_create_html_body(CFCClass *klass) {
     char *html_body
         = CFCUtil_sprintf(pattern, class_name, index_filename,
                           parcel_name, class_name, class_nickname, class_var,
-                          struct_sym, name, synopsis, description,
+                          struct_sym, include_h, name, synopsis, description,
                           functions_html, methods_html, inheritance);
 
     FREEMEM(index_filename);
