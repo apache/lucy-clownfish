@@ -25,6 +25,7 @@
 #include "CFCCHtml.h"
 #include "CFCCMan.h"
 #include "CFCClass.h"
+#include "CFCDocument.h"
 #include "CFCHierarchy.h"
 #include "CFCMethod.h"
 #include "CFCUri.h"
@@ -177,27 +178,39 @@ CFCC_link_text(CFCUri *uri_obj, CFCClass *klass) {
 
     switch (type) {
         case CFC_URI_CLASS: {
-            if (strcmp(CFCUri_get_prefix(uri_obj),
-                       CFCClass_get_prefix(klass)) == 0
-            ) {
-                // Same parcel.
-                const char *struct_sym = CFCUri_get_struct_sym(uri_obj);
-                link_text = CFCUtil_strdup(struct_sym);
-            }
-            else {
-                // Other parcel.
-                const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
-                CFCClass *uri_class
-                    = CFCClass_fetch_by_struct_sym(full_struct_sym);
-                if (!uri_class) {
-                    CFCUtil_warn("URI class not found: %s", full_struct_sym);
+            const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
+            CFCClass *uri_class = full_struct_sym
+                ? CFCClass_fetch_by_struct_sym(full_struct_sym)
+                : NULL;
+
+            if (uri_class) {
+                if (klass
+                    && strcmp(CFCClass_get_prefix(uri_class),
+                              CFCClass_get_prefix(klass)) == 0
+                ) {
+                    // Same parcel.
+                    const char *struct_sym = CFCUri_get_struct_sym(uri_obj);
+                    link_text = CFCUtil_strdup(struct_sym);
                 }
                 else {
+                    // Other parcel.
                     const char *class_name = CFCClass_get_name(uri_class);
                     link_text = CFCUtil_strdup(class_name);
                 }
+
+                break;
             }
 
+            const char *struct_sym = CFCUri_get_struct_sym(uri_obj);
+            CFCDocument *doc = CFCDocument_fetch(struct_sym);
+
+            if (doc) {
+                const char *name = CFCDocument_get_name(doc);
+                link_text = CFCUtil_strdup(name);
+                break;
+            }
+
+            CFCUtil_warn("Can't resolve Clownfish URI '%s'", struct_sym);
             break;
         }
 

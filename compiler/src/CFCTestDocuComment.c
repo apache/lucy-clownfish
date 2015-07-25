@@ -20,6 +20,7 @@
 #include "CFCCHtml.h"
 #include "CFCCMan.h"
 #include "CFCClass.h"
+#include "CFCHierarchy.h"
 #include "CFCParcel.h"
 #include "CFCParser.h"
 #include "CFCPerlClass.h"
@@ -118,7 +119,10 @@ S_test_parser(CFCTest *test) {
 
 static void
 S_test_generator(CFCTest *test) {
+    CFCHierarchy *hierarchy = CFCHierarchy_new("autogen");
     CFCParcel *parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
+    CFCParcel_register(parcel);
+
     CFCDocuComment *docu = CFCDocuComment_parse(
         "/** Test documentation generator.\n"
         " * \n"
@@ -182,29 +186,30 @@ S_test_generator(CFCTest *test) {
         "Paragraph after list\n";
     STR_EQ(test, man_page, expected_man, "create man page");
 
-    char *html = CFCCHtml_create_html_body(klass);
+    CFCCHtml *chtml = CFCCHtml_new(hierarchy, "", "");
+    char *html = CFCCHtml_create_html_body(chtml, klass);
     const char *expected_html =
         "<h1>Neato::Object</h1>\n"
         "<table>\n"
         "<tr>\n"
         "<td class=\"label\">parcel</td>\n"
-        "<td><a href=\"neato.html\">Neato</a></td>\n"
-        "</tr>\n"
-        "<tr>\n"
-        "<td class=\"label\">class name</td>\n"
-        "<td>Neato::Object</td>\n"
-        "</tr>\n"
-        "<tr>\n"
-        "<td class=\"label\">class nickname</td>\n"
-        "<td>Object</td>\n"
+        "<td><a href=\"../neato.html\">Neato</a></td>\n"
         "</tr>\n"
         "<tr>\n"
         "<td class=\"label\">class variable</td>\n"
-        "<td><code>NEATO_OBJECT</code></td>\n"
+        "<td><code><span class=\"prefix\">NEATO_</span>OBJECT</code></td>\n"
         "</tr>\n"
         "<tr>\n"
         "<td class=\"label\">struct symbol</td>\n"
-        "<td><code>neato_Object</code></td>\n"
+        "<td><code><span class=\"prefix\">neato_</span>Object</code></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">class nickname</td>\n"
+        "<td><code><span class=\"prefix\">neato_</span>Object</code></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">header file</td>\n"
+        "<td><code>class.h</code></td>\n"
         "</tr>\n"
         "</table>\n"
         "<h2>Name</h2>\n"
@@ -286,10 +291,14 @@ S_test_generator(CFCTest *test) {
     CFCBase_decref((CFCBase*)perl_pod);
     CFCBase_decref((CFCBase*)perl_class);
     FREEMEM(html);
+    CFCBase_decref((CFCBase*)chtml);
     FREEMEM(man_page);
     CFCBase_decref((CFCBase*)klass);
     CFCBase_decref((CFCBase*)docu);
     CFCBase_decref((CFCBase*)parcel);
+    CFCBase_decref((CFCBase*)hierarchy);
+
+    CFCParcel_reap_singletons();
 }
 
 static void

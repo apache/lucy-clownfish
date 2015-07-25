@@ -51,20 +51,13 @@ CFCCHtml_destroy(CFCCHtml *self);
 void
 CFCCHtml_write_html_docs(CFCCHtml *self);
 
-/** Return the index document of the HTML documentation for `parcel`
- * or NULL if there aren't any public classes in the parcel.
- */
-char*
-CFCCHtml_create_index_doc(CFCCHtml *self, struct CFCParcel *parcel,
-                          struct CFCClass **classes);
-
 /** Return the HTML documentation for the class.
  */
 char*
 CFCCHtml_create_html_doc(CFCCHtml *self, struct CFCClass *klass);
 
 char*
-CFCCHtml_create_html_body(struct CFCClass *klass);
+CFCCHtml_create_html_body(CFCCHtml *self, struct CFCClass *klass);
 
 #ifdef __cplusplus
 }
