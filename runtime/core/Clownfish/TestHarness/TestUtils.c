@@ -162,7 +162,7 @@ TestUtils_time() {
 
 void
 TestUtils_usleep(uint64_t microseconds) {
-    Sleep(microseconds / 1000);
+    Sleep((DWORD)(microseconds / 1000));
 }
 
 /********************************* UNIXEN *********************************/

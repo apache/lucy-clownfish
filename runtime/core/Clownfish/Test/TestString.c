@@ -323,18 +323,17 @@ test_To_I64(TestBatchRunner *runner) {
     DECREF(string);
 
     string = S_get_str("10.");
-    TEST_INT_EQ(runner, Str_To_I64(string), 10,
-                "To_I64 stops at non-digits");
+    TEST_TRUE(runner, Str_To_I64(string) == 10, "To_I64 stops at non-digits");
     DECREF(string);
 
     string = S_get_str("10A");
-    TEST_INT_EQ(runner, Str_To_I64(string), 10,
-                "To_I64 stops at out-of-range digits");
+    TEST_TRUE(runner, Str_To_I64(string) == 10,
+              "To_I64 stops at out-of-range digits");
     DECREF(string);
 
     string = S_get_str("-JJ");
-    TEST_INT_EQ(runner, Str_BaseX_To_I64(string, 20), -399,
-                "BaseX_To_I64 base 20");
+    TEST_TRUE(runner, Str_BaseX_To_I64(string, 20) == -399,
+              "BaseX_To_I64 base 20");
     DECREF(string);
 }
 
