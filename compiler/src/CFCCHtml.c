@@ -343,10 +343,12 @@ char*
 CFCCHtml_create_html_body(CFCClass *klass) {
     CFCParcel  *parcel         = CFCClass_get_parcel(klass);
     const char *parcel_name    = CFCParcel_get_name(parcel);
+    const char *prefix         = CFCClass_get_prefix(klass);
+    const char *PREFIX         = CFCClass_get_PREFIX(klass);
     const char *class_name     = CFCClass_get_name(klass);
     const char *class_nickname = CFCClass_get_nickname(klass);
-    const char *class_var      = CFCClass_full_class_var(klass);
-    const char *struct_sym     = CFCClass_full_struct_sym(klass);
+    const char *class_var      = CFCClass_short_class_var(klass);
+    const char *struct_sym     = CFCClass_get_struct_sym(klass);
     const char *include_h      = CFCClass_include_h(klass);
 
     // Create NAME.
@@ -378,20 +380,16 @@ CFCCHtml_create_html_body(CFCClass *klass) {
         "<td><a href=\"%s\">%s</a></td>\n"
         "</tr>\n"
         "<tr>\n"
-        "<td class=\"label\">class name</td>\n"
-        "<td>%s</td>\n"
-        "</tr>\n"
-        "<tr>\n"
-        "<td class=\"label\">class nickname</td>\n"
-        "<td>%s</td>\n"
-        "</tr>\n"
-        "<tr>\n"
         "<td class=\"label\">class variable</td>\n"
-        "<td><code>%s</code></td>\n"
+        "<td><code><span class=\"prefix\">%s</span>%s</code></td>\n"
         "</tr>\n"
         "<tr>\n"
         "<td class=\"label\">struct symbol</td>\n"
-        "<td><code>%s</code></td>\n"
+        "<td><code><span class=\"prefix\">%s</span>%s</code></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">class nickname</td>\n"
+        "<td><code><span class=\"prefix\">%s</span>%s</code></td>\n"
         "</tr>\n"
         "<tr>\n"
         "<td class=\"label\">header file</td>\n"
@@ -406,9 +404,10 @@ CFCCHtml_create_html_body(CFCClass *klass) {
         "%s";
     char *html_body
         = CFCUtil_sprintf(pattern, class_name, index_filename,
-                          parcel_name, class_name, class_nickname, class_var,
-                          struct_sym, include_h, name, synopsis, description,
-                          functions_html, methods_html, inheritance);
+                          parcel_name, PREFIX, class_var, prefix, struct_sym,
+                          prefix, class_nickname, include_h, name, synopsis,
+                          description, functions_html, methods_html,
+                          inheritance);
 
     FREEMEM(index_filename);
     FREEMEM(name);
