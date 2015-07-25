@@ -206,9 +206,6 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
             chaz_CFlags_append(extra_cflags,
                 "-DLUCY_VALGRIND -fno-inline-functions");
         }
-        if (getenv("LUCY_DEBUG")) {
-            chaz_CFlags_append(extra_cflags, "-DLUCY_DEBUG");
-        }
 
         chaz_CFlags_append(extra_cflags,
             "-pedantic -Wall -Wextra -Wno-variadic-macros");

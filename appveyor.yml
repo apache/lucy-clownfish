@@ -1,6 +1,4 @@
 environment:
-  global:
-    LUCY_DEBUG: 1
   matrix:
     - CLOWNFISH_HOST: c
       MSVC_VERSION: 10
