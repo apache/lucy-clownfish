@@ -14,4 +14,8 @@ typedef char bool;
   #define va_copy(dest, src) ((dest) = (src))
 #endif
 
+#ifdef CHY_HAS_C99_SNPRINTF
+  #define HAVE_C99_SNPRINTF
+#endif
+
 #define inline CHY_INLINE

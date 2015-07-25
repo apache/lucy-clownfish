@@ -2,7 +2,8 @@
 #define CMARK_H
 
 #include <stdio.h>
-#include "cmark_export.h"
+#include <cmark_export.h>
+#include <cmark_version.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,16 +19,12 @@ extern "C" {
  * ## Simple Interface
  */
 
-/** Current version of library.
- */
-#define CMARK_VERSION "0.1"
-
 /** Convert 'text' (assumed to be a UTF-8 encoded string with length
  * 'len' from CommonMark Markdown to HTML, returning a null-terminated,
  * UTF-8-encoded string.
  */
 CMARK_EXPORT
-char *cmark_markdown_to_html(const char *text, int len);
+char *cmark_markdown_to_html(const char *text, size_t len, int options);
 
 /** ## Node Structure
  */
@@ -213,6 +210,12 @@ CMARK_EXPORT
 cmark_event_type
 cmark_iter_get_event_type(cmark_iter *iter);
 
+/** Returns the root node.
+ */
+CMARK_EXPORT
+cmark_node*
+cmark_iter_get_root(cmark_iter *iter);
+
 /** Resets the iterator so that the current node is 'current' and
  * the event type is 'event_type'.  The new current node must be a
  * descendant of the root node or the root node itself.
@@ -225,6 +228,17 @@ cmark_iter_reset(cmark_iter *iter, cmark_node *current,
 /**
  * ## Accessors
  */
+
+/** Returns the user data of 'node'.
+ */
+CMARK_EXPORT void*
+cmark_node_get_user_data(cmark_node *node);
+
+/** Sets arbitrary user data for 'node'.  Returns 1 on success,
+ * 0 on failure.
+ */
+CMARK_EXPORT int
+cmark_node_set_user_data(cmark_node *node, void *user_data);
 
 /** Returns the type of 'node', or `CMARK_NODE_NONE` on error.
  */
@@ -398,11 +412,12 @@ cmark_consolidate_text_nodes(cmark_node *root);
  *
  * Simple interface:
  *
- *     cmark_node *document = cmark_parse_document("Hello *world*", 12);
+ *     cmark_node *document = cmark_parse_document("Hello *world*", 12,
+ *                                                 CMARK_OPT_DEFAULT);
  *
  * Streaming interface:
  *
- *     cmark_parser *parser = cmark_parser_new();
+ *     cmark_parser *parser = cmark_parser_new(CMARK_OPT_DEFAULT);
  *     FILE *fp = fopen("myfile.md", "r");
  *     while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
  *     	   cmark_parser_feed(parser, buffer, bytes);
@@ -417,7 +432,7 @@ cmark_consolidate_text_nodes(cmark_node *root);
 /** Creates a new parser object.
  */
 CMARK_EXPORT
-cmark_parser *cmark_parser_new();
+cmark_parser *cmark_parser_new(int options);
 
 /** Frees memory allocated for a parser object.
  */
@@ -438,13 +453,13 @@ cmark_node *cmark_parser_finish(cmark_parser *parser);
  * Returns a pointer to a tree of nodes.
  */
 CMARK_EXPORT
-cmark_node *cmark_parse_document(const char *buffer, size_t len);
+cmark_node *cmark_parse_document(const char *buffer, size_t len, int options);
 
 /** Parse a CommonMark document in file 'f', returning a pointer to
  * a tree of nodes.
  */
 CMARK_EXPORT
-cmark_node *cmark_parse_file(FILE *f);
+cmark_node *cmark_parse_file(FILE *f, int options);
 
 /**
  * ## Rendering
@@ -453,18 +468,28 @@ cmark_node *cmark_parse_file(FILE *f);
 /** Render a 'node' tree as XML.
  */
 CMARK_EXPORT
-char *cmark_render_xml(cmark_node *root, long options);
+char *cmark_render_xml(cmark_node *root, int options);
 
 /** Render a 'node' tree as an HTML fragment.  It is up to the user
  * to add an appropriate header and footer.
  */
 CMARK_EXPORT
-char *cmark_render_html(cmark_node *root, long options);
+char *cmark_render_html(cmark_node *root, int options);
 
 /** Render a 'node' tree as a groff man page, without the header.
  */
 CMARK_EXPORT
-char *cmark_render_man(cmark_node *root, long options);
+char *cmark_render_man(cmark_node *root, int options, int width);
+
+/** Render a 'node' tree as a commonmark document.
+ */
+CMARK_EXPORT
+char *cmark_render_commonmark(cmark_node *root, int options, int width);
+
+/** Render a 'node' tree as a LaTeX document.
+ */
+CMARK_EXPORT
+char *cmark_render_latex(cmark_node *root, int options, int width);
 
 /** Default writer options.
  */
@@ -481,6 +506,45 @@ char *cmark_render_man(cmark_node *root, long options);
 /** Normalize tree by consolidating adjacent text nodes.
  */
 #define CMARK_OPT_NORMALIZE 4
+
+/** Convert straight quotes to curly, --- to em dashes, -- to en dashes.
+ */
+#define CMARK_OPT_SMART 8
+
+/** Validate UTF-8 in the input before parsing, replacing illegal
+ * sequences with the replacement character U+FFFD.
+ */
+#define CMARK_OPT_VALIDATE_UTF8 16
+
+/** Suppress raw HTML and unsafe links (`javascript:`, `vbscript:`,
+ * `file:`, and `data:`, except for `image/png`, `image/gif`,
+ * `image/jpeg`, or `image/webp` mime types).  Raw HTML is replaced
+ * by a placeholder HTML comment. Unsafe links are replaced by
+ * empty strings.
+ */
+#define CMARK_OPT_SAFE 32
+
+/**
+ * ## Version information
+ */
+
+/** The library version as integer for runtime checks. Also available as
+ * macro CMARK_VERSION for compile time checks.
+ *
+ * * Bits 16-23 contain the major version.
+ * * Bits 8-15 contain the minor version.
+ * * Bits 0-7 contain the patchlevel.
+ *
+ * In hexadecimal format, the number 0x010203 represents version 1.2.3.
+ */
+CMARK_EXPORT
+int cmark_version();
+
+/** The library version string for runtime checks. Also available as
+ * macro CMARK_VERSION_STRING for compile time checks.
+ */
+CMARK_EXPORT
+const char *cmark_version_string();
 
 /** # AUTHORS
  *
@@ -506,7 +570,6 @@ char *cmark_render_man(cmark_node *root, long options);
 #define NODE_STRONG               CMARK_NODE_STRONG
 #define NODE_LINK                 CMARK_NODE_LINK
 #define NODE_IMAGE                CMARK_NODE_IMAGE
-#define NODE_LINK_LABEL           CMARK_NODE_LINK_LABEL
 #define BULLET_LIST               CMARK_BULLET_LIST
 #define ORDERED_LIST              CMARK_ORDERED_LIST
 #define PERIOD_DELIM              CMARK_PERIOD_DELIM

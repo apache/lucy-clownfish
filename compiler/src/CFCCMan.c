@@ -410,7 +410,11 @@ S_man_create_inheritance(CFCClass *klass) {
 
 static char*
 S_md_to_man(CFCClass *klass, const char *md, int needs_indent) {
-    cmark_node *doc = cmark_parse_document(md, strlen(md));
+    int options = CMARK_OPT_NORMALIZE
+                  | CMARK_OPT_SMART
+                  | CMARK_OPT_VALIDATE_UTF8
+                  | CMARK_OPT_SAFE;
+    cmark_node *doc = cmark_parse_document(md, strlen(md), options);
     char *result = S_nodes_to_man(klass, doc, needs_indent);
     cmark_node_free(doc);
 

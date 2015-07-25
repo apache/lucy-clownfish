@@ -2,29 +2,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-
+#include "cmark_ctype.h"
 #include "config.h"
 #include "cmark.h"
 #include "node.h"
 #include "buffer.h"
 #include "houdini.h"
+#include "scanners.h"
 
 // Functions to convert cmark_nodes to HTML strings.
 
-static void escape_html(cmark_strbuf *dest, const unsigned char *source, int length)
+static void escape_html(cmark_strbuf *dest, const unsigned char *source, bufsize_t length)
 {
-	if (length < 0)
-		length = strlen((char *)source);
-
-	houdini_escape_html0(dest, source, (size_t)length, 0);
-}
-
-static void escape_href(cmark_strbuf *dest, const unsigned char *source, int length)
-{
-	if (length < 0)
-		length = strlen((char *)source);
-
-	houdini_escape_href(dest, source, (size_t)length);
+	houdini_escape_html0(dest, source, length, 0);
 }
 
 static inline void cr(cmark_strbuf *html)
@@ -39,7 +29,7 @@ struct render_state {
 };
 
 static void
-S_render_sourcepos(cmark_node *node, cmark_strbuf *html, long options)
+S_render_sourcepos(cmark_node *node, cmark_strbuf *html, int options)
 {
 	if (CMARK_OPT_SOURCEPOS & options) {
 		cmark_strbuf_printf(html, " data-sourcepos=\"%d:%d-%d:%d\"",
@@ -52,7 +42,7 @@ S_render_sourcepos(cmark_node *node, cmark_strbuf *html, long options)
 
 static int
 S_render_node(cmark_node *node, cmark_event_type ev_type,
-              struct render_state *state, long options)
+              struct render_state *state, int options)
 {
 	cmark_node *parent;
 	cmark_node *grandparent;
@@ -165,9 +155,9 @@ S_render_node(cmark_node *node, cmark_event_type ev_type,
 			S_render_sourcepos(node, html, options);
 			cmark_strbuf_puts(html, "><code>");
 		} else {
-			int first_tag = 0;
+			bufsize_t first_tag = 0;
 			while (first_tag < node->as.code.info.len &&
-			       node->as.code.info.data[first_tag] != ' ') {
+			       !cmark_isspace(node->as.code.info.data[first_tag])) {
 				first_tag += 1;
 			}
 
@@ -185,7 +175,13 @@ S_render_node(cmark_node *node, cmark_event_type ev_type,
 
 	case CMARK_NODE_HTML:
 		cr(html);
-		cmark_strbuf_put(html, node->as.literal.data, node->as.literal.len);
+		if (options & CMARK_OPT_SAFE) {
+			cmark_strbuf_puts(html, "<!-- raw HTML omitted -->");
+		} else {
+			cmark_strbuf_put(html, node->as.literal.data,
+			                 node->as.literal.len);
+		}
+		cr(html);
 		break;
 
 	case CMARK_NODE_HRULE:
@@ -217,8 +213,7 @@ S_render_node(cmark_node *node, cmark_event_type ev_type,
 		break;
 
 	case CMARK_NODE_TEXT:
-		escape_html(html, node->as.literal.data,
-		            node->as.literal.len);
+		escape_html(html, node->as.literal.data, node->as.literal.len);
 		break;
 
 	case CMARK_NODE_LINEBREAK:
@@ -240,7 +235,12 @@ S_render_node(cmark_node *node, cmark_event_type ev_type,
 		break;
 
 	case CMARK_NODE_INLINE_HTML:
-		cmark_strbuf_put(html, node->as.literal.data, node->as.literal.len);
+		if (options & CMARK_OPT_SAFE) {
+			cmark_strbuf_puts(html, "<!-- raw HTML omitted -->");
+		} else {
+			cmark_strbuf_put(html, node->as.literal.data,
+			                 node->as.literal.len);
+		}
 		break;
 
 	case CMARK_NODE_STRONG:
@@ -262,14 +262,19 @@ S_render_node(cmark_node *node, cmark_event_type ev_type,
 	case CMARK_NODE_LINK:
 		if (entering) {
 			cmark_strbuf_puts(html, "<a href=\"");
-			if (node->as.link.url)
-				escape_href(html, node->as.link.url, -1);
+			if (!((options & CMARK_OPT_SAFE) &&
+			      scan_dangerous_url(&node->as.link.url, 0))) {
+				houdini_escape_href(html,
+				                    node->as.link.url.data,
+				                    node->as.link.url.len);
 
-			if (node->as.link.title) {
-				cmark_strbuf_puts(html, "\" title=\"");
-				escape_html(html, node->as.link.title, -1);
 			}
-
+			if (node->as.link.title.len) {
+				cmark_strbuf_puts(html, "\" title=\"");
+				escape_html(html,
+				            node->as.link.title.data,
+				            node->as.link.title.len);
+			}
 			cmark_strbuf_puts(html, "\">");
 		} else {
 			cmark_strbuf_puts(html, "</a>");
@@ -279,15 +284,20 @@ S_render_node(cmark_node *node, cmark_event_type ev_type,
 	case CMARK_NODE_IMAGE:
 		if (entering) {
 			cmark_strbuf_puts(html, "<img src=\"");
-			if (node->as.link.url)
-				escape_href(html, node->as.link.url, -1);
+			if (!((options & CMARK_OPT_SAFE) &&
+			      scan_dangerous_url(&node->as.link.url, 0))) {
+				houdini_escape_href(html,
+				                    node->as.link.url.data,
+				                    node->as.link.url.len);
 
+			}
 			cmark_strbuf_puts(html, "\" alt=\"");
 			state->plain = node;
 		} else {
-			if (node->as.link.title) {
+			if (node->as.link.title.len) {
 				cmark_strbuf_puts(html, "\" title=\"");
-				escape_html(html, node->as.link.title, -1);
+				escape_html(html, node->as.link.title.data,
+				            node->as.link.title.len);
 			}
 
 			cmark_strbuf_puts(html, "\" />");
@@ -303,7 +313,7 @@ S_render_node(cmark_node *node, cmark_event_type ev_type,
 	return 1;
 }
 
-char *cmark_render_html(cmark_node *root, long options)
+char *cmark_render_html(cmark_node *root, int options)
 {
 	char *result;
 	cmark_strbuf html = GH_BUF_INIT;
@@ -319,6 +329,5 @@ char *cmark_render_html(cmark_node *root, long options)
 	result = (char *)cmark_strbuf_detach(&html);
 
 	cmark_iter_free(iter);
-	cmark_strbuf_free(&html);
 	return result;
 }

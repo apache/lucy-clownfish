@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "cmark.h"
 #include "buffer.h"
@@ -22,12 +23,13 @@ typedef struct {
 } cmark_list;
 
 typedef struct {
-	bool              fenced;
-	int               fence_length;
-	int               fence_offset;
-	unsigned char     fence_char;
 	cmark_chunk       info;
 	cmark_chunk       literal;
+	int               fence_length;
+	/* fence_offset must be 0-3, so we can use int8_t */
+	int8_t            fence_offset;
+	unsigned char     fence_char;
+	bool              fenced;
 } cmark_code;
 
 typedef struct {
@@ -36,23 +38,26 @@ typedef struct {
 } cmark_header;
 
 typedef struct {
-	unsigned char *url;
-	unsigned char *title;
+	cmark_chunk url;
+	cmark_chunk title;
 } cmark_link;
 
 struct cmark_node {
-	cmark_node_type type;
-
 	struct cmark_node *next;
 	struct cmark_node *prev;
 	struct cmark_node *parent;
 	struct cmark_node *first_child;
 	struct cmark_node *last_child;
 
+	void *user_data;
+
 	int start_line;
 	int start_column;
 	int end_line;
 	int end_column;
+
+	cmark_node_type type;
+
 	bool open;
 	bool last_line_blank;
 
@@ -64,6 +69,7 @@ struct cmark_node {
 		cmark_code        code;
 		cmark_header      header;
 		cmark_link        link;
+		int               html_block_type;
 	} as;
 };
 

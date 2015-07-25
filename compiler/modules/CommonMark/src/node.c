@@ -7,6 +7,73 @@
 static void
 S_node_unlink(cmark_node *node);
 
+static inline bool
+S_is_block(cmark_node *node)
+{
+	if (node == NULL) {
+		return false;
+	}
+	return node->type >= CMARK_NODE_FIRST_BLOCK
+	       && node->type <= CMARK_NODE_LAST_BLOCK;
+}
+
+static inline bool
+S_is_inline(cmark_node *node)
+{
+	if (node == NULL) {
+		return false;
+	}
+	return node->type >= CMARK_NODE_FIRST_INLINE
+	       && node->type <= CMARK_NODE_LAST_INLINE;
+}
+
+static bool
+S_can_contain(cmark_node *node, cmark_node *child)
+{
+	cmark_node *cur;
+
+	if (node == NULL || child == NULL) {
+		return false;
+	}
+
+	// Verify that child is not an ancestor of node or equal to node.
+	cur = node;
+	do {
+		if (cur == child) {
+			return false;
+		}
+		cur = cur->parent;
+	} while (cur != NULL);
+
+	if (child->type == CMARK_NODE_DOCUMENT) {
+		return false;
+	}
+
+	switch (node->type) {
+	case CMARK_NODE_DOCUMENT:
+	case CMARK_NODE_BLOCK_QUOTE:
+	case CMARK_NODE_ITEM:
+		return S_is_block(child)
+		       && child->type != CMARK_NODE_ITEM;
+
+	case CMARK_NODE_LIST:
+		return child->type == CMARK_NODE_ITEM;
+
+	case CMARK_NODE_PARAGRAPH:
+	case CMARK_NODE_HEADER:
+	case CMARK_NODE_EMPH:
+	case CMARK_NODE_STRONG:
+	case CMARK_NODE_LINK:
+	case CMARK_NODE_IMAGE:
+		return S_is_inline(child);
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
 cmark_node*
 cmark_node_new(cmark_node_type type)
 {
@@ -39,7 +106,9 @@ void S_free_nodes(cmark_node *e)
 {
 	cmark_node *next;
 	while (e != NULL) {
-		cmark_strbuf_free(&e->string_content);
+		if (S_is_block(e)) {
+			cmark_strbuf_free(&e->string_content);
+		}
 		switch (e->type) {
 		case NODE_CODE_BLOCK:
 			cmark_chunk_free(&e->as.code.info);
@@ -53,8 +122,8 @@ void S_free_nodes(cmark_node *e)
 			break;
 		case NODE_LINK:
 		case NODE_IMAGE:
-			free(e->as.link.url);
-			free(e->as.link.title);
+			cmark_chunk_free(&e->as.link.url);
+			cmark_chunk_free(&e->as.link.title);
 			break;
 		default:
 			break;
@@ -189,13 +258,24 @@ cmark_node_last_child(cmark_node *node)
 	}
 }
 
-static char*
-S_strdup(const char *str)
+void*
+cmark_node_get_user_data(cmark_node *node)
 {
-	size_t size = strlen(str) + 1;
-	char *dup = (char *)malloc(size);
-	memcpy(dup, str, size);
-	return dup;
+	if (node == NULL) {
+		return NULL;
+	} else {
+		return node->user_data;
+	}
+}
+
+int
+cmark_node_set_user_data(cmark_node *node, void *user_data)
+{
+	if (node == NULL) {
+		return 0;
+	}
+	node->user_data = user_data;
+	return 1;
 }
 
 const char*
@@ -448,7 +528,7 @@ cmark_node_get_url(cmark_node *node)
 	switch (node->type) {
 	case NODE_LINK:
 	case NODE_IMAGE:
-		return (char *)node->as.link.url;
+		return cmark_chunk_to_cstr(&node->as.link.url);
 	default:
 		break;
 	}
@@ -466,8 +546,7 @@ cmark_node_set_url(cmark_node *node, const char *url)
 	switch (node->type) {
 	case NODE_LINK:
 	case NODE_IMAGE:
-		free(node->as.link.url);
-		node->as.link.url = (unsigned char *)S_strdup(url);
+		cmark_chunk_set_cstr(&node->as.link.url, url);
 		return 1;
 	default:
 		break;
@@ -486,7 +565,7 @@ cmark_node_get_title(cmark_node *node)
 	switch (node->type) {
 	case NODE_LINK:
 	case NODE_IMAGE:
-		return (char *)node->as.link.title;
+		return cmark_chunk_to_cstr(&node->as.link.title);
 	default:
 		break;
 	}
@@ -504,8 +583,7 @@ cmark_node_set_title(cmark_node *node, const char *title)
 	switch (node->type) {
 	case NODE_LINK:
 	case NODE_IMAGE:
-		free(node->as.link.title);
-		node->as.link.title = (unsigned char *)S_strdup(title);
+		cmark_chunk_set_cstr(&node->as.link.title, title);
 		return 1;
 	default:
 		break;
@@ -548,73 +626,6 @@ cmark_node_get_end_column(cmark_node *node)
 		return 0;
 	}
 	return node->end_column;
-}
-
-static inline bool
-S_is_block(cmark_node *node)
-{
-	if (node == NULL) {
-		return false;
-	}
-	return node->type >= CMARK_NODE_FIRST_BLOCK
-	       && node->type <= CMARK_NODE_LAST_BLOCK;
-}
-
-static inline bool
-S_is_inline(cmark_node *node)
-{
-	if (node == NULL) {
-		return false;
-	}
-	return node->type >= CMARK_NODE_FIRST_INLINE
-	       && node->type <= CMARK_NODE_LAST_INLINE;
-}
-
-static bool
-S_can_contain(cmark_node *node, cmark_node *child)
-{
-	cmark_node *cur;
-
-	if (node == NULL || child == NULL) {
-		return false;
-	}
-
-	// Verify that child is not an ancestor of node or equal to node.
-	cur = node;
-	do {
-		if (cur == child) {
-			return false;
-		}
-		cur = cur->parent;
-	} while (cur != NULL);
-
-	if (child->type == CMARK_NODE_DOCUMENT) {
-		return false;
-	}
-
-	switch (node->type) {
-	case CMARK_NODE_DOCUMENT:
-	case CMARK_NODE_BLOCK_QUOTE:
-	case CMARK_NODE_ITEM:
-		return S_is_block(child)
-		       && child->type != CMARK_NODE_ITEM;
-
-	case CMARK_NODE_LIST:
-		return child->type == CMARK_NODE_ITEM;
-
-	case CMARK_NODE_PARAGRAPH:
-	case CMARK_NODE_HEADER:
-	case CMARK_NODE_EMPH:
-	case CMARK_NODE_STRONG:
-	case CMARK_NODE_LINK:
-	case CMARK_NODE_IMAGE:
-		return S_is_inline(child);
-
-	default:
-		break;
-	}
-
-	return false;
 }
 
 // Unlink a node without adjusting its next, prev, and parent pointers.

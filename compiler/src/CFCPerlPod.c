@@ -322,7 +322,11 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
 
 char*
 CFCPerlPod_md_to_pod(const char *md, CFCClass *klass, int header_level) {
-    cmark_node *doc = cmark_parse_document(md, strlen(md));
+    int options = CMARK_OPT_NORMALIZE
+                  | CMARK_OPT_SMART
+                  | CMARK_OPT_VALIDATE_UTF8
+                  | CMARK_OPT_SAFE;
+    cmark_node *doc = cmark_parse_document(md, strlen(md), options);
     char *pod = S_nodes_to_pod(doc, klass, header_level);
     cmark_node_free(doc);
 
