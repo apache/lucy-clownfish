@@ -118,11 +118,15 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
             /* Compile as C++ under MSVC11 and below. */
             chaz_CFlags_append(extra_cflags, "/TP");
         }
+	else {
+	    /* Fix warnings in flex generated code. */
+	    chaz_CFlags_append(extra_cflags, "/DYY_USE_CONST");
+	}
 
         chaz_CFlags_append(extra_cflags, "/W3");
         /* Thwart stupid warnings. */
-        chaz_CFlags_append(extra_cflags, "/D_CRT_SECURE_NO_WARNINGS");
-        chaz_CFlags_append(extra_cflags, "/D_SCL_SECURE_NO_WARNINGS");
+        chaz_CFlags_append(extra_cflags,
+	    "/D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS /wd4996");
 
         if (chaz_Probe_msvc_version_num() < 1300) {
             /* Redefine 'for' to fix broken 'for' scoping under MSVC6. */
