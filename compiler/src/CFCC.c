@@ -46,9 +46,6 @@ static const CFCMeta CFCC_META = {
     (CFCBase_destroy_t)CFCC_destroy
 };
 
-static char*
-S_callback_decs(CFCClass *klass);
-
 CFCC*
 CFCC_new(CFCHierarchy *hierarchy, const char *header, const char *footer) {
     CFCC *self = (CFCC*)CFCBase_allocate(&CFCC_META);
@@ -79,26 +76,6 @@ CFCC_destroy(CFCC *self) {
     FREEMEM(self->man_header);
     FREEMEM(self->man_footer);
     CFCBase_destroy((CFCBase*)self);
-}
-
-static char*
-S_callback_decs(CFCClass *klass) {
-    CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
-    char       *cb_decs       = CFCUtil_strdup("");
-
-    for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
-        CFCMethod *method = fresh_methods[meth_num];
-
-        // Define callback to NULL.
-        if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-            char *override_sym = CFCMethod_full_override_sym(method, klass);
-            cb_decs = CFCUtil_cat(cb_decs, "#define ", override_sym, " NULL\n",
-                                  NULL);
-            FREEMEM(override_sym);
-        }
-    }
-
-    return cb_decs;
 }
 
 void

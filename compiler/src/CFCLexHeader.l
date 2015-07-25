@@ -91,6 +91,8 @@
 
 %option noyywrap
 %option nodefault
+%option noinput
+%option nounput
 %option yylineno
 %option never-interactive
 

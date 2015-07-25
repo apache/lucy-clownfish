@@ -178,7 +178,7 @@ CFCParamList_name_list(CFCParamList *self) {
 
 const char*
 CFCParamList_param_name(CFCParamList *self, int tick) {
-    if (tick >= self->num_vars) {
+    if ((size_t)tick >= self->num_vars) {
         CFCUtil_die("No var at position %d for ParamList (%s)", tick,
                     CFCParamList_to_c(self));
     }
@@ -187,7 +187,7 @@ CFCParamList_param_name(CFCParamList *self, int tick) {
 
 CFCType*
 CFCParamList_param_type(CFCParamList *self, int tick) {
-    if (tick >= self->num_vars) {
+    if ((size_t)tick >= self->num_vars) {
         CFCUtil_die("No var at position %d for ParamList (%s)", tick,
                     CFCParamList_to_c(self));
     }

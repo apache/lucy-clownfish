@@ -60,8 +60,7 @@ S_start_class(CFCParser *state, CFCDocuComment *docucomment, char *exposure,
 }
 
 static CFCVariable*
-S_new_var(CFCParser *state, char *exposure, char *modifiers, CFCType *type,
-          char *name) {
+S_new_var(char *exposure, char *modifiers, CFCType *type, char *name) {
     int inert = false;
     if (modifiers) {
         if (strcmp(modifiers, "inert") != 0) {
@@ -235,7 +234,10 @@ S_new_type(CFCParser *state, int flags, char *type_name,
 %type type_qualifier                    {int}
 %type type_qualifier_list               {int}
 
-%destructor result                            { CFCBase_decref((CFCBase*)$$); }
+%destructor result {
+    (void)state; /* Suppress unused variable warning. */
+    CFCBase_decref((CFCBase*)$$);
+}
 %destructor file                              { CFCBase_decref((CFCBase*)$$); }
 %destructor major_block                       { CFCBase_decref((CFCBase*)$$); }
 %destructor parcel_definition                 { CFCBase_decref((CFCBase*)$$); }
@@ -401,20 +403,20 @@ class_defs(A) ::= class_defs(B) subroutine_declaration_statement(C).
 var_declaration_statement(A) ::= 
     type(D) declarator(E) SEMICOLON.
 {
-    A = S_new_var(state, CFCParser_dupe(state, "private"), NULL, D, E);
+    A = S_new_var(CFCParser_dupe(state, "private"), NULL, D, E);
 }
 var_declaration_statement(A) ::= 
     declaration_modifier_list(C)
     type(D) declarator(E) SEMICOLON.
 {
-    A = S_new_var(state, CFCParser_dupe(state, "parcel"), C, D, E);
+    A = S_new_var(CFCParser_dupe(state, "parcel"), C, D, E);
 }
 var_declaration_statement(A) ::= 
     exposure_specifier(B)
     declaration_modifier_list(C)
     type(D) declarator(E) SEMICOLON.
 {
-    A = S_new_var(state, B, C, D, E);
+    A = S_new_var(B, C, D, E);
 }
 
 subroutine_declaration_statement(A) ::= 
@@ -573,7 +575,7 @@ declarator(A) ::= IDENTIFIER(B).
 
 param_variable(A) ::= type(B) declarator(C).
 {
-    A = S_new_var(state, NULL, NULL, B, C);
+    A = S_new_var(NULL, NULL, B, C);
 }
 
 param_list(A) ::= LEFT_PAREN RIGHT_PAREN.
