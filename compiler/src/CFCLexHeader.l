@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+%top{
+    /* Avoid redefinition of integer limits on platforms without inttypes.h. */
+    #include "charmony.h"
+}
+
 %{
     #include "CFC.h"
     #include "CFCParseHeader.h"
