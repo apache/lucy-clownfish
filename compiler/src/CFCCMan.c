@@ -66,10 +66,10 @@ static char*
 S_man_create_inheritance(CFCClass *klass);
 
 static char*
-S_md_to_man(CFCClass *klass, const char *md, int needs_indent);
+S_md_to_man(CFCClass *klass, const char *md, int level);
 
 static char*
-S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent);
+S_nodes_to_man(CFCClass *klass, cmark_node *node, int level);
 
 static char*
 S_man_escape(const char *content);
@@ -132,7 +132,7 @@ S_man_create_name(CFCClass *klass) {
         raw_brief = CFCDocuComment_get_brief(docucom);
     }
     if (raw_brief && raw_brief[0] != '\0') {
-        char *brief = S_md_to_man(klass, raw_brief, false);
+        char *brief = S_md_to_man(klass, raw_brief, 0);
         result = CFCUtil_cat(result, " \\- ", brief, NULL);
         FREEMEM(brief);
     }
@@ -159,7 +159,7 @@ S_man_create_description(CFCClass *klass) {
     const char *raw_description = CFCDocuComment_get_long(docucom);
     if (!raw_description || raw_description[0] == '\0') { return result; }
 
-    char *description = S_md_to_man(klass, raw_description, false);
+    char *description = S_md_to_man(klass, raw_description, 0);
     result = CFCUtil_cat(result, ".SH DESCRIPTION\n", description, NULL);
     FREEMEM(description);
 
@@ -308,7 +308,7 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
     if (docucomment) {
         // Description
         const char *raw_desc = CFCDocuComment_get_description(docucomment);
-        char *desc = S_md_to_man(klass, raw_desc, true);
+        char *desc = S_md_to_man(klass, raw_desc, 1);
         result = CFCUtil_cat(result, ".IP\n", desc, NULL);
         FREEMEM(desc);
 
@@ -320,7 +320,7 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
         if (param_names[0]) {
             result = CFCUtil_cat(result, ".RS\n", NULL);
             for (size_t i = 0; param_names[i] != NULL; i++) {
-                char *doc = S_md_to_man(klass, param_docs[i], true);
+                char *doc = S_md_to_man(klass, param_docs[i], 1);
                 result = CFCUtil_cat(result, ".TP\n.I ", param_names[i],
                                      "\n", doc, NULL);
                 FREEMEM(doc);
@@ -331,7 +331,7 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
         // Return value
         const char *retval_doc = CFCDocuComment_get_retval(docucomment);
         if (retval_doc && strlen(retval_doc)) {
-            char *doc = S_md_to_man(klass, retval_doc, true);
+            char *doc = S_md_to_man(klass, retval_doc, 1);
             result = CFCUtil_cat(result, ".IP\n.B Returns:\n", doc, NULL);
             FREEMEM(doc);
         }
@@ -409,24 +409,49 @@ S_man_create_inheritance(CFCClass *klass) {
 }
 
 static char*
-S_md_to_man(CFCClass *klass, const char *md, int needs_indent) {
+S_md_to_man(CFCClass *klass, const char *md, int level) {
     int options = CMARK_OPT_NORMALIZE
                   | CMARK_OPT_SMART
                   | CMARK_OPT_VALIDATE_UTF8
                   | CMARK_OPT_SAFE;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
-    char *result = S_nodes_to_man(klass, doc, needs_indent);
+    char *result = S_nodes_to_man(klass, doc, level);
     cmark_node_free(doc);
 
     return result;
 }
 
+/*
+ * The first level is indented with .IP, the next levels with .RS and .RE.
+ * Every change of indentation requires an adjustment to the next paragraph.
+ *
+ * - After increasing the indent, the next paragraph must start with .IP.
+ * - After decreasing the indentation to a lever larger than zero, the
+ *   next paragraph mus also start with .IP.
+ * - After decreasing the indentation to level zero, the next paragraph
+ *   must start with .P.
+ *
+ * Level 0
+ * .IP
+ * Level 1
+ * .RS
+ * .IP
+ * Level 2
+ * .RE
+ * .IP
+ * Level 1
+ * .P
+ * Level 0
+ *
+ */
+
+#define ADJUST_REINDENT  1
+#define ADJUST_VSPACE    2
+
 static char*
-S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
+S_nodes_to_man(CFCClass *klass, cmark_node *node, int level) {
     char *result = CFCUtil_strdup("");
-    int level      = needs_indent ? 1 : 0;
-    int has_indent = needs_indent;
-    int has_vspace = true;
+    int needs_adjust = 0;
     int found_matching_code_block = false;
     cmark_iter *iter = cmark_iter_new(node);
     cmark_event_type ev_type;
@@ -441,30 +466,27 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
 
             case CMARK_NODE_PARAGRAPH:
                 if (ev_type == CMARK_EVENT_ENTER) {
-                    if (level > 0 && !has_indent) {
-                        result = CFCUtil_cat(result, ".IP\n", NULL);
-                        has_indent = true;
+                    if (needs_adjust == ADJUST_REINDENT) {
+                        const char *man = level == 0 ? ".P\n" : ".IP\n";
+                        result = CFCUtil_cat(result, man, NULL);
                     }
-                    else if (level == 0 && has_indent) {
-                        result = CFCUtil_cat(result, ".P\n", NULL);
-                        has_indent = false;
-                    }
-                    else if (!has_vspace) {
+                    else if (needs_adjust == ADJUST_VSPACE) {
                         result = CFCUtil_cat(result, "\n", NULL);
                     }
                 }
                 else {
                     result = CFCUtil_cat(result, "\n", NULL);
-                    has_vspace = false;
+                    needs_adjust = ADJUST_VSPACE;
                 }
                 break;
 
             case CMARK_NODE_BLOCK_QUOTE:
-            case CMARK_NODE_LIST:
+            case CMARK_NODE_LIST: {
+                int prev_adjust = needs_adjust;
+                needs_adjust = ADJUST_REINDENT;
                 if (ev_type == CMARK_EVENT_ENTER) {
                     if (level > 0) {
                         result = CFCUtil_cat(result, ".RS\n", NULL);
-                        has_indent = false;
                     }
                     ++level;
                 }
@@ -472,16 +494,19 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                     --level;
                     if (level > 0) {
                         result = CFCUtil_cat(result, ".RE\n", NULL);
-                        has_indent = false;
+                    }
+                    else if (prev_adjust == ADJUST_REINDENT) {
+                        // Avoid .P after consecutive .REs.
+                        needs_adjust = 0;
                     }
                 }
                 break;
+            }
 
             case CMARK_NODE_ITEM:
                 if (ev_type == CMARK_EVENT_ENTER) {
                     result = CFCUtil_cat(result, ".IP \\(bu\n", NULL);
-                    has_indent = true;
-                    has_vspace = true;
+                    needs_adjust = 0;
                 }
                 break;
 
@@ -489,11 +514,10 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 // Only works on top level for now.
                 if (ev_type == CMARK_EVENT_ENTER) {
                     result = CFCUtil_cat(result, ".SS\n", NULL);
-                    has_indent = false;
                 }
                 else {
                     result = CFCUtil_cat(result, "\n", NULL);
-                    has_vspace = true;
+                    needs_adjust = 0;
                 }
                 break;
 
@@ -515,12 +539,9 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
 
                     if (level > 0) {
                         result = CFCUtil_cat(result, ".RE\n", NULL);
-                        has_indent = false;
                     }
-                    else {
-                        has_indent = true;
-                        has_vspace = false;
-                    }
+
+                    needs_adjust = ADJUST_REINDENT;
                 }
 
                 if (CFCMarkdown_code_block_is_last(node)) {
@@ -535,12 +556,8 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                             NULL);
                         if (level > 0) {
                             result = CFCUtil_cat(result, ".RE\n", NULL);
-                            has_indent = false;
                         }
-                        else {
-                            has_indent = true;
-                            has_vspace = false;
-                        }
+                        needs_adjust = ADJUST_REINDENT;
                     }
                     else {
                         // Reset.
