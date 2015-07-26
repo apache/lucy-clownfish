@@ -174,9 +174,6 @@ static char*
 S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *base, int dir_level);
 
 static char*
-S_struct_sym_to_url(const char *struct_sym, CFCClass *base, int dir_level);
-
-static char*
 S_class_to_url(CFCClass *klass, CFCClass *base, int dir_level);
 
 static char*
@@ -1058,26 +1055,40 @@ S_transform_link(cmark_node *link, CFCClass *doc_class, int dir_level) {
 }
 
 static char*
-S_type_to_html(CFCClass *klass, CFCType *type) {
+S_type_to_html(CFCClass *doc_class, CFCType *type) {
     const char *type_c = CFCType_to_c(type);
 
     if (CFCType_is_object(type)) {
-        const char *struct_sym = CFCClass_full_struct_sym(klass);
-        const char *specifier  = CFCType_get_specifier(type);
         const char *underscore = strchr(type_c, '_');
 
         if (underscore) {
+            const char *doc_struct_sym = CFCClass_full_struct_sym(doc_class);
+            const char *specifier      = CFCType_get_specifier(type);
+            CFCClass *klass = NULL;
+
+            // Don't link to doc class.
+            if (strcmp(specifier, doc_struct_sym) != 0) {
+                klass = CFCClass_fetch_by_struct_sym(specifier);
+                if (!klass) {
+                    CFCUtil_warn("Class '%s' not found", specifier);
+                }
+                else if (!CFCClass_public(klass)) {
+                    CFCUtil_warn("Non-public class '%s' used in public method",
+                                 specifier);
+                    klass = NULL;
+                }
+            }
+
             size_t  offset = underscore + 1 - type_c;
             char   *prefix = CFCUtil_strndup(specifier, offset);
             char   *retval;
 
-            if (strcmp(specifier, struct_sym) == 0) {
-                // Don't link types of the same class.
+            if (!klass) {
                 retval = CFCUtil_sprintf("<span class=\"prefix\">%s</span>%s",
                                          prefix, type_c + offset);
             }
             else {
-                char *url = S_struct_sym_to_url(specifier, klass, 0);
+                char *url = S_class_to_url(klass, doc_class, 0);
                 const char *pattern =
                     "<span class=\"prefix\">%s</span>"
                     "<a href=\"%s\">%s</a>";
@@ -1130,21 +1141,9 @@ S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
     return url;
 }
 
-// Return a relative URL to the class with full struct sym `struct_sym`.
-static char*
-S_struct_sym_to_url(const char *struct_sym, CFCClass *base, int dir_level) {
-    if (!struct_sym) { return CFCUtil_strdup("not_found.html"); }
-
-    CFCClass *klass = CFCClass_fetch_by_struct_sym(struct_sym);
-
-    return S_class_to_url(klass, base, dir_level);
-}
-
 // Return a relative URL to a class.
 static char*
 S_class_to_url(CFCClass *klass, CFCClass *base, int dir_level) {
-    if (!klass) { return CFCUtil_strdup("not_found.html"); }
-
     const char *class_name = CFCClass_get_name(klass);
     char *path    = CFCUtil_global_replace(class_name, "::", CHY_DIR_SEP);
     char *url     = CFCUtil_sprintf("%s.html", path);

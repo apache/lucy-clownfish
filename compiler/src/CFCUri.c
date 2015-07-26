@@ -23,6 +23,8 @@
 #include "CFCUri.h"
 #include "CFCClass.h"
 #include "CFCDocument.h"
+#include "CFCFunction.h"
+#include "CFCMethod.h"
 #include "CFCUtil.h"
 
 struct CFCUri {
@@ -167,24 +169,41 @@ S_resolve(CFCUri *self, const char *parcel, const char *struct_sym,
     }
 
     if (klass) {
+        if (!CFCClass_public(klass)) {
+            CFCUtil_warn("Non-public class '%s' in Clownfish URI: %s",
+                          CFCClass_get_struct_sym(klass), self->string);
+        }
+
         self->type  = CFC_URI_CLASS;
         self->klass = klass;
         CFCBase_incref((CFCBase*)klass);
 
         if (callable) {
             if (islower(callable[0])) {
-                if (!CFCClass_function(klass, callable)) {
+                CFCFunction *function = CFCClass_function(klass, callable);
+
+                if (!function) {
                     CFCUtil_warn("Unknown function '%s' in Clownfish URI: %s",
                                  callable, self->string);
+                }
+                else if (!CFCFunction_public(function)) {
+                    CFCUtil_warn("Non-public function '%s' in Clownfish URI:"
+                                 " %s", callable, self->string);
                 }
 
                 self->type     = CFC_URI_FUNCTION;
                 self->callable = CFCUtil_strdup(callable);
             }
             else {
-                if (!CFCClass_method(klass, callable)) {
+                CFCMethod *method = CFCClass_method(klass, callable);
+
+                if (!method) {
                     CFCUtil_warn("Unknown method '%s' in Clownfish URI: %s",
                                  callable, self->string);
+                }
+                else if (!CFCMethod_public(method)) {
+                    CFCUtil_warn("Non-public method '%s' in Clownfish URI:"
+                                 " %s", callable, self->string);
                 }
 
                 self->type     = CFC_URI_METHOD;
