@@ -1018,7 +1018,16 @@ S_transform_link(cmark_node *link, CFCClass *doc_class, int dir_level) {
     CFCUri *uri_obj = CFCUri_new(uri_string, doc_class);
     char   *url     = S_cfc_uri_to_url(uri_obj, doc_class, dir_level);
 
-    if (url) {
+    if (CFCUri_get_type(uri_obj) == CFC_URI_ERROR) {
+        // Replace link with error.
+        char *link_text = CFCC_link_text(uri_obj);
+        cmark_node *text_node = cmark_node_new(CMARK_NODE_TEXT);
+        cmark_node_set_literal(text_node, link_text);
+        cmark_node_insert_after(link, text_node);
+        cmark_node_free(link);
+        FREEMEM(link_text);
+    }
+    else if (url) {
         cmark_node_set_url(link, url);
 
         if (!cmark_node_first_child(link)) {
@@ -1089,7 +1098,7 @@ S_type_to_html(CFCClass *klass, CFCType *type) {
 static char*
 S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
     char *url = NULL;
-    int   type    = CFCUri_get_type(uri_obj);
+    CFCUriType type = CFCUri_get_type(uri_obj);
 
     switch (type) {
         case CFC_URI_CLASS: {
@@ -1113,6 +1122,9 @@ S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
             url = S_document_to_url(doc, doc_class, dir_level);
             break;
         }
+
+        default:
+            break;
     }
 
     return url;

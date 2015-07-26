@@ -29,10 +29,11 @@ struct CFCUri {
     CFCBase      base;
     char        *string;
     CFCClass    *doc_class;
-    int          type;
+    CFCUriType   type;
     CFCClass    *klass;
     CFCDocument *document;
     char        *callable;
+    char        *error;
 };
 
 static const CFCMeta CFCURI_META = {
@@ -47,6 +48,9 @@ S_parse(CFCUri *self);
 static void
 S_resolve(CFCUri *self, const char *prefix, const char *struct_sym,
           const char *callable);
+
+static void
+S_set_error(CFCUri *self, const char *error);
 
 static char*
 S_next_component(char **iter);
@@ -80,6 +84,7 @@ void
 CFCUri_destroy(CFCUri *self) {
     FREEMEM(self->string);
     FREEMEM(self->callable);
+    FREEMEM(self->error);
     CFCBase_decref((CFCBase*)self->doc_class);
     CFCBase_decref((CFCBase*)self->klass);
     CFCBase_decref((CFCBase*)self->document);
@@ -107,24 +112,20 @@ S_parse(CFCUri *self) {
         // Parcel
         parcel = component;
         component = S_next_component(&iter);
+
+        if (!component) {
+            S_set_error(self, "Missing component in Clownfish URI");
+            goto done;
+        }
     }
 
-    if (component) {
-        if (isupper(component[0])) {
-            // Class
-            struct_sym = component;
-        }
-        else if (component == buf && component[0] == '\0' && iter) {
-            // "cfish:.Method" style URL.
-            ;
-        }
-        else {
-            CFCUtil_die("Invalid component in Clownfish URI: %s",
-                        self->string);
-        }
-
-        component = S_next_component(&iter);
+    // struct_sym == NULL for "cfish:.Method" style URL.
+    // parcel implies struct_sym.
+    if (parcel || component[0] != '\0') {
+        struct_sym = component;
     }
+
+    component = S_next_component(&iter);
 
     if (component) {
         callable = component;
@@ -132,11 +133,13 @@ S_parse(CFCUri *self) {
     }
 
     if (component) {
-        CFCUtil_die("Trailing components in Clownfish URI: %s", self->string);
+        S_set_error(self, "Trailing component in Clownfish URI");
+        goto done;
     }
 
     S_resolve(self, parcel, struct_sym, callable);
 
+done:
     FREEMEM(buf);
 }
 
@@ -145,67 +148,74 @@ S_resolve(CFCUri *self, const char *parcel, const char *struct_sym,
           const char *callable) {
 
     // Try to find a CFCClass.
-    if (struct_sym || callable) {
-        CFCClass *doc_class = self->doc_class;
-        CFCClass *klass     = NULL;
+    CFCClass *doc_class = self->doc_class;
+    CFCClass *klass     = NULL;
 
-        if (parcel) {
-            char *full_struct_sym = CFCUtil_sprintf("%s_%s", parcel, struct_sym);
-            klass = CFCClass_fetch_by_struct_sym(full_struct_sym);
-            FREEMEM(full_struct_sym);
-        }
-        else if (struct_sym && doc_class) {
-            const char *prefix = CFCClass_get_prefix(doc_class);
-            char *full_struct_sym = CFCUtil_sprintf("%s%s", prefix, struct_sym);
-            klass = CFCClass_fetch_by_struct_sym(full_struct_sym);
-            FREEMEM(full_struct_sym);
-        }
-        else {
-            klass = doc_class;
-        }
+    if (parcel) {
+        char *full_struct_sym = CFCUtil_sprintf("%s_%s", parcel, struct_sym);
+        klass = CFCClass_fetch_by_struct_sym(full_struct_sym);
+        FREEMEM(full_struct_sym);
+    }
+    else if (struct_sym && doc_class) {
+        const char *prefix = CFCClass_get_prefix(doc_class);
+        char *full_struct_sym = CFCUtil_sprintf("%s%s", prefix, struct_sym);
+        klass = CFCClass_fetch_by_struct_sym(full_struct_sym);
+        FREEMEM(full_struct_sym);
+    }
+    else if (callable) {
+        klass = doc_class;
+    }
 
-        if (klass) {
-            self->type  = CFC_URI_CLASS;
-            self->klass = klass;
-            CFCBase_incref((CFCBase*)klass);
+    if (klass) {
+        self->type  = CFC_URI_CLASS;
+        self->klass = klass;
+        CFCBase_incref((CFCBase*)klass);
 
-            if (callable) {
-                if (islower(callable[0])) {
-                    if (!CFCClass_function(klass, callable)) {
-                        CFCUtil_warn("Unknown function '%s' in Clownfish URI: %s",
-                                     callable, self->string);
-                    }
-
-                    self->type     = CFC_URI_FUNCTION;
-                    self->callable = CFCUtil_strdup(callable);
+        if (callable) {
+            if (islower(callable[0])) {
+                if (!CFCClass_function(klass, callable)) {
+                    CFCUtil_warn("Unknown function '%s' in Clownfish URI: %s",
+                                 callable, self->string);
                 }
-                else {
-                    if (!CFCClass_method(klass, callable)) {
-                        CFCUtil_warn("Unknown method '%s' in Clownfish URI: %s",
-                                     callable, self->string);
-                    }
 
-                    self->type     = CFC_URI_METHOD;
-                    self->callable = CFCUtil_strdup(callable);
+                self->type     = CFC_URI_FUNCTION;
+                self->callable = CFCUtil_strdup(callable);
+            }
+            else {
+                if (!CFCClass_method(klass, callable)) {
+                    CFCUtil_warn("Unknown method '%s' in Clownfish URI: %s",
+                                 callable, self->string);
                 }
+
+                self->type     = CFC_URI_METHOD;
+                self->callable = CFCUtil_strdup(callable);
             }
         }
+
+        return;
     }
 
     // Try to find a CFCDocument.
-    if (self->type == 0 && !parcel && struct_sym && !callable) {
+    if (!parcel && struct_sym && !callable) {
         CFCDocument *doc = CFCDocument_fetch(struct_sym);
 
         if (doc) {
             self->type     = CFC_URI_DOCUMENT;
             self->document = doc;
             CFCBase_incref((CFCBase*)doc);
+            return;
         }
     }
 
-    if (self->type == 0) {
-        CFCUtil_die("Couldn't resolve Clownfish URI: %s", self->string);
-    }
+    S_set_error(self, "Couldn't resolve Clownfish URI");
+}
+
+static void
+S_set_error(CFCUri *self, const char *error) {
+    self->type  = CFC_URI_ERROR;
+    self->error = CFCUtil_sprintf("%s: %s", error, self->string);
+
+    CFCUtil_warn(self->error);
 }
 
 static char*
@@ -231,7 +241,7 @@ CFCUri_get_string(CFCUri *self) {
     return self->string;
 }
 
-int
+CFCUriType
 CFCUri_get_type(CFCUri *self) {
     if (self->type == 0) { S_parse(self); }
     return self->type;
@@ -262,5 +272,14 @@ CFCUri_get_callable_name(CFCUri *self) {
         CFCUtil_die("Not a callable URI");
     }
     return self->callable;
+}
+
+const char*
+CFCUri_get_error(CFCUri *self) {
+    if (self->type == 0) { S_parse(self); }
+    if (self->error == NULL) {
+        CFCUtil_die("Not an error URI");
+    }
+    return self->error;
 }
 

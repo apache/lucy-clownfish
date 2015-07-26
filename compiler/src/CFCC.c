@@ -174,9 +174,15 @@ CFCC_write_hostdefs(CFCC *self) {
 char*
 CFCC_link_text(CFCUri *uri_obj) {
     char *link_text = NULL;
-    int   type      = CFCUri_get_type(uri_obj);
+    CFCUriType type = CFCUri_get_type(uri_obj);
 
     switch (type) {
+        case CFC_URI_ERROR: {
+            const char *error = CFCUri_get_error(uri_obj);
+            link_text = CFCUtil_sprintf("[%s]", error);
+            break;
+        }
+
         case CFC_URI_NULL:
             link_text = CFCUtil_strdup("NULL");
             break;
@@ -203,6 +209,10 @@ CFCC_link_text(CFCUri *uri_obj) {
             link_text = CFCUtil_strdup(name);
             break;
         }
+
+        default:
+            CFCUtil_die("Unsupported node type: %d", type);
+            break;
     }
 
     return link_text;

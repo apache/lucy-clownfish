@@ -21,11 +21,14 @@
 extern "C" {
 #endif
 
-#define CFC_URI_NULL        1
-#define CFC_URI_CLASS       2
-#define CFC_URI_FUNCTION    3
-#define CFC_URI_METHOD      4
-#define CFC_URI_DOCUMENT    5
+typedef enum {
+    CFC_URI_NULL     = 1,
+    CFC_URI_CLASS    = 2,
+    CFC_URI_FUNCTION = 3,
+    CFC_URI_METHOD   = 4,
+    CFC_URI_DOCUMENT = 5,
+    CFC_URI_ERROR    = 6
+} CFCUriType;
 
 typedef struct CFCUri CFCUri;
 struct CFCClass;
@@ -46,7 +49,7 @@ CFCUri_destroy(CFCUri *self);
 const char*
 CFCUri_get_string(CFCUri *self);
 
-int
+CFCUriType
 CFCUri_get_type(CFCUri *self);
 
 struct CFCClass*
@@ -57,6 +60,9 @@ CFCUri_get_document(CFCUri *self);
 
 const char*
 CFCUri_get_callable_name(CFCUri *self);
+
+const char*
+CFCUri_get_error(CFCUri *self);
 
 #ifdef __cplusplus
 }

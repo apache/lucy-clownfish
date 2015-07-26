@@ -570,12 +570,18 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
         return retval;
     }
 
-    char   *new_uri  = NULL;
-    char   *new_text = NULL;
-    CFCUri *uri_obj  = CFCUri_new(uri, doc_class);
-    int     type     = CFCUri_get_type(uri_obj);
+    char       *new_uri  = NULL;
+    char       *new_text = NULL;
+    CFCUri     *uri_obj  = CFCUri_new(uri, doc_class);
+    CFCUriType  type     = CFCUri_get_type(uri_obj);
 
     switch (type) {
+        case CFC_URI_ERROR: {
+            const char *error = CFCUri_get_error(uri_obj);
+            new_text = CFCUtil_sprintf("[%s]", error);
+            break;
+        }
+
         case CFC_URI_NULL:
             // Change all instances of NULL to 'undef'
             new_text = CFCUtil_strdup("undef");
