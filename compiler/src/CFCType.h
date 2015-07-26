@@ -28,19 +28,26 @@ typedef struct CFCType CFCType;
 struct CFCClass;
 struct CFCParcel;
 
-#define CFCTYPE_CONST       0x00000001
-#define CFCTYPE_NULLABLE    0x00000002
-#define CFCTYPE_VOID        0x00000004
-#define CFCTYPE_INCREMENTED 0x00000008
-#define CFCTYPE_DECREMENTED 0x00000010
-#define CFCTYPE_OBJECT      0x00000020
-#define CFCTYPE_PRIMITIVE   0x00000040
-#define CFCTYPE_INTEGER     0x00000080
-#define CFCTYPE_FLOATING    0x00000100
-#define CFCTYPE_STRING_TYPE 0x00000200
-#define CFCTYPE_VA_LIST     0x00000400
-#define CFCTYPE_ARBITRARY   0x00000800
-#define CFCTYPE_COMPOSITE   0x00001000
+#define CFCTYPE_CONST         (1 << 0)
+#define CFCTYPE_NULLABLE      (1 << 1)
+#define CFCTYPE_VOID          (1 << 2)
+#define CFCTYPE_INCREMENTED   (1 << 3)
+#define CFCTYPE_DECREMENTED   (1 << 4)
+#define CFCTYPE_OBJECT        (1 << 5)
+#define CFCTYPE_PRIMITIVE     (1 << 6)
+#define CFCTYPE_INTEGER       (1 << 7)
+#define CFCTYPE_FLOATING      (1 << 8)
+#define CFCTYPE_CFISH_OBJ     (1 << 9)
+#define CFCTYPE_CFISH_STRING  (1 << 10)
+#define CFCTYPE_CFISH_BLOB    (1 << 12)
+#define CFCTYPE_CFISH_INTEGER (1 << 13)
+#define CFCTYPE_CFISH_FLOAT   (1 << 14)
+#define CFCTYPE_CFISH_BOOLEAN (1 << 15)
+#define CFCTYPE_CFISH_VECTOR  (1 << 16)
+#define CFCTYPE_CFISH_HASH    (1 << 17)
+#define CFCTYPE_VA_LIST       (1 << 18)
+#define CFCTYPE_ARBITRARY     (1 << 19)
+#define CFCTYPE_COMPOSITE     (1 << 20)
 
 /** Generic constructor.
  *
@@ -104,8 +111,9 @@ CFCType_new_float(int flags, const char *specifier);
  *
  * The Parcel's prefix will be prepended to the specifier by new_object().
  *
- * @param flags Allowed flags: OBJECT, STRING_TYPE, CONST, NULLABLE,
- * INCREMENTED, DECREMENTED.
+ * @param flags Allowed flags: OBJECT, CFISH_OBJ, CFISH_STRING, CFISH_BLOB,
+ * CFISH_INTEGER, CFISH_FLOAT, CFISH_BOOLEAN, CFISH_VECTOR, CFISH_HASH, CONST,
+ * NULLABLE, INCREMENTED, DECREMENTED.
  * @param parcel A Clownfish::CFC::Model::Parcel.
  * @param specifier Required.  Must follow the rules for
  * Clownfish::CFC::Model::Class class name components.
@@ -255,11 +263,50 @@ CFCType_is_integer(CFCType *self);
 int
 CFCType_is_floating(CFCType *self);
 
-/** Returns true if $type represents a Clownfish type which holds unicode
- * strings.
+/** Returns true if the type is Clownfish::Obj.
+ */
+int
+CFCType_cfish_obj(CFCType *self);
+
+/** Returns true if the type is Clownfish::String.
  */
 int
 CFCType_is_string_type(CFCType *self);
+
+/** Returns true if the type is Clownfish::String.
+ */
+int
+CFCType_cfish_string(CFCType *self);
+
+/** Returns true if the type is Clownfish::Blob.
+ */
+int
+CFCType_cfish_blob(CFCType *self);
+
+/** Returns true if the type is Clownfish::Integer.
+ */
+int
+CFCType_cfish_integer(CFCType *self);
+
+/** Returns true if the type is Clownfish::Float.
+ */
+int
+CFCType_cfish_float(CFCType *self);
+
+/** Returns true if the type is Clownfish::Boolean
+ */
+int
+CFCType_cfish_boolean(CFCType *self);
+
+/** Returns true if the type is Clownfish::Vector.
+ */
+int
+CFCType_cfish_vector(CFCType *self);
+
+/** Returns true if the type is Clownfish::Hash.
+ */
+int
+CFCType_cfish_hash(CFCType *self);
 
 int
 CFCType_is_va_list(CFCType *self);
