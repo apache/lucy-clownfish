@@ -62,7 +62,7 @@ void
 CFCC_write_man_pages(CFCC *self);
 
 char*
-CFCC_link_text(struct CFCUri *uri_obj, struct CFCClass *klass);
+CFCC_link_text(struct CFCUri *uri_obj);
 
 #ifdef __cplusplus
 }

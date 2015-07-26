@@ -597,7 +597,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                     ) {
                         // Empty link text.
                         CFCUri *uri_obj = CFCUri_new(url, klass);
-                        char *link_text = CFCC_link_text(uri_obj, klass);
+                        char *link_text = CFCC_link_text(uri_obj);
                         if (link_text) {
                             result = CFCUtil_cat(result, link_text, NULL);
                             FREEMEM(link_text);

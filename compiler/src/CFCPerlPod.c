@@ -558,10 +558,10 @@ S_pod_escape(const char *content) {
 }
 
 static char*
-S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
+S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
     cmark_node *child = cmark_node_first_child(link);
     const char *uri   = cmark_node_get_url(link);
-    char       *text  = S_nodes_to_pod(child, klass, header_level);
+    char       *text  = S_nodes_to_pod(child, doc_class, header_level);
     char       *retval;
 
     if (!CFCUri_is_clownfish_uri(uri)) {
@@ -572,7 +572,7 @@ S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
 
     char   *new_uri  = NULL;
     char   *new_text = NULL;
-    CFCUri *uri_obj  = CFCUri_new(uri, klass);
+    CFCUri *uri_obj  = CFCUri_new(uri, doc_class);
     int     type     = CFCUri_get_type(uri_obj);
 
     switch (type) {
@@ -582,52 +582,18 @@ S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
             break;
 
         case CFC_URI_CLASS: {
-            const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
-            CFCClass *uri_class
-                = full_struct_sym
-                ? CFCClass_fetch_by_struct_sym(full_struct_sym)
-                : NULL;
+            CFCClass *klass = CFCUri_get_class(uri_obj);
 
-            if (uri_class) {
-                if (uri_class != klass) {
-                    const char *class_name = CFCClass_get_name(uri_class);
-                    new_uri = CFCUtil_strdup(class_name);
-                }
-            }
-            else {
-                const char *doc_name = CFCUri_get_struct_sym(uri_obj);
-                CFCDocument *doc = CFCDocument_fetch(doc_name);
-
-                if (!doc) {
-                    CFCUtil_warn("No class or document found for URI '%s'",
-                                 uri);
-                }
-                else {
-                    const char *path_part = CFCDocument_get_path_part(doc);
-                    new_uri = CFCUtil_global_replace(path_part, CHY_DIR_SEP,
-                                                     "::");
-                }
+            if (klass != doc_class) {
+                const char *class_name = CFCClass_get_name(klass);
+                new_uri = CFCUtil_strdup(class_name);
             }
 
-            if (text[0] != '\0') {
-                // Keep text.
-                break;
-            }
-
-            if (!uri_class
-                || !klass
-                || strcmp(CFCUri_get_prefix(uri_obj),
-                          CFCClass_get_prefix(klass)) == 0
-            ) {
-                // Same parcel.
-                const char *struct_sym = CFCUri_get_struct_sym(uri_obj);
-                new_text = CFCUtil_strdup(struct_sym);
-            }
-            else {
-                // Other parcel.
-                const char *class_name
-                    = CFCClass_get_name(uri_class);
-                new_text = CFCUtil_strdup(class_name);
+            if (text[0] == '\0') {
+                const char *src = CFCClass_included(klass)
+                                  ? CFCClass_get_name(klass)
+                                  : CFCClass_get_struct_sym(klass);
+                new_text = CFCUtil_strdup(src);
             }
 
             break;
@@ -635,35 +601,45 @@ S_convert_link(cmark_node *link, CFCClass *klass, int header_level) {
 
         case CFC_URI_FUNCTION:
         case CFC_URI_METHOD: {
-            const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
-            const char *func_sym        = CFCUri_get_func_sym(uri_obj);
+            CFCClass   *klass = CFCUri_get_class(uri_obj);
+            const char *name  = CFCUri_get_callable_name(uri_obj);
 
             // Convert "Err_get_error" to "Clownfish->error".
-            if (strcmp(full_struct_sym, "cfish_Err") == 0
-                && strcmp(func_sym, "get_error") == 0
+            if (strcmp(CFCClass_full_struct_sym(klass), "cfish_Err") == 0
+                && strcmp(name, "get_error") == 0
             ) {
                 new_text = CFCUtil_strdup("Clownfish->error");
                 break;
             }
 
-            CFCClass *uri_class
-                = CFCClass_fetch_by_struct_sym(full_struct_sym);
-
             // TODO: Link to relevant POD section. This isn't easy because
             // the section headers for functions also contain a description
             // of the parameters.
 
-            if (!uri_class) {
-                CFCUtil_warn("URI class not found: %s", full_struct_sym);
-            }
-            else if (uri_class != klass) {
-                const char *class_name = CFCClass_get_name(uri_class);
+            if (klass != doc_class) {
+                const char *class_name = CFCClass_get_name(klass);
                 new_uri = CFCUtil_strdup(class_name);
             }
 
-            new_text = CFCUtil_sprintf("%s()", func_sym);
-            for (size_t i = 0; new_text[i] != '\0'; ++i) {
-                new_text[i] = tolower(new_text[i]);
+            if (text[0] == '\0') {
+                new_text = CFCUtil_sprintf("%s()", name);
+                for (size_t i = 0; new_text[i] != '\0'; ++i) {
+                    new_text[i] = tolower(new_text[i]);
+                }
+            }
+
+            break;
+        }
+
+        case CFC_URI_DOCUMENT: {
+            CFCDocument *doc = CFCUri_get_document(uri_obj);
+
+            const char *path_part = CFCDocument_get_path_part(doc);
+            new_uri = CFCUtil_global_replace(path_part, CHY_DIR_SEP, "::");
+
+            if (text[0] == '\0') {
+                const char *name = CFCDocument_get_name(doc);
+                new_text = CFCUtil_strdup(name);
             }
 
             break;

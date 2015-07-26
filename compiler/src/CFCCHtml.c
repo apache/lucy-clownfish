@@ -171,14 +171,16 @@ static char*
 S_type_to_html(CFCClass *klass, CFCType *type);
 
 static char*
-S_cfc_uri_to_url(CFCUri *uri_obj, const char *uri_string, CFCClass *base,
-                 int dir_level);
+S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *base, int dir_level);
 
 static char*
 S_struct_sym_to_url(const char *struct_sym, CFCClass *base, int dir_level);
 
 static char*
 S_class_to_url(CFCClass *klass, CFCClass *base, int dir_level);
+
+static char*
+S_document_to_url(CFCDocument *doc, CFCClass *base, int dir_level);
 
 static char*
 S_relative_url(const char *url, CFCClass *base, int dir_level);
@@ -1007,39 +1009,21 @@ S_transform_code_block(cmark_node *code_block, int found_matching_code_block) {
 }
 
 static void
-S_transform_link(cmark_node *link, CFCClass *klass, int dir_level) {
+S_transform_link(cmark_node *link, CFCClass *doc_class, int dir_level) {
     const char *uri_string = cmark_node_get_url(link);
     if (!uri_string || !CFCUri_is_clownfish_uri(uri_string)) {
         return;
     }
 
-    char   *new_uri = NULL;
-    CFCUri *uri_obj = CFCUri_new(uri_string, klass);
-    int     type    = CFCUri_get_type(uri_obj);
+    CFCUri *uri_obj = CFCUri_new(uri_string, doc_class);
+    char   *url     = S_cfc_uri_to_url(uri_obj, doc_class, dir_level);
 
-    switch (type) {
-        case CFC_URI_CLASS: {
-            new_uri = S_cfc_uri_to_url(uri_obj, uri_string, klass, dir_level);
-            break;
-        }
-
-        case CFC_URI_FUNCTION:
-        case CFC_URI_METHOD: {
-            const char *func_sym = CFCUri_get_func_sym(uri_obj);
-            char *url = S_cfc_uri_to_url(uri_obj, uri_string, klass,
-                                         dir_level);
-            new_uri = CFCUtil_sprintf("%s#func_%s", url, func_sym);
-            FREEMEM(url);
-            break;
-        }
-    }
-
-    if (new_uri) {
-        cmark_node_set_url(link, new_uri);
+    if (url) {
+        cmark_node_set_url(link, url);
 
         if (!cmark_node_first_child(link)) {
             // Empty link text.
-            char *link_text = CFCC_link_text(uri_obj, klass);
+            char *link_text = CFCC_link_text(uri_obj);
 
             if (link_text) {
                 cmark_node *text_node = cmark_node_new(CMARK_NODE_TEXT);
@@ -1061,7 +1045,7 @@ S_transform_link(cmark_node *link, CFCClass *klass, int dir_level) {
     }
 
     CFCBase_decref((CFCBase*)uri_obj);
-    FREEMEM(new_uri);
+    FREEMEM(url);
 }
 
 static char*
@@ -1103,34 +1087,35 @@ S_type_to_html(CFCClass *klass, CFCType *type) {
 
 // Return a relative URL for a CFCUri object.
 static char*
-S_cfc_uri_to_url(CFCUri *uri_obj, const char *uri_string, CFCClass *base,
-                 int dir_level) {
-    const char *full_struct_sym = CFCUri_full_struct_sym(uri_obj);
-    CFCClass *klass = full_struct_sym
-                      ? CFCClass_fetch_by_struct_sym(full_struct_sym)
-                      : NULL;
+S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
+    char *url = NULL;
+    int   type    = CFCUri_get_type(uri_obj);
 
-    if (klass) {
-        return S_struct_sym_to_url(full_struct_sym, base, dir_level);
+    switch (type) {
+        case CFC_URI_CLASS: {
+            CFCClass *klass = CFCUri_get_class(uri_obj);
+            url = S_class_to_url(klass, doc_class, dir_level);
+            break;
+        }
+
+        case CFC_URI_FUNCTION:
+        case CFC_URI_METHOD: {
+            CFCClass *klass = CFCUri_get_class(uri_obj);
+            const char *name = CFCUri_get_callable_name(uri_obj);
+            char *class_url = S_class_to_url(klass, doc_class, dir_level);
+            url = CFCUtil_sprintf("%s#func_%s", class_url, name);
+            FREEMEM(class_url);
+            break;
+        }
+
+        case CFC_URI_DOCUMENT: {
+            CFCDocument *doc = CFCUri_get_document(uri_obj);
+            url = S_document_to_url(doc, doc_class, dir_level);
+            break;
+        }
     }
 
-    const char *struct_sym = CFCUri_get_struct_sym(uri_obj);
-    CFCDocument *doc = CFCDocument_fetch(struct_sym);
-
-    if (doc) {
-        const char *path_part = CFCDocument_get_path_part(doc);
-        char *slashy  = CFCUtil_global_replace(path_part, CHY_DIR_SEP, "/");
-        char *url     = CFCUtil_sprintf("%s.html", slashy);
-        char *rel_url = S_relative_url(url, base, dir_level);
-
-        FREEMEM(url);
-        FREEMEM(slashy);
-        return rel_url;
-    }
-
-    CFCUtil_warn("No class or document found for URI '%s'",
-                 uri_string);
-    return CFCUtil_strdup("not_found.html");
+    return url;
 }
 
 // Return a relative URL to the class with full struct sym `struct_sym`.
@@ -1155,6 +1140,19 @@ S_class_to_url(CFCClass *klass, CFCClass *base, int dir_level) {
 
     FREEMEM(url);
     FREEMEM(path);
+    return rel_url;
+}
+
+// Return a relative URL to a document.
+static char*
+S_document_to_url(CFCDocument *doc, CFCClass *base, int dir_level) {
+    const char *path_part = CFCDocument_get_path_part(doc);
+    char *slashy  = CFCUtil_global_replace(path_part, CHY_DIR_SEP, "/");
+    char *url     = CFCUtil_sprintf("%s.html", slashy);
+    char *rel_url = S_relative_url(url, base, dir_level);
+
+    FREEMEM(url);
+    FREEMEM(slashy);
     return rel_url;
 }
 
