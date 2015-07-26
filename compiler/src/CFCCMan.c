@@ -427,6 +427,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
     int level      = needs_indent ? 1 : 0;
     int has_indent = needs_indent;
     int has_vspace = true;
+    int found_matching_code_block = false;
     cmark_iter *iter = cmark_iter_new(node);
     cmark_event_type ev_type;
 
@@ -497,23 +498,54 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int needs_indent) {
                 break;
 
             case CMARK_NODE_CODE_BLOCK: {
-                if (level > 0) {
-                    result = CFCUtil_cat(result, ".RS\n", NULL);
+                int is_host = CFCMarkdown_code_block_is_host(node, "c");
+
+                if (is_host) {
+                    found_matching_code_block = true;
+
+                    if (level > 0) {
+                        result = CFCUtil_cat(result, ".RS\n", NULL);
+                    }
+
+                    const char *content = cmark_node_get_literal(node);
+                    char *escaped = S_man_escape(content);
+                    result = CFCUtil_cat(result, ".IP\n.nf\n.fam C\n", escaped,
+                                         ".fam\n.fi\n", NULL);
+                    FREEMEM(escaped);
+
+                    if (level > 0) {
+                        result = CFCUtil_cat(result, ".RE\n", NULL);
+                        has_indent = false;
+                    }
+                    else {
+                        has_indent = true;
+                        has_vspace = false;
+                    }
                 }
 
-                const char *content = cmark_node_get_literal(node);
-                char *escaped = S_man_escape(content);
-                result = CFCUtil_cat(result, ".IP\n.nf\n.fam C\n", escaped,
-                                     ".fam\n.fi\n", NULL);
-                FREEMEM(escaped);
-
-                if (level > 0) {
-                    result = CFCUtil_cat(result, ".RE\n", NULL);
-                    has_indent = false;
-                }
-                else {
-                    has_indent = true;
-                    has_vspace = false;
+                if (CFCMarkdown_code_block_is_last(node)) {
+                    if (!found_matching_code_block) {
+                        if (level > 0) {
+                            result = CFCUtil_cat(result, ".RS\n", NULL);
+                        }
+                        result = CFCUtil_cat(result,
+                            ".IP\n.nf\n.fam C\n"
+                            "Code example for Perl is missing\n",
+                            ".fam\n.fi\n",
+                            NULL);
+                        if (level > 0) {
+                            result = CFCUtil_cat(result, ".RE\n", NULL);
+                            has_indent = false;
+                        }
+                        else {
+                            has_indent = true;
+                            has_vspace = false;
+                        }
+                    }
+                    else {
+                        // Reset.
+                        found_matching_code_block = false;
+                    }
                 }
 
                 break;

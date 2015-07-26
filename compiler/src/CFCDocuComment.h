@@ -26,6 +26,8 @@ extern "C" {
 
 typedef struct CFCDocuComment CFCDocuComment;
 
+struct cmark_node;
+
 /** Parse comment text.
  */
 CFCDocuComment*
@@ -52,6 +54,13 @@ CFCDocuComment_get_param_docs(CFCDocuComment *self);
 // May be NULL.
 const char*
 CFCDocuComment_get_retval(CFCDocuComment *self);
+
+int
+CFCMarkdown_code_block_is_host(struct cmark_node *code_block,
+                               const char *lang);
+
+int
+CFCMarkdown_code_block_is_last(struct cmark_node *code_block);
 
 #ifdef __cplusplus
 }

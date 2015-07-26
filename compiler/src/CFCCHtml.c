@@ -159,10 +159,13 @@ static char*
 S_md_to_html(const char *md, CFCClass *klass, int dir_level);
 
 static void
-S_convert_uris(cmark_node *node, CFCClass *klass, int dir_level);
+S_transform_doc(cmark_node *node, CFCClass *klass, int dir_level);
+
+static int
+S_transform_code_block(cmark_node *node, int found_matching_code_block);
 
 static void
-S_convert_uri(cmark_node *link, CFCClass *klass, int dir_level);
+S_transform_link(cmark_node *link, CFCClass *klass, int dir_level);
 
 static char*
 S_type_to_html(CFCClass *klass, CFCType *type);
@@ -939,7 +942,7 @@ S_md_to_html(const char *md, CFCClass *klass, int dir_level) {
                   | CMARK_OPT_VALIDATE_UTF8
                   | CMARK_OPT_SAFE;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
-    S_convert_uris(doc, klass, dir_level);
+    S_transform_doc(doc, klass, dir_level);
     char *html = cmark_render_html(doc, CMARK_OPT_DEFAULT);
     cmark_node_free(doc);
 
@@ -947,25 +950,64 @@ S_md_to_html(const char *md, CFCClass *klass, int dir_level) {
 }
 
 static void
-S_convert_uris(cmark_node *node, CFCClass *klass, int dir_level) {
+S_transform_doc(cmark_node *node, CFCClass *klass, int dir_level) {
+    int found_matching_code_block = false;
     cmark_iter *iter = cmark_iter_new(node);
     cmark_event_type ev_type;
 
     while (CMARK_EVENT_DONE != (ev_type = cmark_iter_next(iter))) {
         cmark_node *cur = cmark_iter_get_node(iter);
+        cmark_node_type type = cmark_node_get_type(cur);
 
-        if (ev_type == CMARK_EVENT_EXIT
-            && cmark_node_get_type(cur) == NODE_LINK
-        ) {
-            S_convert_uri(cur, klass, dir_level);
+        switch (type) {
+            case CMARK_NODE_CODE_BLOCK:
+                found_matching_code_block
+                    = S_transform_code_block(cur, found_matching_code_block);
+                break;
+
+            case CMARK_NODE_LINK:
+                if (ev_type == CMARK_EVENT_EXIT) {
+                    S_transform_link(cur, klass, dir_level);
+                }
+                break;
+
+            default:
+                break;
         }
     }
 
     cmark_iter_free(iter);
 }
 
+static int
+S_transform_code_block(cmark_node *code_block, int found_matching_code_block) {
+    int is_host = CFCMarkdown_code_block_is_host(code_block, "c");
+
+    if (is_host) {
+        found_matching_code_block = true;
+    }
+
+    if (CFCMarkdown_code_block_is_last(code_block)) {
+        if (!found_matching_code_block) {
+            cmark_node *warning
+                = cmark_node_new(CMARK_NODE_CODE_BLOCK);
+            cmark_node_set_literal(warning,
+                                   "Code example for C is missing");
+            cmark_node_insert_after(code_block, warning);
+        }
+        else {
+            // Reset.
+            found_matching_code_block = false;
+        }
+    }
+
+    if (!is_host) { cmark_node_free(code_block); }
+
+    return found_matching_code_block;
+}
+
 static void
-S_convert_uri(cmark_node *link, CFCClass *klass, int dir_level) {
+S_transform_link(cmark_node *link, CFCClass *klass, int dir_level) {
     const char *uri_string = cmark_node_get_url(link);
     if (!uri_string || !CFCUri_is_clownfish_uri(uri_string)) {
         return;

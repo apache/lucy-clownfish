@@ -340,6 +340,7 @@ S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
         return result;
     }
 
+    int found_matching_code_block = false;
     cmark_iter *iter = cmark_iter_new(node);
     cmark_event_type ev_type;
 
@@ -388,18 +389,37 @@ S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
                 break;
 
             case CMARK_NODE_CODE_BLOCK: {
-                const char *content = cmark_node_get_literal(node);
-                char *copy = CFCUtil_strdup(content);
-                // Chomp trailing newline.
-                size_t len = strlen(copy);
-                if (len > 0 && copy[len-1] == '\n') {
-                    copy[len-1] = '\0';
+                int is_host = CFCMarkdown_code_block_is_host(node, "perl");
+
+                if (is_host) {
+                    found_matching_code_block = true;
+
+                    const char *content = cmark_node_get_literal(node);
+                    char *copy = CFCUtil_strdup(content);
+                    // Chomp trailing newline.
+                    size_t len = strlen(copy);
+                    if (len > 0 && copy[len-1] == '\n') {
+                        copy[len-1] = '\0';
+                    }
+                    char *indented
+                        = CFCUtil_global_replace(copy, "\n", "\n    ");
+                    result
+                        = CFCUtil_cat(result, "    ", indented, "\n\n", NULL);
+                    FREEMEM(indented);
+                    FREEMEM(copy);
                 }
-                char *indented
-                    = CFCUtil_global_replace(copy, "\n", "\n    ");
-                result = CFCUtil_cat(result, "    ", indented, "\n\n", NULL);
-                FREEMEM(indented);
-                FREEMEM(copy);
+
+                if (CFCMarkdown_code_block_is_last(node)) {
+                    if (!found_matching_code_block) {
+                        result = CFCUtil_cat(result,
+                            "    Code example for Perl is missing\n\n");
+                    }
+                    else {
+                        // Reset.
+                        found_matching_code_block = false;
+                    }
+                }
+
                 break;
             }
 

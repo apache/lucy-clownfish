@@ -16,6 +16,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <cmark.h>
 
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
@@ -251,5 +252,19 @@ CFCDocuComment_get_param_docs(CFCDocuComment *self) {
 const char*
 CFCDocuComment_get_retval(CFCDocuComment *self) {
     return self->retval;
+}
+
+int
+CFCMarkdown_code_block_is_host(cmark_node *code_block, const char *lang) {
+    const char *fence_info = cmark_node_get_fence_info(code_block);
+    return !fence_info
+           || fence_info[0] == '\0'
+           || strcmp(fence_info, lang) == 0;
+}
+
+int
+CFCMarkdown_code_block_is_last(cmark_node *code_block) {
+    cmark_node *next = cmark_node_next(code_block);
+    return !next || cmark_node_get_type(next) != CMARK_NODE_CODE_BLOCK;
 }
 
