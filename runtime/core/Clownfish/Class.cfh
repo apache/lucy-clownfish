@@ -48,7 +48,7 @@ final class Clownfish::Class inherits Clownfish::Obj {
      * will be created using [parent] as a base.
      *
      * If [parent] is NULL, an attempt will be made to find it using
-     * [](cfish:.find_parent_class).  If the attempt fails, an error will
+     * [](.find_parent_class).  If the attempt fails, an error will
      * result.
      */
     inert Class*

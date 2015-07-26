@@ -239,7 +239,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "(*cfish_destroy_t)(void *vself);\n"
         "extern CFISH_VISIBLE uint32_t CFISH_Obj_Destroy_OFFSET;\n"
         "\n"
-        "/** Invoke the [](cfish:.Destroy) method found in `klass` on\n"
+        "/** Invoke the [](.Destroy) method found in `klass` on\n"
         " * `self`.\n"
         " *\n"
         " * TODO: Eliminate this function if we can arrive at a proper SUPER syntax.\n"

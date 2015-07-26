@@ -57,7 +57,7 @@ S_next_component(char **iter);
 
 int
 CFCUri_is_clownfish_uri(const char *uri) {
-    return strncmp(uri, "cfish:", 6) == 0;
+    return strncmp(uri, "cfish:", 6) == 0 || !strchr(uri, ':');
 }
 
 CFCUri*
@@ -69,10 +69,6 @@ CFCUri_new(const char *uri, CFCClass *doc_class) {
 CFCUri*
 CFCUri_init(CFCUri *self, const char *uri, CFCClass *doc_class) {
     CFCUTIL_NULL_CHECK(uri);
-
-    if (strncmp(uri, "cfish:", 6) != 0) {
-        CFCUtil_die("Invalid clownfish URI: %s", uri);
-    }
 
     self->string    = CFCUtil_strdup(uri);
     self->doc_class = (CFCClass*)CFCBase_incref((CFCBase*)doc_class);
@@ -93,7 +89,11 @@ CFCUri_destroy(CFCUri *self) {
 
 static void
 S_parse(CFCUri *self) {
-    const char *uri_part = self->string + sizeof("cfish:") - 1;
+    const char *uri_part = self->string;
+
+    if (strncmp(uri_part, "cfish:", 6) == 0) {
+        uri_part += 6;
+    }
 
     if (strcmp(uri_part, "@null") == 0) {
         self->type = CFC_URI_NULL;
