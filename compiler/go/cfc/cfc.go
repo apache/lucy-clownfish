@@ -288,3 +288,11 @@ func (obj *BindGoClass) SetSuppressStruct(suppressStruct bool) {
 		C.CFCGoClass_set_suppress_struct(obj.ref, C.int(0))
 	}
 }
+
+func (obj *BindGoClass) SetSuppressCtor(suppressCtor bool) {
+	if suppressCtor {
+		C.CFCGoClass_set_suppress_ctor(obj.ref, C.int(1))
+	} else {
+		C.CFCGoClass_set_suppress_ctor(obj.ref, C.int(0))
+	}
+}
