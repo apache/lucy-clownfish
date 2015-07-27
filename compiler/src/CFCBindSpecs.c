@@ -300,8 +300,8 @@ S_ivars_size(CFCClass *klass) {
         ivars_size = CFCUtil_sprintf("sizeof(%s)", struct_sym);
     }
     else {
-        int num_non_package_ivars = CFCClass_num_non_package_ivars(klass);
-        int num_ivars             = CFCClass_num_member_vars(klass);
+        size_t num_non_package_ivars = CFCClass_num_non_package_ivars(klass);
+        size_t num_ivars             = CFCClass_num_member_vars(klass);
 
         if (num_non_package_ivars == num_ivars) {
             // No members in this package.
