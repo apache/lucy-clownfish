@@ -1,134 +1,27 @@
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Writing Apache Clownfish classes
 
-=head1 NAME
-
-Clownfish - Apache Clownfish symbiotic object system.
-
-=head1 VERSION
-
-0.4.0
-
-=head1 DESCRIPTION
-
-Apache Clownfish is a "symbiotic" object system for C which is designed to
-pair with a "host" dynamic language environment, facilitating the development
-of high performance host language extensions.  Clownfish classes are
-declared in header files with a C<.cfh> extension.  The Clownfish headers
-are used by the Clownfish compiler to generate C header files and host
-language bindings.  Methods, functions and variables are defined in normal
-C source files.
-
-=head2 Features
-
-=over
-
-=item *
-
-Designed to support multiple host languages. Currently, only Perl is supported.
-
-=item *
-
-Support for stand-alone C libraries and executables.
-
-=item *
-
-Subclassing and method overriding from the host language.
-
-=item *
-
-Support for host language idioms like named parameters or default argument
-values.
-
-=item *
-
-Highly performant object system with lazy creation of host language objects.
-
-=item *
-
-Runtime with classes for commonly used data structures like strings, dynamic
-arrays and hash tables.
-
-=item *
-
-Guaranteed ABI stability when adding or reordering methods or instance
-variables.
-
-=item *
-
-Modularity.
-
-=item *
-
-Introspection.
-
-=item *
-
-Documentation generator.
-
-=back
-
-=head2 Planned features
-
-=over
-
-=item *
-
-Support for more host languages.
-
-=back
-
-=head1 USING CLOWNFISH CLASSES
-
-TODO: Simple introduction
-
-=head1 WRITING CLOWNFISH CLASSES
-
-=head2 Parcels
+## Parcels
 
 Every Clownfish class belongs to a Clownfish parcel. Parcels are used for
-namespacing and versioning. Information about parcels is stored in C<.cfp>
+namespacing and versioning. Information about parcels is stored in `.cfp`
 files which contain a JSON hash with the following keys:
 
-=over
+* __name:__ The parcel's name. It must contain only letters.
 
-=item name
+* __nickname:__ A short nickname. It must contain only letters. This nickname,
+    followed by an underscore, is used to prefix generated C symbols and
+    macros. Depending on the kind of symbol, a lowercase, mixed case, or
+    uppercase prefix will be used.
 
-The parcel's name. It must contain only letters.
+* __version:__ A version specifier of the following form (without whitespace):
 
-=item nickname
+      version-specifier = "v" version-number
+      version-number = digit | digit "." version-number
 
-A short nickname. It must contain only letters. This nickname, followed by an
-underscore, is used to prefix generated C symbols and macros. Depending on the
-kind of symbol, a lowercase, mixed case, or uppercase prefix will be used.
+* __prerequisites:__ A hash containing the prerequisite parcels. The hash keys
+    are the parcel names. The values contain the minimum required version.
 
-=item version
-
-A version specifier of the following form (without whitespace):
-
-    version-specifier = "v" version-number
-    version-number = digit | digit "." version-number
-
-=item prerequisites
-
-A hash containing the prerequisite parcels. The hash keys are the parcel
-names. The values contain the minimum required version.
-
-=back
-
-An example C<.cfp> file might look like:
+An example `.cfp` file might look like:
 
     {
         "name": "Pathfinder",
@@ -148,13 +41,13 @@ For example:
 
     parcel Pathfinder;
 
-Every C<.cfh> file starts with a parcel specifier containing the name of
+Every `.cfh` file starts with a parcel specifier containing the name of
 the parcel for all classes in the header file.
 
-=head3 Initialization
+### Initialization
 
 Every Clownfish parcel must be initialized before it is used. The
-initialization function is named C<{parcel_nick}_bootstrap_parcel> and takes
+initialization function is named `{parcel_nick}_bootstrap_parcel` and takes
 no arguments.
 
 Example call:
@@ -164,9 +57,9 @@ Example call:
 The generated host language bindings call the bootstrap function
 automatically. C projects must call the function manually.
 
-=head3 Short names
+### Short names
 
-If a macro with the uppercase name C<{PARCEL_NICK}_USE_SHORT_NAMES> is
+If a macro with the uppercase name `{PARCEL_NICK}_USE_SHORT_NAMES` is
 defined before including a generated C header, additional macros without the
 parcel prefix will be defined for most symbols.
 
@@ -186,13 +79,13 @@ For object types in Clownfish header files, prefixes of class structs can
 also be omitted unless multiple parcels declare classes with the same last
 component of the class name.
 
-=head3 The "Clownfish" parcel
+### The "Clownfish" parcel
 
-The Clownfish runtime classes live in a parcel named C<Clownfish> with
-nickname C<Cfish>. Consequently, the short name macro is named
-C<CFISH_USE_SHORT_NAMES>.
+The Clownfish runtime classes live in a parcel named `Clownfish` with
+nickname `Cfish`. Consequently, the short name macro is named
+`CFISH_USE_SHORT_NAMES`.
 
-=head2 Declaring classes
+## Declaring classes
 
 Classes are declared in Clownfish header files using a declaration of the
 following form:
@@ -213,12 +106,12 @@ Class name components must start with an uppercase letter and must not contain
 underscores. The last component must contain at least one lowercase letter and
 must be unique for every class in a parcel.
 
-For every class, a type with the name C<{parcel_nick}_{Class_Last_Comp}>
+For every class, a type with the name `{parcel_nick}_{Class_Last_Comp}`
 is defined in the generated C header. This is an opaque typedef used to
 ensure type safety.
 
 For every class, a global variable with the uppercase name
-C<{PARCEL_NICK}_{CLASS_LAST_COMP}> is defined. This variable is a pointer to
+`{PARCEL_NICK}_{CLASS_LAST_COMP}` is defined. This variable is a pointer to
 a Clownfish::Class object which is initialized when bootstrapping the parcel.
 
 Non-inert classes inherit from Clownfish::Obj by default.
@@ -237,23 +130,23 @@ This will generate:
     typedef struct pfind_VisibilityGraph pfind_VisibilityGraph;
     extern cfish_Class *PFIND_VISIBILITYGRAPH;
 
-=head3 Class exposure
+### Class exposure
 
 TODO
 
-=head3 Inert classes
+### Inert classes
 
 Inert classes must contain only inert variables or inert functions, that is,
 neither instance variables nor methods. They must not inherit from another
 class or be inherited from. They're essentially nothing more than a
 namespace for functions and global variables.
 
-=head3 Final classes
+### Final classes
 
 For final classes, every method is made final, regardless of the method
 modifier. Final classes must not be inherited from.
 
-=head2 Variables
+## Variables
 
 Variables are declared with a declaration of the following form:
 
@@ -264,11 +157,11 @@ Variables are declared with a declaration of the following form:
     variable-modifier = "inert"
     variable-name = identifier
 
-=head3 Inert variables
+### Inert variables
 
 Inert variables are global class variables of which only a single copy
 exists. They are declared in the generated C header with the name
-C<{parcel_nick}_{Class_Nick}_{Variable_Name}> and must be defined in a C
+`{parcel_nick}_{Class_Nick}_{Variable_Name}` and must be defined in a C
 source file.
 
 Example:
@@ -286,11 +179,11 @@ definition will look like:
 
     int Path_max_path_length = 5000;
 
-=head3 Inert variable exposure
+### Inert variable exposure
 
 TODO
 
-=head3 Instance variables
+### Instance variables
 
 Non-inert variables are instance variables and added to the class's ivars
 struct. They must not have an exposure specifier.
@@ -304,13 +197,13 @@ Example:
         Get_Num_Nodes(Path *self);
     }
 
-This will add a C<num_nodes> member to the ivars struct of C<Path>.
+This will add a `num_nodes` member to the ivars struct of `Path`.
 
-=head3 The ivars struct
+### The ivars struct
 
-To access instance variables, the macro C<C_{PARCEL_NICK}_{CLASS_LAST_COMP}>
+To access instance variables, the macro `C_{PARCEL_NICK}_{CLASS_LAST_COMP}`
 must be defined before including the generated header file. This will make
-a struct named C<{parcel_nick}_{Class_Name}IVARS> with a corresponding
+a struct named `{parcel_nick}_{Class_Name}IVARS` with a corresponding
 typedef and short name available that contains all instance variables
 of the class and all superclasses from the same parcel. Instance
 variables defined in other parcels are not accessible. This is by
@@ -320,8 +213,8 @@ If you need to access an instance variable from another parcel,
 add accessor methods.
 
 A pointer to the ivars struct can be obtained by calling an inline
-function named C<{parcel_nick}_{Class_Name}_IVARS>. This function
-takes the object of the class (typically C<self>) as argument.
+function named `{parcel_nick}_{Class_Name}_IVARS`. This function
+takes the object of the class (typically `self`) as argument.
 
 Example using short names:
 
@@ -335,7 +228,7 @@ Example using short names:
         return ivars->num_nodes;
     }
 
-=head2 Functions
+## Functions
 
     function-declaration = function-exposure-specifier?
                            function-modifier*
@@ -351,14 +244,14 @@ Example using short names:
     param-name = identifier
     param-qualifier = "decremented"
 
-=head3 Function exposure
+### Function exposure
 
 TODO
 
-=head3 Inert functions
+### Inert functions
 
 Inert functions are dispatched statically. They are declared in the generated
-C header with the name C<{parcel_nick}_{Class_Nick}_{Function_Name}>
+C header with the name `{parcel_nick}_{Class_Nick}_{Function_Name}`
 and must be defined in a C source file. They must be neither abstract nor
 final.
 
@@ -387,13 +280,13 @@ names. So the implementation will look like:
         /* Implementation */
     }
 
-=head3 Inline functions
+### Inline functions
 
 Inert functions can be inline. They should be defined as static inline
-functions in a C block in the Clownfish header file. The macro C<CFISH_INLINE>
+functions in a C block in the Clownfish header file. The macro `CFISH_INLINE`
 expands to the C compiler's inline keyword and should be used for portability.
 
-=head3 Methods
+### Methods
 
 Non-inert functions are dynamically dispatched methods. Their name must start
 with an uppercase letter and every underscore must be followed by an uppercase
@@ -401,15 +294,15 @@ letter. Methods must not be declared inline.
 
 The first parameter of a method must be a pointer to an object of the method's
 class which receives the object on which the method was invoked. By convention,
-this parameter is named C<self>.
+this parameter is named `self`.
 
 For every method, an inline wrapper for dynamic dispatch is defined in
 the generated C header with the name
-C<{PARCEL_NICK}_{Class_Nick}_{Method_Name}>. Additionally, an
+`{PARCEL_NICK}_{Class_Nick}_{Method_Name}`. Additionally, an
 implementing function is declared with the name
-C<{PARCEL_NICK}_{Class_Nick}_{Method_Name}_IMP>. The Clownfish compiler also
+`{PARCEL_NICK}_{Class_Nick}_{Method_Name}_IMP`. The Clownfish compiler also
 generates a typedef for the method's function pointer type named
-C<{PARCEL_NICK}_{Class_Nick}_{Method_Name}_t>. Wrappers and typedefs are
+`{PARCEL_NICK}_{Class_Nick}_{Method_Name}_t`. Wrappers and typedefs are
 created for all subclasses whether they override a method or not.
 
 Example:
@@ -451,15 +344,15 @@ implementation will look like:
         /* Implementation */
     }
 
-=head3 Looking up function pointers
+### Looking up function pointers
 
-Clownfish defines a macro named C<CFISH_METHOD_PTR> that looks up the pointer
+Clownfish defines a macro named `CFISH_METHOD_PTR` that looks up the pointer
 to the implementing function of a method. The first parameter of the macro is
 a pointer to the Clownfish::Class object of the method's class, the second is
 the unshortened name of the method wrapper. If short names for the Clownfish
-parcel are used, the macro is also available under the name C<METHOD_PTR>.
+parcel are used, the macro is also available under the name `METHOD_PTR`.
 
-To lookup methods from a superclass, there's a macro C<CFISH_SUPER_METHOD_PTR>
+To lookup methods from a superclass, there's a macro `CFISH_SUPER_METHOD_PTR`
 with the same parameters.
 
 Example using short names:
@@ -470,21 +363,21 @@ Example using short names:
     VisGraph_Add_Node_t super_add_node
         = SUPER_METHOD_PTR(PFIND_VISIBILITYGRAPH, Pfind_VisGraph_Add_Node);
 
-=head3 Abstract methods
+### Abstract methods
 
 For abstract methods, the Clownfish compiler generates an implementing function
 which throws an error. They should be overridden in a subclass.
 
-=head3 Final methods
+### Final methods
 
 Final methods must not be overridden. They must not be abstract.
 
-=head3 Nullable return type
+### Nullable return type
 
 If a function has a nullable return type, it must return a pointer.
 Non-nullable functions must never return the NULL pointer.
 
-=head3 Incremented return type
+### Incremented return type
 
 Incremented return types must be pointers to Clownfish objects. The function
 will either return a new object with an initial reference count of 1 or
@@ -493,11 +386,11 @@ the returned object when it's no longer used.
 
 For returned objects with non-incremented return type, usually no additional
 handling of reference counts is required. Only if an object is returned from an
-accessor or a collection object and the caller wants to use the object longer
+accessor or a container object and the caller wants to use the object longer
 than the returning object retains a reference, it must increment the reference
 count itself and decrement when the object is no longer used.
 
-=head3 Decremented parameters
+### Decremented parameters
 
 Decremented parameters must be pointers to Clownfish objects. The function
 will either decrement the reference count of the passed-in object or retain a
@@ -513,17 +406,17 @@ This is typically used in container classes like Vector:
     Vec_Push(array, (Obj*)string);
     // No need to DECREF the string.
 
-=head3 Default parameter values
+### Default parameter values
 
 Default parameter values can be given as integer, float, or string literals.
-The values C<true>, C<false>, and C<NULL> are also supported. The default
+The values `true`, `false`, and `NULL` are also supported. The default
 values are only used by the host language bindings. They're not supported
 when calling a function from C.
 
-=head2 C blocks
+## C blocks
 
 Clownfish headers can contain C blocks which start with a line containing the
-string C<__C__> and end on a line containing the string C<__END_C__>. The
+string `__C__` and end on a line containing the string `__END_C__`. The
 contents of a C block are copied verbatim to the generated C header.
 
 Example:
@@ -537,11 +430,11 @@ Example:
 
     __END_C__
 
-=head2 Object life cycle
+## Object life cycle
 
-=head3 Object creation
+### Object creation
 
-Objects are allocated by invoking the C<Make_Obj> method on a class's
+Objects are allocated by invoking the `Make_Obj` method on a class's
 Clownfish::Class object.
 
 Any inert function can be used to construct objects from C. But to support
@@ -551,8 +444,8 @@ pointer to an object as first argument and return a pointer to the same
 object. If the parent class has an initializer, it should be called first by
 the subclass's initializer.
 
-By convention, the standard constructor is named C<new>. If a class has an
-inert function named C<init>, it is used as initializer to create a host
+By convention, the standard constructor is named `new`. If a class has an
+inert function named `init`, it is used as initializer to create a host
 language constructor by default.
 
 Example:
@@ -591,17 +484,17 @@ Example:
         return self;
     }
 
-=head3 Reference counting
+### Reference counting
 
 Clownfish uses reference counting for memory management. Objects are created
-with a reference count of 1. There are two macros C<CFISH_INCREF> and
-C<CFISH_DECREF> to increment and decrement reference counts. If short names
+with a reference count of 1. There are two macros `CFISH_INCREF` and
+`CFISH_DECREF` to increment and decrement reference counts. If short names
 for the Clownfish parcel are enabled, the macros can be abbreviated to
-C<INCREF> and C<DECREF>. Both macros take a pointer to an object as argument.
-NULL pointers are allowed. C<CFISH_INCREF> returns a pointer to the object.
+`INCREF` and `DECREF`. Both macros take a pointer to an object as argument.
+NULL pointers are allowed. `CFISH_INCREF` returns a pointer to the object.
 This value might differ from the passed-in pointer in some cases. So if a
-reference is retained, the pointer returned from C<CFISH_INCREF> should be
-used. C<CFISH_DECREF> returns the modified reference count.
+reference is retained, the pointer returned from `CFISH_INCREF` should be
+used. `CFISH_DECREF` returns the modified reference count.
 
 Examples:
 
@@ -609,15 +502,15 @@ Examples:
 
     DECREF(object);
 
-=head3 Object destruction
+### Object destruction
 
-If an object's reference count reaches 0, its C<Destroy> method is called.
-This public method takes no arguments besides C<self> and has no return value.
+If an object's reference count reaches 0, its `Destroy` method is called.
+This public method takes no arguments besides `self` and has no return value.
 It should release the resources held by the object and finally call the
-C<Destroy> method of the superclass via the C<CFISH_SUPER_DESTROY> macro with
-short name C<SUPER_DESTROY>. This macro takes the C<self> pointer as first
+`Destroy` method of the superclass via the `CFISH_SUPER_DESTROY` macro with
+short name `SUPER_DESTROY`. This macro takes the `self` pointer as first
 argument and a pointer to the object's Clownfish::Class as second argument.
-The C<Destroy> method of the Clownfish::Obj class will eventually free the
+The `Destroy` method of the Clownfish::Obj class will eventually free the
 object struct.
 
 Example:
@@ -638,11 +531,4 @@ Example:
         DECREF(self->nodes);
         SUPER_DESTROY(self, PATH);
     }
-
-=head1 COPYRIGHT
-
-Clownfish is distributed under the Apache License, Version 2.0, as described
-in the file C<LICENSE> included with the distribution.
-
-=cut
 
