@@ -168,7 +168,7 @@ static void
 S_transform_link(cmark_node *link, CFCClass *klass, int dir_level);
 
 static char*
-S_type_to_html(CFCClass *klass, CFCType *type);
+S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class);
 
 static char*
 S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *base, int dir_level);
@@ -789,11 +789,13 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
 static char*
 S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
                    const char *short_sym) {
-    CFCType    *return_type      = CFCFunction_get_return_type(func);
-    char       *return_type_html = S_type_to_html(klass, return_type);
-    const char *incremented      = "";
+    CFCType    *ret_type      = CFCFunction_get_return_type(func);
+    char       *ret_html      = S_type_to_html(ret_type, "", klass);
+    const char *ret_array     = CFCType_get_array(ret_type);
+    const char *ret_array_str = ret_array ? ret_array : "";
+    const char *incremented   = "";
 
-    if (CFCType_incremented(return_type)) {
+    if (CFCType_incremented(ret_type)) {
         incremented = " <span class=\"comment\">// incremented</span>";
     }
 
@@ -801,10 +803,10 @@ S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
 
     const char *pattern =
         "<dd>\n"
-        "<pre><code>%s%s\n"
+        "<pre><code>%s%s%s\n"
         "<span class=\"prefix\">%s</span><strong>%s</strong>%s</code></pre>\n";
-    char *result = CFCUtil_sprintf(pattern, return_type_html, incremented,
-                                   prefix, short_sym, param_list);
+    char *result = CFCUtil_sprintf(pattern, ret_html, ret_array_str,
+                                   incremented, prefix, short_sym, param_list);
 
     FREEMEM(param_list);
 
@@ -859,7 +861,7 @@ S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
 
     result = CFCUtil_cat(result, "</dd>\n", NULL);
 
-    FREEMEM(return_type_html);
+    FREEMEM(ret_html);
     return result;
 }
 
@@ -875,39 +877,43 @@ S_html_create_param_list(CFCClass *klass, CFCFunction *func) {
         return CFCUtil_strdup("(void);\n");
     }
 
-    char *result = CFCUtil_strdup("(");
+    char *result = CFCUtil_strdup("(\n");
 
     for (int i = 0; variables[i]; ++i) {
-        CFCVariable *variable = variables[i];
-        CFCType     *type     = CFCVariable_get_type(variable);
-        const char  *name     = CFCVariable_get_name(variable);
+        CFCVariable *variable  = variables[i];
+        CFCType     *type      = CFCVariable_get_type(variable);
+        const char  *name      = CFCVariable_get_name(variable);
+        const char  *array     = CFCType_get_array(type);
+        const char  *array_str = array ? array : "";
 
         char *type_html;
         if (is_method && i == 0) {
             const char *prefix     = CFCClass_get_prefix(klass);
             const char *struct_sym = CFCClass_get_struct_sym(klass);
-            const char *pattern    = "<span class=\"prefix\">%s</span>%s*";
+            const char *pattern    = "<span class=\"prefix\">%s</span>%s *";
             type_html = CFCUtil_sprintf(pattern, prefix, struct_sym);
         }
         else {
-            type_html = S_type_to_html(klass, type);
+            type_html = S_type_to_html(type, " ", klass);
         }
 
-        result = CFCUtil_cat(result, "\n    ", type_html, " <strong>", name,
-                             "</strong>", NULL);
+        const char *sep = variables[i+1] ? "," : "";
+        const char *decremented = "";
 
-        if (variables[i+1]) {
-            result = CFCUtil_cat(result, ",", NULL);
-        }
         if (CFCType_decremented(type)) {
-            result = CFCUtil_cat(result,
-                    " <span class=\"comment\">// decremented</span>", NULL);
+            decremented = " <span class=\"comment\">// decremented</span>";
         }
 
+        const char *pattern = "    %s<strong>%s</strong>%s%s%s\n";
+        char *param_html = CFCUtil_sprintf(pattern, type_html, name, array_str,
+                                           sep, decremented);
+        result = CFCUtil_cat(result, param_html, NULL);
+
+        FREEMEM(param_html);
         FREEMEM(type_html);
     }
 
-    result = CFCUtil_cat(result, "\n);\n", NULL);
+    result = CFCUtil_cat(result, ");\n", NULL);
 
     return result;
 }
@@ -1055,54 +1061,66 @@ S_transform_link(cmark_node *link, CFCClass *doc_class, int dir_level) {
 }
 
 static char*
-S_type_to_html(CFCClass *doc_class, CFCType *type) {
-    const char *type_c = CFCType_to_c(type);
+S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class) {
+    const char *specifier = CFCType_get_specifier(type);
+    char *specifier_html = NULL;
 
     if (CFCType_is_object(type)) {
-        const char *underscore = strchr(type_c, '_');
+        CFCClass   *klass = NULL;
 
-        if (underscore) {
-            const char *doc_struct_sym = CFCClass_full_struct_sym(doc_class);
-            const char *specifier      = CFCType_get_specifier(type);
-            CFCClass *klass = NULL;
-
-            // Don't link to doc class.
-            if (strcmp(specifier, doc_struct_sym) != 0) {
-                klass = CFCClass_fetch_by_struct_sym(specifier);
-                if (!klass) {
-                    CFCUtil_warn("Class '%s' not found", specifier);
-                }
-                else if (!CFCClass_public(klass)) {
-                    CFCUtil_warn("Non-public class '%s' used in public method",
-                                 specifier);
-                    klass = NULL;
-                }
-            }
-
-            size_t  offset = underscore + 1 - type_c;
-            char   *prefix = CFCUtil_strndup(specifier, offset);
-            char   *retval;
-
+        // Don't link to doc class.
+        if (strcmp(specifier, CFCClass_full_struct_sym(doc_class)) != 0) {
+            klass = CFCClass_fetch_by_struct_sym(specifier);
             if (!klass) {
-                retval = CFCUtil_sprintf("<span class=\"prefix\">%s</span>%s",
-                                         prefix, type_c + offset);
+                CFCUtil_warn("Class '%s' not found", specifier);
             }
-            else {
-                char *url = S_class_to_url(klass, doc_class, 0);
-                const char *pattern =
-                    "<span class=\"prefix\">%s</span>"
-                    "<a href=\"%s\">%s</a>";
-                retval = CFCUtil_sprintf(pattern, prefix, url,
-                                         type_c + offset);
-                FREEMEM(url);
+            else if (!CFCClass_public(klass)) {
+                CFCUtil_warn("Non-public class '%s' used in public method",
+                             specifier);
+                klass = NULL;
             }
-
-            FREEMEM(prefix);
-            return retval;
         }
+
+        const char *underscore = strchr(specifier, '_');
+        if (!underscore) {
+            CFCUtil_die("Unprefixed object specifier '%s'", specifier);
+        }
+
+        size_t      offset     = underscore + 1 - specifier;
+        char       *prefix     = CFCUtil_strndup(specifier, offset);
+        const char *struct_sym = specifier + offset;
+
+        if (!klass) {
+            const char *pattern = "<span class=\"prefix\">%s</span>%s";
+            specifier_html = CFCUtil_sprintf(pattern, prefix, struct_sym);
+        }
+        else {
+            char *url = S_class_to_url(klass, doc_class, 0);
+            const char *pattern =
+                "<span class=\"prefix\">%s</span>"
+                "<a href=\"%s\">%s</a>";
+            specifier_html = CFCUtil_sprintf(pattern, prefix, url, struct_sym);
+            FREEMEM(url);
+        }
+
+        FREEMEM(prefix);
+    }
+    else {
+        specifier_html = CFCUtil_strdup(specifier);
     }
 
-    return CFCUtil_strdup(type_c);
+    const char *const_str = CFCType_const(type) ? "const " : "";
+
+    int indirection = CFCType_get_indirection(type);
+    size_t asterisk_offset = indirection < 10 ? 10 - indirection : 0;
+    const char *asterisks = "**********";
+    const char *ind_str   = asterisks + asterisk_offset;
+
+    char *html = CFCUtil_sprintf("%s%s%s%s", const_str, specifier_html,
+                                 sep, ind_str);
+
+    FREEMEM(specifier_html);
+    return html;
 }
 
 // Return a relative URL for a CFCUri object.
