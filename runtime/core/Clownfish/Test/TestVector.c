@@ -503,8 +503,8 @@ test_Sort(TestBatchRunner *runner) {
 
 static void
 test_Grow(TestBatchRunner *runner) {
-    Vector   *array = Vec_new(500);
-    uint32_t  cap;
+    Vector *array = Vec_new(500);
+    size_t  cap;
 
     cap = Vec_Get_Capacity(array);
     TEST_TRUE(runner, cap >= 500, "Array is created with minimum capacity");
@@ -513,7 +513,7 @@ test_Grow(TestBatchRunner *runner) {
     cap = Vec_Get_Capacity(array);
     TEST_TRUE(runner, cap >= 2000, "Grow to larger capacity");
 
-    uint32_t old_cap = cap;
+    size_t old_cap = cap;
     Vec_Grow(array, old_cap);
     cap = Vec_Get_Capacity(array);
     TEST_TRUE(runner, cap >= old_cap, "Grow to same capacity");

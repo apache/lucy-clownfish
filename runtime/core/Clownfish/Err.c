@@ -249,16 +249,16 @@ Err_invalid_callback(const char *method_name) {
 
 char*
 Err_win_error() {
-    size_t buf_size = 256;
+    DWORD buf_size = 256;
     char *buf = (char*)MALLOCATE(buf_size);
-    size_t message_len = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-                                       NULL,       // message source table
-                                       GetLastError(),
-                                       0,          // language id
-                                       buf,
-                                       buf_size,
-                                       NULL        // empty va_list
-                                      );
+    DWORD message_len = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+                                      NULL,       // message source table
+                                      GetLastError(),
+                                      0,          // language id
+                                      buf,
+                                      buf_size,
+                                      NULL        // empty va_list
+                                     );
     if (message_len == 0) {
         char unknown[] = "Unknown error";
         size_t len = sizeof(unknown);

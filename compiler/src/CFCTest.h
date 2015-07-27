@@ -21,6 +21,8 @@
 #ifndef H_CFCTEST
 #define H_CFCTEST
 
+#include "charmony.h"
+
 #include <time.h>
 
 #ifdef CFC_USE_TEST_MACROS
@@ -102,7 +104,7 @@ CFCTest_test_string_equals(CFCTest *self, const char *result,
  * @param fmt printf-like format string describing the test.
  */
 void
-CFCTest_test_int_equals(CFCTest *self, long result, long expected,
+CFCTest_test_int_equals(CFCTest *self, uint64_t result, uint64_t expected,
                         const char *fmt, ...);
 
 /* Skip tests.

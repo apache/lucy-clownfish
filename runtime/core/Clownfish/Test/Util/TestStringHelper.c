@@ -128,7 +128,7 @@ S_utf8_valid_alt(const char *maybe_utf8, size_t size) {
 
 static void
 test_overlap(TestBatchRunner *runner) {
-    int32_t result;
+    size_t result;
     result = StrHelp_overlap("", "", 0, 0);
     TEST_INT_EQ(runner, result, 0, "two empty strings");
     result = StrHelp_overlap("", "foo", 0, 3);

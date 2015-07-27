@@ -301,7 +301,7 @@ Class_singleton(String *class_name, Class *parent) {
     Class *singleton = (Class*)LFReg_fetch(Class_registry, class_name);
     if (singleton == NULL) {
         Vector *fresh_host_methods;
-        uint32_t num_fresh;
+        size_t num_fresh;
 
         if (parent == NULL) {
             String *parent_class = Class_find_parent_class(class_name);
@@ -322,7 +322,7 @@ Class_singleton(String *class_name, Class *parent) {
         num_fresh = Vec_Get_Size(fresh_host_methods);
         if (num_fresh) {
             Hash *meths = Hash_new(num_fresh);
-            for (uint32_t i = 0; i < num_fresh; i++) {
+            for (size_t i = 0; i < num_fresh; i++) {
                 String *meth = (String*)Vec_Fetch(fresh_host_methods, i);
                 Hash_Store(meths, meth, (Obj*)CFISH_TRUE);
             }
@@ -462,6 +462,6 @@ S_claim_parcel_id(void) {
                                    old_value.ptr, new_value.ptr);
     } while (!succeeded);
 
-    return new_value.num;
+    return (int32_t)new_value.num;
 }
 

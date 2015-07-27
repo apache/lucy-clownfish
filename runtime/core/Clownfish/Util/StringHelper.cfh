@@ -25,7 +25,7 @@ inert class Clownfish::Util::StringHelper nickname StrHelp {
 
     /** Return the number of bytes that two strings have in common.
      */
-    inert int32_t
+    inert size_t
     overlap(const char *a, const char *b, size_t a_len,  size_t b_len);
 
     /** Encode a NULL-terminated string representation of a value in base 36
@@ -36,7 +36,7 @@ inert class Clownfish::Util::StringHelper nickname StrHelp {
      * @return the number of digits encoded (not including the terminating
      * NULL).
      */
-    inert uint32_t
+    inert size_t
     to_base36(uint64_t value, void *buffer);
 
     /** Return true if the string is valid UTF-8, false otherwise.

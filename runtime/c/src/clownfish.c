@@ -65,7 +65,7 @@ SI_is_string_type(cfish_Class *klass) {
 uint32_t
 cfish_get_refcount(void *vself) {
     cfish_Obj *self = (cfish_Obj*)vself;
-    return self->refcount;
+    return (uint32_t)self->refcount;
 }
 
 Obj*
@@ -99,11 +99,11 @@ cfish_dec_refcount(void *vself) {
     cfish_Class *klass = self->klass;
     if (klass->flags & CFISH_fREFCOUNTSPECIAL) {
         if (SI_immortal(klass)) {
-            return self->refcount;
+            return (uint32_t)self->refcount;
         }
     }
 
-    uint32_t modified_refcount = INT32_MAX;
+    size_t modified_refcount = 0;
     switch (self->refcount) {
         case 0:
             THROW(ERR, "Illegal refcount of 0");
@@ -116,7 +116,7 @@ cfish_dec_refcount(void *vself) {
             modified_refcount = --self->refcount;
             break;
     }
-    return modified_refcount;
+    return (uint32_t)modified_refcount;
 }
 
 void*

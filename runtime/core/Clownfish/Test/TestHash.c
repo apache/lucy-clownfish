@@ -65,7 +65,7 @@ static void
 test_Store_and_Fetch(TestBatchRunner *runner) {
     Hash          *hash         = Hash_new(100);
     Hash          *dupe         = Hash_new(100);
-    const uint32_t starting_cap = Hash_Get_Capacity(hash);
+    const size_t   starting_cap = Hash_Get_Capacity(hash);
     Vector        *expected     = Vec_new(100);
     Vector        *got          = Vec_new(100);
     String        *twenty       = SSTR_WRAP_UTF8("20", 2);
@@ -209,10 +209,10 @@ test_stress(TestBatchRunner *runner) {
 static void
 test_store_skips_tombstone(TestBatchRunner *runner) {
     Hash *hash = Hash_new(0);
-    uint32_t mask = Hash_Get_Capacity(hash) - 1;
+    size_t mask = Hash_Get_Capacity(hash) - 1;
 
     String *one = Str_newf("one");
-    uint32_t slot = Str_Hash_Sum(one) & mask;
+    size_t slot = Str_Hash_Sum(one) & mask;
 
     // Find a colliding key.
     String *two = NULL;

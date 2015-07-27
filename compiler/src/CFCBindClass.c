@@ -357,8 +357,8 @@ S_struct_definition(CFCBindClass *self) {
 
     // Add all member variables declared by classes in this package.
     CFCVariable **member_vars = CFCClass_member_vars(client);
-    int num_non_package_members = CFCClass_num_non_package_ivars(client);
-    for (int i = num_non_package_members; member_vars[i] != NULL; i++) {
+    size_t num_non_package_members = CFCClass_num_non_package_ivars(client);
+    for (size_t i = num_non_package_members; member_vars[i] != NULL; i++) {
         const char *member_dec = CFCVariable_local_declaration(member_vars[i]);
         member_decs = CFCUtil_cat(member_decs, "\n    ", member_dec, NULL);
     }

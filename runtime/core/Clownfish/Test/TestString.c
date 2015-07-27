@@ -542,7 +542,7 @@ test_iterator(TestBatchRunner *runner) {
     {
         StringIterator *iter = Str_Tail(string);
 
-        for (int i = num_code_points - 1; i >= 0; --i) {
+        for (size_t i = num_code_points; i--;) {
             TEST_TRUE(runner, StrIter_Has_Prev(iter), "Has_Prev %d", i);
             int32_t code_point = StrIter_Prev(iter);
             TEST_INT_EQ(runner, code_point, code_points[i], "Prev %d", i);

@@ -32,7 +32,7 @@ struct cfish_LockFreeRegistry {
 typedef struct cfish_LFRegEntry {
     String *key;
     Obj *value;
-    int32_t hash_sum;
+    size_t hash_sum;
     struct cfish_LFRegEntry *volatile next;
 } cfish_LFRegEntry;
 #define LFRegEntry cfish_LFRegEntry
@@ -49,8 +49,8 @@ LFReg_new(size_t capacity) {
 bool
 LFReg_register(LockFreeRegistry *self, String *key, Obj *value) {
     LFRegEntry  *new_entry = NULL;
-    int32_t      hash_sum  = Str_Hash_Sum(key);
-    size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
+    size_t       hash_sum  = Str_Hash_Sum(key);
+    size_t       bucket    = hash_sum  % self->capacity;
     LFRegEntry  *volatile *entries = (LFRegEntry*volatile*)self->entries;
     LFRegEntry  *volatile *slot    = &(entries[bucket]);
 
@@ -107,8 +107,8 @@ FIND_END_OF_LINKED_LIST:
 
 Obj*
 LFReg_fetch(LockFreeRegistry *self, String *key) {
-    int32_t      hash_sum  = Str_Hash_Sum(key);
-    size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
+    size_t       hash_sum  = Str_Hash_Sum(key);
+    size_t       bucket    = hash_sum  % self->capacity;
     LFRegEntry **entries   = (LFRegEntry**)self->entries;
     LFRegEntry  *entry     = entries[bucket];
 

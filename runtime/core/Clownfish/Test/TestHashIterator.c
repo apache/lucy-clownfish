@@ -137,8 +137,10 @@ test_Get_Key_and_Get_Value(TestBatchRunner *runner) {
     DECREF(get_value_error);
 
     HashIter_Next(iter);
-    TEST_TRUE(runner, HashIter_Get_Key(iter), "Get_Key during iteration.");
-    TEST_TRUE(runner, HashIter_Get_Value(iter), "Get_Value during iteration.");
+    TEST_TRUE(runner, HashIter_Get_Key(iter) != NULL,
+              "Get_Key during iteration.");
+    TEST_TRUE(runner, HashIter_Get_Value(iter) != NULL,
+              "Get_Value during iteration.");
 
     HashIter_Next(iter);
     get_key_error = Err_trap(S_invoke_Get_Key, iter);

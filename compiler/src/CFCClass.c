@@ -816,7 +816,7 @@ size_t
 CFCClass_num_non_package_ivars(CFCClass *self) {
     CFCParcel *parcel       = CFCClass_get_parcel(self);
     CFCClass  *ancestor     = CFCClass_get_parent(self);
-    int num_non_package_members = 0;
+    size_t num_non_package_members = 0;
 
     while (ancestor && CFCClass_get_parcel(ancestor) == parcel) {
         ancestor = CFCClass_get_parent(ancestor);

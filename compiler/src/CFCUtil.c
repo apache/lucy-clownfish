@@ -344,7 +344,7 @@ CFCUtil_slurp_text(const char *file_path, size_t *len_ptr) {
     FILE   *const file = fopen(file_path, "r");
     char   *contents;
     size_t  binary_len;
-    long    text_len;
+    size_t  text_len;
 
     /* Sanity check. */
     if (file == NULL) {

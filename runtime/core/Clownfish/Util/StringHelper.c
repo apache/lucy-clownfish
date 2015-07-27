@@ -42,7 +42,7 @@ const uint8_t cfish_StrHelp_UTF8_COUNT[] = {
     4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-int32_t
+size_t
 StrHelp_overlap(const char *a, const char *b, size_t a_len,  size_t b_len) {
     size_t i;
     const size_t len = a_len <= b_len ? a_len : b_len;
@@ -55,7 +55,7 @@ StrHelp_overlap(const char *a, const char *b, size_t a_len,  size_t b_len) {
 
 static const char base36_chars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-uint32_t
+size_t
 StrHelp_to_base36(uint64_t num, void *buffer) {
     char  my_buf[StrHelp_MAX_BASE36_BYTES];
     char *buf = my_buf + StrHelp_MAX_BASE36_BYTES - 1;
@@ -70,7 +70,7 @@ StrHelp_to_base36(uint64_t num, void *buffer) {
         num /= 36;
     } while (num > 0);
 
-    uint32_t size = end - buf;
+    size_t size = end - buf;
     memcpy(buffer, buf, size + 1);
     return size;
 }

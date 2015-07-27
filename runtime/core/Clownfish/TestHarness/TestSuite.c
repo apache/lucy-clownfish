@@ -62,9 +62,9 @@ TestSuite_Run_Batch_IMP(TestSuite *self, String *class_name,
                     TestFormatter *formatter) {
     S_unbuffer_stdout();
 
-    uint32_t size = Vec_Get_Size(self->batches);
+    size_t size = Vec_Get_Size(self->batches);
 
-    for (uint32_t i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         TestBatch *batch = (TestBatch*)Vec_Fetch(self->batches, i);
 
         if (Str_Equals(TestBatch_get_class_name(batch), (Obj*)class_name)) {
@@ -84,9 +84,9 @@ TestSuite_Run_All_Batches_IMP(TestSuite *self, TestFormatter *formatter) {
     S_unbuffer_stdout();
 
     TestSuiteRunner *runner = TestSuiteRunner_new(formatter);
-    uint32_t size = Vec_Get_Size(self->batches);
+    size_t size = Vec_Get_Size(self->batches);
 
-    for (uint32_t i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         TestBatch *batch = (TestBatch*)Vec_Fetch(self->batches, i);
         TestSuiteRunner_Run_Batch(runner, batch);
     }
