@@ -76,6 +76,9 @@ CFCGoClass_gen_ctors(CFCGoClass *self);
 char*
 CFCGoClass_gen_meth_glue(CFCGoClass *self);
 
+char*
+CFCGoClass_gen_wrap_func_reg(CFCGoClass *self);
+
 void
 CFCGoClass_spec_method(CFCGoClass *self, const char *name, const char *sig);
 

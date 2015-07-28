@@ -250,18 +250,24 @@ CFCGoClass_boilerplate_funcs(CFCGoClass *self) {
     else if (CFCClass_inert(self->client)) {
         content = CFCUtil_strdup("");
     } else {
+        const char *clownfish_dot = CFCParcel_is_cfish(self->parcel)
+                                    ? "" : "clownfish.";
         const char *short_struct = CFCClass_get_struct_sym(self->client);
-        const char *full_struct  = CFCClass_full_struct_sym(self->client);
         char pattern[] =
             "func WRAP%s(ptr unsafe.Pointer) %s {\n"
             "\tobj := &%sIMP{}\n"
             "\tobj.INITOBJ(ptr)\n"
             "\treturn obj\n"
             "}\n"
+            "\n"
+            "func WRAP%sASOBJ(ptr unsafe.Pointer) %sObj {\n"
+            "\treturn WRAP%s(ptr)\n"
+            "}\n"
             ;
 
         content = CFCUtil_sprintf(pattern, short_struct, short_struct,
-                                  short_struct, full_struct, short_struct);
+                                  short_struct, short_struct, clownfish_dot,
+                                  short_struct);
     }
     return content;
 }
@@ -366,6 +372,19 @@ CFCGoClass_gen_meth_glue(CFCGoClass *self) {
         FREEMEM(method_def);
     }
     return meth_defs;
+}
+
+char*
+CFCGoClass_gen_wrap_func_reg(CFCGoClass *self) {
+    if (CFCClass_inert(self->client)) {
+        return CFCUtil_strdup("");
+    }
+    char pattern[] =
+        "\t\tunsafe.Pointer(C.%s): WRAP%sASOBJ,\n";
+
+    const char *short_struct = CFCClass_get_struct_sym(self->client);
+    const char *class_var = CFCClass_full_class_var(self->client);
+    return CFCUtil_sprintf(pattern, class_var, short_struct);
 }
 
 void

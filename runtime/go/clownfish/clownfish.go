@@ -62,10 +62,56 @@ GoCfish_RunRoutine(CFISH_Err_Attempt_t routine, void *context) {
 import "C"
 import "runtime"
 import "unsafe"
+import "fmt"
+import "sync"
+
+const (
+	maxUint = ^uint(0)
+	minUint = 0
+	maxInt  = int(^uint(0) >> 1)
+	minInt  = -(maxInt - 1)
+)
+
+type WrapFunc func(unsafe.Pointer)Obj
+var wrapRegMutex sync.Mutex
+var wrapReg *map[unsafe.Pointer]WrapFunc
 
 func init() {
 	C.GoCfish_glue_exported_symbols()
 	C.cfish_bootstrap_parcel()
+	initWRAP()
+}
+
+func RegisterWrapFuncs(newEntries map[unsafe.Pointer]WrapFunc) {
+	wrapRegMutex.Lock()
+	newSize := len(newEntries)
+	if wrapReg != nil {
+		newSize += len(*wrapReg)
+	}
+	newReg := make(map[unsafe.Pointer]WrapFunc, newSize)
+	if wrapReg != nil {
+		for k, v := range *wrapReg {
+			newReg[k] = v
+		}
+	}
+	for k, v := range newEntries {
+		newReg[k] = v
+	}
+	wrapReg = &newReg
+	wrapRegMutex.Unlock()
+}
+
+func WRAPAny(ptr unsafe.Pointer) Obj {
+	if ptr == nil {
+		return nil
+	}
+	class := C.cfish_Obj_get_class((*C.cfish_Obj)(ptr))
+	wrapFunc := (*wrapReg)[unsafe.Pointer(class)]
+	if wrapFunc == nil {
+		className := CFStringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name((*C.cfish_Class)(class))))
+		panic(fmt.Sprintf("Failed to find WRAP function for %s", className))
+	}
+	return wrapFunc(ptr)
 }
 
 type ObjIMP struct {
