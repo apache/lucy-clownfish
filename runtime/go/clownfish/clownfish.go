@@ -130,6 +130,14 @@ func NewString(goString string) String {
 	return WRAPString(unsafe.Pointer(cfObj))
 }
 
+func NewVector(size int) Vector {
+	if (size < 0 || uint64(size) > ^uint64(0)) {
+		panic(NewErr(fmt.Sprintf("Param 'size' out of range: %d", size)))
+	}
+	cfObj := C.cfish_Vec_new(C.size_t(size))
+	return WRAPVector(unsafe.Pointer(cfObj))
+}
+
 func (o *ObjIMP) INITOBJ(ptr unsafe.Pointer) {
 	o.ref = uintptr(ptr)
 	runtime.SetFinalizer(o, ClearRef)
