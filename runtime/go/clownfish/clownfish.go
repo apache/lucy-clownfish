@@ -138,6 +138,14 @@ func NewVector(size int) Vector {
 	return WRAPVector(unsafe.Pointer(cfObj))
 }
 
+func NewHash(size int) Hash {
+	if (size < 0 || uint64(size) > ^uint64(0)) {
+		panic(NewErr(fmt.Sprintf("Param 'size' out of range: %d", size)))
+	}
+	cfObj := C.cfish_Hash_new(C.size_t(size))
+	return WRAPHash(unsafe.Pointer(cfObj))
+}
+
 func (o *ObjIMP) INITOBJ(ptr unsafe.Pointer) {
 	o.ref = uintptr(ptr)
 	runtime.SetFinalizer(o, ClearRef)

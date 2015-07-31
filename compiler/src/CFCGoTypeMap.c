@@ -102,6 +102,9 @@ CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
     else if (CFCType_cfish_vector(type)) {
         return CFCUtil_strdup("[]interface{}");
     }
+    else if (CFCType_cfish_hash(type)) {
+        return CFCUtil_strdup("map[string]interface{}");
+    }
     else if (CFCType_is_object(type)) {
         // Divide the specifier into prefix and struct name.
         const char *specifier  = CFCType_get_specifier(type);
