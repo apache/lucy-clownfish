@@ -90,6 +90,7 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
         char *convertible = NULL;
         if      (CFCType_cfish_string(type))  { convertible = "String"; }
         else if (CFCType_cfish_vector(type))  { convertible = "Vector"; }
+        else if (CFCType_cfish_blob(type))    { convertible = "Blob"; }
         else                                  { continue; }
         char pattern[] =
             "\t%sCF := (*C.cfish_%s)(%sGoTo%s(%s))\n";
@@ -172,6 +173,7 @@ S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
                                  "(", go_name, ")", NULL);
         }
         else if ((CFCType_is_string_type(type)
+                  || CFCType_cfish_blob(type)
                   || CFCType_cfish_vector(type))
                  // Don't convert an invocant.
                  && (targ != IS_METHOD || i != 0)
@@ -232,6 +234,11 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
         else if (CFCType_is_string_type(return_type)) {
             char pattern[] =
                 "%s\treturn %sCFStringToGo(unsafe.Pointer(retvalCF))\n";
+            statement = CFCUtil_sprintf(pattern, maybe_decref, clownfish_dot);
+        }
+        else if (CFCType_cfish_blob(return_type)) {
+            char pattern[] =
+                "%s\treturn %sBlobToGo(unsafe.Pointer(retvalCF))\n";
             statement = CFCUtil_sprintf(pattern, maybe_decref, clownfish_dot);
         }
         else if (CFCType_cfish_vector(return_type)) {

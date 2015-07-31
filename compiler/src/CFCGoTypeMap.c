@@ -96,6 +96,9 @@ CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
     if (CFCType_is_string_type(type)) {
         return CFCUtil_strdup("string");
     }
+    else if (CFCType_cfish_blob(type)) {
+        return CFCUtil_strdup("[]byte");
+    }
     else if (CFCType_cfish_vector(type)) {
         return CFCUtil_strdup("[]interface{}");
     }
