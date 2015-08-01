@@ -130,6 +130,11 @@ cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
 CFISH_VISIBLE cfish_Obj*
 cfish_XSBind_perl_to_cfish(pTHX_ SV *sv);
 
+/** Return the contents of the hash entry's key as UTF-8.
+ */
+CFISH_VISIBLE const char*
+cfish_XSBind_hash_key_to_utf8(pTHX_ HE *entry, STRLEN *size_ptr);
+
 /** Perl-specific wrapper for Err#trap.  The "routine" must be either a
  * subroutine reference or the name of a subroutine.
  */
@@ -302,6 +307,7 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
 #define XSBind_perl_to_cfish           cfish_XSBind_perl_to_cfish
+#define XSBind_hash_key_to_utf8        cfish_XSBind_hash_key_to_utf8
 #define XSBind_trap                    cfish_XSBind_trap
 #define XSBind_allot_params            cfish_XSBind_allot_params
 #define ALLOT_I8                       XSBIND_ALLOT_I8

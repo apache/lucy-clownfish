@@ -189,43 +189,51 @@ XSBind_perl_to_cfish(pTHX_ SV *sv) {
     return retval;
 }
 
+const char*
+XSBind_hash_key_to_utf8(pTHX_ HE *entry, STRLEN *size_ptr) {
+    const char *key_str = NULL;
+    STRLEN key_len = HeKLEN(entry);
+
+    if (key_len == (STRLEN)HEf_SVKEY) {
+        // Key is stored as an SV.  Use its UTF-8 flag?  Not sure about
+        // this.
+        SV *key_sv = HeKEY_sv(entry);
+        key_str = SvPVutf8(key_sv, key_len);
+    }
+    else {
+        key_str = HeKEY(entry);
+
+        if (!HeKUTF8(entry)) {
+            for (STRLEN i = 0; i < key_len; i++) {
+                if ((key_str[i] & 0x80) == 0x80) {
+                    // Force key to UTF-8 if necessary.
+                    SV *key_sv = HeSVKEY_force(entry);
+                    key_str = SvPVutf8(key_sv, key_len);
+                    break;
+                }
+            }
+        }
+    }
+
+    *size_ptr = key_len;
+    return key_str;
+}
+
 static cfish_Hash*
 S_perl_hash_to_cfish_hash(pTHX_ HV *phash) {
     uint32_t    num_keys = hv_iterinit(phash);
     cfish_Hash *retval   = cfish_Hash_new(num_keys);
 
     while (num_keys--) {
-        HE        *entry    = hv_iternext(phash);
-        STRLEN     key_len  = HeKLEN(entry);
-        SV        *value_sv = HeVAL(entry);
-        cfish_Obj *value    = XSBind_perl_to_cfish(aTHX_ value_sv); // Recurse.
+        HE         *entry    = hv_iternext(phash);
+        STRLEN      key_len  = 0;
+        const char *key_str  = XSBind_hash_key_to_utf8(aTHX_ entry, &key_len);
+        SV         *value_sv = HeVAL(entry);
 
-        // Force key to UTF-8 if necessary.
-        if (key_len == (STRLEN)HEf_SVKEY) {
-            // Key is stored as an SV.  Use its UTF-8 flag?  Not sure about
-            // this.
-            SV   *key_sv  = HeKEY_sv(entry);
-            char *key_str = SvPVutf8(key_sv, key_len);
-            CFISH_Hash_Store_Utf8(retval, key_str, key_len, value);
-        }
-        else if (HeKUTF8(entry)) {
-            CFISH_Hash_Store_Utf8(retval, HeKEY(entry), key_len, value);
-        }
-        else {
-            char *key_str = HeKEY(entry);
-            bool pure_ascii = true;
-            for (STRLEN i = 0; i < key_len; i++) {
-                if ((key_str[i] & 0x80) == 0x80) { pure_ascii = false; }
-            }
-            if (pure_ascii) {
-                CFISH_Hash_Store_Utf8(retval, key_str, key_len, value);
-            }
-            else {
-                SV *key_sv = HeSVKEY_force(entry);
-                key_str = SvPVutf8(key_sv, key_len);
-                CFISH_Hash_Store_Utf8(retval, key_str, key_len, value);
-            }
-        }
+        // Recurse.
+        cfish_Obj *value = XSBind_perl_to_cfish(aTHX_ value_sv);
+
+        CFISH_Hash_Store_Utf8(retval, key_str, key_len, value);
     }
 
     return retval;
