@@ -223,17 +223,21 @@ S_gen_init_code(CFCGo *self, CFCParcel *parcel) {
     const char pattern[] =
         "func init() {\n"
         "    C.%sbootstrap_parcel()\n"
+        "    initWRAP()\n"
         "}\n";
     return CFCUtil_sprintf(pattern, prefix);
 }
 
 static char*
 S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
+    const char *clownfish_dot = CFCParcel_is_cfish(parcel)
+                                ? "" : "clownfish.";
     CFCGoClass **registry = CFCGoClass_registry();
     char *type_decs   = CFCUtil_strdup("");
     char *boilerplate = CFCUtil_strdup("");
     char *ctors       = CFCUtil_strdup("");
     char *meth_defs   = CFCUtil_strdup("");
+    char *wrap_funcs  = CFCUtil_strdup("");
 
     for (int i = 0; registry[i] != NULL; i++) {
         CFCGoClass *class_binding = registry[i];
@@ -258,6 +262,22 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         char *glue = CFCGoClass_gen_meth_glue(class_binding);
         meth_defs = CFCUtil_cat(meth_defs, glue, "\n", NULL);
         FREEMEM(glue);
+
+        char *wrap_func = CFCGoClass_gen_wrap_func_reg(class_binding);
+        wrap_funcs = CFCUtil_cat(wrap_funcs, wrap_func, NULL);
+        FREEMEM(wrap_func);
+    }
+
+    if (strlen(wrap_funcs)) {
+        char pattern[] =
+            "\tnewEntries := map[unsafe.Pointer]%sWrapFunc{\n%s"
+            "\t}\n"
+            "\t%sRegisterWrapFuncs(newEntries)\n"
+            ;
+        char *temp = CFCUtil_sprintf(pattern, clownfish_dot, wrap_funcs,
+                                     clownfish_dot);
+        FREEMEM(wrap_funcs);
+        wrap_funcs = temp;
     }
 
     char pattern[] =
@@ -269,6 +289,11 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         "\n"
         "%s\n"
         "\n"
+        "// Register WRAP functions.\n"
+        "func initWRAP() {\n"
+        "%s"
+        "}\n"
+        "\n"
         "// Constructors.\n"
         "\n"
         "%s\n"
@@ -279,8 +304,10 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         "\n"
         ;
     char *content
-        = CFCUtil_sprintf(pattern, type_decs, boilerplate, ctors, meth_defs);
+        = CFCUtil_sprintf(pattern, type_decs, boilerplate, wrap_funcs,
+                          ctors, meth_defs);
 
+    FREEMEM(wrap_funcs);
     FREEMEM(meth_defs);
     FREEMEM(ctors);
     FREEMEM(boilerplate);

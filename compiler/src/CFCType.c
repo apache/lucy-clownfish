@@ -63,18 +63,25 @@ S_check_flags(int supplied, int acceptable, const char *type_name) {
     int bad = (supplied & ~acceptable);
     if (bad) {
         char bad_flag[20];
-        if ((bad & CFCTYPE_CONST))            { strcpy(bad_flag, "CONST"); }
-        else if ((bad & CFCTYPE_NULLABLE))    { strcpy(bad_flag, "NULLABLE"); }
-        else if ((bad & CFCTYPE_INCREMENTED)) { strcpy(bad_flag, "INCREMENTED"); }
-        else if ((bad & CFCTYPE_DECREMENTED)) { strcpy(bad_flag, "DECREMENTED"); }
-        else if ((bad & CFCTYPE_OBJECT))      { strcpy(bad_flag, "OBJECT"); }
-        else if ((bad & CFCTYPE_PRIMITIVE))   { strcpy(bad_flag, "PRIMITIVE"); }
-        else if ((bad & CFCTYPE_INTEGER))     { strcpy(bad_flag, "INTEGER"); }
-        else if ((bad & CFCTYPE_FLOATING))    { strcpy(bad_flag, "FLOATING"); }
-        else if ((bad & CFCTYPE_STRING_TYPE)) { strcpy(bad_flag, "STRING_TYPE"); }
-        else if ((bad & CFCTYPE_VA_LIST))     { strcpy(bad_flag, "VA_LIST"); }
-        else if ((bad & CFCTYPE_ARBITRARY))   { strcpy(bad_flag, "ARBITRARY"); }
-        else if ((bad & CFCTYPE_COMPOSITE))   { strcpy(bad_flag, "COMPOSITE"); }
+        if ((bad & CFCTYPE_CONST))              { strcpy(bad_flag, "CONST"); }
+        else if ((bad & CFCTYPE_NULLABLE))      { strcpy(bad_flag, "NULLABLE"); }
+        else if ((bad & CFCTYPE_INCREMENTED))   { strcpy(bad_flag, "INCREMENTED"); }
+        else if ((bad & CFCTYPE_DECREMENTED))   { strcpy(bad_flag, "DECREMENTED"); }
+        else if ((bad & CFCTYPE_OBJECT))        { strcpy(bad_flag, "OBJECT"); }
+        else if ((bad & CFCTYPE_PRIMITIVE))     { strcpy(bad_flag, "PRIMITIVE"); }
+        else if ((bad & CFCTYPE_INTEGER))       { strcpy(bad_flag, "INTEGER"); }
+        else if ((bad & CFCTYPE_FLOATING))      { strcpy(bad_flag, "FLOATING"); }
+        else if ((bad & CFCTYPE_CFISH_OBJ))     { strcpy(bad_flag, "CFISH_OBJ"); }
+        else if ((bad & CFCTYPE_CFISH_STRING))  { strcpy(bad_flag, "CFISH_STRING"); }
+        else if ((bad & CFCTYPE_CFISH_BLOB))    { strcpy(bad_flag, "CFISH_BLOB"); }
+        else if ((bad & CFCTYPE_CFISH_INTEGER)) { strcpy(bad_flag, "CFISH_INTEGER"); }
+        else if ((bad & CFCTYPE_CFISH_FLOAT))   { strcpy(bad_flag, "CFISH_FLOAT"); }
+        else if ((bad & CFCTYPE_CFISH_BOOLEAN)) { strcpy(bad_flag, "CFISH_BOOLEAN"); }
+        else if ((bad & CFCTYPE_CFISH_VECTOR))  { strcpy(bad_flag, "CFISH_VECTOR"); }
+        else if ((bad & CFCTYPE_CFISH_HASH))    { strcpy(bad_flag, "CFISH_HASH"); }
+        else if ((bad & CFCTYPE_VA_LIST))       { strcpy(bad_flag, "VA_LIST"); }
+        else if ((bad & CFCTYPE_ARBITRARY))     { strcpy(bad_flag, "ARBITRARY"); }
+        else if ((bad & CFCTYPE_COMPOSITE))     { strcpy(bad_flag, "COMPOSITE"); }
         else {
             CFCUtil_die("Unknown flags: %d", bad);
         }
@@ -182,12 +189,36 @@ CFCType_new_object(int flags, CFCParcel *parcel, const char *specifier,
 
     // Add flags.
     flags |= CFCTYPE_OBJECT;
-    if (strcmp(specifier, "String") == 0
-        || strcmp(specifier, "cfish_String") == 0
-       ) {
-        // Determine whether this type is a string type.
-        flags |= CFCTYPE_STRING_TYPE;
+    static struct {
+        char *sym;
+        char *full_sym;
+        int   flag;
+    } cfish_types[] = {
+        {"Obj",     "cfish_Obj",     CFCTYPE_CFISH_OBJ},
+        {"String",  "cfish_String",  CFCTYPE_CFISH_STRING},
+        {"Blob",    "cfish_Blob",    CFCTYPE_CFISH_BLOB},
+        {"Integer", "cfish_Integer", CFCTYPE_CFISH_INTEGER},
+        {"Float",   "cfish_Float",   CFCTYPE_CFISH_FLOAT},
+        {"Boolean", "cfish_Boolean", CFCTYPE_CFISH_BOOLEAN},
+        {"Vector",  "cfish_Vector",  CFCTYPE_CFISH_VECTOR},
+        {"Hash",    "cfish_Hash",    CFCTYPE_CFISH_HASH}
+    };
+    int count_cfish_types = sizeof(cfish_types) / sizeof(cfish_types[0]);
+    int acceptable_flags = CFCTYPE_OBJECT
+                           | CFCTYPE_CONST
+                           | CFCTYPE_NULLABLE
+                           | CFCTYPE_INCREMENTED
+                           | CFCTYPE_DECREMENTED;
+    for (int i = 0; i < count_cfish_types; i++) {
+        if (strcmp(specifier, cfish_types[i].sym) == 0
+            || strcmp(specifier, cfish_types[i].full_sym) == 0
+           ) {
+            flags |= cfish_types[i].flag;
+            acceptable_flags |= cfish_types[i].flag;
+            break;
+        }
     }
+    S_check_flags(flags, acceptable_flags, "Object");
 
     // Validate specifier.
     if (!isalpha(*specifier)) {
@@ -203,14 +234,6 @@ CFCType_new_object(int flags, CFCParcel *parcel, const char *specifier,
     if (!CFCClass_validate_class_name_component(small_specifier)) {
         CFCUtil_die("Invalid specifier: '%s'", specifier);
     }
-
-    int acceptable_flags = CFCTYPE_OBJECT
-                           | CFCTYPE_STRING_TYPE
-                           | CFCTYPE_CONST
-                           | CFCTYPE_NULLABLE
-                           | CFCTYPE_INCREMENTED
-                           | CFCTYPE_DECREMENTED;
-    S_check_flags(flags, acceptable_flags, "Object");
 
     return CFCType_new(flags, parcel, specifier, 1);
 }
@@ -481,9 +504,50 @@ CFCType_is_floating(CFCType *self) {
     return !!(self->flags & CFCTYPE_FLOATING);
 }
 
+
+int
+CFCType_cfish_obj(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_OBJ);
+}
+
 int
 CFCType_is_string_type(CFCType *self) {
-    return !!(self->flags & CFCTYPE_STRING_TYPE);
+    return !!(self->flags & CFCTYPE_CFISH_STRING);
+}
+
+int
+CFCType_cfish_string(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_STRING);
+}
+
+int
+CFCType_cfish_blob(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_BLOB);
+}
+
+int
+CFCType_cfish_integer(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_INTEGER);
+}
+
+int
+CFCType_cfish_float(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_FLOAT);
+}
+
+int
+CFCType_cfish_boolean(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_BOOLEAN);
+}
+
+int
+CFCType_cfish_vector(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_VECTOR);
+}
+
+int
+CFCType_cfish_hash(CFCType *self) {
+    return !!(self->flags & CFCTYPE_CFISH_HASH);
 }
 
 int

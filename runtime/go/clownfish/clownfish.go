@@ -18,6 +18,8 @@ package clownfish
 
 /*
 
+#include <limits.h>
+
 #include "charmony.h"
 
 #include "Clownfish/Obj.h"
@@ -26,7 +28,9 @@ package clownfish
 #include "Clownfish/String.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/Hash.h"
+#include "Clownfish/HashIterator.h"
 #include "Clownfish/Vector.h"
+#include "Clownfish/Num.h"
 #include "Clownfish/Boolean.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Method.h"
@@ -62,10 +66,57 @@ GoCfish_RunRoutine(CFISH_Err_Attempt_t routine, void *context) {
 import "C"
 import "runtime"
 import "unsafe"
+import "fmt"
+import "math"
+import "sync"
+
+const (
+	maxUint = ^uint(0)
+	minUint = 0
+	maxInt  = int(^uint(0) >> 1)
+	minInt  = -(maxInt - 1)
+)
+
+type WrapFunc func(unsafe.Pointer)Obj
+var wrapRegMutex sync.Mutex
+var wrapReg *map[unsafe.Pointer]WrapFunc
 
 func init() {
 	C.GoCfish_glue_exported_symbols()
 	C.cfish_bootstrap_parcel()
+	initWRAP()
+}
+
+func RegisterWrapFuncs(newEntries map[unsafe.Pointer]WrapFunc) {
+	wrapRegMutex.Lock()
+	newSize := len(newEntries)
+	if wrapReg != nil {
+		newSize += len(*wrapReg)
+	}
+	newReg := make(map[unsafe.Pointer]WrapFunc, newSize)
+	if wrapReg != nil {
+		for k, v := range *wrapReg {
+			newReg[k] = v
+		}
+	}
+	for k, v := range newEntries {
+		newReg[k] = v
+	}
+	wrapReg = &newReg
+	wrapRegMutex.Unlock()
+}
+
+func WRAPAny(ptr unsafe.Pointer) Obj {
+	if ptr == nil {
+		return nil
+	}
+	class := C.cfish_Obj_get_class((*C.cfish_Obj)(ptr))
+	wrapFunc := (*wrapReg)[unsafe.Pointer(class)]
+	if wrapFunc == nil {
+		className := CFStringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name((*C.cfish_Class)(class))))
+		panic(fmt.Sprintf("Failed to find WRAP function for %s", className))
+	}
+	return wrapFunc(ptr)
 }
 
 type ObjIMP struct {
@@ -77,6 +128,22 @@ func NewString(goString string) String {
 	len := C.size_t(len(goString))
 	cfObj := C.cfish_Str_new_steal_utf8(str, len)
 	return WRAPString(unsafe.Pointer(cfObj))
+}
+
+func NewVector(size int) Vector {
+	if (size < 0 || uint64(size) > ^uint64(0)) {
+		panic(NewErr(fmt.Sprintf("Param 'size' out of range: %d", size)))
+	}
+	cfObj := C.cfish_Vec_new(C.size_t(size))
+	return WRAPVector(unsafe.Pointer(cfObj))
+}
+
+func NewHash(size int) Hash {
+	if (size < 0 || uint64(size) > ^uint64(0)) {
+		panic(NewErr(fmt.Sprintf("Param 'size' out of range: %d", size)))
+	}
+	cfObj := C.cfish_Hash_new(C.size_t(size))
+	return WRAPHash(unsafe.Pointer(cfObj))
 }
 
 func (o *ObjIMP) INITOBJ(ptr unsafe.Pointer) {
@@ -93,7 +160,315 @@ func (o *ObjIMP) TOPTR() uintptr {
 	return o.ref
 }
 
+func certifyCF(value interface{}, class *C.cfish_Class) {
+	cfObj, ok := value.(Obj)
+	if ok {
+		if C.cfish_Obj_is_a((*C.cfish_Obj)(unsafe.Pointer(cfObj.TOPTR())), class) {
+			return
+		}
+	}
+	className := StringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name(class)))
+	panic(NewErr(fmt.Sprintf("Can't convert a %T to %s", value, className)))
+}
+
+// Convert a Go type into an incremented Clownfish object.  If the supplied
+// object is a Clownfish object wrapped in a Go struct, extract the Clownfish
+// object and incref it before returning its address.
+func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsafe.Pointer {
+	klass := (*C.cfish_Class)(class)
+
+	// Check for nil values.
+	if value == nil {
+		if nullable {
+			return nil
+		} else if class != nil {
+			className := StringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name(klass)))
+			panic(NewErr("Cannot be nil, must be a valid " + className))
+		} else {
+			panic(NewErr("Cannot be nil"))
+		}
+	}
+
+	// Default to accepting any type.
+	if klass == nil {
+		klass = C.CFISH_OBJ
+	}
+
+	// Convert the value according to its type if possible.
+	var converted unsafe.Pointer
+	switch v := value.(type) {
+	case string:
+		if klass == C.CFISH_STRING || klass == C.CFISH_OBJ {
+			converted = GoToString(value)
+		}
+	case []byte:
+		if klass == C.CFISH_BLOB || klass == C.CFISH_OBJ {
+			converted = GoToBlob(value)
+		}
+	case int:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case uint:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case uintptr:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case int64:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case int32:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case int16:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case int8:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case uint64:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case uint32:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case uint16:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case uint8:
+		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
+			converted = GoToInteger(value)
+		}
+	case float32:
+		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
+			converted = GoToFloat(value)
+		}
+	case float64:
+		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
+			converted = GoToFloat(value)
+		}
+	case []interface{}:
+		if klass == C.CFISH_VECTOR || klass == C.CFISH_OBJ {
+			converted = GoToVector(value)
+		}
+	case map[string]interface{}:
+		if klass == C.CFISH_HASH || klass == C.CFISH_OBJ {
+			converted = GoToHash(value)
+		}
+	case Obj:
+		converted = unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	}
+
+	// Confirm that we got what we were looking for and return.
+	if converted != nil {
+		if C.cfish_Obj_is_a((*C.cfish_Obj)(converted), klass) {
+			return unsafe.Pointer(C.cfish_incref(converted))
+		}
+	}
+
+	// Report a conversion error.
+	className := StringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name(klass)))
+	panic(NewErr(fmt.Sprintf("Can't convert a %T to %s", value, className)))
+}
+
+func GoToString(value interface{}) unsafe.Pointer {
+	switch v := value.(type) {
+	case string:
+		size := len(v)
+		str := C.CString(v)
+		return unsafe.Pointer(C.cfish_Str_new_steal_utf8(str, C.size_t(size)))
+	case Obj:
+		certifyCF(v, C.CFISH_STRING)
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	default:
+		mess := fmt.Sprintf("Can't convert %T to clownfish.String", v)
+		panic(NewErr(mess))
+	}
+}
+
+func GoToBlob(value interface{}) unsafe.Pointer {
+	switch v := value.(type) {
+	case []byte:
+		size := C.size_t(len(v))
+		var buf *C.char = nil
+		if size > 0 {
+			buf = ((*C.char)(unsafe.Pointer(&v[0])))
+		}
+		return unsafe.Pointer(C.cfish_Blob_new(buf, size))
+	case Obj:
+		certifyCF(v, C.CFISH_BLOB)
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	default:
+		mess := fmt.Sprintf("Can't convert %T to clownfish.Blob", v)
+		panic(NewErr(mess))
+	}
+}
+
+func GoToInteger(value interface{}) unsafe.Pointer {
+	switch v := value.(type) {
+	case int:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case uint:
+		if v > math.MaxInt64 {
+			mess := fmt.Sprintf("uint value too large: %v", v)
+			panic(NewErr(mess))
+		}
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case uintptr:
+		if v > math.MaxInt64 {
+			mess := fmt.Sprintf("uintptr value too large: %v", v)
+			panic(NewErr(mess))
+		}
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case uint64:
+		if v > math.MaxInt64 {
+			mess := fmt.Sprintf("uint64 value too large: %v", v)
+			panic(NewErr(mess))
+		}
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case uint32:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case uint16:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case uint8:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case int64:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case int32:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case int16:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case int8:
+		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
+	case Obj:
+		certifyCF(v, C.CFISH_INTEGER)
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	default:
+		mess := fmt.Sprintf("Can't convert %T to clownfish.Integer", v)
+		panic(NewErr(mess))
+	}
+}
+
+func GoToFloat(value interface{}) unsafe.Pointer {
+	switch v := value.(type) {
+	case float32:
+		return unsafe.Pointer(C.cfish_Float_new(C.double(v)))
+	case float64:
+		return unsafe.Pointer(C.cfish_Float_new(C.double(v)))
+	case Obj:
+		certifyCF(v, C.CFISH_FLOAT)
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	default:
+		mess := fmt.Sprintf("Can't convert %T to clownfish.Float", v)
+		panic(NewErr(mess))
+	}
+}
+
+func GoToBoolean(value interface{}) unsafe.Pointer {
+	switch v := value.(type) {
+	case bool:
+		if v {
+			return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(C.CFISH_TRUE)))
+		} else {
+			return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(C.CFISH_FALSE)))
+		}
+	case Obj:
+		certifyCF(v, C.CFISH_BOOLEAN)
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	default:
+		mess := fmt.Sprintf("Can't convert %T to clownfish.Boolean", v)
+		panic(NewErr(mess))
+	}
+}
+
+func GoToVector(value interface{}) unsafe.Pointer {
+	switch v := value.(type) {
+	case []interface{}:
+		size := len(v)
+		vec := C.cfish_Vec_new(C.size_t(size))
+		for i := 0; i < size; i++ {
+			elem := GoToClownfish(v[i], nil, true)
+			C.CFISH_Vec_Store(vec, C.size_t(i), (*C.cfish_Obj)(elem))
+		}
+		return unsafe.Pointer(vec)
+	case Obj:
+		certifyCF(v, C.CFISH_VECTOR)
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	default:
+		mess := fmt.Sprintf("Can't convert %T to clownfish.Vector", v)
+		panic(NewErr(mess))
+	}
+}
+
+func GoToHash(value interface{}) unsafe.Pointer {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		size := len(v)
+		hash := C.cfish_Hash_new(C.size_t(size))
+		for key, val := range v {
+			newVal := GoToClownfish(val, nil, true)
+			keySize := len(key)
+			keyStr := C.CString(key)
+		    cfKey := C.cfish_Str_new_steal_utf8(keyStr, C.size_t(keySize))
+			defer C.cfish_dec_refcount(unsafe.Pointer(cfKey))
+			C.CFISH_Hash_Store(hash, cfKey, (*C.cfish_Obj)(newVal))
+		}
+		return unsafe.Pointer(hash)
+	case Obj:
+		certifyCF(v, C.CFISH_HASH)
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	default:
+		mess := fmt.Sprintf("Can't convert %T to clownfish.Hash", v)
+		panic(NewErr(mess))
+	}
+}
+
+func ToGo(ptr unsafe.Pointer) interface{} {
+	if ptr == nil {
+		return nil
+	}
+	class := C.cfish_Obj_get_class((*C.cfish_Obj)(ptr))
+	if class == C.CFISH_STRING {
+		return CFStringToGo(ptr)
+	} else if class == C.CFISH_BLOB {
+		return BlobToGo(ptr)
+	} else if class == C.CFISH_VECTOR {
+		return VectorToGo(ptr)
+	} else if class == C.CFISH_HASH {
+		return HashToGo(ptr)
+	} else if class == C.CFISH_BOOLEAN {
+		if ptr == unsafe.Pointer(C.CFISH_TRUE) {
+			return true
+		} else {
+			return false
+		}
+	} else if class == C.CFISH_INTEGER {
+		val := C.CFISH_Int_Get_Value((*C.cfish_Integer)(ptr))
+		return int64(val)
+	} else if class == C.CFISH_FLOAT {
+		val := C.CFISH_Float_Get_Value((*C.cfish_Float)(ptr))
+		return float64(val)
+	} else {
+		// Don't convert to a native Go type, but wrap in a Go struct.
+		return WRAPAny(ptr)
+	}
+}
+
 func CFStringToGo(ptr unsafe.Pointer) string {
+	return StringToGo(ptr)
+}
+
+func StringToGo(ptr unsafe.Pointer) string {
 	cfString := (*C.cfish_String)(ptr)
 	if cfString == nil {
 		return ""
@@ -103,13 +478,77 @@ func CFStringToGo(ptr unsafe.Pointer) string {
 		defer C.cfish_dec_refcount(unsafe.Pointer(cfString))
 	}
 	data := C.CFISH_Str_Get_Ptr8(cfString)
-	size := C.int(C.CFISH_Str_Get_Size(cfString))
-	return C.GoStringN(data, size)
+	size := C.CFISH_Str_Get_Size(cfString)
+	if size > C.size_t(C.INT_MAX) {
+		panic(fmt.Sprintf("Overflow: %d > %d", size, C.INT_MAX))
+	}
+	return C.GoStringN(data, C.int(size))
+}
+
+func BlobToGo(ptr unsafe.Pointer) []byte {
+	blob := (*C.cfish_Blob)(ptr)
+	if blob == nil {
+		return nil
+	}
+	class := C.cfish_Obj_get_class((*C.cfish_Obj)(ptr))
+	if class != C.CFISH_BLOB {
+		mess := "Not a Blob: " + StringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name(class)))
+		panic(NewErr(mess))
+	}
+	data := C.CFISH_Blob_Get_Buf(blob)
+	size := C.CFISH_Blob_Get_Size(blob)
+	if size > C.size_t(C.INT_MAX) {
+		panic(fmt.Sprintf("Overflow: %d > %d", size, C.INT_MAX))
+	}
+	return C.GoBytes(unsafe.Pointer(data), C.int(size))
+}
+
+func VectorToGo(ptr unsafe.Pointer) []interface{} {
+	vec := (*C.cfish_Vector)(ptr)
+	if vec == nil {
+		return nil
+	}
+	class := C.cfish_Obj_get_class((*C.cfish_Obj)(ptr))
+	if class != C.CFISH_VECTOR {
+		mess := "Not a Vector: " + StringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name(class)))
+		panic(NewErr(mess))
+	}
+	size := C.CFISH_Vec_Get_Size(vec)
+	if size > C.size_t(maxInt) {
+		panic(fmt.Sprintf("Overflow: %d > %d", size, maxInt))
+	}
+	slice := make([]interface{}, int(size))
+	for i := 0; i < int(size); i++ {
+		slice[i] = ToGo(unsafe.Pointer(C.CFISH_Vec_Fetch(vec, C.size_t(i))))
+	}
+	return slice
+}
+
+func HashToGo(ptr unsafe.Pointer) map[string]interface{} {
+	hash := (*C.cfish_Hash)(ptr)
+	if hash == nil {
+		return nil
+	}
+	class := C.cfish_Obj_get_class((*C.cfish_Obj)(ptr))
+	if class != C.CFISH_HASH {
+		mess := "Not a Hash: " + StringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name(class)))
+		panic(NewErr(mess))
+	}
+	size := C.CFISH_Hash_Get_Size(hash)
+	m := make(map[string]interface{}, int(size))
+	iter := C.cfish_HashIter_new(hash)
+	defer C.cfish_dec_refcount(unsafe.Pointer(iter))
+	for C.CFISH_HashIter_Next(iter) {
+		key := C.CFISH_HashIter_Get_Key(iter)
+		val := C.CFISH_HashIter_Get_Value(iter)
+		m[StringToGo(unsafe.Pointer(key))] = ToGo(unsafe.Pointer(val))
+	}
+	return m
 }
 
 func (e *ErrIMP) Error() string {
 	mess := C.CFISH_Err_Get_Mess((*C.cfish_Err)(unsafe.Pointer(e.ref)))
-	return CFStringToGo(unsafe.Pointer(mess))
+	return StringToGo(unsafe.Pointer(mess))
 }
 
 //export GoCfish_PanicErr_internal

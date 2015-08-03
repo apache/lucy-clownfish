@@ -148,6 +148,14 @@ func specMethods(parcel *cfc.Parcel) {
 	stringBinding.SpecMethod("Code_Point_From", "CodePointFrom(uintptr) rune")
 	stringBinding.SpecMethod("Swap_Chars", "SwapChars(rune, rune) string")
 	stringBinding.Register()
+
+	vecBinding := cfc.NewGoClass(parcel, "Clownfish::Vector")
+	vecBinding.SetSuppressCtor(true)
+	vecBinding.Register()
+
+	hashBinding := cfc.NewGoClass(parcel, "Clownfish::Hash")
+	hashBinding.SetSuppressCtor(true)
+	hashBinding.Register()
 }
 
 func prep() {
