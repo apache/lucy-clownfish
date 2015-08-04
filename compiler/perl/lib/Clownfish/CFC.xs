@@ -1533,10 +1533,10 @@ CODE:
 OUTPUT: RETVAL
 
 unsigned
-STRING_TYPE(...)
+CFISH_STRING(...)
 CODE:
     CHY_UNUSED_VAR(items);
-    RETVAL = CFCTYPE_STRING_TYPE;
+    RETVAL = CFCTYPE_CFISH_STRING;
 OUTPUT: RETVAL
 
 unsigned
@@ -1583,7 +1583,7 @@ ALIAS:
     is_primitive    = 18
     is_integer      = 20
     is_floating     = 22
-    is_string_type  = 24
+    cfish_string    = 24
     is_va_list      = 26
     is_arbitrary    = 28
     is_composite    = 30
@@ -1640,7 +1640,7 @@ PPCODE:
             retval = newSViv(CFCType_is_floating(self));
             break;
         case 24:
-            retval = newSViv(CFCType_is_string_type(self));
+            retval = newSViv(CFCType_cfish_string(self));
             break;
         case 26:
             retval = newSViv(CFCType_is_va_list(self));

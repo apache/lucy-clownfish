@@ -271,11 +271,6 @@ CFCType_cfish_obj(CFCType *self);
 /** Returns true if the type is Clownfish::String.
  */
 int
-CFCType_is_string_type(CFCType *self);
-
-/** Returns true if the type is Clownfish::String.
- */
-int
 CFCType_cfish_string(CFCType *self);
 
 /** Returns true if the type is Clownfish::Blob.

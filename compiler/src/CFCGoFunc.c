@@ -185,7 +185,7 @@ S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
             cfargs = CFCUtil_cat(cfargs, "C.", CFCType_get_specifier(type),
                                  "(", go_name, ")", NULL);
         }
-        else if ((CFCType_is_string_type(type)
+        else if ((CFCType_cfish_string(type)
                   || CFCType_cfish_blob(type)
                   || CFCType_cfish_vector(type)
                   || CFCType_cfish_hash(type))
@@ -245,7 +245,7 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
         if (CFCType_is_primitive(return_type)) {
             statement = CFCUtil_sprintf("\treturn %s(retvalCF)\n", ret_type_str);
         }
-        else if (CFCType_is_string_type(return_type)) {
+        else if (CFCType_cfish_string(return_type)) {
             char pattern[] =
                 "%s\treturn %sCFStringToGo(unsafe.Pointer(retvalCF))\n";
             statement = CFCUtil_sprintf(pattern, maybe_decref, clownfish_dot);

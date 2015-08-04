@@ -511,11 +511,6 @@ CFCType_cfish_obj(CFCType *self) {
 }
 
 int
-CFCType_is_string_type(CFCType *self) {
-    return !!(self->flags & CFCTYPE_CFISH_STRING);
-}
-
-int
 CFCType_cfish_string(CFCType *self) {
     return !!(self->flags & CFCTYPE_CFISH_STRING);
 }

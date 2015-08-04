@@ -99,7 +99,7 @@ S_run_basic_tests(CFCTest *test) {
     TEST_BOOL_ACCESSOR(type, is_primitive);
     TEST_BOOL_ACCESSOR(type, is_integer);
     TEST_BOOL_ACCESSOR(type, is_floating);
-    TEST_BOOL_ACCESSOR(type, is_string_type);
+    TEST_BOOL_ACCESSOR(type, cfish_string);
     TEST_BOOL_ACCESSOR(type, is_va_list);
     TEST_BOOL_ACCESSOR(type, is_arbitrary);
     TEST_BOOL_ACCESSOR(type, is_composite);
@@ -389,8 +389,8 @@ S_run_object_tests(CFCTest *test) {
     {
         CFCType *string_type
             = CFCType_new_object(0, neato_parcel, "String", 1);
-        OK(test, CFCType_is_string_type(string_type), "%s", "is_string_type");
-        OK(test, !CFCType_is_string_type(foo), "not %s", "not is_string_type");
+        OK(test, CFCType_cfish_string(string_type), "%s", "cfish_string");
+        OK(test, !CFCType_cfish_string(foo), "not %s", "not cfish_string");
         CFCBase_decref((CFCBase*)string_type);
     }
 

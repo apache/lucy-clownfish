@@ -152,6 +152,6 @@ my $string_type = Clownfish::CFC::Model::Type->new_object(
     parcel    => 'Neato',
     specifier => 'String',
 );
-ok( !$foo_type->is_string_type,   "Not is_string_type" );
-ok( $string_type->is_string_type, "is_string_type" );
+ok( !$foo_type->cfish_string,   "Not cfish_string" );
+ok( $string_type->cfish_string, "cfish_string" );
 

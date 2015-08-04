@@ -465,19 +465,19 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
     use Carp;
 
     our %new_PARAMS = (
-        const       => undef,
-        specifier   => undef,
-        indirection => undef,
-        parcel      => undef,
-        void        => undef,
-        object      => undef,
-        primitive   => undef,
-        integer     => undef,
-        floating    => undef,
-        string_type => undef,
-        va_list     => undef,
-        arbitrary   => undef,
-        composite   => undef,
+        const        => undef,
+        specifier    => undef,
+        indirection  => undef,
+        parcel       => undef,
+        void         => undef,
+        object       => undef,
+        primitive    => undef,
+        integer      => undef,
+        floating     => undef,
+        cfish_string => undef,
+        va_list      => undef,
+        arbitrary    => undef,
+        composite    => undef,
     );
 
     sub new {
@@ -487,17 +487,17 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
         verify_args( \%new_PARAMS, %args ) or confess $@;
 
         my $flags = 0;
-        $flags |= CONST       if $args{const};
-        $flags |= NULLABLE    if $args{nullable};
-        $flags |= VOID        if $args{void};
-        $flags |= OBJECT      if $args{object};
-        $flags |= PRIMITIVE   if $args{primitive};
-        $flags |= INTEGER     if $args{integer};
-        $flags |= FLOATING    if $args{floating};
-        $flags |= STRING_TYPE if $args{string_type};
-        $flags |= VA_LIST     if $args{va_list};
-        $flags |= ARBITRARY   if $args{arbitrary};
-        $flags |= COMPOSITE   if $args{composite};
+        $flags |= CONST        if $args{const};
+        $flags |= NULLABLE     if $args{nullable};
+        $flags |= VOID         if $args{void};
+        $flags |= OBJECT       if $args{object};
+        $flags |= PRIMITIVE    if $args{primitive};
+        $flags |= INTEGER      if $args{integer};
+        $flags |= FLOATING     if $args{floating};
+        $flags |= CFISH_STRING if $args{cfish_string};
+        $flags |= VA_LIST      if $args{va_list};
+        $flags |= ARBITRARY    if $args{arbitrary};
+        $flags |= COMPOSITE    if $args{composite};
 
         my $parcel
             = $args{parcel}
