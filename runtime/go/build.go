@@ -155,6 +155,7 @@ func specMethods(parcel *cfc.Parcel) {
 	vecBinding.Register()
 
 	hashBinding := cfc.NewGoClass(parcel, "Clownfish::Hash")
+	hashBinding.SpecMethod("Keys", "Keys() []string")
 	hashBinding.SetSuppressCtor(true)
 	hashBinding.Register()
 }

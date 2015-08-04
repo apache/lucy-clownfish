@@ -146,6 +146,18 @@ func NewHash(size int) Hash {
 	return WRAPHash(unsafe.Pointer(cfObj))
 }
 
+func (h *HashIMP) Keys() []string {
+	self := (*C.cfish_Hash)(unsafe.Pointer(h.TOPTR()))
+	keysCF := C.CFISH_Hash_Keys(self)
+	numKeys := C.CFISH_Vec_Get_Size(keysCF)
+	keys := make([]string, 0, int(numKeys))
+	for i := C.size_t(0); i < numKeys; i++ {
+		keys = append(keys, CFStringToGo(unsafe.Pointer(C.CFISH_Vec_Fetch(keysCF, i))))
+	}
+	C.cfish_decref(unsafe.Pointer(keysCF))
+	return keys
+}
+
 func (o *ObjIMP) INITOBJ(ptr unsafe.Pointer) {
 	o.ref = uintptr(ptr)
 	runtime.SetFinalizer(o, ClearRef)
