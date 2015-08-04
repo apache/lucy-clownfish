@@ -137,6 +137,7 @@ func runCFC() {
 func specMethods(parcel *cfc.Parcel) {
 	objBinding := cfc.NewGoClass(parcel, "Clownfish::Obj")
 	objBinding.SpecMethod("", "TOPTR() uintptr")
+	objBinding.SpecMethod("Clone", "Clone() Obj")
 	objBinding.Register()
 
 	errBinding := cfc.NewGoClass(parcel, "Clownfish::Err")

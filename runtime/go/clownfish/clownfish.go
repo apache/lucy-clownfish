@@ -160,6 +160,12 @@ func (o *ObjIMP) TOPTR() uintptr {
 	return o.ref
 }
 
+func (o *ObjIMP)Clone() Obj {
+	self := (*C.cfish_Obj)(unsafe.Pointer(o.TOPTR()))
+	dupe := C.CFISH_Obj_Clone(self)
+	return WRAPAny(unsafe.Pointer(dupe)).(Obj)
+}
+
 func certifyCF(value interface{}, class *C.cfish_Class) {
 	cfObj, ok := value.(Obj)
 	if ok {
