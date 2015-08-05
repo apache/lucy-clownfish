@@ -84,44 +84,38 @@ func TestStringFind(t *testing.T) {
 }
 
 func TestStringEquals(t *testing.T) {
-	t.Skip("Skip Equals because Obj arg won't accept string")
-	/*
-		s := NewString("foo")
-		if !s.Equals("foo") {
-			t.Error("Equals should succeed")
-		}
-		if s.Equals("bar") {
-			t.Error("Equals should fail")
-		}
-	*/
+	s := NewString("foo")
+	if !s.Equals("foo") {
+		t.Error("Equals should succeed")
+	}
+	if s.Equals("bar") {
+		t.Error("Equals should fail")
+	}
 }
 
 func TestStringCompareTo(t *testing.T) {
-	t.Skip("Skip CompareTo() because Obj arg won't accept string")
-	/*
-		s := NewString("foo")
-		if !(s.CompareTo("boo") > 0) {
-			t.Error("'foo' > 'boo'")
-		}
-		if !(s.CompareTo("foo") == 0) {
-			t.Error("'foo' == 'foo'")
-		}
-		if !(s.CompareTo("zoo") < 0) {
-			t.Error("'foo' < 'zoo'")
-		}
-		if !(s.CompareTo("fo") > 0) {
-			t.Error("'foo' > 'fo'")
-		}
-		if !(s.CompareTo("food") < 0) {
-			t.Error("'foo' < 'food'")
-		}
-		if !(s.CompareTo("foo\u0000") < 0) {
-			t.Error("'foo' < 'foo\\0'")
-		}
-		if !(s.CompareTo("") > 0) {
-			t.Error("'foo' > ''")
-		}
-	*/
+	s := NewString("foo")
+	if !(s.CompareTo("boo") > 0) {
+		t.Error("'foo' > 'boo'")
+	}
+	if !(s.CompareTo("foo") == 0) {
+		t.Error("'foo' == 'foo'")
+	}
+	if !(s.CompareTo("zoo") < 0) {
+		t.Error("'foo' < 'zoo'")
+	}
+	if !(s.CompareTo("fo") > 0) {
+		t.Error("'foo' > 'fo'")
+	}
+	if !(s.CompareTo("food") < 0) {
+		t.Error("'foo' < 'food'")
+	}
+	if !(s.CompareTo("foo\u0000") < 0) {
+		t.Error("'foo' < 'foo\\0'")
+	}
+	if !(s.CompareTo("") > 0) {
+		t.Error("'foo' > ''")
+	}
 }
 
 func TestStringLenAndGetSize(t *testing.T) {
