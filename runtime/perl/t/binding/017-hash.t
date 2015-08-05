@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 4;
 use Clownfish qw( to_perl to_clownfish );
 
 my $hash = Clownfish::Hash->new( capacity => 10 );
@@ -25,6 +25,11 @@ $hash->store( "baz", Clownfish::String->new("banana") );
 
 ok( !defined( $hash->fetch("blah") ),
     "fetch for a non-existent key returns undef" );
+
+$hash->clear();
+$hash->store( "nada", undef );
+ok( !defined($hash->fetch("nada")), "store/fetch undef value" );
+is( $hash->get_size, 1, "size after storing undef value" );
 
 my %hash_with_utf8_keys = ( "\x{263a}" => "foo" );
 my $round_tripped = to_perl( to_clownfish( \%hash_with_utf8_keys ) );
