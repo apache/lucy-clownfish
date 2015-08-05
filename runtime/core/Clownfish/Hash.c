@@ -221,10 +221,10 @@ Hash_Delete_Utf8_IMP(Hash *self, const char *key, size_t key_len) {
     return Hash_Delete_IMP(self, key_buf);
 }
 
-String*
-Hash_Find_Key_IMP(Hash *self, String *key, size_t hash_sum) {
-    HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
-    return entry ? entry->key : NULL;
+bool
+Hash_Has_Key_IMP(Hash *self, String *key) {
+    HashEntry *entry = SI_fetch_entry(self, key, Str_Hash_Sum(key));
+    return entry ? true : false;
 }
 
 Vector*

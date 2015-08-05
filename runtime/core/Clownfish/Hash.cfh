@@ -82,11 +82,10 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     public incremented nullable Obj*
     Delete_Utf8(Hash *self, const char *key, size_t key_len);
 
-    /** Search for a key which Equals the key supplied, and return the key
-     * rather than its value.
+    /** Indicate whether the supplied `key` is present.
      */
-    nullable String*
-    Find_Key(Hash *self, String *key, size_t hash_sum);
+    public bool
+    Has_Key(Hash *self, String *key);
 
     /** Return an Vector of pointers to the hash's keys.
      */
