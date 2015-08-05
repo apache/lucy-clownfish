@@ -465,19 +465,19 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
     use Carp;
 
     our %new_PARAMS = (
-        const       => undef,
-        specifier   => undef,
-        indirection => undef,
-        parcel      => undef,
-        void        => undef,
-        object      => undef,
-        primitive   => undef,
-        integer     => undef,
-        floating    => undef,
-        string_type => undef,
-        va_list     => undef,
-        arbitrary   => undef,
-        composite   => undef,
+        const        => undef,
+        specifier    => undef,
+        indirection  => undef,
+        parcel       => undef,
+        void         => undef,
+        object       => undef,
+        primitive    => undef,
+        integer      => undef,
+        floating     => undef,
+        cfish_string => undef,
+        va_list      => undef,
+        arbitrary    => undef,
+        composite    => undef,
     );
 
     sub new {

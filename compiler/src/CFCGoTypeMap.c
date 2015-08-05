@@ -93,7 +93,10 @@ static int num_go_keywords = sizeof(go_keywords) / sizeof(go_keywords[0]);
 
 char*
 CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
-    if (CFCType_is_string_type(type)) {
+    if (CFCType_cfish_obj(type)) {
+        return CFCUtil_strdup("interface{}");
+    }
+    else if (CFCType_cfish_string(type)) {
         return CFCUtil_strdup("string");
     }
     else if (CFCType_cfish_blob(type)) {

@@ -33,10 +33,10 @@ is( $type->to_c, "mytype_t", "to_c()" );
 ok( !$type->const, "const() is off by default" );
 is( $type->get_specifier, "mytype_t", "get_specifier()" );
 
-ok( !$type->is_object,      "is_object() false by default" );
-ok( !$type->is_integer,     "is_integer() false by default" );
-ok( !$type->is_floating,    "is_floating() false by default" );
-ok( !$type->is_void,        "is_void() false by default" );
-ok( !$type->is_composite,   "is_composite() false by default" );
-ok( !$type->is_string_type, "is_string_type() false by default" );
+ok( !$type->is_object,    "is_object() false by default" );
+ok( !$type->is_integer,   "is_integer() false by default" );
+ok( !$type->is_floating,  "is_floating() false by default" );
+ok( !$type->is_void,      "is_void() false by default" );
+ok( !$type->is_composite, "is_composite() false by default" );
+ok( !$type->cfish_string, "cfish_string() false by default" );
 

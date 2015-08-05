@@ -87,17 +87,32 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
 
         // Convert certain types and defer their destruction until after the
         // Clownfish call returns.
-        char *convertible = NULL;
-        if      (CFCType_cfish_string(type))  { convertible = "String"; }
-        else if (CFCType_cfish_vector(type))  { convertible = "Vector"; }
-        else if (CFCType_cfish_blob(type))    { convertible = "Blob"; }
-        else if (CFCType_cfish_hash(type))    { convertible = "Hash"; }
-        else                                  { continue; }
+        const char *class_var;
+        if (CFCType_cfish_obj(type)) {
+            class_var = "CFISH_OBJ";
+        }
+        else if (CFCType_cfish_string(type)) {
+            class_var = "CFISH_STRING";
+        }
+        else if (CFCType_cfish_vector(type)) {
+            class_var = "CFISH_VECTOR";
+        }
+        else if (CFCType_cfish_blob(type)) {
+            class_var = "CFISH_BLOB";
+        }
+        else if (CFCType_cfish_hash(type)) {
+            class_var = "CFISH_HASH";
+        }
+        else {
+            continue;
+        }
+        const char *struct_name = CFCType_get_specifier(type);
+        const char *nullable = CFCType_nullable(type) ? "true" : "false";
         char pattern[] =
-            "\t%sCF := (*C.cfish_%s)(%sGoTo%s(%s))\n";
-        char *conversion = CFCUtil_sprintf(pattern, go_name, convertible,
-                                           clownfish_dot, convertible,
-                                           go_name);
+            "\t%sCF := (*C.%s)(%sGoToClownfish(%s, unsafe.Pointer(C.%s), %s))\n";
+        char *conversion = CFCUtil_sprintf(pattern, go_name, struct_name,
+                                           clownfish_dot, go_name,
+                                           class_var, nullable);
         converted = CFCUtil_cat(converted, conversion, NULL);
         FREEMEM(conversion);
         if (CFCType_decremented(type)) {
@@ -173,7 +188,8 @@ S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
             cfargs = CFCUtil_cat(cfargs, "C.", CFCType_get_specifier(type),
                                  "(", go_name, ")", NULL);
         }
-        else if ((CFCType_is_string_type(type)
+        else if ((CFCType_cfish_obj(type)
+                  || CFCType_cfish_string(type)
                   || CFCType_cfish_blob(type)
                   || CFCType_cfish_vector(type)
                   || CFCType_cfish_hash(type))
@@ -233,7 +249,12 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
         if (CFCType_is_primitive(return_type)) {
             statement = CFCUtil_sprintf("\treturn %s(retvalCF)\n", ret_type_str);
         }
-        else if (CFCType_is_string_type(return_type)) {
+        else if (CFCType_cfish_obj(return_type)) {
+            char pattern[] =
+                "%s\treturn %sToGo(unsafe.Pointer(retvalCF))\n";
+            statement = CFCUtil_sprintf(pattern, maybe_decref, clownfish_dot);
+        }
+        else if (CFCType_cfish_string(return_type)) {
             char pattern[] =
                 "%s\treturn %sCFStringToGo(unsafe.Pointer(retvalCF))\n";
             statement = CFCUtil_sprintf(pattern, maybe_decref, clownfish_dot);
