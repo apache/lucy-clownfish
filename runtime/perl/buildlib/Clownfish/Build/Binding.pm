@@ -52,7 +52,7 @@ to_clownfish(sv)
     SV *sv;
 CODE:
 {
-    cfish_Obj *obj = XSBind_perl_to_cfish(aTHX_ sv);
+    cfish_Obj *obj = XSBind_perl_to_cfish_nullable(aTHX_ sv, CFISH_OBJ);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(obj);
 }
 OUTPUT: RETVAL
@@ -107,9 +107,10 @@ void
 invoke_to_string(sv)
     SV *sv;
 PPCODE:
-    cfish_Obj *obj = XSBind_sv_to_cfish_obj(aTHX_ sv, CFISH_OBJ, NULL);
+    cfish_Obj *obj = XSBind_perl_to_cfish(aTHX_ sv, CFISH_OBJ);
     cfish_String *str = CFISH_Obj_To_String(obj);
     CFISH_DECREF(str);
+    CFISH_DECREF(obj);
 
 int
 refcount(obj)

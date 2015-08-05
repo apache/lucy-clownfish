@@ -38,6 +38,10 @@
 #define XSBIND_REFCOUNT_FLAG   1
 #define XSBIND_REFCOUNT_SHIFT  1
 
+static bool
+S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
+                      void *allocation, cfish_Obj **obj_ptr);
+
 // Convert a Perl hash into a Clownfish Hash.  Caller takes responsibility for
 // a refcount.
 static cfish_Hash*
@@ -74,119 +78,124 @@ XSBind_new_blank_obj(pTHX_ SV *either_sv) {
 }
 
 cfish_Obj*
-XSBind_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass, void *allocation) {
-    cfish_Obj *retval
-        = XSBind_maybe_sv_to_cfish_obj(aTHX_ sv, klass, allocation);
-    if (!retval) {
-        THROW(CFISH_ERR, "Not a %o", CFISH_Class_Get_Name(klass));
+XSBind_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass) {
+    cfish_Obj *retval = NULL;
+    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, true, NULL, &retval)) {
+        THROW(CFISH_ERR, "Can't convert to %o", CFISH_Class_Get_Name(klass));
+    }
+    else if (!retval) {
+        THROW(CFISH_ERR, "%o must not be undef", CFISH_Class_Get_Name(klass));
     }
     return retval;
 }
 
 cfish_Obj*
-XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
-                             void *allocation) {
+XSBind_perl_to_cfish_nullable(pTHX_ SV *sv, cfish_Class *klass) {
     cfish_Obj *retval = NULL;
-    if (XSBind_sv_defined(aTHX_ sv)) {
+    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, true, NULL, &retval)) {
+        THROW(CFISH_ERR, "Can't convert to %o", CFISH_Class_Get_Name(klass));
+    }
+    return retval;
+}
+
+cfish_Obj*
+XSBind_perl_to_cfish_noinc(pTHX_ SV *sv, cfish_Class *klass, void *allocation) {
+    cfish_Obj *retval = NULL;
+    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, false, allocation, &retval)) {
+        THROW(CFISH_ERR, "Can't convert to %o", CFISH_Class_Get_Name(klass));
+    }
+    else if (!retval) {
+        THROW(CFISH_ERR, "%o must not be undef", CFISH_Class_Get_Name(klass));
+    }
+    return retval;
+}
+
+static bool
+S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
+                      void *allocation, cfish_Obj **obj_ptr) {
+    if (sv_isobject(sv)) {
+        cfish_String *class_name = CFISH_Class_Get_Name(klass);
         // Assume that the class name is always NULL-terminated. Somewhat
         // dangerous but should be safe.
-        if (sv_isobject(sv)
-            && sv_derived_from(sv, CFISH_Str_Get_Ptr8(CFISH_Class_Get_Name(klass)))
-           ) {
+        if (sv_derived_from(sv, CFISH_Str_Get_Ptr8(class_name))) {
             // Unwrap a real Clownfish object.
             IV tmp = SvIV(SvRV(sv));
-            retval = INT2PTR(cfish_Obj*, tmp);
+            cfish_Obj *obj = INT2PTR(cfish_Obj*, tmp);
+            if (increment) {
+                obj = CFISH_INCREF(obj);
+            }
+            *obj_ptr = obj;
+            return true;
         }
-        else if (allocation &&
-                 (klass == CFISH_STRING
-                  || klass == CFISH_OBJ)
-                ) {
-            // Wrap the string from an ordinary Perl scalar inside a
-            // stack String.
-            STRLEN size;
-            char *ptr = SvPVutf8(sv, size);
-            retval = (cfish_Obj*)cfish_Str_new_stack_string(
-                    allocation, ptr, size);
-        }
-        else if (SvROK(sv)) {
-            // Attempt to convert Perl hashes and arrays into their Clownfish
-            // analogues.
-            SV *inner = SvRV(sv);
-            if (SvTYPE(inner) == SVt_PVAV && klass == CFISH_VECTOR) {
-                retval = (cfish_Obj*)
+    }
+    else if (SvROK(sv)) {
+        cfish_Obj *obj = NULL;
+        SV *inner = SvRV(sv);
+        svtype inner_type = SvTYPE(inner);
+
+        // Attempt to convert Perl hashes and arrays into their Clownfish
+        // analogues.
+        if (inner_type == SVt_PVAV) {
+            if (klass == CFISH_VECTOR || klass == CFISH_OBJ) {
+                obj = (cfish_Obj*)
                          S_perl_array_to_cfish_array(aTHX_ (AV*)inner);
             }
-            else if (SvTYPE(inner) == SVt_PVHV && klass == CFISH_HASH) {
-                retval = (cfish_Obj*)
+        }
+        else if (inner_type == SVt_PVHV) {
+            if (klass == CFISH_HASH || klass == CFISH_OBJ) {
+                obj = (cfish_Obj*)
                          S_perl_hash_to_cfish_hash(aTHX_ (HV*)inner);
             }
+        }
+        else if (inner_type < SVt_PVAV && !SvOK(inner)) {
+            // Reference to undef. After cloning a Perl interpeter,
+            // most Clownfish objects look like this after they're
+            // CLONE_SKIPped.
+            *obj_ptr = NULL;
+            return true;
+        }
 
-            if (retval) {
+        if (obj) {
+            if (!increment) {
                 // Mortalize the converted object -- which is somewhat
                 // dangerous, but is the only way to avoid requiring that the
                 // caller take responsibility for a refcount.
-                SV *mortal = XSBind_cfish_obj_to_sv(aTHX_ retval);
-                CFISH_DECREF(retval);
+                SV *mortal = XSBind_cfish_obj_to_sv(aTHX_ obj);
+                CFISH_DECREF(obj);
                 sv_2mortal(mortal);
             }
+
+            *obj_ptr = obj;
+            return true;
+        }
+    }
+    else if (!XSBind_sv_defined(aTHX_ sv)) {
+        *obj_ptr = NULL;
+        return true;
+    }
+
+    // Stringify as last resort.
+    if (klass == CFISH_STRING || klass == CFISH_OBJ) {
+        STRLEN size;
+        char *ptr = SvPVutf8(sv, size);
+
+        if (increment) {
+            *obj_ptr = (cfish_Obj*)cfish_Str_new_from_trusted_utf8(ptr, size);
+            return true;
+        }
+        else {
+            // Wrap the string from an ordinary Perl scalar inside a
+            // stack String.
+            if (!allocation) {
+                CFISH_THROW(CFISH_ERR, "Allocation for stack string missing");
+            }
+            *obj_ptr = (cfish_Obj*)cfish_Str_new_stack_string(
+                    allocation, ptr, size);
+            return true;
         }
     }
 
-    return retval;
-}
-
-cfish_Obj*
-XSBind_perl_to_cfish(pTHX_ SV *sv) {
-    cfish_Obj *retval = NULL;
-
-    if (XSBind_sv_defined(aTHX_ sv)) {
-        bool is_undef = false;
-
-        if (SvROK(sv)) {
-            // Deep conversion of references.
-            SV *inner = SvRV(sv);
-            if (SvTYPE(inner) == SVt_PVAV) {
-                retval = (cfish_Obj*)
-                         S_perl_array_to_cfish_array(aTHX_ (AV*)inner);
-            }
-            else if (SvTYPE(inner) == SVt_PVHV) {
-                retval = (cfish_Obj*)
-                         S_perl_hash_to_cfish_hash(aTHX_ (HV*)inner);
-            }
-            else if (sv_isobject(sv)
-                     && sv_derived_from(sv, "Clownfish::Obj")
-                    ) {
-                IV tmp = SvIV(inner);
-                retval = INT2PTR(cfish_Obj*, tmp);
-                (void)CFISH_INCREF(retval);
-            }
-            else if (!XSBind_sv_defined(aTHX_ inner)) {
-                // Reference to undef. After cloning a Perl interpeter,
-                // most Clownfish objects look like this after they're
-                // CLONE_SKIPped.
-                is_undef = true;
-            }
-        }
-
-        // It's either a plain scalar or a non-Clownfish Perl object, so
-        // stringify.
-        if (!retval && !is_undef) {
-            STRLEN len;
-            char *ptr = SvPVutf8(sv, len);
-            retval = (cfish_Obj*)cfish_Str_new_from_trusted_utf8(ptr, len);
-        }
-    }
-    else if (sv) {
-        // Deep conversion of raw AVs and HVs.
-        if (SvTYPE(sv) == SVt_PVAV) {
-            retval = (cfish_Obj*)S_perl_array_to_cfish_array(aTHX_ (AV*)sv);
-        }
-        else if (SvTYPE(sv) == SVt_PVHV) {
-            retval = (cfish_Obj*)S_perl_hash_to_cfish_hash(aTHX_ (HV*)sv);
-        }
-    }
-
-    return retval;
+    return false;
 }
 
 const char*
@@ -231,7 +240,8 @@ S_perl_hash_to_cfish_hash(pTHX_ HV *phash) {
         SV         *value_sv = HeVAL(entry);
 
         // Recurse.
-        cfish_Obj *value = XSBind_perl_to_cfish(aTHX_ value_sv);
+        cfish_Obj *value
+            = XSBind_perl_to_cfish_nullable(aTHX_ value_sv, CFISH_OBJ);
 
         CFISH_Hash_Store_Utf8(retval, key_str, key_len, value);
     }
@@ -248,7 +258,8 @@ S_perl_array_to_cfish_array(pTHX_ AV *parray) {
     for (uint32_t i = 0; i < size; i++) {
         SV **elem_sv = av_fetch(parray, i, false);
         if (elem_sv) {
-            cfish_Obj *elem = XSBind_perl_to_cfish(aTHX_ *elem_sv);
+            cfish_Obj *elem
+                = XSBind_perl_to_cfish_nullable(aTHX_ *elem_sv, CFISH_OBJ);
             if (elem) { CFISH_Vec_Store(retval, i, elem); }
         }
     }
@@ -350,10 +361,11 @@ S_extract_from_sv(pTHX_ SV *value, void *target, const char *label,
                 valid_assignment = true;
                 break;
             case XSBIND_WANT_OBJ: {
-                    cfish_Obj *object
-                        = XSBind_maybe_sv_to_cfish_obj(aTHX_ value, klass,
-                                                       allocation);
-                    if (object) {
+                    cfish_Obj *object = NULL;
+                    bool success
+                        = S_maybe_perl_to_cfish(aTHX_ value, klass, false,
+                                                allocation, &object);
+                    if (success && object) {
                         *((cfish_Obj**)target) = object;
                         valid_assignment = true;
                     }
@@ -729,7 +741,8 @@ cfish_Class_fresh_host_methods(cfish_String *class_name) {
     PUTBACK;
     call_pv("Clownfish::Class::_fresh_host_methods", G_SCALAR);
     SPAGAIN;
-    cfish_Vector *methods = (cfish_Vector*)XSBind_perl_to_cfish(aTHX_ POPs);
+    cfish_Vector *methods
+        = (cfish_Vector*)XSBind_perl_to_cfish(aTHX_ POPs, CFISH_VECTOR);
     PUTBACK;
     FREETMPS;
     LEAVE;
@@ -748,10 +761,9 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     PUTBACK;
     call_pv("Clownfish::Class::_find_parent_class", G_SCALAR);
     SPAGAIN;
-    SV *parent_class_sv = POPs;
+    cfish_String *parent_class = (cfish_String*)
+        XSBind_perl_to_cfish_nullable(aTHX_ POPs, CFISH_STRING);
     PUTBACK;
-    cfish_String *parent_class
-        = (cfish_String*)XSBind_perl_to_cfish(aTHX_ parent_class_sv);
     FREETMPS;
     LEAVE;
     return parent_class;
@@ -824,8 +836,8 @@ cfish_Err_get_error() {
     PUTBACK;
     call_pv("Clownfish::Err::get_error", G_SCALAR);
     SPAGAIN;
-    cfish_Err *error = (cfish_Err*)XSBind_perl_to_cfish(aTHX_ POPs);
-    if (error) { CFISH_CERTIFY(error, CFISH_ERR); }
+    cfish_Err *error
+        = (cfish_Err*)XSBind_perl_to_cfish_nullable(aTHX_ POPs, CFISH_ERR);
     PUTBACK;
     FREETMPS;
     LEAVE;

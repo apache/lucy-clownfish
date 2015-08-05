@@ -60,25 +60,6 @@ cfish_XSBind_sv_defined(pTHX_ SV *sv) {
     return !!SvOK(sv);
 }
 
-/** If the SV contains a Clownfish object which passes an "isa" test against the
- * passed-in Class, return a pointer to it.  If not, but
- * `allocation` is non-NULL and a String would satisfy the
- * "isa" test, stringify the SV, create a stack String using
- * `allocation`, assign the SV's string to it, and return that
- * instead.  If all else fails, throw an exception.
- */
-CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
-                             void *allocation);
-
-/** As XSBind_sv_to_cfish_obj above, but returns NULL instead of throwing an
- * exception.
- */
-CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_maybe_sv_to_cfish_obj(pTHX_ SV *sv, cfish_Class *klass,
-                                   void *allocation);
-
-
 /** Derive an SV from a Clownfish object.  If the Clownfish object is NULL, the SV
  * will be undef.  Doesn't invoke To_Host and always returns a reference to a
  * Clownfish::Obj.
@@ -123,12 +104,38 @@ cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
     return obj ? (SV*)CFISH_Obj_To_Host(obj) : newSV(0);
 }
 
-/** Deep conversion of Perl data structures to Clownfish objects -- Perl hash
- * to Hash, Perl array to Vector, Clownfish objects stripped of their
- * wrappers, and everything else stringified and turned to a String.
+/** Convert a Perl SV to a Clownfish object of class `klass`.
+ *
+ * - If the SV contains a Clownfish object which passes an "isa" test against
+ *   `klass`, return a pointer to it.
+ * - If the SV contains an arrayref and `klass` is VECTOR or OBJ, perform a
+ *   deep conversion of the Perl array to a Vector.
+ * - If the SV contains a hashref and `klass` is HASH or OBJ, perform a
+ *   deep conversion of the Perl hash to a Hash.
+ * - If `klass` is STRING or OBJ, stringify and return a String.
+ * - If all else fails, throw an exception.
+ *
+ * Returns an non-NULL, "incremented" object that must be decref'd at some
+ * point.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_perl_to_cfish(pTHX_ SV *sv);
+cfish_XSBind_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass);
+
+/** As XSBind_perl_to_cfish above, but returns NULL if the SV is undefined
+ * or a reference to an undef.
+ */
+CFISH_VISIBLE cfish_Obj*
+cfish_XSBind_perl_to_cfish_nullable(pTHX_ SV *sv, cfish_Class *klass);
+
+/** As XSBind_perl_to_cfish above, but returns an object that can be used for
+ * a while with no need to decref.
+ *
+ * If `klass` is STRING or OBJ, `allocation` must point to stack-allocated
+ * memory that can hold a String. Otherwise, `allocation` should be NULL.
+ */
+CFISH_VISIBLE cfish_Obj*
+cfish_XSBind_perl_to_cfish_noinc(pTHX_ SV *sv, cfish_Class *klass,
+                                 void *allocation);
 
 /** Return the contents of the hash entry's key as UTF-8.
  */
@@ -301,12 +308,12 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
  */
 #define XSBind_new_blank_obj           cfish_XSBind_new_blank_obj
 #define XSBind_sv_defined              cfish_XSBind_sv_defined
-#define XSBind_sv_to_cfish_obj         cfish_XSBind_sv_to_cfish_obj
-#define XSBind_maybe_sv_to_cfish_obj   cfish_XSBind_maybe_sv_to_cfish_obj
 #define XSBind_cfish_obj_to_sv         cfish_XSBind_cfish_obj_to_sv
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
 #define XSBind_perl_to_cfish           cfish_XSBind_perl_to_cfish
+#define XSBind_perl_to_cfish_nullable  cfish_XSBind_perl_to_cfish_nullable
+#define XSBind_perl_to_cfish_noinc     cfish_XSBind_perl_to_cfish_noinc
 #define XSBind_hash_key_to_utf8        cfish_XSBind_hash_key_to_utf8
 #define XSBind_trap                    cfish_XSBind_trap
 #define XSBind_allot_params            cfish_XSBind_allot_params

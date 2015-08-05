@@ -218,7 +218,7 @@ S_self_assign_statement(CFCPerlMethod *self) {
         CFCUtil_die("Not an object type: %s", type_c);
     }
     const char *class_var = CFCType_get_class_var(type);
-    char pattern[] = "arg_%s = (%s)XSBind_sv_to_cfish_obj("
+    char pattern[] = "arg_%s = (%s)XSBind_perl_to_cfish_noinc("
                      "aTHX_ ST(0), %s, NULL);";
     char *statement = CFCUtil_sprintf(pattern, self_name, type_c, class_var);
 

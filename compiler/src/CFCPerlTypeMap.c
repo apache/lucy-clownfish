@@ -52,7 +52,8 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var) {
         else {
             allocation = "NULL";
         }
-        const char pattern[] = "(%s*)XSBind_sv_to_cfish_obj(aTHX_ %s, %s, %s)";
+        const char pattern[]
+            = "(%s*)XSBind_perl_to_cfish_noinc(aTHX_ %s, %s, %s)";
         result = CFCUtil_sprintf(pattern, struct_sym, xs_var, class_var,
                                  allocation);
     }
@@ -271,8 +272,8 @@ CFCPerlTypeMap_write_xs_typemap(CFCHierarchy *hierarchy) {
         }
         input = CFCUtil_cat(input, class_var, "_\n"
                             "    $var = (", full_struct_sym,
-                            "*)XSBind_sv_to_cfish_obj(aTHX_ $arg, ", class_var,
-                            ", ", allocation, ");\n\n", NULL);
+                            "*)XSBind_perl_to_cfish_noinc(aTHX_ $arg, ",
+                            class_var, ", ", allocation, ");\n\n", NULL);
 
         output = CFCUtil_cat(output, class_var, "_\n"
                              "    $arg = (SV*)CFISH_Obj_To_Host((cfish_Obj*)$var);\n"
