@@ -146,6 +146,12 @@ func NewHash(size int) Hash {
 	return WRAPHash(unsafe.Pointer(cfObj))
 }
 
+func NewHashIterator(hash Hash) HashIterator {
+	hashCF := (*C.cfish_Hash)(unsafe.Pointer(hash.TOPTR()))
+	cfObj := C.cfish_HashIter_new(hashCF)
+	return WRAPHashIterator(unsafe.Pointer(cfObj))
+}
+
 func (h *HashIMP) Keys() []string {
 	self := (*C.cfish_Hash)(unsafe.Pointer(h.TOPTR()))
 	keysCF := C.CFISH_Hash_Keys(self)

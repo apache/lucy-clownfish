@@ -158,6 +158,10 @@ func specMethods(parcel *cfc.Parcel) {
 	hashBinding.SpecMethod("Keys", "Keys() []string")
 	hashBinding.SetSuppressCtor(true)
 	hashBinding.Register()
+
+	hashIterBinding := cfc.NewGoClass(parcel, "Clownfish::HashIterator")
+	hashIterBinding.SetSuppressCtor(true)
+	hashIterBinding.Register()
 }
 
 func prep() {
