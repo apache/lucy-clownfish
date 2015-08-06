@@ -20,7 +20,7 @@ parcel Clownfish;
  * Immutable buffer holding arbitrary bytes.
  */
 
-final class Clownfish::Blob inherits Clownfish::Obj {
+public final class Clownfish::Blob inherits Clownfish::Obj {
 
     const char *buf;
     size_t      size;

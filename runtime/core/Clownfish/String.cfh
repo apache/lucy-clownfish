@@ -27,7 +27,7 @@ __END_C__
  * Immutable string holding Unicode characters.
  */
 
-final class Clownfish::String nickname Str
+public final class Clownfish::String nickname Str
     inherits Clownfish::Obj {
 
     const char *ptr;
@@ -285,7 +285,7 @@ final class Clownfish::String nickname Str
     Tail(String *self);
 }
 
-final class Clownfish::StringIterator nickname StrIter
+public final class Clownfish::StringIterator nickname StrIter
     inherits Clownfish::Obj {
 
     String *string;
