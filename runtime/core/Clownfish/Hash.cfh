@@ -55,11 +55,11 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     /** Store a key-value pair.
      */
     public void
-    Store(Hash *self, String *key, decremented Obj *value);
+    Store(Hash *self, String *key, decremented nullable Obj *value);
 
     public void
     Store_Utf8(Hash *self, const char *str, size_t len,
-               decremented Obj *value);
+               decremented nullable Obj *value);
 
     /** Fetch the value associated with `key`.
      *

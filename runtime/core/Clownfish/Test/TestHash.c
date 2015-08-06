@@ -122,6 +122,14 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     TEST_TRUE(runner, Hash_Fetch(hash, twenty) == NULL, "Clear");
     TEST_TRUE(runner, Hash_Get_Size(hash) == 0, "size is 0 after Clear");
 
+    Hash_Clear(hash);
+    Hash_Store(hash, forty, NULL);
+    TEST_TRUE(runner, Hash_Fetch(hash, forty) == NULL, "Store NULL");
+    TEST_TRUE(runner, Hash_Get_Size(hash) == 1, "Size after Store NULL");
+    TEST_TRUE(runner, Hash_Delete(hash, forty) == NULL, "Delete NULL value");
+    TEST_TRUE(runner, Hash_Get_Size(hash) == 0,
+              "Size after Deleting NULL val");
+
     DECREF(hash);
     DECREF(dupe);
     DECREF(got);
@@ -237,7 +245,7 @@ test_store_skips_tombstone(TestBatchRunner *runner) {
 
 void
 TestHash_Run_IMP(TestHash *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 26);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 30);
     srand((unsigned int)time((time_t*)NULL));
     test_Equals(runner);
     test_Store_and_Fetch(runner);

@@ -302,13 +302,16 @@ CODE:
 OUTPUT: RETVAL
 
 void
-store(self, key, value);
+store(self, key, value_sv);
     cfish_Hash         *self;
     cfish_String *key;
-    cfish_Obj          *value;
+    SV           *value_sv;
 PPCODE:
 {
-    if (value) { CFISH_INCREF(value); }
+    cfish_Obj *value
+        = (cfish_Obj*)XSBind_maybe_sv_to_cfish_obj(aTHX_ value_sv, CFISH_OBJ,
+                                                   CFISH_ALLOCA_OBJ(CFISH_STRING));
+    if (value) { value = CFISH_INCREF(value); }
     CFISH_Hash_Store_IMP(self, key, value);
 }
 END_XS_CODE
