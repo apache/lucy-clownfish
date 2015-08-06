@@ -134,3 +134,21 @@ func TestHashEquals(t *testing.T) {
 		t.Error("Equals should return false for a different Go type.")
 	}
 }
+
+func TestHashIterator(t *testing.T) {
+	hash := NewHash(0)
+	hash.Store("a", "foo")
+	iter := NewHashIterator(hash)
+	if !iter.Next() {
+		t.Error("Next() should proceed")
+	}
+	if key := iter.GetKey(); key != "a" {
+		t.Error("Expected \"a\", got %v", key)
+	}
+	if val, ok := iter.GetValue().(string); !ok || val != "foo" {
+		t.Error("Expected \"a\", got %v", val)
+	}
+	if iter.Next() {
+		t.Error("Next() should return false when iteration complete")
+	}
+}
