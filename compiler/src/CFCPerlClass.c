@@ -406,6 +406,8 @@ CFCPerlClass_create_pod(CFCPerlClass *self) {
 
     // Put it all together.
     const char pattern[] =
+        "=encoding utf8\n"
+        "\n"
         "=head1 NAME\n"
         "\n"
         "%s - %s"
