@@ -39,3 +39,28 @@ func TestTrapErr_no_trap_error(t *testing.T) {
 	TrapErr(func() { panic(errors.New("foo")) })
 	t.Error("Trapped non-clownfish.Error error type") // shouldn't reach here
 }
+
+func TestErrGetMess(t *testing.T) {
+	err := NewErr("foo")
+	expected := "foo"
+	if got := err.GetMess(); got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestErrCatMess(t *testing.T) {
+	err := NewErr("foo")
+	err.CatMess("bar")
+	expected := "foobar"
+	if got := err.GetMess(); got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestErrToString(t *testing.T) {
+	err := NewErr("foo")
+	expected := "foo"
+	if got := err.ToString(); got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
