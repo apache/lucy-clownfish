@@ -155,11 +155,9 @@ test_Keys_Values(TestBatchRunner *runner) {
     {
         String *forty = SSTR_WRAP_UTF8("40", 2);
         String *nope  = SSTR_WRAP_UTF8("nope", 4);
-        String *key = Hash_Find_Key(hash, forty, Str_Hash_Sum(forty));
-        TEST_TRUE(runner, Str_Equals(key, (Obj*)forty), "Find_Key");
-        key = Hash_Find_Key(hash, nope, Str_Hash_Sum(nope)),
-        TEST_TRUE(runner, key == NULL,
-                  "Find_Key returns NULL for non-existent key");
+        TEST_TRUE(runner, Hash_Has_Key(hash, forty), "Has_Key");
+        TEST_FALSE(runner, Hash_Has_Key(hash, nope),
+                   "Has_Key returns false for non-existent key");
     }
 
     DECREF(hash);
