@@ -281,6 +281,10 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
 			converted = GoToFloat(value)
 		}
+	case bool:
+		if klass == C.CFISH_BOOLEAN || klass == C.CFISH_OBJ {
+			converted = GoToBoolean(value)
+		}
 	case []interface{}:
 		if klass == C.CFISH_VECTOR || klass == C.CFISH_OBJ {
 			converted = GoToVector(value)
