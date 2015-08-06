@@ -647,3 +647,8 @@ func NewBlob(content []byte) Blob {
 	obj := C.cfish_Blob_new(buf, size)
 	return WRAPBlob(unsafe.Pointer(obj))
 }
+
+func (b *BlobIMP) GetBuf() uintptr {
+	self := (*C.cfish_Blob)(unsafe.Pointer(b.TOPTR()))
+	return uintptr(unsafe.Pointer(C.CFISH_Blob_Get_Buf(self)))
+}
