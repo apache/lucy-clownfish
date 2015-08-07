@@ -123,6 +123,25 @@ type ObjIMP struct {
 	ref uintptr
 }
 
+func FetchClass(className string) Class {
+	nameCF := (*C.cfish_String)(GoToString(className))
+	defer C.cfish_decref(unsafe.Pointer(nameCF))
+	class := C.cfish_Class_fetch_class(nameCF)
+	return WRAPClass(unsafe.Pointer(class))
+}
+
+func (c *ClassIMP) GetMethods() []Method {
+	self := (*C.cfish_Class)(unsafe.Pointer(c.TOPTR()))
+	methsVec := C.CFISH_Class_Get_Methods(self)
+	size := C.CFISH_Vec_Get_Size(methsVec)
+	meths := make([]Method, 0, int(size))
+	for i := C.size_t(0); i < size; i++ {
+		meths = append(meths, WRAPMethod(unsafe.Pointer(C.CFISH_Vec_Fetch(methsVec, i))))
+	}
+	C.cfish_decref(unsafe.Pointer(methsVec))
+	return meths
+}
+
 func NewString(goString string) String {
 	str := C.CString(goString)
 	len := C.size_t(len(goString))

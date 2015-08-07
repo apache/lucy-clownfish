@@ -144,6 +144,10 @@ func specMethods(parcel *cfc.Parcel) {
 	errBinding.SpecMethod("", "Error() string")
 	errBinding.Register()
 
+	classBinding := cfc.NewGoClass(parcel, "Clownfish::Class")
+	classBinding.SpecMethod("Get_Methods", "GetMethods() []Method")
+	classBinding.Register()
+
 	stringBinding := cfc.NewGoClass(parcel, "Clownfish::String")
 	stringBinding.SpecMethod("Code_Point_At", "CodePointAt(uintptr) rune")
 	stringBinding.SpecMethod("Code_Point_From", "CodePointFrom(uintptr) rune")
