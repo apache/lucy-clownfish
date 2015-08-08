@@ -29,6 +29,7 @@
 #include "Clownfish/Blob.h"
 #include "Clownfish/Boolean.h"
 #include "Clownfish/ByteBuf.h"
+#include "Clownfish/CharBuf.h"
 #include "Clownfish/Class.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
@@ -186,7 +187,18 @@ Class_To_Host_IMP(Class *self) {
 
 String*
 Method_Host_Name_IMP(Method *self) {
-    return (String*)INCREF(self->name);
+    StringIterator *iter = StrIter_new(self->name, 0);
+    CharBuf *charbuf = CB_new(Str_Get_Size(self->name));
+    int32_t code_point;
+    while (STRITER_DONE != (code_point = StrIter_Next(iter))) {
+        if (code_point != '_') {
+            CB_Cat_Char(charbuf, code_point);
+        }
+    }
+    String *host_name = CB_Yield_String(charbuf);
+    DECREF(charbuf);
+    DECREF(iter);
+    return host_name;
 }
 
 /******************************** Err **************************************/
