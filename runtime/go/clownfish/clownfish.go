@@ -142,6 +142,14 @@ func (c *ClassIMP) GetMethods() []Method {
 	return meths
 }
 
+func NewMethod(name string, callbackFunc unsafe.Pointer, offset uint32) Method {
+	nameCF := (*C.cfish_String)(GoToString(name))
+	defer C.cfish_decref(unsafe.Pointer(nameCF))
+	methCF := C.cfish_Method_new(nameCF, C.cfish_method_t(callbackFunc),
+		C.uint32_t(offset));
+	return WRAPMethod(unsafe.Pointer(methCF))
+}
+
 func NewString(goString string) String {
 	str := C.CString(goString)
 	len := C.size_t(len(goString))
