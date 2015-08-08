@@ -242,6 +242,8 @@ S_test_generator(CFCTest *test) {
     CFCPerlClass_set_pod_spec(perl_class, perl_pod);
     char *pod = CFCPerlClass_create_pod(perl_class);
     const char *expected_pod =
+        "=encoding utf8\n"
+        "\n"
         "=head1 NAME\n"
         "\n"
         "Neato::Object - Test documentation generator.\n"
