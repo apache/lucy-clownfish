@@ -126,7 +126,7 @@ cfish_dec_refcount(void *vself) {
 void*
 Obj_To_Host_IMP(Obj *self) {
     UNUSED_VAR(self);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(void*);
 }
 
@@ -153,7 +153,7 @@ Obj*
 Class_Foster_Obj_IMP(Class *self, void *host_obj) {
     UNUSED_VAR(self);
     UNUSED_VAR(host_obj);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(Obj*);
 }
 
@@ -172,14 +172,14 @@ Class_fresh_host_methods(String *class_name) {
 String*
 Class_find_parent_class(String *class_name) {
     UNUSED_VAR(class_name);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(String*);
 }
 
 void*
 Class_To_Host_IMP(Class *self) {
     UNUSED_VAR(self);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(void*);
 }
 
