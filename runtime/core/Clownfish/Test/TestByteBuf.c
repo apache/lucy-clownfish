@@ -25,6 +25,7 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
+#include "Clownfish/Blob.h"
 #include "Clownfish/Class.h"
 
 TestByteBuf*
@@ -125,16 +126,16 @@ static void
 test_Cat(TestBatchRunner *runner) {
     ByteBuf *wanted  = BB_new_bytes("foobar", 6);
     ByteBuf *got     = BB_new_bytes("foo", 3);
-    ByteBuf *scratch = BB_new_bytes("bar", 3);
+    Blob    *blob    = BB_new_bytes("bar", 3);
 
-    BB_Cat(got, scratch);
+    BB_Cat(got, blob);
     TEST_TRUE(runner, BB_Equals(wanted, (Obj*)got), "Cat");
 
     BB_Mimic_Bytes(wanted, "foobarbaz", 9);
     BB_Cat_Bytes(got, "baz", 3);
     TEST_TRUE(runner, BB_Equals(wanted, (Obj*)got), "Cat_Bytes");
 
-    DECREF(scratch);
+    DECREF(blob);
     DECREF(got);
     DECREF(wanted);
 }
