@@ -154,6 +154,10 @@ func specMethods(parcel *cfc.Parcel) {
 	stringBinding.SpecMethod("Swap_Chars", "SwapChars(rune, rune) string")
 	stringBinding.Register()
 
+	stringIterBinding := cfc.NewGoClass(parcel, "Clownfish::StringIterator")
+	stringIterBinding.SetSuppressCtor(true)
+	stringIterBinding.Register()
+
 	blobBinding := cfc.NewGoClass(parcel, "Clownfish::Blob")
 	blobBinding.SpecMethod("", "GetBuf() uintptr")
 	blobBinding.Register()

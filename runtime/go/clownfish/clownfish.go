@@ -157,6 +157,12 @@ func NewString(goString string) String {
 	return WRAPString(unsafe.Pointer(cfObj))
 }
 
+func NewStringIterator(str String, offset uintptr) StringIterator {
+	strCF := (*C.cfish_String)(unsafe.Pointer(str.TOPTR()))
+	iter := C.cfish_StrIter_new(strCF, C.size_t(offset))
+	return WRAPStringIterator(unsafe.Pointer(iter))
+}
+
 func NewVector(size int) Vector {
 	if (size < 0 || uint64(size) > ^uint64(0)) {
 		panic(NewErr(fmt.Sprintf("Param 'size' out of range: %d", size)))
