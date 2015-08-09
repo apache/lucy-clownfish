@@ -201,3 +201,117 @@ func TestStringTopTail(t *testing.T) {
 		t.Error("Tail iter returned", got)
 	}
 }
+
+func TestStrIterNextPrev(t *testing.T) {
+	iter := NewStringIterator(NewString("abc"), 1)
+	if got := iter.Next(); got != 'b' {
+		t.Errorf("Expected 'b', got %d", got)
+	}
+	if got := iter.Prev(); got != 'b' {
+		t.Errorf("Expected 'b', got %d", got)
+	}
+}
+
+func TestStrIterHasNextHasPrev(t *testing.T) {
+	iter := NewStringIterator(NewString("a"), 0)
+	if iter.HasPrev() {
+		t.Error("HasPrev at top")
+	}
+	if !iter.HasNext() {
+		t.Error("HasNext at top")
+	}
+	iter.Next()
+	if !iter.HasPrev() {
+		t.Error("HasPrev at end")
+	}
+	if iter.HasNext() {
+		t.Error("HasNext at end")
+	}
+}
+
+func TestStrIterClone(t *testing.T) {
+	iter := NewStringIterator(NewString("abc"), 0)
+	iter.Next()
+	clone := iter.Clone().(StringIterator)
+	if got := clone.Next(); got != 'b' {
+		t.Errorf("Expected 'b', got %d", got)
+	}
+}
+
+func TestStrIterAssign(t *testing.T) {
+	abc := NewString("abc")
+	xyz := NewString("xyz")
+	iter := NewStringIterator(abc, 1)
+	iter.Assign(NewStringIterator(xyz, 1))
+	if got := iter.Next(); got != 'y' {
+		t.Errorf("Expected 'y', got %d", got)
+	}
+}
+
+func TestStrIterEquals(t *testing.T) {
+	iter := NewStringIterator(NewString("abc"), 0)
+	iter.Next()
+	clone := iter.Clone().(StringIterator)
+	if !iter.Equals(clone) {
+		t.Error("Equals should succeed")
+	}
+	clone.Next()
+	if iter.Equals(clone) {
+		t.Error("Equals should fail")
+	}
+}
+
+func TestStrIterCompareTo(t *testing.T) {
+	iter := NewStringIterator(NewString("abc"), 0)
+	other := iter.Clone().(StringIterator)
+	if got := iter.CompareTo(other); got != 0 {
+		t.Errorf("Expected 0, got %d", got)
+	}
+	iter.Next()
+	if got := iter.CompareTo(other); got <= 0 {
+		t.Errorf("More advanced iterator should be greater than: %d", got)
+	}
+	if got := other.CompareTo(iter); got >= 0 {
+		t.Errorf("Less advanced iterator should be less than: %d", got)
+	}
+}
+
+func TestStrIterAdvanceRecede(t *testing.T) {
+	iter := NewStringIterator(NewString("abcde"), 0)
+	if got := iter.Advance(3); got != 3 {
+		t.Errorf("Expected Advance to return 3, got %d", got)
+	}
+	if got := iter.Recede(2); got != 2 {
+		t.Errorf("Expected Recede to return 2, got %d", got)
+	}
+}
+
+func TestStrIterStartsWithEndsWith(t *testing.T) {
+	iter := NewStringIterator(NewString("abcd"), 2)
+	if !iter.StartsWith("cd") {
+		t.Error("StartsWith should succeed")
+	}
+	if iter.StartsWith("cde") {
+		t.Error("StartsWith should fail")
+	}
+	if !iter.EndsWith("ab") {
+		t.Error("EndsWith should succeed")
+	}
+	if iter.EndsWith("abc") {
+		t.Error("EndsWith should fail")
+	}
+}
+
+func TestStrIterSkipWhite(t *testing.T) {
+	iter := NewStringIterator(NewString("foo  bar"), 0)
+	if got := iter.SkipNextWhitespace(); got != 0 {
+		t.Error("No whitespace to skip")
+	}
+	iter.Advance(3)
+	if got := iter.SkipNextWhitespace(); got != 2 || !iter.StartsWith("bar") {
+		t.Error("Skip forward 2 spaces")
+	}
+	if got := iter.SkipPrevWhitespace(); got != 2 || !iter.EndsWith("foo") {
+		t.Error("Skip backwards 2 spaces")
+	}
+}
