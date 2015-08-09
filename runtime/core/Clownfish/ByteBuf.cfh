@@ -99,7 +99,7 @@ final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
      * original ByteBuf. Allocate more memory as needed.
      */
     void
-    Cat(ByteBuf *self, ByteBuf *other);
+    Cat(ByteBuf *self, Blob *blob);
 
     /** Assign more memory to the ByteBuf, if it doesn't already have enough
      * room to hold `size` bytes.  Cannot shrink the allocation.
