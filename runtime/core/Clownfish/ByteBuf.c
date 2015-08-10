@@ -159,8 +159,8 @@ BB_Cat_Bytes_IMP(ByteBuf *self, const void *bytes, size_t size) {
 }
 
 void
-BB_Cat_IMP(ByteBuf *self, ByteBuf *other) {
-    SI_cat_bytes(self, other->buf, other->size);
+BB_Cat_IMP(ByteBuf *self, Blob *blob) {
+    SI_cat_bytes(self, Blob_Get_Buf(blob), Blob_Get_Size(blob));
 }
 
 static void
