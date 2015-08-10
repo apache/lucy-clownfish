@@ -146,6 +146,7 @@ func specMethods(parcel *cfc.Parcel) {
 
 	classBinding := cfc.NewGoClass(parcel, "Clownfish::Class")
 	classBinding.SpecMethod("Get_Methods", "GetMethods() []Method")
+	classBinding.SpecMethod("Make_Obj", "MakeObj() Obj")
 	classBinding.Register()
 
 	stringBinding := cfc.NewGoClass(parcel, "Clownfish::String")

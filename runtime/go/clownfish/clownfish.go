@@ -142,6 +142,12 @@ func (c *ClassIMP) GetMethods() []Method {
 	return meths
 }
 
+func (c *ClassIMP) MakeObj() Obj {
+	self := (*C.cfish_Class)(unsafe.Pointer(c.TOPTR()))
+	retvalCF := C.CFISH_Class_Make_Obj_IMP(self)
+	return WRAPAny(unsafe.Pointer(retvalCF))
+}
+
 func NewMethod(name string, callbackFunc unsafe.Pointer, offset uint32) Method {
 	nameCF := (*C.cfish_String)(GoToString(name))
 	defer C.cfish_decref(unsafe.Pointer(nameCF))

@@ -41,3 +41,11 @@ func TestClassGetObjAllocSize(t *testing.T) {
 		t.Error("Unexpected result for GetObjAllocSize")
 	}
 }
+
+func TestMakeObj(t *testing.T) {
+	intClass := FetchClass("Clownfish::Integer")
+	o := intClass.MakeObj()
+	if _, ok := o.(Integer); !ok {
+		t.Error("MakeObj for Integer class didn't yield an Integer")
+	}
+}
