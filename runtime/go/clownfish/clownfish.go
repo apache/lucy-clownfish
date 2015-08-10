@@ -146,6 +146,24 @@ func NewHash(size int) Hash {
 	return WRAPHash(unsafe.Pointer(cfObj))
 }
 
+func NewHashIterator(hash Hash) HashIterator {
+	hashCF := (*C.cfish_Hash)(unsafe.Pointer(hash.TOPTR()))
+	cfObj := C.cfish_HashIter_new(hashCF)
+	return WRAPHashIterator(unsafe.Pointer(cfObj))
+}
+
+func (h *HashIMP) Keys() []string {
+	self := (*C.cfish_Hash)(unsafe.Pointer(h.TOPTR()))
+	keysCF := C.CFISH_Hash_Keys(self)
+	numKeys := C.CFISH_Vec_Get_Size(keysCF)
+	keys := make([]string, 0, int(numKeys))
+	for i := C.size_t(0); i < numKeys; i++ {
+		keys = append(keys, CFStringToGo(unsafe.Pointer(C.CFISH_Vec_Fetch(keysCF, i))))
+	}
+	C.cfish_decref(unsafe.Pointer(keysCF))
+	return keys
+}
+
 func (o *ObjIMP) INITOBJ(ptr unsafe.Pointer) {
 	o.ref = uintptr(ptr)
 	runtime.SetFinalizer(o, ClearRef)
@@ -158,6 +176,12 @@ func ClearRef (o *ObjIMP) {
 
 func (o *ObjIMP) TOPTR() uintptr {
 	return o.ref
+}
+
+func (o *ObjIMP)Clone() Obj {
+	self := (*C.cfish_Obj)(unsafe.Pointer(o.TOPTR()))
+	dupe := C.CFISH_Obj_Clone(self)
+	return WRAPAny(unsafe.Pointer(dupe)).(Obj)
 }
 
 func certifyCF(value interface{}, class *C.cfish_Class) {
@@ -256,6 +280,10 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 	case float64:
 		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
 			converted = GoToFloat(value)
+		}
+	case bool:
+		if klass == C.CFISH_BOOLEAN || klass == C.CFISH_OBJ {
+			converted = GoToBoolean(value)
 		}
 	case []interface{}:
 		if klass == C.CFISH_VECTOR || klass == C.CFISH_OBJ {
@@ -622,4 +650,9 @@ func NewBlob(content []byte) Blob {
 	}
 	obj := C.cfish_Blob_new(buf, size)
 	return WRAPBlob(unsafe.Pointer(obj))
+}
+
+func (b *BlobIMP) GetBuf() uintptr {
+	self := (*C.cfish_Blob)(unsafe.Pointer(b.TOPTR()))
+	return uintptr(unsafe.Pointer(C.CFISH_Blob_Get_Buf(self)))
 }

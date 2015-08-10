@@ -14,29 +14,53 @@
  * limitations under the License.
  */
 
-package clownfish_test
+package clownfish
 
-import "git-wip-us.apache.org/repos/asf/lucy-clownfish.git/runtime/go/clownfish"
 import "testing"
 import "errors"
 
 func TestTrapErr(t *testing.T) {
-	err := clownfish.TrapErr(
-		func() { panic(clownfish.NewErr("mistakes were made")) },
+	err := TrapErr(
+		func() { panic(NewErr("mistakes were made")) },
 	)
 	if err == nil {
-		t.Error("Failed to trap clownfish.Err")
+		t.Error("Failed to trap Err")
 	}
 }
 
 func TestTrapErr_no_trap_string(t *testing.T) {
 	defer func() { recover() }()
-	clownfish.TrapErr(func() { panic("foo") })
+	TrapErr(func() { panic("foo") })
 	t.Error("Trapped plain string") // shouldn't reach here
 }
 
 func TestTrapErr_no_trap_error(t *testing.T) {
 	defer func() { recover() }()
-	clownfish.TrapErr(func() { panic(errors.New("foo")) })
+	TrapErr(func() { panic(errors.New("foo")) })
 	t.Error("Trapped non-clownfish.Error error type") // shouldn't reach here
+}
+
+func TestErrGetMess(t *testing.T) {
+	err := NewErr("foo")
+	expected := "foo"
+	if got := err.GetMess(); got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestErrCatMess(t *testing.T) {
+	err := NewErr("foo")
+	err.CatMess("bar")
+	expected := "foobar"
+	if got := err.GetMess(); got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestErrToString(t *testing.T) {
+	err := NewErr("foo")
+	expected := "foo"
+	if got := err.ToString(); got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
 }

@@ -18,7 +18,7 @@ package clownfish
 
 import "testing"
 
-func TestCat(t *testing.T) {
+func TestStringCat(t *testing.T) {
 	s := NewString("foo")
 	got := s.Cat("bar")
 	if got != "foobar" {
@@ -26,7 +26,7 @@ func TestCat(t *testing.T) {
 	}
 }
 
-func TestSwapChars(t *testing.T) {
+func TestStringSwapChars(t *testing.T) {
 	s := NewString("foo")
 	got := s.SwapChars('o', 'u')
 	if got != "fuu" {
@@ -34,7 +34,7 @@ func TestSwapChars(t *testing.T) {
 	}
 }
 
-func TestStartsWithEndsWith(t *testing.T) {
+func TestStringStartsWithEndsWith(t *testing.T) {
 	s := NewString("foobar")
 	if !s.StartsWith("foo") {
 		t.Error("StartsWith yes")
@@ -50,7 +50,7 @@ func TestStartsWithEndsWith(t *testing.T) {
 	}
 }
 
-func TestBaseXToI64(t *testing.T) {
+func TestStringBaseXToI64(t *testing.T) {
 	s := NewString("100000000")
 	var got int64 = s.BaseXToI64(10)
 	if got != 100000000 {
@@ -71,7 +71,7 @@ func TestBaseXToI64(t *testing.T) {
 	}
 }
 
-func TestFind(t *testing.T) {
+func TestStringFind(t *testing.T) {
 	s := NewString("foobarbaz")
 	var got int64 = s.Find("bar")
 	if got != 3 {
@@ -83,48 +83,42 @@ func TestFind(t *testing.T) {
 	}
 }
 
-func TestEquals(t *testing.T) {
-	t.Skip("Skip Equals because Obj arg won't accept string")
-	/*
-		s := NewString("foo")
-		if !s.Equals("foo") {
-			t.Error("Equals should succeed")
-		}
-		if s.Equals("bar") {
-			t.Error("Equals should fail")
-		}
-	*/
+func TestStringEquals(t *testing.T) {
+	s := NewString("foo")
+	if !s.Equals("foo") {
+		t.Error("Equals should succeed")
+	}
+	if s.Equals("bar") {
+		t.Error("Equals should fail")
+	}
 }
 
-func TestCompareTo(t *testing.T) {
-	t.Skip("Skip CompareTo() because Obj arg won't accept string")
-	/*
-		s := NewString("foo")
-		if !(s.CompareTo("boo") > 0) {
-			t.Error("'foo' > 'boo'")
-		}
-		if !(s.CompareTo("foo") == 0) {
-			t.Error("'foo' == 'foo'")
-		}
-		if !(s.CompareTo("zoo") < 0) {
-			t.Error("'foo' < 'zoo'")
-		}
-		if !(s.CompareTo("fo") > 0) {
-			t.Error("'foo' > 'fo'")
-		}
-		if !(s.CompareTo("food") < 0) {
-			t.Error("'foo' < 'food'")
-		}
-		if !(s.CompareTo("foo\u0000") < 0) {
-			t.Error("'foo' < 'foo\\0'")
-		}
-		if !(s.CompareTo("") > 0) {
-			t.Error("'foo' > ''")
-		}
-	*/
+func TestStringCompareTo(t *testing.T) {
+	s := NewString("foo")
+	if !(s.CompareTo("boo") > 0) {
+		t.Error("'foo' > 'boo'")
+	}
+	if !(s.CompareTo("foo") == 0) {
+		t.Error("'foo' == 'foo'")
+	}
+	if !(s.CompareTo("zoo") < 0) {
+		t.Error("'foo' < 'zoo'")
+	}
+	if !(s.CompareTo("fo") > 0) {
+		t.Error("'foo' > 'fo'")
+	}
+	if !(s.CompareTo("food") < 0) {
+		t.Error("'foo' < 'food'")
+	}
+	if !(s.CompareTo("foo\u0000") < 0) {
+		t.Error("'foo' < 'foo\\0'")
+	}
+	if !(s.CompareTo("") > 0) {
+		t.Error("'foo' > ''")
+	}
 }
 
-func TestLenAndGetSize(t *testing.T) {
+func TestStringLenAndGetSize(t *testing.T) {
 	s := NewString("\u263a")
 	var len uintptr = s.Length()
 	if len != 1 {
@@ -136,7 +130,7 @@ func TestLenAndGetSize(t *testing.T) {
 	}
 }
 
-func TestClone(t *testing.T) {
+func TestStringClone(t *testing.T) {
 	t.Skip("Skip Clone() because it shouldn't return an Obj")
 	s := NewString("foo")
 	got := s.Clone()
@@ -145,20 +139,20 @@ func TestClone(t *testing.T) {
 	}
 }
 
-func TestHashSum(t *testing.T) {
+func TestStringHashSum(t *testing.T) {
 	// Test compilation only.
 	s := NewString("foo")
 	var _ uintptr = s.HashSum()
 }
 
-func TestToString(t *testing.T) {
+func TestStringToString(t *testing.T) {
 	s := NewString("foo")
 	if s.ToString() != "foo" {
 		t.Fail()
 	}
 }
 
-func TestTrim(t *testing.T) {
+func TestStringTrim(t *testing.T) {
 	s := NewString(" foo ")
 	var got string = s.Trim()
 	if got != "foo" {
@@ -174,7 +168,7 @@ func TestTrim(t *testing.T) {
 	}
 }
 
-func TestCodePointAtFrom(t *testing.T) {
+func TestStringCodePointAtFrom(t *testing.T) {
 	s := NewString("foobar")
 	var got rune = s.CodePointAt(3)
 	if got != 'b' {
@@ -186,7 +180,7 @@ func TestCodePointAtFrom(t *testing.T) {
 	}
 }
 
-func TestSubString(t *testing.T) {
+func TestStringSubString(t *testing.T) {
 	s := NewString("foobarbaz")
 	var got string = s.SubString(3, 3)
 	if got != "bar" {
@@ -194,7 +188,7 @@ func TestSubString(t *testing.T) {
 	}
 }
 
-func TestTopTail(t *testing.T) {
+func TestStringTopTail(t *testing.T) {
 	s := NewString("foo")
 	top := s.Top()
 	got := top.Next()

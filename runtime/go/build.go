@@ -137,6 +137,7 @@ func runCFC() {
 func specMethods(parcel *cfc.Parcel) {
 	objBinding := cfc.NewGoClass(parcel, "Clownfish::Obj")
 	objBinding.SpecMethod("", "TOPTR() uintptr")
+	objBinding.SpecMethod("Clone", "Clone() Obj")
 	objBinding.Register()
 
 	errBinding := cfc.NewGoClass(parcel, "Clownfish::Err")
@@ -149,13 +150,22 @@ func specMethods(parcel *cfc.Parcel) {
 	stringBinding.SpecMethod("Swap_Chars", "SwapChars(rune, rune) string")
 	stringBinding.Register()
 
+	blobBinding := cfc.NewGoClass(parcel, "Clownfish::Blob")
+	blobBinding.SpecMethod("", "GetBuf() uintptr")
+	blobBinding.Register()
+
 	vecBinding := cfc.NewGoClass(parcel, "Clownfish::Vector")
 	vecBinding.SetSuppressCtor(true)
 	vecBinding.Register()
 
 	hashBinding := cfc.NewGoClass(parcel, "Clownfish::Hash")
+	hashBinding.SpecMethod("Keys", "Keys() []string")
 	hashBinding.SetSuppressCtor(true)
 	hashBinding.Register()
+
+	hashIterBinding := cfc.NewGoClass(parcel, "Clownfish::HashIterator")
+	hashIterBinding.SetSuppressCtor(true)
+	hashIterBinding.Register()
 }
 
 func prep() {
