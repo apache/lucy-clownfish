@@ -123,6 +123,12 @@ type ObjIMP struct {
 	ref uintptr
 }
 
+func GetClass(o Obj) Class {
+	objCF := (*C.cfish_Obj)(unsafe.Pointer(o.TOPTR()))
+	classCF := C.cfish_Obj_get_class(objCF)
+	return WRAPClass(unsafe.Pointer(classCF))
+}
+
 func FetchClass(className string) Class {
 	nameCF := (*C.cfish_String)(GoToString(className))
 	defer C.cfish_decref(unsafe.Pointer(nameCF))
