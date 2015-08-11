@@ -287,10 +287,10 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
             }
             char *pattern;
             if (CFCType_incremented(return_type)) {
-                pattern = "\treturn %sWRAP%s(unsafe.Pointer(retvalCF))\n";
+                pattern = "\treturn %sWRAPAny(unsafe.Pointer(retvalCF)).(%s)\n";
             }
             else {
-                pattern = "\treturn %sWRAP%s(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(retvalCF))))\n";
+                pattern = "\treturn %sWRAPAny(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(retvalCF)))).(%s)\n";
             }
             statement = CFCUtil_sprintf(pattern, go_package, struct_name);
             FREEMEM(go_type_name);
