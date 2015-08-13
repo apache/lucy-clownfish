@@ -533,7 +533,7 @@ func ToGo(ptr unsafe.Pointer) interface{} {
 		return float64(val)
 	} else {
 		// Don't convert to a native Go type, but wrap in a Go struct.
-		return WRAPAny(ptr)
+		return WRAPAny(unsafe.Pointer(C.cfish_incref(unsafe.Pointer(ptr))))
 	}
 }
 
