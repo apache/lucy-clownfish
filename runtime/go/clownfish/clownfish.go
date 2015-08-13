@@ -354,6 +354,17 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 	panic(NewErr(fmt.Sprintf("Can't convert a %T to %s", value, className)))
 }
 
+func UnwrapClownfish(value Obj, name string, nullable bool) unsafe.Pointer {
+	if value == nil {
+		if nullable {
+			return nil
+		} else {
+			panic(NewErr(fmt.Sprintf("%s cannot be nil", name)))
+		}
+	}
+	return unsafe.Pointer(value.TOPTR())
+}
+
 func GoToString(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case string:
