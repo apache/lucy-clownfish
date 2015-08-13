@@ -58,6 +58,7 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
     const char *clownfish_dot = CFCParcel_is_cfish(parcel)
                                 ? "" : "clownfish.";
     CFCVariable **param_vars = CFCParamList_get_variables(param_list);
+    const char  **default_values = CFCParamList_get_initial_values(param_list);
     char *invocant;
     char go_name[GO_NAME_BUF_SIZE];
 
@@ -84,10 +85,39 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
         }
         params = CFCUtil_cat(params, go_name, " ", go_type_name, NULL);
         FREEMEM(go_type_name);
+    }
 
-        // Convert certain types and defer their destruction until after the
-        // Clownfish call returns.
-        const char *class_var;
+    // Convert certain types and defer their destruction until after the
+    // Clownfish call returns.
+    for (int i = 0; param_vars[i] != NULL; i++) {
+        CFCVariable *var = param_vars[i];
+        CFCType *type = CFCVariable_get_type(var);
+        if (!CFCType_is_object(type)) {
+            continue;
+        }
+
+        if (targ == IS_METHOD && i == 0) {
+            CFCGoTypeMap_go_meth_receiever(CFCClass_get_struct_sym(invoker),
+                                           param_list, go_name,
+                                           GO_NAME_BUF_SIZE);
+        }
+        else {
+            CFCGoTypeMap_go_arg_name(param_list, i, go_name, GO_NAME_BUF_SIZE);
+        }
+
+        // A parameter may be marked with the nullable modifier.  It may also
+        // be nullable if it has a default value of "NULL".  (Since Go does
+        // not support default values for method parameters, this is the only
+        // default value we care about.)
+        const char *nullable = CFCType_nullable(type) ? "true" : "false";
+        if (default_values[i] != NULL
+            && strcmp(default_values[i], "NULL") == 0
+           ) {
+            nullable = "true";
+        }
+
+        const char *class_var = NULL;
+        const char *struct_name = CFCType_get_specifier(type);
         if (CFCType_cfish_obj(type)) {
             class_var = "CFISH_OBJ";
         }
@@ -103,11 +133,26 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
         else if (CFCType_cfish_hash(type)) {
             class_var = "CFISH_HASH";
         }
-        else {
+
+        if (class_var == NULL || (targ == IS_METHOD && i == 0)) {
+            // Just unwrap -- don't convert.
+            char *pattern;
+            if (CFCType_decremented(type)) {
+                pattern =
+                    "\t%sCF := (*C.%s)(unsafe.Pointer(C.cfish_incref(%sUnwrapClownfish(%s, \"%s\", %s))))\n";
+            }
+            else {
+                pattern =
+                    "\t%sCF := (*C.%s)(%sUnwrapClownfish(%s, \"%s\", %s))\n";
+            }
+            char *conversion = CFCUtil_sprintf(pattern, go_name, struct_name,
+                                               clownfish_dot, go_name,
+                                               go_name, nullable);
+            converted = CFCUtil_cat(converted, conversion, NULL);
+            FREEMEM(conversion);
             continue;
         }
-        const char *struct_name = CFCType_get_specifier(type);
-        const char *nullable = CFCType_nullable(type) ? "true" : "false";
+
         char pattern[] =
             "\t%sCF := (*C.%s)(%sGoToClownfish(%s, unsafe.Pointer(C.%s), %s))\n";
         char *conversion = CFCUtil_sprintf(pattern, go_name, struct_name,
@@ -188,29 +233,8 @@ S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
             cfargs = CFCUtil_cat(cfargs, "C.", CFCType_get_specifier(type),
                                  "(", go_name, ")", NULL);
         }
-        else if ((CFCType_cfish_obj(type)
-                  || CFCType_cfish_string(type)
-                  || CFCType_cfish_blob(type)
-                  || CFCType_cfish_vector(type)
-                  || CFCType_cfish_hash(type))
-                 // Don't convert an invocant.
-                 && (targ != IS_METHOD || i != 0)
-                ) {
-            cfargs = CFCUtil_cat(cfargs, go_name, "CF", NULL);
-        }
         else if (CFCType_is_object(type)) {
-
-            char *obj_pattern;
-            if (CFCType_decremented(type)) {
-                obj_pattern = "(*C.%s)(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(%s.TOPTR()))))";
-            }
-            else {
-                obj_pattern = "(*C.%s)(unsafe.Pointer(%s.TOPTR()))";
-            }
-            char *temp = CFCUtil_sprintf(obj_pattern,
-                                         CFCType_get_specifier(type), go_name);
-            cfargs = CFCUtil_cat(cfargs, temp, NULL);
-            FREEMEM(temp);
+            cfargs = CFCUtil_cat(cfargs, go_name, "CF", NULL);
         }
     }
     return cfargs;
@@ -276,15 +300,6 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
         }
         else if (CFCType_is_object(return_type)) {
             char *go_type_name = CFCGoTypeMap_go_type_name(return_type, parcel);
-            char *struct_name  = go_type_name;
-            char *go_package   = CFCUtil_strdup(go_type_name);
-            for (int i = strlen(go_package) - 1; i >= 0; i--) {
-                if (go_package[i] == '.') {
-                    struct_name += i + 1;
-                    break;
-                }
-                go_package[i] = '\0';
-            }
             char *pattern;
             if (CFCType_incremented(return_type)) {
                 pattern = "\treturn %sWRAPAny(unsafe.Pointer(retvalCF)).(%s)\n";
@@ -292,9 +307,8 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
             else {
                 pattern = "\treturn %sWRAPAny(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(retvalCF)))).(%s)\n";
             }
-            statement = CFCUtil_sprintf(pattern, go_package, struct_name);
+            statement = CFCUtil_sprintf(pattern, clownfish_dot, go_type_name);
             FREEMEM(go_type_name);
-            FREEMEM(go_package);
         }
         else {
             CFCUtil_die("Unexpected type: %s", CFCType_to_c(return_type));
