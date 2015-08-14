@@ -29,6 +29,7 @@
 #include "Clownfish/Blob.h"
 #include "Clownfish/Boolean.h"
 #include "Clownfish/ByteBuf.h"
+#include "Clownfish/CharBuf.h"
 #include "Clownfish/Class.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
@@ -125,7 +126,7 @@ cfish_dec_refcount(void *vself) {
 void*
 Obj_To_Host_IMP(Obj *self) {
     UNUSED_VAR(self);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(void*);
 }
 
@@ -152,7 +153,7 @@ Obj*
 Class_Foster_Obj_IMP(Class *self, void *host_obj) {
     UNUSED_VAR(self);
     UNUSED_VAR(host_obj);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(Obj*);
 }
 
@@ -171,14 +172,14 @@ Class_fresh_host_methods(String *class_name) {
 String*
 Class_find_parent_class(String *class_name) {
     UNUSED_VAR(class_name);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(String*);
 }
 
 void*
 Class_To_Host_IMP(Class *self) {
     UNUSED_VAR(self);
-    THROW(ERR, "TODO");
+    THROW(ERR, "Unimplemented for Go");
     UNREACHABLE_RETURN(void*);
 }
 
@@ -186,7 +187,18 @@ Class_To_Host_IMP(Class *self) {
 
 String*
 Method_Host_Name_IMP(Method *self) {
-    return (String*)INCREF(self->name);
+    StringIterator *iter = StrIter_new(self->name, 0);
+    CharBuf *charbuf = CB_new(Str_Get_Size(self->name));
+    int32_t code_point;
+    while (STRITER_DONE != (code_point = StrIter_Next(iter))) {
+        if (code_point != '_') {
+            CB_Cat_Char(charbuf, code_point);
+        }
+    }
+    String *host_name = CB_Yield_String(charbuf);
+    DECREF(charbuf);
+    DECREF(iter);
+    return host_name;
 }
 
 /******************************** Err **************************************/

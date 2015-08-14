@@ -26,7 +26,6 @@ func TestHashStoreFetch(t *testing.T) {
 	if got, ok := hash.Fetch("foo").(string); !ok || got != "bar" {
 		t.Errorf("Expected \"bar\", got %v", got)
 	}
-	t.Skip("Can't store nil values yet")
 	hash.Store("nada", nil)
 	if got := hash.Fetch("nada"); got != nil {
 		t.Errorf("Expected nil, got %v", got)
@@ -57,11 +56,15 @@ func TestHashClear(t *testing.T) {
 func TestHashHasKey(t *testing.T) {
 	hash := NewHash(0)
 	hash.Store("foo", 1)
+	hash.Store("nada", nil)
 	if !hash.HasKey("foo") {
 		t.Errorf("HasKey returns true on success")
 	}
 	if hash.HasKey("bar") {
 		t.Errorf("HasKey returns false when key not present")
+	}
+	if !hash.HasKey("nada") {
+		t.Errorf("HasKey returns true for key mapped to nil")
 	}
 }
 

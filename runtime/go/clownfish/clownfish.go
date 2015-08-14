@@ -123,11 +123,50 @@ type ObjIMP struct {
 	ref uintptr
 }
 
+func FetchClass(className string) Class {
+	nameCF := (*C.cfish_String)(GoToString(className))
+	defer C.cfish_decref(unsafe.Pointer(nameCF))
+	class := C.cfish_Class_fetch_class(nameCF)
+	return WRAPClass(unsafe.Pointer(class))
+}
+
+func (c *ClassIMP) GetMethods() []Method {
+	self := (*C.cfish_Class)(unsafe.Pointer(c.TOPTR()))
+	methsVec := C.CFISH_Class_Get_Methods(self)
+	size := C.CFISH_Vec_Get_Size(methsVec)
+	meths := make([]Method, 0, int(size))
+	for i := C.size_t(0); i < size; i++ {
+		meths = append(meths, WRAPMethod(unsafe.Pointer(C.CFISH_Vec_Fetch(methsVec, i))))
+	}
+	C.cfish_decref(unsafe.Pointer(methsVec))
+	return meths
+}
+
+func (c *ClassIMP) MakeObj() Obj {
+	self := (*C.cfish_Class)(unsafe.Pointer(c.TOPTR()))
+	retvalCF := C.CFISH_Class_Make_Obj_IMP(self)
+	return WRAPAny(unsafe.Pointer(retvalCF))
+}
+
+func NewMethod(name string, callbackFunc unsafe.Pointer, offset uint32) Method {
+	nameCF := (*C.cfish_String)(GoToString(name))
+	defer C.cfish_decref(unsafe.Pointer(nameCF))
+	methCF := C.cfish_Method_new(nameCF, C.cfish_method_t(callbackFunc),
+		C.uint32_t(offset));
+	return WRAPMethod(unsafe.Pointer(methCF))
+}
+
 func NewString(goString string) String {
 	str := C.CString(goString)
 	len := C.size_t(len(goString))
 	cfObj := C.cfish_Str_new_steal_utf8(str, len)
 	return WRAPString(unsafe.Pointer(cfObj))
+}
+
+func NewStringIterator(str String, offset uintptr) StringIterator {
+	strCF := (*C.cfish_String)(unsafe.Pointer(str.TOPTR()))
+	iter := C.cfish_StrIter_new(strCF, C.size_t(offset))
+	return WRAPStringIterator(unsafe.Pointer(iter))
 }
 
 func NewVector(size int) Vector {
