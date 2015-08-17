@@ -123,6 +123,12 @@ type ObjIMP struct {
 	ref uintptr
 }
 
+func GetClass(o Obj) Class {
+	objCF := (*C.cfish_Obj)(unsafe.Pointer(o.TOPTR()))
+	classCF := C.cfish_Obj_get_class(objCF)
+	return WRAPClass(unsafe.Pointer(classCF))
+}
+
 func FetchClass(className string) Class {
 	nameCF := (*C.cfish_String)(GoToString(className))
 	defer C.cfish_decref(unsafe.Pointer(nameCF))
@@ -348,6 +354,17 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 	panic(NewErr(fmt.Sprintf("Can't convert a %T to %s", value, className)))
 }
 
+func UnwrapClownfish(value Obj, name string, nullable bool) unsafe.Pointer {
+	if value == nil {
+		if nullable {
+			return nil
+		} else {
+			panic(NewErr(fmt.Sprintf("%s cannot be nil", name)))
+		}
+	}
+	return unsafe.Pointer(value.TOPTR())
+}
+
 func GoToString(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case string:
@@ -527,7 +544,7 @@ func ToGo(ptr unsafe.Pointer) interface{} {
 		return float64(val)
 	} else {
 		// Don't convert to a native Go type, but wrap in a Go struct.
-		return WRAPAny(ptr)
+		return WRAPAny(unsafe.Pointer(C.cfish_incref(unsafe.Pointer(ptr))))
 	}
 }
 
