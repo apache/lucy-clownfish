@@ -64,7 +64,12 @@ CFCDocument_do_create(CFCDocument *self, const char *path,
     }
 
     const char *last_dir_sep = strrchr(self->path_part, CHY_DIR_SEP_CHAR);
-    self->name = CFCUtil_strdup(last_dir_sep + 1);
+    if (last_dir_sep) {
+        self->name = CFCUtil_strdup(last_dir_sep + 1);
+    }
+    else {
+        self->name = CFCUtil_strdup(self->path_part);
+    }
 
     S_register(self);
 
