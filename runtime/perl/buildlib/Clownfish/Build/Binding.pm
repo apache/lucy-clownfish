@@ -310,9 +310,7 @@ store(self, key, value_sv);
 PPCODE:
 {
     cfish_Obj *value
-        = (cfish_Obj*)XSBind_maybe_sv_to_cfish_obj(aTHX_ value_sv, CFISH_OBJ,
-                                                   CFISH_ALLOCA_OBJ(CFISH_STRING));
-    if (value) { value = CFISH_INCREF(value); }
+        = (cfish_Obj*)XSBind_perl_to_cfish_nullable(aTHX_ value_sv, CFISH_OBJ);
     CFISH_Hash_Store_IMP(self, key, value);
 }
 END_XS_CODE
