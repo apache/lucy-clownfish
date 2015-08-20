@@ -144,18 +144,12 @@ CFCDocuComment_parse(const char *raw_text) {
         // Extract param description.
         while (isspace(*ptr) && ptr < text_limit) { ptr++; }
         char *param_doc = ptr;
-        while (ptr < text_limit) {
-            if (*ptr == '@') { break; }
-            else if (*ptr == '\n' && ptr < text_limit) {
-                ptr++;
-                while (ptr < text_limit && *ptr != '\n' && isspace(*ptr)) {
-                    ptr++;
-                }
-                if (*ptr == '\n' || *ptr == '@') { break; }
-            }
-            else {
-                ptr++;
-            }
+        while (ptr < text_limit
+               && (*ptr != '@'
+                   || (strncmp(ptr, "@param", 6) != 0
+                       && strncmp(ptr, "@return", 7) != 0))
+              ) {
+            ptr++;
         }
         size_t param_doc_len = ptr - param_doc;
 
@@ -202,7 +196,7 @@ CFCDocuComment_parse(const char *raw_text) {
     char *maybe_retval = strstr(text, "@return ");
     if (maybe_retval) {
         self->retval = CFCUtil_strdup(maybe_retval + sizeof("@return ") - 1);
-        char *terminus = strchr(self->retval, '@');
+        char *terminus = strstr(self->retval, "@param");
         if (terminus) {
             *terminus = '\0';
         }
