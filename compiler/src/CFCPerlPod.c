@@ -29,6 +29,7 @@
 #include "CFCMethod.h"
 #include "CFCParcel.h"
 #include "CFCParamList.h"
+#include "CFCPerlMethod.h"
 #include "CFCFunction.h"
 #include "CFCDocuComment.h"
 #include "CFCUri.h"
@@ -168,6 +169,7 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
     const char *class_name = CFCClass_get_name(klass);
     char *abstract_pod = CFCUtil_strdup("");
     char *methods_pod  = CFCUtil_strdup("");
+
     for (size_t i = 0; i < self->num_methods; i++) {
         NamePod meth_spec = self->methods[i];
         CFCMethod *method = CFCClass_method(klass, meth_spec.func);
@@ -196,6 +198,47 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
             methods_pod = CFCUtil_cat(methods_pod, meth_pod, NULL);
         }
         FREEMEM(meth_pod);
+    }
+
+    // Add POD for public novel methods by default.
+    CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
+    for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
+        CFCMethod *method = fresh_methods[meth_num];
+        if (!CFCMethod_public(method) || !CFCMethod_novel(method)) {
+            continue;
+        }
+        if (CFCMethod_excluded_from_host(method)) {
+            continue;
+        }
+        if (!CFCMethod_can_be_bound(method)) {
+            continue;
+        }
+
+        const char *name = CFCMethod_get_name(method);
+
+        // Skip methods that were added manually.
+        int found = false;
+        for (size_t j = 0; j < self->num_methods; j++) {
+            const char *other_name = self->methods[j].func;
+            if (other_name && strcmp(other_name, name) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (found) { continue; }
+
+        char *perl_name = CFCPerlMethod_perl_name(method);
+        char *meth_pod
+            = CFCPerlPod_gen_subroutine_pod((CFCFunction*)method, perl_name,
+                                            klass, NULL, class_name, false);
+        if (CFCMethod_abstract(method)) {
+            abstract_pod = CFCUtil_cat(abstract_pod, meth_pod, NULL);
+        }
+        else {
+            methods_pod = CFCUtil_cat(methods_pod, meth_pod, NULL);
+        }
+        FREEMEM(meth_pod);
+        FREEMEM(perl_name);
     }
 
     char *pod = CFCUtil_strdup("");
@@ -249,23 +292,6 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     int num_vars = (int)CFCParamList_num_vars(param_list);
     char *pod = CFCUtil_sprintf("=head2 %s", alias);
 
-    // Get documentation, which may be inherited.
-    CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
-    if (!docucomment) {
-        const char *func_name = CFCFunction_get_name(func);
-        CFCClass *parent = klass;
-        while (NULL != (parent = CFCClass_get_parent(parent))) {
-            CFCFunction *parent_func
-                = (CFCFunction*)CFCClass_method(parent, func_name);
-            if (!parent_func) { break; }
-            docucomment = CFCFunction_get_docucomment(parent_func);
-            if (docucomment) { break; }
-        }
-    }
-    if (!docucomment) {
-        CFCUtil_die("No DocuComment for '%s' in '%s'", alias, class_name);
-    }
-
     // Build string summarizing arguments to use in header.
     if (num_vars > 2 || (is_constructor && num_vars > 1)) {
         pod = CFCUtil_cat(pod, "( I<[labeled params]> )\n\n", NULL);
@@ -285,6 +311,23 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     // Add code sample.
     if (code_sample && strlen(code_sample)) {
         pod = CFCUtil_cat(pod, code_sample, "\n", NULL);
+    }
+
+    // Get documentation, which may be inherited.
+    CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
+    if (!docucomment) {
+        const char *func_name = CFCFunction_get_name(func);
+        CFCClass *parent = klass;
+        while (NULL != (parent = CFCClass_get_parent(parent))) {
+            CFCFunction *parent_func
+                = (CFCFunction*)CFCClass_method(parent, func_name);
+            if (!parent_func) { break; }
+            docucomment = CFCFunction_get_docucomment(parent_func);
+            if (docucomment) { break; }
+        }
+    }
+    if (!docucomment) {
+        return pod;
     }
 
     // Incorporate "description" text from DocuComment.

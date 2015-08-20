@@ -354,11 +354,6 @@ END_XS_CODE
 }
 
 sub bind_obj {
-    my @exposed = qw(
-        To_String
-        Equals
-    );
-
     my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
     my $synopsis = <<'END_SYNOPSIS';
     package MyObj;
@@ -434,17 +429,20 @@ instantiate objects of class "Clownfish::Obj" directly causes an
 error.
 
 Takes no arguments; if any are supplied, an error will be reported.
-
-=head1 DESTRUCTOR
-
-=head2 DESTROY
+END_DESCRIPTION
+    my $destroy_pod = <<'END_POD';
+=head2 DESTROY()
 
 All Clownfish classes implement a DESTROY method; if you override it in a
 subclass, you must call C<< $self->SUPER::DESTROY >> to avoid leaking memory.
-END_DESCRIPTION
+END_POD
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->set_description($description);
-    $pod_spec->add_method( method => $_, alias => lc($_) ) for @exposed;
+    $pod_spec->add_method(
+        method => 'Destroy',
+        alias  => 'DESTROY',
+        pod    => $destroy_pod,
+    );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::Obj
