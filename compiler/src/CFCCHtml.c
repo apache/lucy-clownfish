@@ -1018,11 +1018,12 @@ S_transform_link(cmark_node *link, CFCClass *doc_class, int dir_level) {
         return;
     }
 
-    CFCUri *uri_obj = CFCUri_new(uri_string, doc_class);
-    char   *url     = S_cfc_uri_to_url(uri_obj, doc_class, dir_level);
+    CFCUri     *uri_obj  = CFCUri_new(uri_string, doc_class);
+    CFCUriType  uri_type = CFCUri_get_type(uri_obj);
+    char       *url      = S_cfc_uri_to_url(uri_obj, doc_class, dir_level);
 
-    if (CFCUri_get_type(uri_obj) == CFC_URI_ERROR) {
-        // Replace link with error.
+    if (uri_type == CFC_URI_NULL || uri_type == CFC_URI_ERROR) {
+        // Replace link with text.
         char *link_text = CFCC_link_text(uri_obj);
         cmark_node *text_node = cmark_node_new(CMARK_NODE_TEXT);
         cmark_node_set_literal(text_node, link_text);
