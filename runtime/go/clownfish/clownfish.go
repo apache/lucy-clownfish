@@ -130,7 +130,7 @@ func GetClass(o Obj) Class {
 }
 
 func FetchClass(className string) Class {
-	nameCF := (*C.cfish_String)(GoToString(className))
+	nameCF := (*C.cfish_String)(goToString(className))
 	defer C.cfish_decref(unsafe.Pointer(nameCF))
 	class := C.cfish_Class_fetch_class(nameCF)
 	return WRAPClass(unsafe.Pointer(class))
@@ -155,7 +155,7 @@ func (c *ClassIMP) MakeObj() Obj {
 }
 
 func NewMethod(name string, callbackFunc unsafe.Pointer, offset uint32) Method {
-	nameCF := (*C.cfish_String)(GoToString(name))
+	nameCF := (*C.cfish_String)(goToString(name))
 	defer C.cfish_decref(unsafe.Pointer(nameCF))
 	methCF := C.cfish_Method_new(nameCF, C.cfish_method_t(callbackFunc),
 		C.uint32_t(offset));
@@ -268,75 +268,75 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 	switch v := value.(type) {
 	case string:
 		if klass == C.CFISH_STRING || klass == C.CFISH_OBJ {
-			converted = GoToString(value)
+			converted = goToString(value)
 		}
 	case []byte:
 		if klass == C.CFISH_BLOB || klass == C.CFISH_OBJ {
-			converted = GoToBlob(value)
+			converted = goToBlob(value)
 		}
 	case int:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case uint:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case uintptr:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case int64:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case int32:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case int16:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case int8:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case uint64:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case uint32:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case uint16:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case uint8:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = GoToInteger(value)
+			converted = goToInteger(value)
 		}
 	case float32:
 		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
-			converted = GoToFloat(value)
+			converted = goToFloat(value)
 		}
 	case float64:
 		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
-			converted = GoToFloat(value)
+			converted = goToFloat(value)
 		}
 	case bool:
 		if klass == C.CFISH_BOOLEAN || klass == C.CFISH_OBJ {
-			converted = GoToBoolean(value)
+			converted = goToBoolean(value)
 		}
 	case []interface{}:
 		if klass == C.CFISH_VECTOR || klass == C.CFISH_OBJ {
-			converted = GoToVector(value)
+			converted = goToVector(value)
 		}
 	case map[string]interface{}:
 		if klass == C.CFISH_HASH || klass == C.CFISH_OBJ {
-			converted = GoToHash(value)
+			converted = goToHash(value)
 		}
 	case Obj:
 		converted = unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
@@ -365,7 +365,7 @@ func UnwrapClownfish(value Obj, name string, nullable bool) unsafe.Pointer {
 	return unsafe.Pointer(value.TOPTR())
 }
 
-func GoToString(value interface{}) unsafe.Pointer {
+func goToString(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case string:
 		size := len(v)
@@ -380,7 +380,7 @@ func GoToString(value interface{}) unsafe.Pointer {
 	}
 }
 
-func GoToBlob(value interface{}) unsafe.Pointer {
+func goToBlob(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case []byte:
 		size := C.size_t(len(v))
@@ -398,7 +398,7 @@ func GoToBlob(value interface{}) unsafe.Pointer {
 	}
 }
 
-func GoToInteger(value interface{}) unsafe.Pointer {
+func goToInteger(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case int:
 		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
@@ -443,7 +443,7 @@ func GoToInteger(value interface{}) unsafe.Pointer {
 	}
 }
 
-func GoToFloat(value interface{}) unsafe.Pointer {
+func goToFloat(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case float32:
 		return unsafe.Pointer(C.cfish_Float_new(C.double(v)))
@@ -458,7 +458,7 @@ func GoToFloat(value interface{}) unsafe.Pointer {
 	}
 }
 
-func GoToBoolean(value interface{}) unsafe.Pointer {
+func goToBoolean(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case bool:
 		if v {
@@ -475,7 +475,7 @@ func GoToBoolean(value interface{}) unsafe.Pointer {
 	}
 }
 
-func GoToVector(value interface{}) unsafe.Pointer {
+func goToVector(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case []interface{}:
 		size := len(v)
@@ -494,7 +494,7 @@ func GoToVector(value interface{}) unsafe.Pointer {
 	}
 }
 
-func GoToHash(value interface{}) unsafe.Pointer {
+func goToHash(value interface{}) unsafe.Pointer {
 	switch v := value.(type) {
 	case map[string]interface{}:
 		size := len(v)
