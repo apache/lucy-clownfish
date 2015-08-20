@@ -274,55 +274,11 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 		if klass == C.CFISH_BLOB || klass == C.CFISH_OBJ {
 			converted = goToBlob(value)
 		}
-	case int:
+	case int, uint, uintptr, int64, int32, int16, int8, uint64, uint32, uint16, uint8:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
 			converted = goToInteger(value)
 		}
-	case uint:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case uintptr:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case int64:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case int32:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case int16:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case int8:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case uint64:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case uint32:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case uint16:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case uint8:
-		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
-		}
-	case float32:
-		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
-			converted = goToFloat(value)
-		}
-	case float64:
+	case float32, float64:
 		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
 			converted = goToFloat(value)
 		}
