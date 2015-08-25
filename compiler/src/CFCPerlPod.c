@@ -268,6 +268,13 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
         }
         else {
             CFCFunction *init_func = CFCClass_function(klass, slot.func);
+            if (!init_func) {
+                init_func = CFCClass_function(klass, slot.alias);
+            }
+            if (!init_func) {
+                CFCUtil_die("Can't find constructor '%s' in class '%s'",
+                            slot.alias, CFCClass_get_name(klass));
+            }
             char *sub_pod
                 = CFCPerlPod_gen_subroutine_pod(init_func, slot.alias, klass,
                                                 slot.sample, class_name, true);
