@@ -66,6 +66,7 @@ GoCfish_RunRoutine(CFISH_Err_Attempt_t routine, void *context) {
 import "C"
 import "runtime"
 import "unsafe"
+import "reflect"
 import "fmt"
 import "math"
 import "sync"
@@ -124,7 +125,7 @@ type ObjIMP struct {
 }
 
 func GetClass(o Obj) Class {
-	objCF := (*C.cfish_Obj)(unsafe.Pointer(o.TOPTR()))
+	objCF := (*C.cfish_Obj)(Unwrap(o, "o"))
 	classCF := C.cfish_Obj_get_class(objCF)
 	return WRAPClass(unsafe.Pointer(classCF))
 }
@@ -137,7 +138,7 @@ func FetchClass(className string) Class {
 }
 
 func (c *ClassIMP) GetMethods() []Method {
-	self := (*C.cfish_Class)(unsafe.Pointer(c.TOPTR()))
+	self := (*C.cfish_Class)(Unwrap(c, "c"))
 	methsVec := C.CFISH_Class_Get_Methods(self)
 	size := C.CFISH_Vec_Get_Size(methsVec)
 	meths := make([]Method, 0, int(size))
@@ -149,7 +150,7 @@ func (c *ClassIMP) GetMethods() []Method {
 }
 
 func (c *ClassIMP) MakeObj() Obj {
-	self := (*C.cfish_Class)(unsafe.Pointer(c.TOPTR()))
+	self := (*C.cfish_Class)(Unwrap(c, "c"))
 	retvalCF := C.CFISH_Class_Make_Obj_IMP(self)
 	return WRAPAny(unsafe.Pointer(retvalCF))
 }
@@ -170,7 +171,7 @@ func NewString(goString string) String {
 }
 
 func NewStringIterator(str String, offset uintptr) StringIterator {
-	strCF := (*C.cfish_String)(unsafe.Pointer(str.TOPTR()))
+	strCF := (*C.cfish_String)(Unwrap(str, "str"))
 	iter := C.cfish_StrIter_new(strCF, C.size_t(offset))
 	return WRAPStringIterator(unsafe.Pointer(iter))
 }
@@ -192,13 +193,13 @@ func NewHash(size int) Hash {
 }
 
 func NewHashIterator(hash Hash) HashIterator {
-	hashCF := (*C.cfish_Hash)(unsafe.Pointer(hash.TOPTR()))
+	hashCF := (*C.cfish_Hash)(Unwrap(hash, "hash"))
 	cfObj := C.cfish_HashIter_new(hashCF)
 	return WRAPHashIterator(unsafe.Pointer(cfObj))
 }
 
 func (h *HashIMP) Keys() []string {
-	self := (*C.cfish_Hash)(unsafe.Pointer(h.TOPTR()))
+	self := (*C.cfish_Hash)(Unwrap(h, "h"))
 	keysCF := C.CFISH_Hash_Keys(self)
 	numKeys := C.CFISH_Vec_Get_Size(keysCF)
 	keys := make([]string, 0, int(numKeys))
@@ -224,7 +225,7 @@ func (o *ObjIMP) TOPTR() uintptr {
 }
 
 func (o *ObjIMP)Clone() Obj {
-	self := (*C.cfish_Obj)(unsafe.Pointer(o.TOPTR()))
+	self := (*C.cfish_Obj)(Unwrap(o, "o"))
 	dupe := C.CFISH_Obj_Clone(self)
 	return WRAPAny(unsafe.Pointer(dupe)).(Obj)
 }
@@ -310,15 +311,23 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 	panic(NewErr(fmt.Sprintf("Can't convert a %T to %s", value, className)))
 }
 
-func UnwrapClownfish(value Obj, name string, nullable bool) unsafe.Pointer {
+func UnwrapNullable(value Obj) unsafe.Pointer {
 	if value == nil {
-		if nullable {
-			return nil
-		} else {
-			panic(NewErr(fmt.Sprintf("%s cannot be nil", name)))
-		}
+		return nil
+	}
+	val := reflect.ValueOf(value)
+	if val.IsNil() {
+		return nil
 	}
 	return unsafe.Pointer(value.TOPTR())
+}
+
+func Unwrap(value Obj, name string) unsafe.Pointer {
+	ptr := UnwrapNullable(value)
+	if ptr == nil {
+		panic(NewErr(fmt.Sprintf("%s cannot be nil", name)))
+	}
+	return ptr
 }
 
 func goToString(value interface{}) unsafe.Pointer {
@@ -628,19 +637,19 @@ func TrapErr(routine func()) (trapped error) {
 }
 
 func (s *StringIMP) CodePointAt(tick uintptr) rune {
-	self := ((*C.cfish_String)(unsafe.Pointer(s.TOPTR())))
+	self := ((*C.cfish_String)(Unwrap(s, "s")))
 	retvalCF := C.CFISH_Str_Code_Point_At(self, C.size_t(tick))
 	return rune(retvalCF)
 }
 
 func (s *StringIMP) CodePointFrom(tick uintptr) rune {
-	self := ((*C.cfish_String)(unsafe.Pointer(s.TOPTR())))
+	self := ((*C.cfish_String)(Unwrap(s, "s")))
 	retvalCF := C.CFISH_Str_Code_Point_From(self, C.size_t(tick))
 	return rune(retvalCF)
 }
 
 func (s *StringIMP) SwapChars(match, replacement rune) string {
-	self := ((*C.cfish_String)(unsafe.Pointer(s.TOPTR())))
+	self := ((*C.cfish_String)(Unwrap(s, "s")))
 	retvalCF := C.CFISH_Str_Swap_Chars(self, C.int32_t(match), C.int32_t(replacement))
 	defer C.cfish_dec_refcount(unsafe.Pointer(retvalCF))
 	return CFStringToGo(unsafe.Pointer(retvalCF))
@@ -665,6 +674,6 @@ func NewBlob(content []byte) Blob {
 }
 
 func (b *BlobIMP) GetBuf() uintptr {
-	self := (*C.cfish_Blob)(unsafe.Pointer(b.TOPTR()))
+	self := (*C.cfish_Blob)(Unwrap(b, "b"))
 	return uintptr(unsafe.Pointer(C.CFISH_Blob_Get_Buf(self)))
 }

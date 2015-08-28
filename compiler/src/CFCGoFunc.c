@@ -109,11 +109,11 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
         // be nullable if it has a default value of "NULL".  (Since Go does
         // not support default values for method parameters, this is the only
         // default value we care about.)
-        const char *nullable = CFCType_nullable(type) ? "true" : "false";
+        int nullable = CFCType_nullable(type);
         if (default_values[i] != NULL
             && strcmp(default_values[i], "NULL") == 0
            ) {
-            nullable = "true";
+            nullable = true;
         }
 
         const char *class_var = NULL;
@@ -136,20 +136,29 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
 
         if (class_var == NULL || (targ == IS_METHOD && i == 0)) {
             // Just unwrap -- don't convert.
-            char *pattern;
-            if (CFCType_decremented(type)) {
-                pattern =
-                    "\t%sCF := (*C.%s)(unsafe.Pointer(C.cfish_incref(%sUnwrapClownfish(%s, \"%s\", %s))))\n";
+            char *unwrapped;
+            if (nullable) {
+                unwrapped = CFCUtil_sprintf("%sUnwrapNullable(%s)",
+                                            clownfish_dot, go_name);
             }
             else {
-                pattern =
-                    "\t%sCF := (*C.%s)(%sUnwrapClownfish(%s, \"%s\", %s))\n";
+                unwrapped = CFCUtil_sprintf("%sUnwrap(%s, \"%s\")",
+                                            clownfish_dot, go_name, go_name);
             }
-            char *conversion = CFCUtil_sprintf(pattern, go_name, struct_name,
-                                               clownfish_dot, go_name,
-                                               go_name, nullable);
+
+            if (CFCType_decremented(type)) {
+                char *pattern = "unsafe.Pointer(C.cfish_incref(%s))";
+                char *temp = CFCUtil_sprintf(pattern, unwrapped);
+                FREEMEM(unwrapped);
+                unwrapped = temp;
+            }
+
+            char *conversion
+                = CFCUtil_sprintf("\t%sCF := (*C.%s)(%s)\n", go_name,
+                                  struct_name, unwrapped);
             converted = CFCUtil_cat(converted, conversion, NULL);
             FREEMEM(conversion);
+            FREEMEM(unwrapped);
             continue;
         }
 
@@ -157,7 +166,8 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
             "\t%sCF := (*C.%s)(%sGoToClownfish(%s, unsafe.Pointer(C.%s), %s))\n";
         char *conversion = CFCUtil_sprintf(pattern, go_name, struct_name,
                                            clownfish_dot, go_name,
-                                           class_var, nullable);
+                                           class_var,
+                                           nullable ? "true" : "false");
         converted = CFCUtil_cat(converted, conversion, NULL);
         FREEMEM(conversion);
         if (CFCType_decremented(type)) {
