@@ -131,7 +131,7 @@ func GetClass(o Obj) Class {
 }
 
 func FetchClass(className string) Class {
-	nameCF := (*C.cfish_String)(goToString(className))
+	nameCF := (*C.cfish_String)(goToString(className, false))
 	defer C.cfish_decref(unsafe.Pointer(nameCF))
 	class := C.cfish_Class_fetch_class(nameCF)
 	return WRAPClass(unsafe.Pointer(class))
@@ -156,7 +156,7 @@ func (c *ClassIMP) MakeObj() Obj {
 }
 
 func NewMethod(name string, callbackFunc unsafe.Pointer, offset uint32) Method {
-	nameCF := (*C.cfish_String)(goToString(name))
+	nameCF := (*C.cfish_String)(goToString(name, false))
 	defer C.cfish_decref(unsafe.Pointer(nameCF))
 	methCF := C.cfish_Method_new(nameCF, C.cfish_method_t(callbackFunc),
 		C.uint32_t(offset));
@@ -230,10 +230,17 @@ func (o *ObjIMP)Clone() Obj {
 	return WRAPAny(unsafe.Pointer(dupe)).(Obj)
 }
 
-func certifyCF(value interface{}, class *C.cfish_Class) {
-	cfObj, ok := value.(Obj)
-	if ok {
-		if C.cfish_Obj_is_a((*C.cfish_Obj)(unsafe.Pointer(cfObj.TOPTR())), class) {
+func certifyCF(value interface{}, class *C.cfish_Class, nullable bool) {
+	if nullable && value == nil {
+		return
+	}
+	if cfObj, ok := value.(Obj); ok {
+		o := (*C.cfish_Obj)(unsafe.Pointer(cfObj.TOPTR()))
+		if o == nil {
+			if nullable {
+				return
+			}
+		} else if C.cfish_Obj_is_a(o, class) {
 			return
 		}
 	}
@@ -247,18 +254,6 @@ func certifyCF(value interface{}, class *C.cfish_Class) {
 func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsafe.Pointer {
 	klass := (*C.cfish_Class)(class)
 
-	// Check for nil values.
-	if value == nil {
-		if nullable {
-			return nil
-		} else if class != nil {
-			className := StringToGo(unsafe.Pointer(C.CFISH_Class_Get_Name(klass)))
-			panic(NewErr("Cannot be nil, must be a valid " + className))
-		} else {
-			panic(NewErr("Cannot be nil"))
-		}
-	}
-
 	// Default to accepting any type.
 	if klass == nil {
 		klass = C.CFISH_OBJ
@@ -269,38 +264,46 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 	switch v := value.(type) {
 	case string:
 		if klass == C.CFISH_STRING || klass == C.CFISH_OBJ {
-			converted = goToString(value)
+			converted = goToString(value, nullable)
 		}
 	case []byte:
 		if klass == C.CFISH_BLOB || klass == C.CFISH_OBJ {
-			converted = goToBlob(value)
+			converted = goToBlob(value, nullable)
 		}
 	case int, uint, uintptr, int64, int32, int16, int8, uint64, uint32, uint16, uint8:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value)
+			converted = goToInteger(value, nullable)
 		}
 	case float32, float64:
 		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
-			converted = goToFloat(value)
+			converted = goToFloat(value, nullable)
 		}
 	case bool:
 		if klass == C.CFISH_BOOLEAN || klass == C.CFISH_OBJ {
-			converted = goToBoolean(value)
+			converted = goToBoolean(value, nullable)
 		}
 	case []interface{}:
 		if klass == C.CFISH_VECTOR || klass == C.CFISH_OBJ {
-			converted = goToVector(value)
+			converted = goToVector(value, nullable)
 		}
 	case map[string]interface{}:
 		if klass == C.CFISH_HASH || klass == C.CFISH_OBJ {
-			converted = goToHash(value)
+			converted = goToHash(value, nullable)
 		}
 	case Obj:
+		certifyCF(value, klass, nullable)
 		converted = unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+	case nil:
+		if nullable {
+			return nil
+		}
 	}
 
-	// Confirm that we got what we were looking for and return.
-	if converted != nil {
+	if converted == nil {
+		if nullable {
+			return nil
+		}
+	} else {
 		if C.cfish_Obj_is_a((*C.cfish_Obj)(converted), klass) {
 			return unsafe.Pointer(C.cfish_incref(converted))
 		}
@@ -330,22 +333,21 @@ func Unwrap(value Obj, name string) unsafe.Pointer {
 	return ptr
 }
 
-func goToString(value interface{}) unsafe.Pointer {
+func goToString(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case string:
 		size := len(v)
 		str := C.CString(v)
 		return unsafe.Pointer(C.cfish_Str_new_steal_utf8(str, C.size_t(size)))
 	case Obj:
-		certifyCF(v, C.CFISH_STRING)
+		certifyCF(v, C.CFISH_STRING, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
-	default:
-		mess := fmt.Sprintf("Can't convert %T to clownfish.String", v)
-		panic(NewErr(mess))
 	}
+	mess := fmt.Sprintf("Can't convert %T to clownfish.String", value)
+	panic(NewErr(mess))
 }
 
-func goToBlob(value interface{}) unsafe.Pointer {
+func goToBlob(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case []byte:
 		size := C.size_t(len(v))
@@ -355,15 +357,14 @@ func goToBlob(value interface{}) unsafe.Pointer {
 		}
 		return unsafe.Pointer(C.cfish_Blob_new(buf, size))
 	case Obj:
-		certifyCF(v, C.CFISH_BLOB)
+		certifyCF(v, C.CFISH_BLOB, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
-	default:
-		mess := fmt.Sprintf("Can't convert %T to clownfish.Blob", v)
-		panic(NewErr(mess))
 	}
+	mess := fmt.Sprintf("Can't convert %T to clownfish.Blob", value)
+	panic(NewErr(mess))
 }
 
-func goToInteger(value interface{}) unsafe.Pointer {
+func goToInteger(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case int:
 		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
@@ -400,30 +401,28 @@ func goToInteger(value interface{}) unsafe.Pointer {
 	case int8:
 		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
 	case Obj:
-		certifyCF(v, C.CFISH_INTEGER)
+		certifyCF(v, C.CFISH_INTEGER, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
-	default:
-		mess := fmt.Sprintf("Can't convert %T to clownfish.Integer", v)
-		panic(NewErr(mess))
 	}
+	mess := fmt.Sprintf("Can't convert %T to clownfish.Integer", value)
+	panic(NewErr(mess))
 }
 
-func goToFloat(value interface{}) unsafe.Pointer {
+func goToFloat(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case float32:
 		return unsafe.Pointer(C.cfish_Float_new(C.double(v)))
 	case float64:
 		return unsafe.Pointer(C.cfish_Float_new(C.double(v)))
 	case Obj:
-		certifyCF(v, C.CFISH_FLOAT)
+		certifyCF(v, C.CFISH_FLOAT, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
-	default:
-		mess := fmt.Sprintf("Can't convert %T to clownfish.Float", v)
-		panic(NewErr(mess))
 	}
+	mess := fmt.Sprintf("Can't convert %T to clownfish.Float", value)
+	panic(NewErr(mess))
 }
 
-func goToBoolean(value interface{}) unsafe.Pointer {
+func goToBoolean(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case bool:
 		if v {
@@ -432,15 +431,14 @@ func goToBoolean(value interface{}) unsafe.Pointer {
 			return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(C.CFISH_FALSE)))
 		}
 	case Obj:
-		certifyCF(v, C.CFISH_BOOLEAN)
+		certifyCF(v, C.CFISH_BOOLEAN, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
-	default:
-		mess := fmt.Sprintf("Can't convert %T to clownfish.Boolean", v)
-		panic(NewErr(mess))
 	}
+	mess := fmt.Sprintf("Can't convert %T to clownfish.Boolean", value)
+	panic(NewErr(mess))
 }
 
-func goToVector(value interface{}) unsafe.Pointer {
+func goToVector(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case []interface{}:
 		size := len(v)
@@ -451,15 +449,14 @@ func goToVector(value interface{}) unsafe.Pointer {
 		}
 		return unsafe.Pointer(vec)
 	case Obj:
-		certifyCF(v, C.CFISH_VECTOR)
+		certifyCF(v, C.CFISH_VECTOR, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
-	default:
-		mess := fmt.Sprintf("Can't convert %T to clownfish.Vector", v)
-		panic(NewErr(mess))
 	}
+	mess := fmt.Sprintf("Can't convert %T to clownfish.Vector", value)
+	panic(NewErr(mess))
 }
 
-func goToHash(value interface{}) unsafe.Pointer {
+func goToHash(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case map[string]interface{}:
 		size := len(v)
@@ -474,12 +471,11 @@ func goToHash(value interface{}) unsafe.Pointer {
 		}
 		return unsafe.Pointer(hash)
 	case Obj:
-		certifyCF(v, C.CFISH_HASH)
+		certifyCF(v, C.CFISH_HASH, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
-	default:
-		mess := fmt.Sprintf("Can't convert %T to clownfish.Hash", v)
-		panic(NewErr(mess))
 	}
+	mess := fmt.Sprintf("Can't convert %T to clownfish.Hash", value)
+	panic(NewErr(mess))
 }
 
 func ToGo(ptr unsafe.Pointer) interface{} {
