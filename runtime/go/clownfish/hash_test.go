@@ -24,11 +24,11 @@ func TestHashStoreFetch(t *testing.T) {
 	hash := NewHash(0)
 	hash.Store("foo", "bar")
 	if got, ok := hash.Fetch("foo").(string); !ok || got != "bar" {
-		t.Errorf("Expected \"bar\", got %v", got)
+		t.Errorf("Expected 'bar', got '%v'", got)
 	}
 	hash.Store("nada", nil)
 	if got := hash.Fetch("nada"); got != nil {
-		t.Errorf("Expected nil, got %v", got)
+		t.Errorf("Expected nil, got '%v'", got)
 	}
 }
 
@@ -40,7 +40,7 @@ func TestHashDelete(t *testing.T) {
 		t.Errorf("Delete failed (size %d)", size)
 	}
 	if val, ok := got.(string); !ok || val != "bar" {
-		t.Errorf("Delete returned unexpected value: %v")
+		t.Errorf("Delete returned unexpected value: '%v'", val)
 	}
 }
 
@@ -76,7 +76,7 @@ func TestHashKeys(t *testing.T) {
 	sort.Strings(keys)
 	expected := []string{"a", "b"}
 	if !reflect.DeepEqual(keys, expected) {
-		t.Errorf("Expected %v, got %v", expected, keys)
+		t.Errorf("Expected '%v', got '%v'", expected, keys)
 	}
 }
 
@@ -92,7 +92,7 @@ func TestHashValues(t *testing.T) {
 	sort.Strings(vals)
 	expected := []string{"a", "b"}
 	if !reflect.DeepEqual(vals, expected) {
-		t.Errorf("Expected %v, got %v", expected, vals)
+		t.Errorf("Expected '%v', got '%v'", expected, vals)
 	}
 }
 
@@ -146,10 +146,10 @@ func TestHashIterator(t *testing.T) {
 		t.Error("Next() should proceed")
 	}
 	if key := iter.GetKey(); key != "a" {
-		t.Error("Expected \"a\", got %v", key)
+		t.Error("Expected 'a', got '%v'", key)
 	}
 	if val, ok := iter.GetValue().(string); !ok || val != "foo" {
-		t.Error("Expected \"a\", got %v", val)
+		t.Error("Expected 'a', got '%v'", val)
 	}
 	if iter.Next() {
 		t.Error("Next() should return false when iteration complete")
