@@ -260,52 +260,41 @@ func GoToClownfish(value interface{}, class unsafe.Pointer, nullable bool) unsaf
 	}
 
 	// Convert the value according to its type if possible.
-	var converted unsafe.Pointer
 	switch v := value.(type) {
 	case string:
 		if klass == C.CFISH_STRING || klass == C.CFISH_OBJ {
-			converted = goToString(value, nullable)
+			return goToString(value, nullable)
 		}
 	case []byte:
 		if klass == C.CFISH_BLOB || klass == C.CFISH_OBJ {
-			converted = goToBlob(value, nullable)
+			return goToBlob(value, nullable)
 		}
 	case int, uint, uintptr, int64, int32, int16, int8, uint64, uint32, uint16, uint8:
 		if klass == C.CFISH_INTEGER || klass == C.CFISH_OBJ {
-			converted = goToInteger(value, nullable)
+			return goToInteger(value, nullable)
 		}
 	case float32, float64:
 		if klass == C.CFISH_FLOAT || klass == C.CFISH_OBJ {
-			converted = goToFloat(value, nullable)
+			return goToFloat(value, nullable)
 		}
 	case bool:
 		if klass == C.CFISH_BOOLEAN || klass == C.CFISH_OBJ {
-			converted = goToBoolean(value, nullable)
+			return goToBoolean(value, nullable)
 		}
 	case []interface{}:
 		if klass == C.CFISH_VECTOR || klass == C.CFISH_OBJ {
-			converted = goToVector(value, nullable)
+			return goToVector(value, nullable)
 		}
 	case map[string]interface{}:
 		if klass == C.CFISH_HASH || klass == C.CFISH_OBJ {
-			converted = goToHash(value, nullable)
+			return goToHash(value, nullable)
 		}
 	case Obj:
 		certifyCF(value, klass, nullable)
-		converted = unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
+		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
 	case nil:
 		if nullable {
 			return nil
-		}
-	}
-
-	if converted == nil {
-		if nullable {
-			return nil
-		}
-	} else {
-		if C.cfish_Obj_is_a((*C.cfish_Obj)(converted), klass) {
-			return unsafe.Pointer(C.cfish_incref(converted))
 		}
 	}
 

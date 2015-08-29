@@ -170,7 +170,7 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
                                            nullable ? "true" : "false");
         converted = CFCUtil_cat(converted, conversion, NULL);
         FREEMEM(conversion);
-        if (CFCType_decremented(type)) {
+        if (!CFCType_decremented(type)) {
             converted = CFCUtil_cat(converted,
                                     "\tdefer C.cfish_decref(unsafe.Pointer(",
                                     go_name, "CF))\n", NULL);
