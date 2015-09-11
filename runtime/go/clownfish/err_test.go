@@ -44,7 +44,7 @@ func TestErrGetMess(t *testing.T) {
 	err := NewErr("foo")
 	expected := "foo"
 	if got := err.GetMess(); got != expected {
-		t.Errorf("Expected %v, got %v", expected, got)
+		t.Errorf("Expected '%v', got '%v'", expected, got)
 	}
 }
 
@@ -53,7 +53,7 @@ func TestErrCatMess(t *testing.T) {
 	err.CatMess("bar")
 	expected := "foobar"
 	if got := err.GetMess(); got != expected {
-		t.Errorf("Expected %v, got %v", expected, got)
+		t.Errorf("Expected '%v', got '%v'", expected, got)
 	}
 }
 
@@ -61,6 +61,6 @@ func TestErrToString(t *testing.T) {
 	err := NewErr("foo")
 	expected := "foo"
 	if got := err.ToString(); got != expected {
-		t.Errorf("Expected %v, got %v", expected, got)
+		t.Errorf("Expected '%v', got '%v'", expected, got)
 	}
 }

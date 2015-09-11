@@ -136,7 +136,7 @@ func TestGoToNilNotNullable(t *testing.T) {
 func TestGoToString(t *testing.T) {
 	strings := []string{"foo", "", "z\u0000z"}
 	for _, val := range strings {
-		got := WRAPAny(GoToString(val))
+		got := WRAPAny(goToString(val, false))
 		if _, ok := got.(String); !ok {
 			t.Errorf("Not a String, but a %T", got)
 		}
@@ -150,7 +150,7 @@ func TestGoToBlob(t *testing.T) {
 	strings := []string{"foo", "", "z\u0000z"}
 	for _, str := range strings {
 		val := []byte(str)
-		got := WRAPAny(GoToBlob(val))
+		got := WRAPAny(goToBlob(val, false))
 		if _, ok := got.(Blob); !ok {
 			t.Errorf("Not a Blob, but a %T", got)
 		}
@@ -193,7 +193,7 @@ func TestGoToFloat(t *testing.T) {
 	values := []float64{math.MaxFloat64, math.SmallestNonzeroFloat64,
 		0.0, -0.0, 0.5, -0.5, math.Inf(1), math.Inf(-1)}
 	for _, val := range values {
-		got := WRAPAny(GoToFloat(val))
+		got := WRAPAny(goToFloat(val, false))
 		if _, ok := got.(Float); !ok {
 			t.Errorf("Not a Float, but a %T", got)
 		}
@@ -203,7 +203,7 @@ func TestGoToFloat(t *testing.T) {
 	}
 
 	// NaN
-	got = WRAPAny(GoToFloat(math.NaN()))
+	got = WRAPAny(goToFloat(math.NaN(), false))
 	if !math.IsNaN(ToGo(unsafe.Pointer(got.TOPTR())).(float64)) {
 		t.Error("Didn't convert NaN cleanly")
 	}
@@ -217,7 +217,7 @@ func TestGoToFloat(t *testing.T) {
 func TestGoToBoolean(t *testing.T) {
 	values := []bool{true, false}
 	for _, val := range values {
-		got := WRAPAny(GoToBoolean(val))
+		got := WRAPAny(goToBoolean(val, false))
 		if _, ok := got.(Boolean); !ok {
 			t.Errorf("Not a Boolean, but a %T", got)
 		}
@@ -232,7 +232,7 @@ func TestGoToHash(t *testing.T) {
 		"foo": int64(1),
 		"bar": []interface{}{},
 	}
-	got := WRAPAny(GoToHash(expected))
+	got := WRAPAny(goToHash(expected, false))
 	if _, ok := got.(Hash); !ok {
 		t.Errorf("Not a Hash, but a %T", got)
 	}
@@ -246,7 +246,7 @@ func TestGoToVector(t *testing.T) {
 		[]interface{}{},
 		int64(-1),
 	}
-	got := WRAPAny(GoToVector(expected))
+	got := WRAPAny(goToVector(expected, false))
 	if _, ok := got.(Vector); !ok {
 		t.Errorf("Not a Vector, but a %T", got)
 	}
