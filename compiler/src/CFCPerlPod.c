@@ -204,7 +204,9 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
     CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
     for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
         CFCMethod *method = fresh_methods[meth_num];
-        if (!CFCMethod_public(method) || !CFCMethod_novel(method)) {
+        const char *name = CFCMethod_get_name(method);
+
+        if (!CFCMethod_public(method)) {
             continue;
         }
         if (CFCMethod_excluded_from_host(method)) {
@@ -213,8 +215,13 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
         if (!CFCMethod_can_be_bound(method)) {
             continue;
         }
-
-        const char *name = CFCMethod_get_name(method);
+        if (!CFCMethod_novel(method)) {
+            // Add POD for first implementation of abstract methods.
+            if (CFCMethod_abstract(method)) { continue; }
+            CFCClass *parent = CFCClass_get_parent(klass);
+            CFCMethod *parent_method = CFCClass_method(parent, name);
+            if (!CFCMethod_abstract(parent_method)) { continue; }
+        }
 
         // Skip methods that were added manually.
         int found = false;
