@@ -112,11 +112,6 @@ final class Clownfish::Class inherits Clownfish::Obj {
     incremented Obj*
     Init_Obj(Class *self, void *allocation);
 
-    /** Create a new object to go with the supplied host object.
-     */
-    Obj*
-    Foster_Obj(Class *self, void *host_obj);
-
     void
     Add_Host_Method_Alias(Class *self, const char *alias,
                           const char *meth_name);

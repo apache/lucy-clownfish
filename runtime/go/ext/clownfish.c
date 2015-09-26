@@ -149,14 +149,6 @@ Class_Init_Obj_IMP(Class *self, void *allocation) {
     return obj;
 }
 
-Obj*
-Class_Foster_Obj_IMP(Class *self, void *host_obj) {
-    UNUSED_VAR(self);
-    UNUSED_VAR(host_obj);
-    THROW(ERR, "Unimplemented for Go");
-    UNREACHABLE_RETURN(Obj*);
-}
-
 void
 Class_register_with_host(Class *singleton, Class *parent) {
     UNUSED_VAR(singleton);

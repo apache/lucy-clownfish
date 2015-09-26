@@ -78,6 +78,17 @@ XSBind_new_blank_obj(pTHX_ SV *either_sv) {
 }
 
 cfish_Obj*
+XSBind_foster_obj(pTHX_ SV *sv, cfish_Class *klass) {
+    cfish_Obj *obj
+        = (cfish_Obj*)cfish_Memory_wrapped_calloc(klass->obj_alloc_size, 1);
+    SV *inner_obj = SvRV((SV*)sv);
+    obj->klass = klass;
+    sv_setiv(inner_obj, PTR2IV(obj));
+    obj->ref.host_obj = inner_obj;
+    return obj;
+}
+
+cfish_Obj*
 XSBind_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass) {
     cfish_Obj *retval = NULL;
     if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, true, NULL, &retval)) {
@@ -698,18 +709,6 @@ CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
     cfish_Obj *obj = (cfish_Obj*)allocation;
     obj->klass = self;
     obj->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;
-    return obj;
-}
-
-cfish_Obj*
-CFISH_Class_Foster_Obj_IMP(cfish_Class *self, void *host_obj) {
-    dTHX;
-    cfish_Obj *obj
-        = (cfish_Obj*)cfish_Memory_wrapped_calloc(self->obj_alloc_size, 1);
-    SV *inner_obj = SvRV((SV*)host_obj);
-    obj->klass = self;
-    sv_setiv(inner_obj, PTR2IV(obj));
-    obj->ref.host_obj = inner_obj;
     return obj;
 }
 
