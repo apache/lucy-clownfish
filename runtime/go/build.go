@@ -111,7 +111,8 @@ func configure() {
 	}
 	if !current(charmonizerEXE, charmonyH) {
 		runCommand("./charmonizer", "--cc=cc", "--enable-c", "--host=go",
-			"--enable-makefile", "--", "-std=gnu99", "-O2")
+			"--enable-makefile", "--disable-threads", "--", "-std=gnu99",
+			"-O2")
 	}
 }
 
