@@ -22,6 +22,9 @@ package clownfish
 
 #include "charmony.h"
 
+#include "cfish_parcel.h"
+#include "testcfish_parcel.h"
+
 #include "Clownfish/Obj.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Class.h"
@@ -85,6 +88,7 @@ var wrapReg *map[unsafe.Pointer]WrapFunc
 func init() {
 	C.GoCfish_glue_exported_symbols()
 	C.cfish_bootstrap_parcel()
+	C.testcfish_bootstrap_parcel()
 	initWRAP()
 }
 
