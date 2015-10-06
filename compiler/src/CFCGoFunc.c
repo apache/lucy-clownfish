@@ -312,10 +312,28 @@ CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
             char *go_type_name = CFCGoTypeMap_go_type_name(return_type, parcel);
             char *pattern;
             if (CFCType_incremented(return_type)) {
-                pattern = "\treturn %sWRAPAny(unsafe.Pointer(retvalCF)).(%s)\n";
+                if (CFCType_nullable(return_type)) {
+                    pattern =
+                        "\tretvalGO := %sWRAPAny(unsafe.Pointer(retvalCF))\n"
+                        "\tif retvalGO == nil { return nil }\n"
+                        "\treturn retvalGO.(%s)\n"
+                        ;
+                }
+                else {
+                    pattern = "\treturn %sWRAPAny(unsafe.Pointer(retvalCF)).(%s)\n";
+                }
             }
             else {
-                pattern = "\treturn %sWRAPAny(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(retvalCF)))).(%s)\n";
+                if (CFCType_nullable(return_type)) {
+                    pattern =
+                        "\tretvalGO := %sWRAPAny(unsafe.Pointer(C.cfish_incref(unsafe.Pointer(retvalCF))))\n"
+                        "\tif retvalGO == nil { return nil }\n"
+                        "\treturn retvalGO.(%s)\n"
+                        ;
+                }
+                else {
+                    pattern = "\treturn %sWRAPAny(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(retvalCF)))).(%s)\n";
+                }
             }
             statement = CFCUtil_sprintf(pattern, clownfish_dot, go_type_name);
             FREEMEM(go_type_name);
