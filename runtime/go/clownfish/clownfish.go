@@ -343,12 +343,18 @@ func goToString(value interface{}, nullable bool) unsafe.Pointer {
 func goToBlob(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case []byte:
-		size := C.size_t(len(v))
-		var buf *C.char = nil
-		if size > 0 {
-			buf = ((*C.char)(unsafe.Pointer(&v[0])))
+		if v == nil {
+			if nullable {
+				return nil
+			}
+		} else {
+			size := C.size_t(len(v))
+			var buf *C.char = nil
+			if size > 0 {
+				buf = ((*C.char)(unsafe.Pointer(&v[0])))
+			}
+			return unsafe.Pointer(C.cfish_Blob_new(buf, size))
 		}
-		return unsafe.Pointer(C.cfish_Blob_new(buf, size))
 	case Obj:
 		certifyCF(v, C.CFISH_BLOB, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
@@ -434,13 +440,19 @@ func goToBoolean(value interface{}, nullable bool) unsafe.Pointer {
 func goToVector(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case []interface{}:
-		size := len(v)
-		vec := C.cfish_Vec_new(C.size_t(size))
-		for i := 0; i < size; i++ {
-			elem := GoToClownfish(v[i], nil, true)
-			C.CFISH_Vec_Store(vec, C.size_t(i), (*C.cfish_Obj)(elem))
+		if v == nil {
+			if nullable {
+				return nil
+			}
+		} else {
+			size := len(v)
+			vec := C.cfish_Vec_new(C.size_t(size))
+			for i := 0; i < size; i++ {
+				elem := GoToClownfish(v[i], nil, true)
+				C.CFISH_Vec_Store(vec, C.size_t(i), (*C.cfish_Obj)(elem))
+			}
+			return unsafe.Pointer(vec)
 		}
-		return unsafe.Pointer(vec)
 	case Obj:
 		certifyCF(v, C.CFISH_VECTOR, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
@@ -452,17 +464,23 @@ func goToVector(value interface{}, nullable bool) unsafe.Pointer {
 func goToHash(value interface{}, nullable bool) unsafe.Pointer {
 	switch v := value.(type) {
 	case map[string]interface{}:
-		size := len(v)
-		hash := C.cfish_Hash_new(C.size_t(size))
-		for key, val := range v {
-			newVal := GoToClownfish(val, nil, true)
-			keySize := len(key)
-			keyStr := C.CString(key)
-		    cfKey := C.cfish_Str_new_steal_utf8(keyStr, C.size_t(keySize))
-			defer C.cfish_dec_refcount(unsafe.Pointer(cfKey))
-			C.CFISH_Hash_Store(hash, cfKey, (*C.cfish_Obj)(newVal))
+		if v == nil {
+			if nullable {
+				return nil
+			}
+		} else {
+			size := len(v)
+			hash := C.cfish_Hash_new(C.size_t(size))
+			for key, val := range v {
+				newVal := GoToClownfish(val, nil, true)
+				keySize := len(key)
+				keyStr := C.CString(key)
+				cfKey := C.cfish_Str_new_steal_utf8(keyStr, C.size_t(keySize))
+				defer C.cfish_dec_refcount(unsafe.Pointer(cfKey))
+				C.CFISH_Hash_Store(hash, cfKey, (*C.cfish_Obj)(newVal))
+			}
+			return unsafe.Pointer(hash)
 		}
-		return unsafe.Pointer(hash)
 	case Obj:
 		certifyCF(v, C.CFISH_HASH, nullable)
 		return unsafe.Pointer(C.cfish_incref(unsafe.Pointer(v.TOPTR())))
