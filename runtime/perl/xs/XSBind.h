@@ -50,6 +50,11 @@ extern "C" {
 CFISH_VISIBLE cfish_Obj*
 cfish_XSBind_new_blank_obj(pTHX_ SV *either_sv);
 
+/** Create a new object to go with the supplied host object.
+ */
+CFISH_VISIBLE cfish_Obj*
+cfish_XSBind_foster_obj(pTHX_ SV *sv, cfish_Class *klass);
+
 /** Test whether an SV is defined.  Handles "get" magic, unlike SvOK on its
  * own.
  */
@@ -307,6 +312,7 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
  * named "XSBind_sv_defined".)
  */
 #define XSBind_new_blank_obj           cfish_XSBind_new_blank_obj
+#define XSBind_foster_obj              cfish_XSBind_foster_obj
 #define XSBind_sv_defined              cfish_XSBind_sv_defined
 #define XSBind_cfish_obj_to_sv         cfish_XSBind_cfish_obj_to_sv
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc

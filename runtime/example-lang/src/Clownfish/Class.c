@@ -31,12 +31,6 @@ CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
     UNREACHABLE_RETURN(cfish_Obj*);
 }
 
-cfish_Obj*
-CFISH_Class_Foster_Obj_IMP(cfish_Class *self, void *host_obj) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(cfish_Obj*);
-}
-
 void
 cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
     THROW(CFISH_ERR, "TODO");
