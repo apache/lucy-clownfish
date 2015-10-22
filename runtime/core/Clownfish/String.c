@@ -118,7 +118,7 @@ Str_new_wrap_trusted_utf8(const char *utf8, size_t size) {
 }
 
 String*
-Str_new_stack_string(void *allocation, const char *utf8, size_t size) {
+Str_init_stack_string(void *allocation, const char *utf8, size_t size) {
     String *self = (String*)Class_Init_Obj(STRING, allocation);
     return Str_init_wrap_trusted_utf8(self, utf8, size);
 }

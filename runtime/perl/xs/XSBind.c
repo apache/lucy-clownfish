@@ -200,7 +200,7 @@ S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
             if (!allocation) {
                 CFISH_THROW(CFISH_ERR, "Allocation for stack string missing");
             }
-            *obj_ptr = (cfish_Obj*)cfish_Str_new_stack_string(
+            *obj_ptr = (cfish_Obj*)cfish_Str_init_stack_string(
                     allocation, ptr, size);
             return true;
         }

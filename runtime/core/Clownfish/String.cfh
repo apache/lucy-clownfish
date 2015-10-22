@@ -85,7 +85,7 @@ public final class Clownfish::String nickname Str
     new_wrap_trusted_utf8(const char *utf8, size_t size);
 
     inert incremented String*
-    new_stack_string(void *allocation, const char *utf8, size_t size);
+    init_stack_string(void *allocation, const char *utf8, size_t size);
 
     /** Initialize a String which wraps an external buffer containing UTF-8
      * character data after checking for validity.
@@ -390,10 +390,10 @@ public final class Clownfish::StringIterator nickname StrIter
 __C__
 
 #define CFISH_SSTR_BLANK() \
-    cfish_Str_new_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), "", 0)
+    cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), "", 0)
 
 #define CFISH_SSTR_WRAP_UTF8(ptr, size) \
-    cfish_Str_new_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), ptr, size)
+    cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), ptr, size)
 
 #define CFISH_STRITER_DONE  -1
 
