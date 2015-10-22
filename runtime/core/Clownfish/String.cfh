@@ -219,17 +219,17 @@ public final class Clownfish::String nickname Str
 
     /** Remove Unicode whitespace characters from both top and tail.
      */
-    String*
+    incremented String*
     Trim(String *self);
 
     /** Remove leading Unicode whitespace.
      */
-    String*
+    incremented String*
     Trim_Top(String *self);
 
     /** Remove trailing Unicode whitespace.
      */
-    String*
+    incremented String*
     Trim_Tail(String *self);
 
     /** Return the Unicode code point located `tick` code points in from the
