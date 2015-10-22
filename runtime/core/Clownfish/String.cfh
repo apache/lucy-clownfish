@@ -107,19 +107,6 @@ public final class Clownfish::String nickname Str
     inert incremented String*
     newf(const char *pattern, ...);
 
-    /** Perform lexical comparison of two Strings, with level of indirection
-     * set to please qsort and friends.
-     */
-    inert int
-    compare(const void *va, const void *vb);
-
-    /** Perform lexical comparison of two Strings, with level of indirection
-     * set to please qsort and friends, and return true if `a` is
-     * less than `b`.
-     */
-    inert bool
-    less_than(const void *va, const void *vb);
-
     void*
     To_Host(String *self);
 

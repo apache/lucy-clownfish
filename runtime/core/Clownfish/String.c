@@ -343,8 +343,24 @@ Str_Equals_IMP(String *self, Obj *other) {
 
 int32_t
 Str_Compare_To_IMP(String *self, Obj *other) {
-    CERTIFY(other, STRING);
-    return Str_compare(&self, &other);
+    String  *twin = (String*)CERTIFY(other, STRING);
+    size_t   min_size;
+    int32_t  tie;
+
+    if (self->size <= twin->size) {
+        min_size = self->size;
+        tie      = self->size < twin->size ? -1 : 0;
+    }
+    else {
+        min_size = twin->size;
+        tie      = 1;
+    }
+
+    int comparison = memcmp(self->ptr, twin->ptr, min_size);
+    if (comparison < 0) { return -1; }
+    if (comparison > 0) { return 1; }
+
+    return tie;
 }
 
 bool
@@ -455,34 +471,6 @@ Str_SubString_IMP(String *self, size_t offset, size_t len) {
     size_t size = iter->byte_offset - start_offset;
 
     return S_new_substring(self, start_offset, size);
-}
-
-int
-Str_compare(const void *va, const void *vb) {
-    String *a = *(String**)va;
-    String *b = *(String**)vb;
-    size_t min_size;
-    int    tie;
-
-    if (a->size <= b->size) {
-        min_size = a->size;
-        tie      = a->size < b->size ? -1 : 0;
-    }
-    else {
-        min_size = b->size;
-        tie      = 1;
-    }
-
-    int comparison = memcmp(a->ptr, b->ptr, min_size);
-    if (comparison < 0) { return -1; }
-    if (comparison > 0) { return 1; }
-
-    return tie;
-}
-
-bool
-Str_less_than(const void *va, const void *vb) {
-    return Str_compare(va, vb) < 0 ? true : false;
 }
 
 size_t
