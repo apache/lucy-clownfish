@@ -194,12 +194,12 @@ test_Code_Point_At_and_From(TestBatchRunner *runner) {
                     code_points[i], "Code_Point_From %ld", (long)from);
     }
 
-    TEST_INT_EQ(runner, Str_Code_Point_At(string, num_code_points), 0,
+    TEST_INT_EQ(runner, Str_Code_Point_At(string, num_code_points), STR_OOB,
                 "Code_Point_At %ld", (long)num_code_points);
-    TEST_INT_EQ(runner, Str_Code_Point_From(string, 0), 0,
+    TEST_INT_EQ(runner, Str_Code_Point_From(string, 0), STR_OOB,
                 "Code_Point_From 0");
-    TEST_INT_EQ(runner, Str_Code_Point_From(string, num_code_points + 1), 0,
-                "Code_Point_From %ld", (long)(num_code_points + 1));
+    TEST_INT_EQ(runner, Str_Code_Point_From(string, num_code_points + 1),
+                STR_OOB, "Code_Point_From %ld", (long)(num_code_points + 1));
 
     DECREF(string);
 }

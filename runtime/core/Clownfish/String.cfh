@@ -246,15 +246,13 @@ public final class Clownfish::String nickname Str
     Trim_Tail(String *self);
 
     /** Return the Unicode code point located `tick` code points in from the
-     * top.  Return 0 if out of bounds.  (XXX It would be
-     * better to throw an exception, but that's not practical with UTF-8 and
-     * no cached length.)
+     * top.  Return CFISH_STR_OOB if out of bounds.
      */
     int32_t
     Code_Point_At(String *self, size_t tick);
 
     /** Return the Unicode code point located `tick` code points counting
-     * backwards from the end.  Return 0 if out of bounds.
+     * backwards from the end.  Return CFISH_STR_OOB if out of bounds.
      */
     int32_t
     Code_Point_From(String *self, size_t tick);
@@ -388,11 +386,13 @@ __C__
 #define CFISH_SSTR_WRAP_UTF8(ptr, size) \
     cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), ptr, size)
 
+#define CFISH_STR_OOB       -1
 #define CFISH_STRITER_DONE  -1
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define SSTR_BLANK             CFISH_SSTR_BLANK
   #define SSTR_WRAP_UTF8         CFISH_SSTR_WRAP_UTF8
+  #define STR_OOB                CFISH_STR_OOB
   #define STRITER_DONE           CFISH_STRITER_DONE
 #endif
 __END_C__

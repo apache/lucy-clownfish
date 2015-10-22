@@ -432,16 +432,16 @@ Str_Code_Point_At_IMP(String *self, size_t tick) {
     StringIterator *iter = STACK_ITER(self, 0);
     StrIter_Advance(iter, tick);
     int32_t code_point = StrIter_Next(iter);
-    return code_point == STRITER_DONE ? 0 : code_point;
+    return code_point == STRITER_DONE ? STR_OOB : code_point;
 }
 
 int32_t
 Str_Code_Point_From_IMP(String *self, size_t tick) {
-    if (tick == 0) { return 0; }
+    if (tick == 0) { return STR_OOB; }
     StringIterator *iter = STACK_ITER(self, self->size);
     StrIter_Recede(iter, tick - 1);
     int32_t code_point = StrIter_Prev(iter);
-    return code_point == STRITER_DONE ? 0 : code_point;
+    return code_point == STRITER_DONE ? STR_OOB : code_point;
 }
 
 String*
