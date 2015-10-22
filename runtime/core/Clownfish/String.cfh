@@ -140,13 +140,6 @@ public final class Clownfish::String nickname Str
     incremented String*
     Cat_Trusted_Utf8(String *self, const char *ptr, size_t size);
 
-    /** Replace all instances of one character for the other.
-     *
-     * @return a new String with the characters replaced.
-     */
-    incremented String*
-    Swap_Chars(String *self, int32_t match, int32_t replacement);
-
     public int64_t
     To_I64(String *self);
 

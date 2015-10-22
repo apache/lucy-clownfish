@@ -386,17 +386,6 @@ test_Compare_To(TestBatchRunner *runner) {
 }
 
 static void
-test_Swap_Chars(TestBatchRunner *runner) {
-    String *source = S_get_str("aXXbXc");
-    String *got    = Str_Swap_Chars(source, 'X', smiley_cp);
-    String *wanted = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
-    TEST_TRUE(runner, Str_Equals(got, (Obj*)wanted), "Swap_Chars");
-    DECREF(wanted);
-    DECREF(got);
-    DECREF(source);
-}
-
-static void
 test_Starts_Ends_With(TestBatchRunner *runner) {
     String *prefix  = S_get_str("pre" SMILEY "fix_");
     String *postfix = S_get_str("_post" SMILEY "fix");
@@ -687,7 +676,7 @@ test_iterator_substring(TestBatchRunner *runner) {
 
 void
 TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 134);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 133);
     test_new(runner);
     test_Cat(runner);
     test_Clone(runner);
@@ -701,7 +690,6 @@ TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
     test_To_Utf8(runner);
     test_Length(runner);
     test_Compare_To(runner);
-    test_Swap_Chars(runner);
     test_Starts_Ends_With(runner);
     test_Get_Ptr8(runner);
     test_iterator(runner);

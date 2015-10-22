@@ -26,14 +26,6 @@ func TestStringCat(t *testing.T) {
 	}
 }
 
-func TestStringSwapChars(t *testing.T) {
-	s := NewString("foo")
-	got := s.SwapChars('o', 'u')
-	if got != "fuu" {
-		t.Error("Expected 'fuu', got", got)
-	}
-}
-
 func TestStringStartsWithEndsWith(t *testing.T) {
 	s := NewString("foobar")
 	if !s.StartsWith("foo") {

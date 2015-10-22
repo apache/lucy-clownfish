@@ -219,22 +219,6 @@ Str_To_String_IMP(String *self) {
     return (String*)INCREF(self);
 }
 
-String*
-Str_Swap_Chars_IMP(String *self, int32_t match, int32_t replacement) {
-    CharBuf *charbuf = CB_new(self->size);
-    StringIterator *iter = STACK_ITER(self, 0);
-    int32_t code_point;
-
-    while (STRITER_DONE != (code_point = StrIter_Next(iter))) {
-        if (code_point == match) { code_point = replacement; }
-        CB_Cat_Char(charbuf, code_point);
-    }
-
-    String *retval = CB_Yield_String(charbuf);
-    DECREF(charbuf);
-    return retval;
-}
-
 int64_t
 Str_To_I64_IMP(String *self) {
     return Str_BaseX_To_I64(self, 10);
