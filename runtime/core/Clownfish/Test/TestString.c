@@ -387,20 +387,20 @@ test_Compare_To(TestBatchRunner *runner) {
 
 static void
 test_Starts_Ends_With(TestBatchRunner *runner) {
-    String *prefix  = S_get_str("pre" SMILEY "fix_");
-    String *postfix = S_get_str("_post" SMILEY "fix");
-    String *empty   = S_get_str("");
+    String *prefix = S_get_str("pre" SMILEY "fix_");
+    String *suffix = S_get_str("_post" SMILEY "fix");
+    String *empty  = S_get_str("");
 
-    TEST_TRUE(runner, Str_Starts_With(postfix, postfix),
+    TEST_TRUE(runner, Str_Starts_With(suffix, suffix),
               "Starts_With self returns true");
     TEST_TRUE(runner, Str_Starts_With(prefix, prefix),
               "Ends_With self returns true");
 
-    TEST_TRUE(runner, Str_Starts_With(postfix, empty),
+    TEST_TRUE(runner, Str_Starts_With(suffix, empty),
               "Starts_With empty string returns true");
     TEST_TRUE(runner, Str_Ends_With(prefix, empty),
               "Ends_With empty string returns true");
-    TEST_FALSE(runner, Str_Starts_With(empty, postfix),
+    TEST_FALSE(runner, Str_Starts_With(empty, suffix),
               "Empty string Starts_With returns false");
     TEST_FALSE(runner, Str_Ends_With(empty, prefix),
               "Empty string Ends_With returns false");
@@ -410,7 +410,7 @@ test_Starts_Ends_With(TestBatchRunner *runner) {
             = S_get_str("pre" SMILEY "fix_string_post" SMILEY "fix");
         TEST_TRUE(runner, Str_Starts_With(string, prefix),
                   "Starts_With returns true");
-        TEST_TRUE(runner, Str_Ends_With(string, postfix),
+        TEST_TRUE(runner, Str_Ends_With(string, suffix),
                   "Ends_With returns true");
         DECREF(string);
     }
@@ -420,13 +420,13 @@ test_Starts_Ends_With(TestBatchRunner *runner) {
             = S_get_str("pre" SMILEY "fix:string:post" SMILEY "fix");
         TEST_FALSE(runner, Str_Starts_With(string, prefix),
                    "Starts_With returns false");
-        TEST_FALSE(runner, Str_Ends_With(string, postfix),
+        TEST_FALSE(runner, Str_Ends_With(string, suffix),
                    "Ends_With returns false");
         DECREF(string);
     }
 
     DECREF(prefix);
-    DECREF(postfix);
+    DECREF(suffix);
     DECREF(empty);
 }
 

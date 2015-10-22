@@ -148,15 +148,15 @@ public final class Clownfish::String nickname Str
     bool
     Starts_With_Utf8(String *self, const char *prefix, size_t size);
 
-    /** Test whether the String ends with `postfix`.
+    /** Test whether the String ends with `suffix`.
      */
     bool
-    Ends_With(String *self, String *postfix);
+    Ends_With(String *self, String *suffix);
 
-    /** Test whether the String ends with `postfix`.
+    /** Test whether the String ends with `suffix`.
      */
     bool
-    Ends_With_Utf8(String *self, const char *postfix, size_t size);
+    Ends_With_Utf8(String *self, const char *suffix, size_t size);
 
     /** Return the location of the substring within the String (measured in
      * code points), or -1 if the substring does not match.
@@ -351,15 +351,15 @@ public final class Clownfish::StringIterator nickname StrIter
     Starts_With_Utf8(StringIterator *self, const char *prefix, size_t size);
 
     /** Test whether the content before the iterator ends with
-     * `postfix`.
+     * `suffix`.
      */
     bool
-    Ends_With(StringIterator *self, String *postfix);
+    Ends_With(StringIterator *self, String *suffix);
 
-    /** Test whether the content before the iterator ends with `postfix`.
+    /** Test whether the content before the iterator ends with `suffix`.
      */
     bool
-    Ends_With_Utf8(StringIterator *self, const char *postfix, size_t size);
+    Ends_With_Utf8(StringIterator *self, const char *suffix, size_t size);
 
     public void
     Destroy(StringIterator *self);

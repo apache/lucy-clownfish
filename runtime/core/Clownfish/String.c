@@ -372,15 +372,15 @@ Str_Equals_Utf8_IMP(String *self, const char *ptr, size_t size) {
 }
 
 bool
-Str_Ends_With_IMP(String *self, String *postfix) {
-    return Str_Ends_With_Utf8_IMP(self, postfix->ptr, postfix->size);
+Str_Ends_With_IMP(String *self, String *suffix) {
+    return Str_Ends_With_Utf8_IMP(self, suffix->ptr, suffix->size);
 }
 
 bool
-Str_Ends_With_Utf8_IMP(String *self, const char *postfix, size_t postfix_len) {
-    if (postfix_len <= self->size) {
-        const char *start = self->ptr + self->size - postfix_len;
-        if (memcmp(start, postfix, postfix_len) == 0) {
+Str_Ends_With_Utf8_IMP(String *self, const char *suffix, size_t suffix_len) {
+    if (suffix_len <= self->size) {
+        const char *start = self->ptr + self->size - suffix_len;
+        if (memcmp(start, suffix, suffix_len) == 0) {
             return true;
         }
     }
@@ -803,12 +803,12 @@ StrIter_Starts_With_Utf8_IMP(StringIterator *self, const char *prefix,
 }
 
 bool
-StrIter_Ends_With_IMP(StringIterator *self, String *postfix) {
-    return StrIter_Ends_With_Utf8_IMP(self, postfix->ptr, postfix->size);
+StrIter_Ends_With_IMP(StringIterator *self, String *suffix) {
+    return StrIter_Ends_With_Utf8_IMP(self, suffix->ptr, suffix->size);
 }
 
 bool
-StrIter_Ends_With_Utf8_IMP(StringIterator *self, const char *postfix,
+StrIter_Ends_With_Utf8_IMP(StringIterator *self, const char *suffix,
                            size_t size) {
     String *string      = self->string;
     size_t  byte_offset = self->byte_offset;
@@ -820,7 +820,7 @@ StrIter_Ends_With_Utf8_IMP(StringIterator *self, const char *postfix,
 
     if (byte_offset < size) { return false; }
 
-    return memcmp(string->ptr + byte_offset - size, postfix, size) == 0;
+    return memcmp(string->ptr + byte_offset - size, suffix, size) == 0;
 }
 
 void
