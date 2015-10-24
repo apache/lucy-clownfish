@@ -555,10 +555,6 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
         }
 
         tail_offset = tail->byte_offset;
-        if (tail_offset > string->size) {
-            THROW(ERR, "Invalid StringIterator offset");
-            UNREACHABLE_RETURN(String*);
-        }
     }
 
     if (top == NULL) {
@@ -811,11 +807,6 @@ StrIter_Starts_With_Utf8_IMP(StringIterator *self, const char *prefix,
     String *string      = self->string;
     size_t  byte_offset = self->byte_offset;
 
-    if (byte_offset > string->size) {
-        THROW(ERR, "Invalid StringIterator offset");
-        UNREACHABLE_RETURN(bool);
-    }
-
     if (string->size - byte_offset < size) { return false; }
 
     return memcmp(string->ptr + byte_offset, prefix, size) == 0;
@@ -831,11 +822,6 @@ StrIter_Ends_With_Utf8_IMP(StringIterator *self, const char *suffix,
                            size_t size) {
     String *string      = self->string;
     size_t  byte_offset = self->byte_offset;
-
-    if (byte_offset > string->size) {
-        THROW(ERR, "Invalid StringIterator offset");
-        UNREACHABLE_RETURN(bool);
-    }
 
     if (byte_offset < size) { return false; }
 
