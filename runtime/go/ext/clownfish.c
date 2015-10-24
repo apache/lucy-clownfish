@@ -182,7 +182,7 @@ Method_Host_Name_IMP(Method *self) {
     StringIterator *iter = StrIter_new(self->name, 0);
     CharBuf *charbuf = CB_new(Str_Get_Size(self->name));
     int32_t code_point;
-    while (STRITER_DONE != (code_point = StrIter_Next(iter))) {
+    while (STR_OOB != (code_point = StrIter_Next(iter))) {
         if (code_point != '_') {
             CB_Cat_Char(charbuf, code_point);
         }

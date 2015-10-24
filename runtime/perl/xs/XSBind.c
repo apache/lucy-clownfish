@@ -782,7 +782,7 @@ CFISH_Method_Host_Name_IMP(cfish_Method *self) {
     cfish_CharBuf *buf = cfish_CB_new(CFISH_Str_Get_Size(name));
     cfish_StringIterator *iter = CFISH_Str_Top(name);
     int32_t code_point;
-    while (CFISH_STRITER_DONE != (code_point = CFISH_StrIter_Next(iter))) {
+    while (CFISH_STR_OOB != (code_point = CFISH_StrIter_Next(iter))) {
         if (code_point > 127) {
             THROW(CFISH_ERR, "Can't lowercase '%o'", name);
         }

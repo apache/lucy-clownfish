@@ -319,13 +319,13 @@ public final class Clownfish::StringIterator nickname StrIter
     Has_Prev(StringIterator *self);
 
     /** Return the code point after the current position and advance the
-     * iterator. Return CFISH_STRITER_DONE at the end of the string.
+     * iterator. Return CFISH_STR_OOB at the end of the string.
      */
     public int32_t
     Next(StringIterator *self);
 
     /** Return the code point before the current position and go one step back.
-     * Return CFISH_STRITER_DONE at the start of the string.
+     * Return CFISH_STR_OOB at the start of the string.
      */
     public int32_t
     Prev(StringIterator *self);
@@ -396,14 +396,12 @@ __C__
     cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), ptr, size)
 
 #define CFISH_STR_OOB       -1
-#define CFISH_STRITER_DONE  -1
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define SSTR_BLANK             CFISH_SSTR_BLANK
   #define SSTR_WRAP_C            CFISH_SSTR_WRAP_C
   #define SSTR_WRAP_UTF8         CFISH_SSTR_WRAP_UTF8
   #define STR_OOB                CFISH_STR_OOB
-  #define STRITER_DONE           CFISH_STRITER_DONE
 #endif
 __END_C__
 

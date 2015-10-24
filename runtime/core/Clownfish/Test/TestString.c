@@ -535,7 +535,7 @@ test_iterator(TestBatchRunner *runner) {
 
         TEST_TRUE(runner, !StrIter_Has_Next(iter),
                   "Has_Next at end of string");
-        TEST_INT_EQ(runner, StrIter_Next(iter), STRITER_DONE,
+        TEST_INT_EQ(runner, StrIter_Next(iter), STR_OOB,
                     "Next at end of string");
 
         StringIterator *tail = Str_Tail(string);
@@ -556,7 +556,7 @@ test_iterator(TestBatchRunner *runner) {
 
         TEST_TRUE(runner, !StrIter_Has_Prev(iter),
                   "Has_Prev at end of string");
-        TEST_INT_EQ(runner, StrIter_Prev(iter), STRITER_DONE,
+        TEST_INT_EQ(runner, StrIter_Prev(iter), STR_OOB,
                     "Prev at start of string");
 
         StringIterator *top = Str_Top(string);
