@@ -18,6 +18,9 @@ parcel Clownfish;
 
 __C__
 
+// For strlen
+#include <string.h>
+
 // For CFISH_ALLOCA_OBJ.
 #include "Clownfish/Class.h"
 
@@ -385,6 +388,10 @@ __C__
 #define CFISH_SSTR_BLANK() \
     cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), "", 0)
 
+#define CFISH_SSTR_WRAP_C(ptr) \
+    cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), ptr, \
+                                strlen(ptr))
+
 #define CFISH_SSTR_WRAP_UTF8(ptr, size) \
     cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), ptr, size)
 
@@ -393,6 +400,7 @@ __C__
 
 #ifdef CFISH_USE_SHORT_NAMES
   #define SSTR_BLANK             CFISH_SSTR_BLANK
+  #define SSTR_WRAP_C            CFISH_SSTR_WRAP_C
   #define SSTR_WRAP_UTF8         CFISH_SSTR_WRAP_UTF8
   #define STR_OOB                CFISH_STR_OOB
   #define STRITER_DONE           CFISH_STRITER_DONE

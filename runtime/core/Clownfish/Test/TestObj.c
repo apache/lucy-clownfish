@@ -36,7 +36,7 @@ TestObj_new() {
 
 static Obj*
 S_new_testobj() {
-    String *class_name = SSTR_WRAP_UTF8("TestObj", 7);
+    String *class_name = SSTR_WRAP_C("TestObj");
     Obj *obj;
     Class *klass = Class_fetch_class(class_name);
     if (!klass) {

@@ -206,7 +206,7 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &novel_specs[num_novel++];
-            String *name = SSTR_WRAP_UTF8(mspec->name, strlen(mspec->name));
+            String *name = SSTR_WRAP_C(mspec->name);
             Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
             klass->methods[i] = method;
@@ -406,7 +406,7 @@ Class_Add_Host_Method_Alias_IMP(Class *self, const char *alias,
         fprintf(stderr, "Method %s not found\n", meth_name);
         abort();
     }
-    String *string = SSTR_WRAP_UTF8(alias, strlen(alias));
+    String *string = SSTR_WRAP_C(alias);
     Method_Set_Host_Alias(method, string);
 }
 
