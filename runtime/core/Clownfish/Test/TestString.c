@@ -600,19 +600,19 @@ test_iterator_whitespace(TestBatchRunner *runner) {
 
     {
         StringIterator *iter = Str_Top(ws_smiley);
-        TEST_INT_EQ(runner, StrIter_Skip_Next_Whitespace(iter), num_spaces,
-                    "Skip_Next_Whitespace");
-        TEST_INT_EQ(runner, StrIter_Skip_Next_Whitespace(iter), 0,
-                    "Skip_Next_Whitespace without whitespace");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace(iter), num_spaces,
+                    "Skip_Whitespace");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace(iter), 0,
+                    "Skip_Whitespace without whitespace");
         DECREF(iter);
     }
 
     {
         StringIterator *iter = Str_Tail(ws_smiley);
-        TEST_INT_EQ(runner, StrIter_Skip_Prev_Whitespace(iter), num_spaces,
-                    "Skip_Prev_Whitespace");
-        TEST_INT_EQ(runner, StrIter_Skip_Prev_Whitespace(iter), 0,
-                    "Skip_Prev_Whitespace without whitespace");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), num_spaces,
+                    "Skip_Whitespace_Back");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), 0,
+                    "Skip_Whitespace_Back without whitespace");
         DECREF(iter);
     }
 

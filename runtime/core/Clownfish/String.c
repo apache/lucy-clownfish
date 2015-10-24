@@ -433,12 +433,12 @@ S_memmem(String *self, const char *substring, size_t size) {
 String*
 Str_Trim_IMP(String *self) {
     StringIterator *top = STACK_ITER(self, 0);
-    StrIter_Skip_Next_Whitespace(top);
+    StrIter_Skip_Whitespace(top);
 
     StringIterator *tail = NULL;
     if (top->byte_offset < self->size) {
         tail = STACK_ITER(self, self->size);
-        StrIter_Skip_Prev_Whitespace(tail);
+        StrIter_Skip_Whitespace_Back(tail);
     }
 
     return StrIter_substring((StringIterator*)top, (StringIterator*)tail);
@@ -447,14 +447,14 @@ Str_Trim_IMP(String *self) {
 String*
 Str_Trim_Top_IMP(String *self) {
     StringIterator *top = STACK_ITER(self, 0);
-    StrIter_Skip_Next_Whitespace(top);
+    StrIter_Skip_Whitespace(top);
     return StrIter_substring((StringIterator*)top, NULL);
 }
 
 String*
 Str_Trim_Tail_IMP(String *self) {
     StringIterator *tail = STACK_ITER(self, self->size);
-    StrIter_Skip_Prev_Whitespace(tail);
+    StrIter_Skip_Whitespace_Back(tail);
     return StrIter_substring(NULL, (StringIterator*)tail);
 }
 
@@ -771,7 +771,7 @@ StrIter_Recede_IMP(StringIterator *self, size_t num) {
 }
 
 size_t
-StrIter_Skip_Next_Whitespace_IMP(StringIterator *self) {
+StrIter_Skip_Whitespace_IMP(StringIterator *self) {
     size_t  num_skipped = 0;
     size_t  byte_offset = self->byte_offset;
     int32_t code_point;
@@ -787,7 +787,7 @@ StrIter_Skip_Next_Whitespace_IMP(StringIterator *self) {
 }
 
 size_t
-StrIter_Skip_Prev_Whitespace_IMP(StringIterator *self) {
+StrIter_Skip_Whitespace_Back_IMP(StringIterator *self) {
     size_t  num_skipped = 0;
     size_t  byte_offset = self->byte_offset;
     int32_t code_point;

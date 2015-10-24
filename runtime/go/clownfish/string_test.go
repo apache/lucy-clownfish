@@ -310,14 +310,14 @@ func TestStrIterStartsWithEndsWith(t *testing.T) {
 
 func TestStrIterSkipWhite(t *testing.T) {
 	iter := NewStringIterator(NewString("foo  bar"), 0)
-	if got := iter.SkipNextWhitespace(); got != 0 {
+	if got := iter.SkipWhitespace(); got != 0 {
 		t.Error("No whitespace to skip")
 	}
 	iter.Advance(3)
-	if got := iter.SkipNextWhitespace(); got != 2 || !iter.StartsWith("bar") {
+	if got := iter.SkipWhitespace(); got != 2 || !iter.StartsWith("bar") {
 		t.Error("Skip forward 2 spaces")
 	}
-	if got := iter.SkipPrevWhitespace(); got != 2 || !iter.EndsWith("foo") {
+	if got := iter.SkipWhitespaceBack(); got != 2 || !iter.EndsWith("foo") {
 		t.Error("Skip backwards 2 spaces")
 	}
 }

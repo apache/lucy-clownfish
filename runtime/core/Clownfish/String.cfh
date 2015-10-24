@@ -347,13 +347,13 @@ public final class Clownfish::StringIterator nickname StrIter
      * @return the number of code points skipped.
      */
     public size_t
-    Skip_Next_Whitespace(StringIterator *self);
+    Skip_Whitespace(StringIterator *self);
 
     /** Skip whitespace backward.
      * @return the number of code points skipped.
      */
     public size_t
-    Skip_Prev_Whitespace(StringIterator *self);
+    Skip_Whitespace_Back(StringIterator *self);
 
     /** Test whether the content after the iterator starts with `prefix`.
      */
