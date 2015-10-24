@@ -158,13 +158,28 @@ public final class Clownfish::String nickname Str
     public bool
     Ends_With_Utf8(String *self, const char *suffix, size_t size);
 
-    /** Return the location of the substring within the String (measured in
-     * code points), or -1 if the substring does not match.
+    /** Test whether the String contains `substring`.
      */
-    public int64_t
+    public bool
+    Contains(String *self, String *substring);
+
+    /** Test whether the String contains `substring`.
+     */
+    public bool
+    Contains_Utf8(String *self, const char *ptr, size_t size);
+
+    /** Return a [](StringIterator) pointing to the first occurrence of the
+     * substring within the String, or [](@null) if the substring does not
+     * match.
+     */
+    public incremented nullable StringIterator*
     Find(String *self, String *substring);
 
-    public int64_t
+    /** Return a [](StringIterator) pointing to the first occurrence of the
+     * substring within the String, or [](@null) if the substring does not
+     * match.
+     */
+    public incremented nullable StringIterator*
     Find_Utf8(String *self, const char *ptr, size_t size);
 
     /** Test whether the String matches the supplied UTF-8 character data.

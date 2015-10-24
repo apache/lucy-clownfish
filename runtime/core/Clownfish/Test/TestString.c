@@ -150,28 +150,45 @@ test_Clone(TestBatchRunner *runner) {
     DECREF(wanted);
 }
 
+static int64_t
+S_find(String *string, String *substring) {
+    StringIterator *iter = Str_Find(string, substring);
+    if (iter == NULL) { return -1; }
+    size_t tick = StrIter_Recede(iter, SIZE_MAX);
+    DECREF(iter);
+    return (int64_t)tick;
+}
+
 static void
-test_Find(TestBatchRunner *runner) {
+test_Contains_and_Find(TestBatchRunner *runner) {
     String *string;
     String *substring = S_get_str("foo");
 
     string = S_get_str("");
-    TEST_TRUE(runner, Str_Find(string, substring) == -1, "Not in empty string");
+    TEST_FALSE(runner, Str_Contains(string, substring),
+               "Not contained in empty string");
+    TEST_INT_EQ(runner, S_find(string, substring), -1,
+                "Not found in empty string");
     DECREF(string);
 
     string = S_get_str("foo");
-    TEST_TRUE(runner, Str_Find(string, substring) == 0, "Find complete string");
+    TEST_TRUE(runner, Str_Contains(string, substring),
+              "Contained in complete string");
+    TEST_INT_EQ(runner, S_find(string, substring), 0, "Find complete string");
     DECREF(string);
 
     string = S_get_str("afoo");
-    TEST_TRUE(runner, Str_Find(string, substring) == 1, "Find after first");
-    // TODO: Enable this test when we have real substrings.
-    /*Str_Set_Size(string, 3);
-    TEST_TRUE(runner, Str_Find(string, substring) == -1, "Don't overrun");*/
+    TEST_TRUE(runner, Str_Contains(string, substring),
+              "Contained after first");
+    TEST_INT_EQ(runner, S_find(string, substring), 1, "Find after first");
+    String *prefix = Str_SubString(string, 0, 3);
+    TEST_FALSE(runner, Str_Contains(prefix, substring), "Don't overrun");
+    DECREF(prefix);
     DECREF(string);
 
     string = S_get_str("afood");
-    TEST_TRUE(runner, Str_Find(string, substring) == 1, "Find in middle");
+    TEST_TRUE(runner, Str_Contains(string, substring), "Contained in middle");
+    TEST_INT_EQ(runner, S_find(string, substring), 1, "Find in middle");
     DECREF(string);
 
     DECREF(substring);
@@ -676,12 +693,12 @@ test_iterator_substring(TestBatchRunner *runner) {
 
 void
 TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 133);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 138);
     test_new(runner);
     test_Cat(runner);
     test_Clone(runner);
     test_Code_Point_At_and_From(runner);
-    test_Find(runner);
+    test_Contains_and_Find(runner);
     test_SubString(runner);
     test_Trim(runner);
     test_To_F64(runner);

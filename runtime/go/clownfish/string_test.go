@@ -63,15 +63,29 @@ func TestStringBaseXToI64(t *testing.T) {
 	}
 }
 
+func TestStringContains(t *testing.T) {
+	s := NewString("foobarbaz")
+	if !s.Contains("bar") {
+		t.Error("Contains yes")
+	}
+	if s.Contains("banana") {
+		t.Error("Contains no")
+	}
+}
+
 func TestStringFind(t *testing.T) {
 	s := NewString("foobarbaz")
-	var got int64 = s.Find("bar")
-	if got != 3 {
-		t.Error("Find yes", got)
+	iter := s.Find("bar")
+	var pos int = -1
+	if iter != nil {
+	    pos = int(iter.Recede(100))
 	}
-	got = s.Find("banana")
-	if got != -1 {
-		t.Error("Find no", got)
+	if pos != 3 {
+		t.Error("Find yes", pos)
+	}
+	iter = s.Find("banana")
+	if iter != nil {
+		t.Error("Find no")
 	}
 }
 

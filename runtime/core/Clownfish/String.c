@@ -44,6 +44,9 @@ static void
 S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
                    const char *func);
 
+static const char*
+S_memmem(String *self, const char *substring, size_t size);
+
 static StringIterator*
 S_new_stack_iter(void *allocation, String *string, size_t byte_offset);
 
@@ -388,25 +391,43 @@ Str_Ends_With_Utf8_IMP(String *self, const char *suffix, size_t suffix_len) {
     return false;
 }
 
-int64_t
+bool
+Str_Contains_IMP(String *self, String *substring) {
+    return !!S_memmem(self, substring->ptr, substring->size);
+}
+
+bool
+Str_Contains_Utf8_IMP(String *self, const char *substring, size_t size) {
+    return !!S_memmem(self, substring, size);
+}
+
+StringIterator*
 Str_Find_IMP(String *self, String *substring) {
     return Str_Find_Utf8(self, substring->ptr, substring->size);
 }
 
-int64_t
-Str_Find_Utf8_IMP(String *self, const char *ptr, size_t size) {
-    StringIterator *iter = STACK_ITER(self, 0);
-    int64_t location = 0;
+StringIterator*
+Str_Find_Utf8_IMP(String *self, const char *substring, size_t size) {
+    const char *ptr = S_memmem(self, substring, size);
+    return ptr ? StrIter_new(self, ptr - self->ptr) : NULL;
+}
 
-    while (iter->byte_offset + size <= self->size) {
-        if (memcmp(self->ptr + iter->byte_offset, ptr, size) == 0) {
-            return location;
-        }
-        StrIter_Advance(iter, 1);
-        location++;
+static const char*
+S_memmem(String *self, const char *substring, size_t size) {
+    if (size == 0)         { return self->ptr; }
+    if (size > self->size) { return NULL;      }
+
+    const char *ptr = self->ptr;
+    const char *end = ptr + self->size - size + 1;
+    char first_char = substring[0];
+
+    // Naive string search.
+    while (NULL != (ptr = (const char*)memchr(ptr, first_char, end - ptr))) {
+        if (memcmp(ptr, substring, size) == 0) { break; }
+        ptr++;
     }
 
-    return -1;
+    return ptr;
 }
 
 String*
