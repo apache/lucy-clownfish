@@ -441,21 +441,21 @@ Str_Trim_IMP(String *self) {
         StrIter_Skip_Whitespace_Back(tail);
     }
 
-    return StrIter_substring((StringIterator*)top, (StringIterator*)tail);
+    return StrIter_crop((StringIterator*)top, (StringIterator*)tail);
 }
 
 String*
 Str_Trim_Top_IMP(String *self) {
     StringIterator *top = STACK_ITER(self, 0);
     StrIter_Skip_Whitespace(top);
-    return StrIter_substring((StringIterator*)top, NULL);
+    return StrIter_crop((StringIterator*)top, NULL);
 }
 
 String*
 Str_Trim_Tail_IMP(String *self) {
     StringIterator *tail = STACK_ITER(self, self->size);
     StrIter_Skip_Whitespace_Back(tail);
-    return StrIter_substring(NULL, (StringIterator*)tail);
+    return StrIter_crop(NULL, (StringIterator*)tail);
 }
 
 size_t
@@ -534,14 +534,14 @@ S_new_stack_iter(void *allocation, String *string, size_t byte_offset) {
 }
 
 String*
-StrIter_substring(StringIterator *top, StringIterator *tail) {
+StrIter_crop(StringIterator *top, StringIterator *tail) {
     String *string;
     size_t  top_offset;
     size_t  tail_offset;
 
     if (tail == NULL) {
         if (top == NULL) {
-            THROW(ERR, "StrIter_substring: Both top and tail are NULL");
+            THROW(ERR, "StrIter_crop: Both top and tail are NULL");
             UNREACHABLE_RETURN(String*);
         }
         string      = top->string;
@@ -550,7 +550,7 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
     else {
         string = tail->string;
         if (top != NULL && string != top->string) {
-            THROW(ERR, "StrIter_substring: strings don't match");
+            THROW(ERR, "StrIter_crop: strings don't match");
             UNREACHABLE_RETURN(String*);
         }
 
@@ -563,7 +563,7 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
     else {
         top_offset = top->byte_offset;
         if (top_offset > tail_offset) {
-            THROW(ERR, "StrIter_substring: top is behind tail");
+            THROW(ERR, "StrIter_crop: top is behind tail");
             UNREACHABLE_RETURN(String*);
         }
     }

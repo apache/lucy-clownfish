@@ -627,9 +627,9 @@ test_iterator_substring(TestBatchRunner *runner) {
     StringIterator *end = Str_Tail(string);
 
     {
-        String *substring = StrIter_substring(start, end);
+        String *substring = StrIter_crop(start, end);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)string),
-                  "StrIter_substring whole string");
+                  "StrIter_crop whole string");
         DECREF(substring);
     }
 
@@ -637,10 +637,10 @@ test_iterator_substring(TestBatchRunner *runner) {
     StrIter_Recede(end, 2);
 
     {
-        String *substring = StrIter_substring(start, end);
+        String *substring = StrIter_crop(start, end);
         String *wanted = Str_newf("b%sc", smiley);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring");
+                  "StrIter_crop");
 
         TEST_TRUE(runner, StrIter_Starts_With(start, wanted),
                   "Starts_With returns true");
@@ -669,19 +669,19 @@ test_iterator_substring(TestBatchRunner *runner) {
     }
 
     {
-        String *substring = StrIter_substring(end, NULL);
+        String *substring = StrIter_crop(end, NULL);
         String *wanted = Str_newf("%sd", smiley);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring with NULL tail");
+                  "StrIter_crop with NULL tail");
         DECREF(wanted);
         DECREF(substring);
     }
 
     {
-        String *substring = StrIter_substring(NULL, start);
+        String *substring = StrIter_crop(NULL, start);
         String *wanted = Str_newf("a%s", smiley);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring with NULL top");
+                  "StrIter_crop with NULL top");
         DECREF(wanted);
         DECREF(substring);
     }

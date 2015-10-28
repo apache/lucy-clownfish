@@ -290,11 +290,11 @@ public final class Clownfish::StringIterator nickname StrIter
     new(String *string, size_t byte_offset);
 
     /** Return the substring between the top and tail iterators.
-     * @param top Top iterator. Use start of string if NULL.
-     * @param tail Tail iterator. Use end of string if NULL.
+     * @param top Top iterator. Use start of string if [](@null).
+     * @param tail Tail iterator. Use end of string if [](@null).
      */
     public inert incremented String*
-    substring(StringIterator *top, StringIterator *tail);
+    crop(StringIterator *top, StringIterator *tail);
 
     public incremented StringIterator*
     Clone(StringIterator *self);
