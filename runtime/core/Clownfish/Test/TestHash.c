@@ -40,7 +40,7 @@ static void
 test_Equals(TestBatchRunner *runner) {
     Hash *hash  = Hash_new(0);
     Hash *other = Hash_new(0);
-    String *stuff = SSTR_WRAP_UTF8("stuff", 5);
+    String *stuff = SSTR_WRAP_C("stuff");
 
     TEST_TRUE(runner, Hash_Equals(hash, (Obj*)other),
               "Empty hashes are equal");
@@ -68,9 +68,9 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     const size_t   starting_cap = Hash_Get_Capacity(hash);
     Vector        *expected     = Vec_new(100);
     Vector        *got          = Vec_new(100);
-    String        *twenty       = SSTR_WRAP_UTF8("20", 2);
-    String        *forty        = SSTR_WRAP_UTF8("40", 2);
-    String        *foo          = SSTR_WRAP_UTF8("foo", 3);
+    String        *twenty       = SSTR_WRAP_C("20");
+    String        *forty        = SSTR_WRAP_C("40");
+    String        *foo          = SSTR_WRAP_C("foo");
 
     for (int32_t i = 0; i < 100; i++) {
         String *str = Str_newf("%i32", i);
@@ -161,8 +161,8 @@ test_Keys_Values(TestBatchRunner *runner) {
     Vec_Clear(values);
 
     {
-        String *forty = SSTR_WRAP_UTF8("40", 2);
-        String *nope  = SSTR_WRAP_UTF8("nope", 4);
+        String *forty = SSTR_WRAP_C("40");
+        String *nope  = SSTR_WRAP_C("nope");
         TEST_TRUE(runner, Hash_Has_Key(hash, forty), "Has_Key");
         TEST_FALSE(runner, Hash_Has_Key(hash, nope),
                    "Has_Key returns false for non-existent key");

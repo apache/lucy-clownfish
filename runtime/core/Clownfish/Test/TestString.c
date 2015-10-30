@@ -150,28 +150,45 @@ test_Clone(TestBatchRunner *runner) {
     DECREF(wanted);
 }
 
+static int64_t
+S_find(String *string, String *substring) {
+    StringIterator *iter = Str_Find(string, substring);
+    if (iter == NULL) { return -1; }
+    size_t tick = StrIter_Recede(iter, SIZE_MAX);
+    DECREF(iter);
+    return (int64_t)tick;
+}
+
 static void
-test_Find(TestBatchRunner *runner) {
+test_Contains_and_Find(TestBatchRunner *runner) {
     String *string;
     String *substring = S_get_str("foo");
 
     string = S_get_str("");
-    TEST_TRUE(runner, Str_Find(string, substring) == -1, "Not in empty string");
+    TEST_FALSE(runner, Str_Contains(string, substring),
+               "Not contained in empty string");
+    TEST_INT_EQ(runner, S_find(string, substring), -1,
+                "Not found in empty string");
     DECREF(string);
 
     string = S_get_str("foo");
-    TEST_TRUE(runner, Str_Find(string, substring) == 0, "Find complete string");
+    TEST_TRUE(runner, Str_Contains(string, substring),
+              "Contained in complete string");
+    TEST_INT_EQ(runner, S_find(string, substring), 0, "Find complete string");
     DECREF(string);
 
     string = S_get_str("afoo");
-    TEST_TRUE(runner, Str_Find(string, substring) == 1, "Find after first");
-    // TODO: Enable this test when we have real substrings.
-    /*Str_Set_Size(string, 3);
-    TEST_TRUE(runner, Str_Find(string, substring) == -1, "Don't overrun");*/
+    TEST_TRUE(runner, Str_Contains(string, substring),
+              "Contained after first");
+    TEST_INT_EQ(runner, S_find(string, substring), 1, "Find after first");
+    String *prefix = Str_SubString(string, 0, 3);
+    TEST_FALSE(runner, Str_Contains(prefix, substring), "Don't overrun");
+    DECREF(prefix);
     DECREF(string);
 
     string = S_get_str("afood");
-    TEST_TRUE(runner, Str_Find(string, substring) == 1, "Find in middle");
+    TEST_TRUE(runner, Str_Contains(string, substring), "Contained in middle");
+    TEST_INT_EQ(runner, S_find(string, substring), 1, "Find in middle");
     DECREF(string);
 
     DECREF(substring);
@@ -194,12 +211,12 @@ test_Code_Point_At_and_From(TestBatchRunner *runner) {
                     code_points[i], "Code_Point_From %ld", (long)from);
     }
 
-    TEST_INT_EQ(runner, Str_Code_Point_At(string, num_code_points), 0,
+    TEST_INT_EQ(runner, Str_Code_Point_At(string, num_code_points), STR_OOB,
                 "Code_Point_At %ld", (long)num_code_points);
-    TEST_INT_EQ(runner, Str_Code_Point_From(string, 0), 0,
+    TEST_INT_EQ(runner, Str_Code_Point_From(string, 0), STR_OOB,
                 "Code_Point_From 0");
-    TEST_INT_EQ(runner, Str_Code_Point_From(string, num_code_points + 1), 0,
-                "Code_Point_From %ld", (long)(num_code_points + 1));
+    TEST_INT_EQ(runner, Str_Code_Point_From(string, num_code_points + 1),
+                STR_OOB, "Code_Point_From %ld", (long)(num_code_points + 1));
 
     DECREF(string);
 }
@@ -386,32 +403,21 @@ test_Compare_To(TestBatchRunner *runner) {
 }
 
 static void
-test_Swap_Chars(TestBatchRunner *runner) {
-    String *source = S_get_str("aXXbXc");
-    String *got    = Str_Swap_Chars(source, 'X', smiley_cp);
-    String *wanted = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
-    TEST_TRUE(runner, Str_Equals(got, (Obj*)wanted), "Swap_Chars");
-    DECREF(wanted);
-    DECREF(got);
-    DECREF(source);
-}
-
-static void
 test_Starts_Ends_With(TestBatchRunner *runner) {
-    String *prefix  = S_get_str("pre" SMILEY "fix_");
-    String *postfix = S_get_str("_post" SMILEY "fix");
-    String *empty   = S_get_str("");
+    String *prefix = S_get_str("pre" SMILEY "fix_");
+    String *suffix = S_get_str("_post" SMILEY "fix");
+    String *empty  = S_get_str("");
 
-    TEST_TRUE(runner, Str_Starts_With(postfix, postfix),
+    TEST_TRUE(runner, Str_Starts_With(suffix, suffix),
               "Starts_With self returns true");
     TEST_TRUE(runner, Str_Starts_With(prefix, prefix),
               "Ends_With self returns true");
 
-    TEST_TRUE(runner, Str_Starts_With(postfix, empty),
+    TEST_TRUE(runner, Str_Starts_With(suffix, empty),
               "Starts_With empty string returns true");
     TEST_TRUE(runner, Str_Ends_With(prefix, empty),
               "Ends_With empty string returns true");
-    TEST_FALSE(runner, Str_Starts_With(empty, postfix),
+    TEST_FALSE(runner, Str_Starts_With(empty, suffix),
               "Empty string Starts_With returns false");
     TEST_FALSE(runner, Str_Ends_With(empty, prefix),
               "Empty string Ends_With returns false");
@@ -421,7 +427,7 @@ test_Starts_Ends_With(TestBatchRunner *runner) {
             = S_get_str("pre" SMILEY "fix_string_post" SMILEY "fix");
         TEST_TRUE(runner, Str_Starts_With(string, prefix),
                   "Starts_With returns true");
-        TEST_TRUE(runner, Str_Ends_With(string, postfix),
+        TEST_TRUE(runner, Str_Ends_With(string, suffix),
                   "Ends_With returns true");
         DECREF(string);
     }
@@ -431,13 +437,13 @@ test_Starts_Ends_With(TestBatchRunner *runner) {
             = S_get_str("pre" SMILEY "fix:string:post" SMILEY "fix");
         TEST_FALSE(runner, Str_Starts_With(string, prefix),
                    "Starts_With returns false");
-        TEST_FALSE(runner, Str_Ends_With(string, postfix),
+        TEST_FALSE(runner, Str_Ends_With(string, suffix),
                    "Ends_With returns false");
         DECREF(string);
     }
 
     DECREF(prefix);
-    DECREF(postfix);
+    DECREF(suffix);
     DECREF(empty);
 }
 
@@ -529,7 +535,7 @@ test_iterator(TestBatchRunner *runner) {
 
         TEST_TRUE(runner, !StrIter_Has_Next(iter),
                   "Has_Next at end of string");
-        TEST_INT_EQ(runner, StrIter_Next(iter), STRITER_DONE,
+        TEST_INT_EQ(runner, StrIter_Next(iter), STR_OOB,
                     "Next at end of string");
 
         StringIterator *tail = Str_Tail(string);
@@ -550,7 +556,7 @@ test_iterator(TestBatchRunner *runner) {
 
         TEST_TRUE(runner, !StrIter_Has_Prev(iter),
                   "Has_Prev at end of string");
-        TEST_INT_EQ(runner, StrIter_Prev(iter), STRITER_DONE,
+        TEST_INT_EQ(runner, StrIter_Prev(iter), STR_OOB,
                     "Prev at start of string");
 
         StringIterator *top = Str_Top(string);
@@ -594,19 +600,19 @@ test_iterator_whitespace(TestBatchRunner *runner) {
 
     {
         StringIterator *iter = Str_Top(ws_smiley);
-        TEST_INT_EQ(runner, StrIter_Skip_Next_Whitespace(iter), num_spaces,
-                    "Skip_Next_Whitespace");
-        TEST_INT_EQ(runner, StrIter_Skip_Next_Whitespace(iter), 0,
-                    "Skip_Next_Whitespace without whitespace");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace(iter), num_spaces,
+                    "Skip_Whitespace");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace(iter), 0,
+                    "Skip_Whitespace without whitespace");
         DECREF(iter);
     }
 
     {
         StringIterator *iter = Str_Tail(ws_smiley);
-        TEST_INT_EQ(runner, StrIter_Skip_Prev_Whitespace(iter), num_spaces,
-                    "Skip_Prev_Whitespace");
-        TEST_INT_EQ(runner, StrIter_Skip_Prev_Whitespace(iter), 0,
-                    "Skip_Prev_Whitespace without whitespace");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), num_spaces,
+                    "Skip_Whitespace_Back");
+        TEST_INT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), 0,
+                    "Skip_Whitespace_Back without whitespace");
         DECREF(iter);
     }
 
@@ -621,9 +627,9 @@ test_iterator_substring(TestBatchRunner *runner) {
     StringIterator *end = Str_Tail(string);
 
     {
-        String *substring = StrIter_substring(start, end);
+        String *substring = StrIter_crop(start, end);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)string),
-                  "StrIter_substring whole string");
+                  "StrIter_crop whole string");
         DECREF(substring);
     }
 
@@ -631,10 +637,10 @@ test_iterator_substring(TestBatchRunner *runner) {
     StrIter_Recede(end, 2);
 
     {
-        String *substring = StrIter_substring(start, end);
+        String *substring = StrIter_crop(start, end);
         String *wanted = Str_newf("b%sc", smiley);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring");
+                  "StrIter_crop");
 
         TEST_TRUE(runner, StrIter_Starts_With(start, wanted),
                   "Starts_With returns true");
@@ -663,19 +669,19 @@ test_iterator_substring(TestBatchRunner *runner) {
     }
 
     {
-        String *substring = StrIter_substring(end, NULL);
+        String *substring = StrIter_crop(end, NULL);
         String *wanted = Str_newf("%sd", smiley);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring with NULL tail");
+                  "StrIter_crop with NULL tail");
         DECREF(wanted);
         DECREF(substring);
     }
 
     {
-        String *substring = StrIter_substring(NULL, start);
+        String *substring = StrIter_crop(NULL, start);
         String *wanted = Str_newf("a%s", smiley);
         TEST_TRUE(runner, Str_Equals(substring, (Obj*)wanted),
-                  "StrIter_substring with NULL top");
+                  "StrIter_crop with NULL top");
         DECREF(wanted);
         DECREF(substring);
     }
@@ -687,12 +693,12 @@ test_iterator_substring(TestBatchRunner *runner) {
 
 void
 TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 134);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 138);
     test_new(runner);
     test_Cat(runner);
     test_Clone(runner);
     test_Code_Point_At_and_From(runner);
-    test_Find(runner);
+    test_Contains_and_Find(runner);
     test_SubString(runner);
     test_Trim(runner);
     test_To_F64(runner);
@@ -701,7 +707,6 @@ TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
     test_To_Utf8(runner);
     test_Length(runner);
     test_Compare_To(runner);
-    test_Swap_Chars(runner);
     test_Starts_Ends_With(runner);
     test_Get_Ptr8(runner);
     test_iterator(runner);

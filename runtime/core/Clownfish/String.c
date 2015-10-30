@@ -44,6 +44,9 @@ static void
 S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
                    const char *func);
 
+static const char*
+S_memmem(String *self, const char *substring, size_t size);
+
 static StringIterator*
 S_new_stack_iter(void *allocation, String *string, size_t byte_offset);
 
@@ -118,7 +121,7 @@ Str_new_wrap_trusted_utf8(const char *utf8, size_t size) {
 }
 
 String*
-Str_new_stack_string(void *allocation, const char *utf8, size_t size) {
+Str_init_stack_string(void *allocation, const char *utf8, size_t size) {
     String *self = (String*)Class_Init_Obj(STRING, allocation);
     return Str_init_wrap_trusted_utf8(self, utf8, size);
 }
@@ -197,7 +200,7 @@ Str_Hash_Sum_IMP(String *self) {
 
     const StrIter_Next_t next = METHOD_PTR(STRINGITERATOR, CFISH_StrIter_Next);
     int32_t code_point;
-    while (STRITER_DONE != (code_point = next(iter))) {
+    while (STR_OOB != (code_point = next(iter))) {
         hashvalue = ((hashvalue << 5) + hashvalue) ^ code_point;
     }
 
@@ -219,22 +222,6 @@ Str_To_String_IMP(String *self) {
     return (String*)INCREF(self);
 }
 
-String*
-Str_Swap_Chars_IMP(String *self, int32_t match, int32_t replacement) {
-    CharBuf *charbuf = CB_new(self->size);
-    StringIterator *iter = STACK_ITER(self, 0);
-    int32_t code_point;
-
-    while (STRITER_DONE != (code_point = StrIter_Next(iter))) {
-        if (code_point == match) { code_point = replacement; }
-        CB_Cat_Char(charbuf, code_point);
-    }
-
-    String *retval = CB_Yield_String(charbuf);
-    DECREF(charbuf);
-    return retval;
-}
-
 int64_t
 Str_To_I64_IMP(String *self) {
     return Str_BaseX_To_I64(self, 10);
@@ -254,7 +241,7 @@ Str_BaseX_To_I64_IMP(String *self, uint32_t base) {
     }
 
     // Accumulate.
-    while (code_point != STRITER_DONE) {
+    while (code_point != STR_OOB) {
         if (isalnum(code_point)) {
             int32_t addend = isdigit(code_point)
                              ? code_point - '0'
@@ -359,8 +346,24 @@ Str_Equals_IMP(String *self, Obj *other) {
 
 int32_t
 Str_Compare_To_IMP(String *self, Obj *other) {
-    CERTIFY(other, STRING);
-    return Str_compare(&self, &other);
+    String  *twin = (String*)CERTIFY(other, STRING);
+    size_t   min_size;
+    int32_t  tie;
+
+    if (self->size <= twin->size) {
+        min_size = self->size;
+        tie      = self->size < twin->size ? -1 : 0;
+    }
+    else {
+        min_size = twin->size;
+        tie      = 1;
+    }
+
+    int comparison = memcmp(self->ptr, twin->ptr, min_size);
+    if (comparison < 0) { return -1; }
+    if (comparison > 0) { return 1; }
+
+    return tie;
 }
 
 bool
@@ -372,15 +375,15 @@ Str_Equals_Utf8_IMP(String *self, const char *ptr, size_t size) {
 }
 
 bool
-Str_Ends_With_IMP(String *self, String *postfix) {
-    return Str_Ends_With_Utf8_IMP(self, postfix->ptr, postfix->size);
+Str_Ends_With_IMP(String *self, String *suffix) {
+    return Str_Ends_With_Utf8_IMP(self, suffix->ptr, suffix->size);
 }
 
 bool
-Str_Ends_With_Utf8_IMP(String *self, const char *postfix, size_t postfix_len) {
-    if (postfix_len <= self->size) {
-        const char *start = self->ptr + self->size - postfix_len;
-        if (memcmp(start, postfix, postfix_len) == 0) {
+Str_Ends_With_Utf8_IMP(String *self, const char *suffix, size_t suffix_len) {
+    if (suffix_len <= self->size) {
+        const char *start = self->ptr + self->size - suffix_len;
+        if (memcmp(start, suffix, suffix_len) == 0) {
             return true;
         }
     }
@@ -388,53 +391,71 @@ Str_Ends_With_Utf8_IMP(String *self, const char *postfix, size_t postfix_len) {
     return false;
 }
 
-int64_t
+bool
+Str_Contains_IMP(String *self, String *substring) {
+    return !!S_memmem(self, substring->ptr, substring->size);
+}
+
+bool
+Str_Contains_Utf8_IMP(String *self, const char *substring, size_t size) {
+    return !!S_memmem(self, substring, size);
+}
+
+StringIterator*
 Str_Find_IMP(String *self, String *substring) {
     return Str_Find_Utf8(self, substring->ptr, substring->size);
 }
 
-int64_t
-Str_Find_Utf8_IMP(String *self, const char *ptr, size_t size) {
-    StringIterator *iter = STACK_ITER(self, 0);
-    int64_t location = 0;
+StringIterator*
+Str_Find_Utf8_IMP(String *self, const char *substring, size_t size) {
+    const char *ptr = S_memmem(self, substring, size);
+    return ptr ? StrIter_new(self, ptr - self->ptr) : NULL;
+}
 
-    while (iter->byte_offset + size <= self->size) {
-        if (memcmp(self->ptr + iter->byte_offset, ptr, size) == 0) {
-            return location;
-        }
-        StrIter_Advance(iter, 1);
-        location++;
+static const char*
+S_memmem(String *self, const char *substring, size_t size) {
+    if (size == 0)         { return self->ptr; }
+    if (size > self->size) { return NULL;      }
+
+    const char *ptr = self->ptr;
+    const char *end = ptr + self->size - size + 1;
+    char first_char = substring[0];
+
+    // Naive string search.
+    while (NULL != (ptr = (const char*)memchr(ptr, first_char, end - ptr))) {
+        if (memcmp(ptr, substring, size) == 0) { break; }
+        ptr++;
     }
 
-    return -1;
+    return ptr;
 }
 
 String*
 Str_Trim_IMP(String *self) {
     StringIterator *top = STACK_ITER(self, 0);
-    StrIter_Skip_Next_Whitespace(top);
+    StrIter_Skip_Whitespace(top);
 
     StringIterator *tail = NULL;
     if (top->byte_offset < self->size) {
         tail = STACK_ITER(self, self->size);
-        StrIter_Skip_Prev_Whitespace(tail);
+        StrIter_Skip_Whitespace_Back(tail);
     }
 
-    return StrIter_substring((StringIterator*)top, (StringIterator*)tail);
+    return StrIter_crop((StringIterator*)top, (StringIterator*)tail);
 }
 
 String*
 Str_Trim_Top_IMP(String *self) {
     StringIterator *top = STACK_ITER(self, 0);
-    StrIter_Skip_Next_Whitespace(top);
-    return StrIter_substring((StringIterator*)top, NULL);
+    StrIter_Skip_Whitespace(top);
+    return StrIter_crop((StringIterator*)top, NULL);
 }
 
 String*
 Str_Trim_Tail_IMP(String *self) {
     StringIterator *tail = STACK_ITER(self, self->size);
-    StrIter_Skip_Prev_Whitespace(tail);
-    return StrIter_substring(NULL, (StringIterator*)tail);
+    StrIter_Skip_Whitespace_Back(tail);
+    return StrIter_crop(NULL, (StringIterator*)tail);
 }
 
 size_t
@@ -447,17 +468,15 @@ int32_t
 Str_Code_Point_At_IMP(String *self, size_t tick) {
     StringIterator *iter = STACK_ITER(self, 0);
     StrIter_Advance(iter, tick);
-    int32_t code_point = StrIter_Next(iter);
-    return code_point == STRITER_DONE ? 0 : code_point;
+    return StrIter_Next(iter);
 }
 
 int32_t
 Str_Code_Point_From_IMP(String *self, size_t tick) {
-    if (tick == 0) { return 0; }
+    if (tick == 0) { return STR_OOB; }
     StringIterator *iter = STACK_ITER(self, self->size);
     StrIter_Recede(iter, tick - 1);
-    int32_t code_point = StrIter_Prev(iter);
-    return code_point == STRITER_DONE ? 0 : code_point;
+    return StrIter_Prev(iter);
 }
 
 String*
@@ -471,34 +490,6 @@ Str_SubString_IMP(String *self, size_t offset, size_t len) {
     size_t size = iter->byte_offset - start_offset;
 
     return S_new_substring(self, start_offset, size);
-}
-
-int
-Str_compare(const void *va, const void *vb) {
-    String *a = *(String**)va;
-    String *b = *(String**)vb;
-    size_t min_size;
-    int    tie;
-
-    if (a->size <= b->size) {
-        min_size = a->size;
-        tie      = a->size < b->size ? -1 : 0;
-    }
-    else {
-        min_size = b->size;
-        tie      = 1;
-    }
-
-    int comparison = memcmp(a->ptr, b->ptr, min_size);
-    if (comparison < 0) { return -1; }
-    if (comparison > 0) { return 1; }
-
-    return tie;
-}
-
-bool
-Str_less_than(const void *va, const void *vb) {
-    return Str_compare(va, vb) < 0 ? true : false;
 }
 
 size_t
@@ -543,14 +534,14 @@ S_new_stack_iter(void *allocation, String *string, size_t byte_offset) {
 }
 
 String*
-StrIter_substring(StringIterator *top, StringIterator *tail) {
+StrIter_crop(StringIterator *top, StringIterator *tail) {
     String *string;
     size_t  top_offset;
     size_t  tail_offset;
 
     if (tail == NULL) {
         if (top == NULL) {
-            THROW(ERR, "StrIter_substring: Both top and tail are NULL");
+            THROW(ERR, "StrIter_crop: Both top and tail are NULL");
             UNREACHABLE_RETURN(String*);
         }
         string      = top->string;
@@ -559,15 +550,11 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
     else {
         string = tail->string;
         if (top != NULL && string != top->string) {
-            THROW(ERR, "StrIter_substring: strings don't match");
+            THROW(ERR, "StrIter_crop: strings don't match");
             UNREACHABLE_RETURN(String*);
         }
 
         tail_offset = tail->byte_offset;
-        if (tail_offset > string->size) {
-            THROW(ERR, "Invalid StringIterator offset");
-            UNREACHABLE_RETURN(String*);
-        }
     }
 
     if (top == NULL) {
@@ -576,7 +563,7 @@ StrIter_substring(StringIterator *top, StringIterator *tail) {
     else {
         top_offset = top->byte_offset;
         if (top_offset > tail_offset) {
-            THROW(ERR, "StrIter_substring: top is behind tail");
+            THROW(ERR, "StrIter_crop: top is behind tail");
             UNREACHABLE_RETURN(String*);
         }
     }
@@ -635,7 +622,7 @@ StrIter_Next_IMP(StringIterator *self) {
     size_t  byte_offset = self->byte_offset;
     size_t  size        = string->size;
 
-    if (byte_offset >= size) { return STRITER_DONE; }
+    if (byte_offset >= size) { return STR_OOB; }
 
     const uint8_t *const ptr = (const uint8_t*)string->ptr;
     int32_t retval = ptr[byte_offset++];
@@ -688,7 +675,7 @@ int32_t
 StrIter_Prev_IMP(StringIterator *self) {
     size_t byte_offset = self->byte_offset;
 
-    if (byte_offset == 0) { return STRITER_DONE; }
+    if (byte_offset == 0) { return STR_OOB; }
 
     const uint8_t *const ptr = (const uint8_t*)self->string->ptr;
     int32_t retval = ptr[--byte_offset];
@@ -778,12 +765,12 @@ StrIter_Recede_IMP(StringIterator *self, size_t num) {
 }
 
 size_t
-StrIter_Skip_Next_Whitespace_IMP(StringIterator *self) {
+StrIter_Skip_Whitespace_IMP(StringIterator *self) {
     size_t  num_skipped = 0;
     size_t  byte_offset = self->byte_offset;
     int32_t code_point;
 
-    while (STRITER_DONE != (code_point = StrIter_Next(self))) {
+    while (STR_OOB != (code_point = StrIter_Next(self))) {
         if (!StrHelp_is_whitespace(code_point)) { break; }
         byte_offset = self->byte_offset;
         ++num_skipped;
@@ -794,12 +781,12 @@ StrIter_Skip_Next_Whitespace_IMP(StringIterator *self) {
 }
 
 size_t
-StrIter_Skip_Prev_Whitespace_IMP(StringIterator *self) {
+StrIter_Skip_Whitespace_Back_IMP(StringIterator *self) {
     size_t  num_skipped = 0;
     size_t  byte_offset = self->byte_offset;
     int32_t code_point;
 
-    while (STRITER_DONE != (code_point = StrIter_Prev(self))) {
+    while (STR_OOB != (code_point = StrIter_Prev(self))) {
         if (!StrHelp_is_whitespace(code_point)) { break; }
         byte_offset = self->byte_offset;
         ++num_skipped;
@@ -820,35 +807,25 @@ StrIter_Starts_With_Utf8_IMP(StringIterator *self, const char *prefix,
     String *string      = self->string;
     size_t  byte_offset = self->byte_offset;
 
-    if (byte_offset > string->size) {
-        THROW(ERR, "Invalid StringIterator offset");
-        UNREACHABLE_RETURN(bool);
-    }
-
     if (string->size - byte_offset < size) { return false; }
 
     return memcmp(string->ptr + byte_offset, prefix, size) == 0;
 }
 
 bool
-StrIter_Ends_With_IMP(StringIterator *self, String *postfix) {
-    return StrIter_Ends_With_Utf8_IMP(self, postfix->ptr, postfix->size);
+StrIter_Ends_With_IMP(StringIterator *self, String *suffix) {
+    return StrIter_Ends_With_Utf8_IMP(self, suffix->ptr, suffix->size);
 }
 
 bool
-StrIter_Ends_With_Utf8_IMP(StringIterator *self, const char *postfix,
+StrIter_Ends_With_Utf8_IMP(StringIterator *self, const char *suffix,
                            size_t size) {
     String *string      = self->string;
     size_t  byte_offset = self->byte_offset;
 
-    if (byte_offset > string->size) {
-        THROW(ERR, "Invalid StringIterator offset");
-        UNREACHABLE_RETURN(bool);
-    }
-
     if (byte_offset < size) { return false; }
 
-    return memcmp(string->ptr + byte_offset - size, postfix, size) == 0;
+    return memcmp(string->ptr + byte_offset - size, suffix, size) == 0;
 }
 
 void

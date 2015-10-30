@@ -36,7 +36,7 @@ TestObj_new() {
 
 static Obj*
 S_new_testobj() {
-    String *class_name = SSTR_WRAP_UTF8("TestObj", 7);
+    String *class_name = SSTR_WRAP_C("TestObj");
     Obj *obj;
     Class *klass = Class_fetch_class(class_name);
     if (!klass) {
@@ -66,7 +66,7 @@ static void
 test_To_String(TestBatchRunner *runner) {
     Obj *testobj = S_new_testobj();
     String *string = Obj_To_String(testobj);
-    TEST_TRUE(runner, Str_Find_Utf8(string, "TestObj", 7) >= 0, "To_String");
+    TEST_TRUE(runner, Str_Contains_Utf8(string, "TestObj", 7), "To_String");
     DECREF(string);
     DECREF(testobj);
 }
@@ -123,7 +123,7 @@ S_verify_abstract_error(TestBatchRunner *runner, Err_Attempt_t routine,
     Err *error = Err_trap(routine, context);
     TEST_TRUE(runner, error != NULL
               && Err_is_a(error, ERR)
-              && Str_Find_Utf8(Err_Get_Mess(error), "bstract", 7) != -1,
+              && Str_Contains_Utf8(Err_Get_Mess(error), "bstract", 7),
               message);
     DECREF(error);
 }

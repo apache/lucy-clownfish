@@ -655,13 +655,6 @@ func (s *StringIMP) CodePointFrom(tick uintptr) rune {
 	return rune(retvalCF)
 }
 
-func (s *StringIMP) SwapChars(match, replacement rune) string {
-	self := ((*C.cfish_String)(Unwrap(s, "s")))
-	retvalCF := C.CFISH_Str_Swap_Chars(self, C.int32_t(match), C.int32_t(replacement))
-	defer C.cfish_dec_refcount(unsafe.Pointer(retvalCF))
-	return CFStringToGo(unsafe.Pointer(retvalCF))
-}
-
 func NewBoolean(val bool) Boolean {
 	if val {
 		return WRAPBoolean(unsafe.Pointer(C.cfish_inc_refcount(unsafe.Pointer(C.CFISH_TRUE))))

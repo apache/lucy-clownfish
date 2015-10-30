@@ -26,14 +26,6 @@ func TestStringCat(t *testing.T) {
 	}
 }
 
-func TestStringSwapChars(t *testing.T) {
-	s := NewString("foo")
-	got := s.SwapChars('o', 'u')
-	if got != "fuu" {
-		t.Error("Expected 'fuu', got", got)
-	}
-}
-
 func TestStringStartsWithEndsWith(t *testing.T) {
 	s := NewString("foobar")
 	if !s.StartsWith("foo") {
@@ -71,15 +63,29 @@ func TestStringBaseXToI64(t *testing.T) {
 	}
 }
 
+func TestStringContains(t *testing.T) {
+	s := NewString("foobarbaz")
+	if !s.Contains("bar") {
+		t.Error("Contains yes")
+	}
+	if s.Contains("banana") {
+		t.Error("Contains no")
+	}
+}
+
 func TestStringFind(t *testing.T) {
 	s := NewString("foobarbaz")
-	var got int64 = s.Find("bar")
-	if got != 3 {
-		t.Error("Find yes", got)
+	iter := s.Find("bar")
+	var pos int = -1
+	if iter != nil {
+	    pos = int(iter.Recede(100))
 	}
-	got = s.Find("banana")
-	if got != -1 {
-		t.Error("Find no", got)
+	if pos != 3 {
+		t.Error("Find yes", pos)
+	}
+	iter = s.Find("banana")
+	if iter != nil {
+		t.Error("Find no")
 	}
 }
 
@@ -304,14 +310,14 @@ func TestStrIterStartsWithEndsWith(t *testing.T) {
 
 func TestStrIterSkipWhite(t *testing.T) {
 	iter := NewStringIterator(NewString("foo  bar"), 0)
-	if got := iter.SkipNextWhitespace(); got != 0 {
+	if got := iter.SkipWhitespace(); got != 0 {
 		t.Error("No whitespace to skip")
 	}
 	iter.Advance(3)
-	if got := iter.SkipNextWhitespace(); got != 2 || !iter.StartsWith("bar") {
+	if got := iter.SkipWhitespace(); got != 2 || !iter.StartsWith("bar") {
 		t.Error("Skip forward 2 spaces")
 	}
-	if got := iter.SkipPrevWhitespace(); got != 2 || !iter.EndsWith("foo") {
+	if got := iter.SkipWhitespaceBack(); got != 2 || !iter.EndsWith("foo") {
 		t.Error("Skip backwards 2 spaces")
 	}
 }

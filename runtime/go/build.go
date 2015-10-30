@@ -153,7 +153,6 @@ func specMethods(parcel *cfc.Parcel) {
 	stringBinding := cfc.NewGoClass(parcel, "Clownfish::String")
 	stringBinding.SpecMethod("Code_Point_At", "CodePointAt(uintptr) rune")
 	stringBinding.SpecMethod("Code_Point_From", "CodePointFrom(uintptr) rune")
-	stringBinding.SpecMethod("Swap_Chars", "SwapChars(rune, rune) string")
 	stringBinding.Register()
 
 	stringIterBinding := cfc.NewGoClass(parcel, "Clownfish::StringIterator")
