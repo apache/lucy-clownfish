@@ -93,7 +93,8 @@ S_lazy_init_sig(CFCGoMethod *self, CFCClass *invoker) {
     CFCMethod *method = self->method;
     CFCParcel *parcel = CFCClass_get_parcel(invoker);
     CFCType *return_type = CFCMethod_get_return_type(method);
-    char *name = CFCGoFunc_go_meth_name(CFCMethod_get_name(method));
+    char *name = CFCGoFunc_go_meth_name(CFCMethod_get_name(method),
+                                        CFCMethod_public(method));
     char *go_ret_type = CFCType_is_void(return_type)
                         ? CFCUtil_strdup("")
                         : CFCGoTypeMap_go_type_name(return_type, parcel);
@@ -143,7 +144,8 @@ CFCGoMethod_func_def(CFCGoMethod *self, CFCClass *invoker) {
     CFCParcel    *parcel     = CFCClass_get_parcel(invoker);
     CFCParamList *param_list = CFCMethod_get_param_list(novel_method);
     CFCType      *ret_type   = CFCMethod_get_return_type(novel_method);
-    char *name = CFCGoFunc_go_meth_name(CFCMethod_get_name(novel_method));
+    char *name = CFCGoFunc_go_meth_name(CFCMethod_get_name(novel_method),
+                                        CFCMethod_public(novel_method));
     char *first_line = CFCGoFunc_meth_start(parcel, name, invoker,
                                             param_list, ret_type);
     char *cfunc;

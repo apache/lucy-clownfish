@@ -29,7 +29,7 @@ struct CFCClass;
 struct CFCParamList;
 
 char*
-CFCGoFunc_go_meth_name(const char *orig);
+CFCGoFunc_go_meth_name(const char *orig, int is_public);
 
 char*
 CFCGoFunc_meth_start(struct CFCParcel *parcel, const char *name,
