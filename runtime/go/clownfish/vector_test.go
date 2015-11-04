@@ -148,7 +148,7 @@ func TestVecGetSize(t *testing.T) {
 
 func TestVecGetCapacity(t *testing.T) {
 	vec := NewVector(10)
-	cap := vec.GetCapacity()
+	cap := vec.getCapacity()
 	if cap != 10 {
 		t.Errorf("Unexpected capacity: %v", cap)
 	}

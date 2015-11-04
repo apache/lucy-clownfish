@@ -98,8 +98,8 @@ func TestHashValues(t *testing.T) {
 
 func TestGetCapacity(t *testing.T) {
 	hash := NewHash(1)
-	if cap := hash.GetCapacity(); cap <= 1 {
-		t.Errorf("Unexpected value for GetCapacity: %d", cap)
+	if cap := hash.getCapacity(); cap <= 1 {
+		t.Errorf("Unexpected value for getCapacity: %d", cap)
 	}
 }
 

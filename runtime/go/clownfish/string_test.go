@@ -148,7 +148,7 @@ func TestStringClone(t *testing.T) {
 func TestStringHashSum(t *testing.T) {
 	// Test compilation only.
 	s := NewString("foo")
-	var _ uintptr = s.HashSum()
+	var _ uintptr = s.hashSum()
 }
 
 func TestStringToString(t *testing.T) {
