@@ -179,6 +179,7 @@ S_xsub_body(CFCPerlMethod *self, CFCClass *klass) {
                 "arg_%s = (%s)CFISH_INCREF(arg_%s);\n    ";
             char *statement = CFCUtil_sprintf(pattern, name, type_c, name);
             body = CFCUtil_cat(body, statement, NULL);
+            FREEMEM(statement);
         }
     }
 
