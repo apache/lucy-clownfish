@@ -167,12 +167,18 @@ S_xsub_body(CFCPerlMethod *self, CFCClass *klass) {
     FREEMEM(method_ptr);
 
     // Compensate for functions which eat refcounts.
+    // It would be more efficient to convert decremented arguments
+    // by calling XSBind_perl_to_cfish without noinc.
     for (int i = 0; arg_vars[i] != NULL; i++) {
         CFCVariable *var = arg_vars[i];
         CFCType     *type = CFCVariable_get_type(var);
         if (CFCType_is_object(type) && CFCType_decremented(type)) {
-            body = CFCUtil_cat(body, "CFISH_INCREF(arg_",
-                               CFCVariable_get_name(var), ");\n    ", NULL);
+            const char *name   = CFCVariable_get_name(var);
+            const char *type_c = CFCType_to_c(type);
+            const char *pattern =
+                "arg_%s = (%s)CFISH_INCREF(arg_%s);\n    ";
+            char *statement = CFCUtil_sprintf(pattern, name, type_c, name);
+            body = CFCUtil_cat(body, statement, NULL);
         }
     }
 

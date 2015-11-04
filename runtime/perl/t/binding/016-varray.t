@@ -24,6 +24,11 @@ my ( $varray, $twin );
 $varray = Clownfish::Vector->new;
 $varray->push( Clownfish::String->new($_) ) for 1 .. 5;
 $varray->delete(3);
+$varray->push('abc');
+$varray->insert(
+    tick    => 0,
+    element => 'elem',
+);
 $twin = $varray->_clone;
 is_deeply( $twin->to_perl, $varray->to_perl, "clone" );
 
