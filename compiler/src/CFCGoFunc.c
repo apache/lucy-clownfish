@@ -42,9 +42,12 @@ enum {
 };
 
 char*
-CFCGoFunc_go_meth_name(const char *orig) {
+CFCGoFunc_go_meth_name(const char *orig, int is_public) {
     char *go_name = CFCUtil_strdup(orig);
-    for (int i = 0, j = 0, max = strlen(go_name) + 1; i < max; i++) {
+    if (!is_public) {
+        go_name[0] = tolower(go_name[0]);
+    }
+    for (int i = 1, j = 1, max = strlen(go_name) + 1; i < max; i++) {
         if (go_name[i] != '_') {
             go_name[j++] = go_name[i];
         }

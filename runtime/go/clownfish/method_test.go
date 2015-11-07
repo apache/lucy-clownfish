@@ -21,7 +21,7 @@ import "unsafe"
 
 func TestMethodGetName(t *testing.T) {
 	meth := NewMethod("Do_Stuff", unsafe.Pointer(nil), 32)
-	if name := meth.GetName(); name != "Do_Stuff" {
+	if name := meth.getName(); name != "Do_Stuff" {
 		t.Errorf("Expected \"Do_Stuff\", got %s", name)
 	}
 }
@@ -29,8 +29,8 @@ func TestMethodGetName(t *testing.T) {
 func TestMethodGetHostAlias(t *testing.T) {
 	meth := NewMethod("Do_Stuff", unsafe.Pointer(nil), 32)
 	alias := "GetStuffDone"
-	meth.SetHostAlias(alias)
-	if got := meth.GetHostAlias(); got != alias {
+	meth.setHostAlias(alias)
+	if got := meth.getHostAlias(); got != alias {
 		t.Errorf("Expected %v, got %v", alias, got)
 	}
 }
@@ -38,14 +38,14 @@ func TestMethodGetHostAlias(t *testing.T) {
 func TestMethodHostName(t *testing.T) {
 	meth := NewMethod("Do_Stuff", unsafe.Pointer(nil), 32)
 	expected := "DoStuff"
-	if hostName := meth.HostName(); hostName != expected {
+	if hostName := meth.hostName(); hostName != expected {
 		t.Errorf("Expected %v, got %v", expected, hostName)
 	}
 }
 
 func TestMethodIsExcludedFromHost(t *testing.T) {
 	meth := NewMethod("Do_Stuff", unsafe.Pointer(nil), 32)
-	if meth.IsExcludedFromHost() {
+	if meth.isExcludedFromHost() {
 		t.Errorf("Meth should not be excluded")
 	}
 }

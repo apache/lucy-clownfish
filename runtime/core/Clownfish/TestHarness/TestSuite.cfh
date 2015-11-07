@@ -30,13 +30,13 @@ class Clownfish::TestHarness::TestSuite inherits Clownfish::Obj {
     public void
     Destroy(TestSuite *self);
 
-    void
+    public void
     Add_Batch(TestSuite *self, decremented TestBatch *batch);
 
-    bool
+    public bool
     Run_Batch(TestSuite *self, String *class_name, TestFormatter *formatter);
 
-    bool
+    public bool
     Run_All_Batches(TestSuite *self, TestFormatter *formatter);
 }
 
