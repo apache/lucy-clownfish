@@ -323,9 +323,20 @@ test_vcatf_x32(TestBatchRunner *runner) {
     DECREF(got);
 }
 
+static void
+test_Clear(TestBatchRunner *runner) {
+    CharBuf *cb = S_get_cb("foo");
+    CB_Clear(cb);
+    CB_Cat_Utf8(cb, "bar", 3);
+    String *string = CB_Yield_String(cb);
+    TEST_TRUE(runner, Str_Equals_Utf8(string, "bar", 3), "Clear");
+    DECREF(string);
+    DECREF(cb);
+}
+
 void
 TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 26);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 27);
     test_new(runner);
     test_vcatf_percent(runner);
     test_vcatf_s(runner);
@@ -344,5 +355,6 @@ TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
     test_Cat(runner);
     test_Mimic_and_Clone(runner);
     test_Get_Ptr8(runner);
+    test_Clear(runner);
 }
 
