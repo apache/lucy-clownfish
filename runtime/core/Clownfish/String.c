@@ -26,6 +26,7 @@
 #include "Clownfish/Class.h"
 #include "Clownfish/String.h"
 
+#include "Clownfish/ByteBuf.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
@@ -63,6 +64,17 @@ String*
 Str_new_from_trusted_utf8(const char *utf8, size_t size) {
     String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_from_trusted_utf8(self, utf8, size);
+}
+
+String*
+Str_new_from_bb(ByteBuf *bb) {
+    return Str_new_from_utf8(BB_Get_Buf(bb), BB_Get_Size(bb));
+}
+
+String*
+Str_new_from_trusted_bb(ByteBuf *bb) {
+    String *self = (String*)Class_Make_Obj(STRING);
+    return Str_init_from_trusted_utf8(self, BB_Get_Buf(bb), BB_Get_Size(bb));
 }
 
 String*

@@ -49,6 +49,18 @@ public final class Clownfish::String nickname Str
     public inert incremented String*
     new_from_trusted_utf8(const char *utf8, size_t size);
 
+    /** Return a String which holds a copy of the UTF-8 character data in
+     * the supplied ByteBuf after checking for validity.
+     */
+    public inert incremented String*
+    new_from_bb(ByteBuf *bb);
+
+    /** Return a String which holds a copy of the UTF-8 character data in
+     * the supplied ByteBuf, skipping validity checks.
+     */
+    public inert incremented String*
+    new_from_trusted_bb(ByteBuf *bb);
+
     /** Initialize a String which holds a copy of the supplied UTF-8 character
      * data, skipping validity checks.
      */
