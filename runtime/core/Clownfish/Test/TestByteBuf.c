@@ -27,10 +27,21 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/Class.h"
+#include "Clownfish/String.h"
 
 TestByteBuf*
 TestBB_new() {
     return (TestByteBuf*)Class_Make_Obj(TESTBYTEBUF);
+}
+
+static void
+test_new_from_str(TestBatchRunner *runner) {
+    String     *string = Str_newf("foo");
+    ByteBuf    *bb     = BB_new_from_str(string);
+    const char *buf    = BB_Get_Buf(bb);
+    size_t      size   = BB_Get_Size(bb);
+    TEST_INT_EQ(runner, size, 3, "size after new_from_str");
+    TEST_TRUE(runner, memcmp(buf, "foo", 3) == 0, "buf after new_from_str");
 }
 
 static void
@@ -142,7 +153,8 @@ test_Cat(TestBatchRunner *runner) {
 
 void
 TestBB_Run_IMP(TestByteBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 19);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 21);
+    test_new_from_str(runner);
     test_Equals(runner);
     test_Grow(runner);
     test_Clone(runner);

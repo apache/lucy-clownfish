@@ -26,6 +26,7 @@
 #include "Clownfish/ByteBuf.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/Err.h"
+#include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 
 static void
@@ -50,6 +51,17 @@ BB_init(ByteBuf *self, size_t capacity) {
 ByteBuf*
 BB_new_bytes(const void *bytes, size_t size) {
     ByteBuf *self = (ByteBuf*)Class_Make_Obj(BYTEBUF);
+    return BB_init_bytes(self, bytes, size);
+}
+
+ByteBuf*
+BB_new_from_str(String *string) {
+    ByteBuf *self = (ByteBuf*)Class_Make_Obj(BYTEBUF);
+    return BB_init_bytes(self, Str_Get_Ptr8(string), Str_Get_Size(string));
+}
+
+ByteBuf*
+BB_init_bytes(ByteBuf *self, const void *bytes, size_t size) {
     BB_init(self, size);
     memcpy(self->buf, bytes, size);
     self->size = size;
