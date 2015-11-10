@@ -117,6 +117,18 @@ final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     incremented Blob*
     Yield_Blob(ByteBuf *self);
 
+    /** Return a String which holds a copy of the UTF-8 character data in
+     * the ByteBuf after checking for validity.
+     */
+    public incremented String*
+    Utf8_To_String(ByteBuf *self);
+
+    /** Return a String which holds a copy of the UTF-8 character data in
+     * the ByteBuf, skipping validity checks.
+     */
+    public incremented String*
+    Trusted_Utf8_To_String(ByteBuf *self);
+
     /** Test whether the ByteBuf matches the passed-in bytes.
      */
     bool

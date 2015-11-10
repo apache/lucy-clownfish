@@ -207,6 +207,16 @@ BB_Yield_Blob_IMP(ByteBuf *self) {
     return blob;
 }
 
+String*
+BB_Utf8_To_String_IMP(ByteBuf *self) {
+    return Str_new_from_utf8(self->buf, self->size);
+}
+
+String*
+BB_Trusted_Utf8_To_String_IMP(ByteBuf *self) {
+    return Str_new_from_trusted_utf8(self->buf, self->size);
+}
+
 int
 BB_compare(const void *va, const void *vb) {
     ByteBuf *a = *(ByteBuf**)va;
