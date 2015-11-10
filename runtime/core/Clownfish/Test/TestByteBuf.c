@@ -27,6 +27,7 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/Class.h"
+#include "Clownfish/String.h"
 
 TestByteBuf*
 TestBB_new() {
@@ -118,6 +119,11 @@ test_Mimic(TestBatchRunner *runner) {
     BB_Mimic(b, (Obj*)a);
     TEST_TRUE(runner, BB_Equals(a, (Obj*)b), "Mimic");
 
+    String *string = Str_newf("baz");
+    BB_Mimic(b, (Obj*)string);
+    DECREF(string);
+    TEST_TRUE(runner, BB_Equals_Bytes(b, "baz", 3), "Mimic String");
+
     DECREF(a);
     DECREF(b);
 }
@@ -142,7 +148,7 @@ test_Cat(TestBatchRunner *runner) {
 
 void
 TestBB_Run_IMP(TestByteBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 19);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 20);
     test_Equals(runner);
     test_Grow(runner);
     test_Clone(runner);

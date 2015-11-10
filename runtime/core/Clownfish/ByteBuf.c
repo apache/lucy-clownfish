@@ -26,6 +26,7 @@
 #include "Clownfish/ByteBuf.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/Err.h"
+#include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 
 static void
@@ -144,8 +145,17 @@ BB_Mimic_Bytes_IMP(ByteBuf *self, const void *bytes, size_t size) {
 
 void
 BB_Mimic_IMP(ByteBuf *self, Obj *other) {
-    ByteBuf *twin = (ByteBuf*)CERTIFY(other, BYTEBUF);
-    SI_mimic_bytes(self, twin->buf, twin->size);
+    if (Obj_is_a(other, BYTEBUF)) {
+        ByteBuf *twin = (ByteBuf*)other;
+        SI_mimic_bytes(self, twin->buf, twin->size);
+    }
+    else if (Obj_is_a(other, STRING)) {
+        String *string = (String*)other;
+        SI_mimic_bytes(self, Str_Get_Ptr8(string), Str_Get_Size(string));
+    }
+    else {
+        THROW(ERR, "ByteBuf can't mimic %o", Obj_get_class_name(other));
+    }
 }
 
 static CFISH_INLINE void
