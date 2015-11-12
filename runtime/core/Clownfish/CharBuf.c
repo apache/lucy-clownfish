@@ -33,6 +33,14 @@
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Class.h"
 
+// Append trusted UTF-8 to the CharBuf.
+static void
+S_cat_utf8(CharBuf *self, const char* ptr, size_t size);
+
+// Inline version of S_cat_utf8.
+static CFISH_INLINE void
+SI_cat_utf8(CharBuf *self, const char* ptr, size_t size);
+
 // Ensure that the CharBuf's capacity is at least (size + extra).
 // If the buffer must be grown, oversize the allocation.
 static CFISH_INLINE void
@@ -136,7 +144,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
         while (slice_end < pattern_end && *slice_end != '%') { slice_end++; }
         if (pattern != slice_end) {
             size_t size = slice_end - pattern;
-            CB_Cat_Trusted_Utf8(self, pattern, size);
+            S_cat_utf8(self, pattern, size);
             pattern = slice_end;
         }
 
@@ -145,13 +153,13 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
 
             switch (*pattern) {
                 case '%': {
-                        CB_Cat_Trusted_Utf8(self, "%", 1);
+                        S_cat_utf8(self, "%", 1);
                     }
                     break;
                 case 'o': {
                         Obj *obj = va_arg(args, Obj*);
                         if (!obj) {
-                            CB_Cat_Trusted_Utf8(self, "[NULL]", 6);
+                            S_cat_utf8(self, "[NULL]", 6);
                         }
                         else if (Obj_is_a(obj, STRING)) {
                             CB_Cat(self, (String*)obj);
@@ -182,7 +190,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                             S_die_invalid_pattern(pattern_start);
                         }
                         size = sprintf(buf, "%" PRId64, val);
-                        CB_Cat_Trusted_Utf8(self, buf, size);
+                        S_cat_utf8(self, buf, size);
                     }
                     break;
                 case 'u': {
@@ -204,7 +212,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                             S_die_invalid_pattern(pattern_start);
                         }
                         size = sprintf(buf, "%" PRIu64, val);
-                        CB_Cat_Trusted_Utf8(self, buf, size);
+                        S_cat_utf8(self, buf, size);
                     }
                     break;
                 case 'f': {
@@ -212,7 +220,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                             double num  = va_arg(args, double);
                             char bigbuf[512];
                             size_t size = sprintf(bigbuf, "%g", num);
-                            CB_Cat_Trusted_Utf8(self, bigbuf, size);
+                            S_cat_utf8(self, bigbuf, size);
                             pattern += 2;
                         }
                         else {
@@ -224,7 +232,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                         if (pattern[1] == '3' && pattern[2] == '2') {
                             unsigned long val = va_arg(args, uint32_t);
                             size_t size = sprintf(buf, "%.8lx", val);
-                            CB_Cat_Trusted_Utf8(self, buf, size);
+                            S_cat_utf8(self, buf, size);
                             pattern += 2;
                         }
                         else {
@@ -235,15 +243,15 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                 case 's': {
                         char *string = va_arg(args, char*);
                         if (string == NULL) {
-                            CB_Cat_Trusted_Utf8(self, "[NULL]", 6);
+                            S_cat_utf8(self, "[NULL]", 6);
                         }
                         else {
                             size_t size = strlen(string);
                             if (StrHelp_utf8_valid(string, size)) {
-                                CB_Cat_Trusted_Utf8(self, string, size);
+                                S_cat_utf8(self, string, size);
                             }
                             else {
-                                CB_Cat_Trusted_Utf8(self, "[INVALID UTF8]", 14);
+                                S_cat_utf8(self, "[INVALID UTF8]", 14);
                             }
                         }
                     }
@@ -295,14 +303,6 @@ CB_Clone_IMP(CharBuf *self) {
     return clone;
 }
 
-static CFISH_INLINE void
-SI_cat_utf8(CharBuf *self, const char* ptr, size_t size) {
-    size_t old_size = self->size;
-    SI_add_grow_and_oversize(self, old_size, size);
-    memcpy(self->ptr + old_size, ptr, size);
-    self->size = old_size + size;
-}
-
 void
 CB_Cat_Utf8_IMP(CharBuf *self, const char* ptr, size_t size) {
     if (!StrHelp_utf8_valid(ptr, size)) {
@@ -329,6 +329,19 @@ CB_Clear_IMP(CharBuf *self) {
 size_t
 CB_Get_Size_IMP(CharBuf *self) {
     return self->size;
+}
+
+static void
+S_cat_utf8(CharBuf *self, const char* ptr, size_t size) {
+    SI_cat_utf8(self, ptr, size);
+}
+
+static CFISH_INLINE void
+SI_cat_utf8(CharBuf *self, const char* ptr, size_t size) {
+    size_t old_size = self->size;
+    SI_add_grow_and_oversize(self, old_size, size);
+    memcpy(self->ptr + old_size, ptr, size);
+    self->size = old_size + size;
 }
 
 static CFISH_INLINE void
