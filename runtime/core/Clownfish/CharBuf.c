@@ -56,14 +56,11 @@ CB_new(size_t size) {
 CharBuf*
 CB_init(CharBuf *self, size_t size) {
     // Derive.
-    self->ptr = (char*)MALLOCATE(size + 1);
-
-    // Init.
-    *self->ptr = '\0'; // Empty string.
+    self->ptr = (char*)MALLOCATE(size);
 
     // Assign.
     self->size = 0;
-    self->cap  = size + 1;
+    self->cap  = size;
 
     return self;
 }
@@ -76,9 +73,9 @@ CB_Destroy_IMP(CharBuf *self) {
 
 void
 CB_Grow_IMP(CharBuf *self, size_t size) {
-    if (size >= self->cap) {
-        self->cap = size + 1;
-        self->ptr = (char*)REALLOCATE(self->ptr, self->cap);
+    if (size > self->cap) {
+        self->cap = size;
+        self->ptr = (char*)REALLOCATE(self->ptr, size);
     }
 }
 
@@ -264,14 +261,13 @@ CB_Yield_String_IMP(CharBuf *self) {
 void
 CB_Cat_Char_IMP(CharBuf *self, int32_t code_point) {
     const size_t MAX_UTF8_BYTES = 4;
-    if (self->size + MAX_UTF8_BYTES >= self->cap) {
+    if (self->size + MAX_UTF8_BYTES > self->cap) {
         CB_Grow(self, Memory_oversize(self->size + MAX_UTF8_BYTES,
                                      sizeof(char)));
     }
     char *end = self->ptr + self->size;
     size_t count = StrHelp_encode_utf8_char(code_point, (uint8_t*)end);
     self->size += count;
-    *(end + count) = '\0';
 }
 
 CharBuf*
@@ -281,7 +277,6 @@ CB_Clone_IMP(CharBuf *self) {
 
     clone->size = size;
     memcpy(clone->ptr, self->ptr, size);
-    clone->ptr[size] = '\0';
 
     return clone;
 }
@@ -289,13 +284,12 @@ CB_Clone_IMP(CharBuf *self) {
 static CFISH_INLINE void
 SI_cat_utf8(CharBuf *self, const char* ptr, size_t size) {
     const size_t new_size = self->size + size;
-    if (new_size >= self->cap) {
+    if (new_size > self->cap) {
         size_t amount = Memory_oversize(new_size, sizeof(char));
         CB_Grow(self, amount);
     }
     memcpy(self->ptr + self->size, ptr, size);
     self->size = new_size;
-    self->ptr[new_size] = '\0';
 }
 
 void
