@@ -26,6 +26,7 @@
 #include "Clownfish/Class.h"
 #include "Clownfish/String.h"
 
+#include "Clownfish/ByteBuf.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
@@ -288,6 +289,11 @@ Str_To_Utf8_IMP(String *self) {
     memcpy(buf, self->ptr, self->size);
     buf[self->size] = '\0'; // NULL-terminate.
     return buf;
+}
+
+ByteBuf*
+Str_To_ByteBuf_IMP(String *self) {
+    return BB_new_bytes(self->ptr, self->size);
 }
 
 String*

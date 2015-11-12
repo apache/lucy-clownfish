@@ -212,6 +212,11 @@ public final class Clownfish::String nickname Str
     public char*
     To_Utf8(String *self);
 
+    /** Return a ByteBuf which holds a copy of the String.
+     */
+    public incremented ByteBuf*
+    To_ByteBuf(String *self);
+
     public incremented String*
     Clone(String *self);
 

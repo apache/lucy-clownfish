@@ -24,6 +24,7 @@
 
 #include "Clownfish/String.h"
 #include "Clownfish/Boolean.h"
+#include "Clownfish/ByteBuf.h"
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
@@ -374,6 +375,15 @@ test_To_Utf8(TestBatchRunner *runner) {
 }
 
 static void
+test_To_ByteBuf(TestBatchRunner *runner) {
+    String     *string = Str_newf("foo");
+    ByteBuf    *bb     = Str_To_ByteBuf(string);
+    TEST_TRUE(runner, BB_Equals_Bytes(bb, "foo", 3), "To_ByteBuf");
+    DECREF(bb);
+    DECREF(string);
+}
+
+static void
 test_Length(TestBatchRunner *runner) {
     String *string = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
     TEST_INT_EQ(runner, Str_Length(string), 6, "Length");
@@ -693,7 +703,7 @@ test_iterator_substring(TestBatchRunner *runner) {
 
 void
 TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 138);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 139);
     test_new(runner);
     test_Cat(runner);
     test_Clone(runner);
@@ -705,6 +715,7 @@ TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
     test_To_I64(runner);
     test_To_String(runner);
     test_To_Utf8(runner);
+    test_To_ByteBuf(runner);
     test_Length(runner);
     test_Compare_To(runner);
     test_Starts_Ends_With(runner);
