@@ -33,6 +33,22 @@
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Class.h"
 
+// Ensure that the CharBuf's capacity is at least (size + extra).
+// If the buffer must be grown, oversize the allocation.
+static CFISH_INLINE void
+SI_add_grow_and_oversize(CharBuf *self, size_t size, size_t extra);
+
+// Compilers tend to inline this function although this is the unlikely
+// slow path. If we ever add cross-platform support for the noinline
+// attribute, it should be marked as such to reduce code size.
+static void
+S_grow_and_oversize(CharBuf *self, size_t min_size);
+
+// Not inlining the THROW macro reduces code size and complexity of
+// SI_add_grow_and_oversize.
+static void
+S_overflow_error();
+
 // Helper function for throwing invalid UTF-8 error. Since THROW uses
 // a String internally, calling THROW with invalid UTF-8 would create an
 // infinite loop -- so we fwrite some of the bogus text to stderr and
@@ -261,11 +277,9 @@ CB_Yield_String_IMP(CharBuf *self) {
 void
 CB_Cat_Char_IMP(CharBuf *self, int32_t code_point) {
     const size_t MAX_UTF8_BYTES = 4;
-    if (self->size + MAX_UTF8_BYTES > self->cap) {
-        CB_Grow(self, Memory_oversize(self->size + MAX_UTF8_BYTES,
-                                     sizeof(char)));
-    }
-    char *end = self->ptr + self->size;
+    size_t old_size = self->size;
+    SI_add_grow_and_oversize(self, old_size, MAX_UTF8_BYTES);
+    char *end = self->ptr + old_size;
     size_t count = StrHelp_encode_utf8_char(code_point, (uint8_t*)end);
     self->size += count;
 }
@@ -283,13 +297,10 @@ CB_Clone_IMP(CharBuf *self) {
 
 static CFISH_INLINE void
 SI_cat_utf8(CharBuf *self, const char* ptr, size_t size) {
-    const size_t new_size = self->size + size;
-    if (new_size > self->cap) {
-        size_t amount = Memory_oversize(new_size, sizeof(char));
-        CB_Grow(self, amount);
-    }
-    memcpy(self->ptr + self->size, ptr, size);
-    self->size = new_size;
+    size_t old_size = self->size;
+    SI_add_grow_and_oversize(self, old_size, size);
+    memcpy(self->ptr + old_size, ptr, size);
+    self->size = old_size + size;
 }
 
 void
@@ -318,6 +329,40 @@ CB_Clear_IMP(CharBuf *self) {
 size_t
 CB_Get_Size_IMP(CharBuf *self) {
     return self->size;
+}
+
+static CFISH_INLINE void
+SI_add_grow_and_oversize(CharBuf *self, size_t size, size_t extra) {
+    size_t min_size = size + extra;
+    if (min_size < size) {
+        S_overflow_error();
+        return;
+    }
+
+    if (min_size > self->cap) {
+        S_grow_and_oversize(self, min_size);
+    }
+}
+
+static void
+S_grow_and_oversize(CharBuf *self, size_t min_size) {
+    // Oversize by 25%, but at least eight bytes.
+    size_t extra = min_size / 4;
+    // Round up to next multiple of eight.
+    extra = (extra + 7) & ~7;
+
+    size_t capacity = min_size + extra;
+    if (capacity < min_size) {
+        capacity = SIZE_MAX;
+    }
+
+    self->cap = capacity;
+    self->ptr = (char*)REALLOCATE(self->ptr, capacity);
+}
+
+static void
+S_overflow_error() {
+    THROW(ERR, "CharBuf buffer overflow");
 }
 
 
