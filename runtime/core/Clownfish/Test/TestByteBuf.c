@@ -27,6 +27,7 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/Class.h"
+#include "Clownfish/String.h"
 
 TestByteBuf*
 TestBB_new() {
@@ -118,6 +119,11 @@ test_Mimic(TestBatchRunner *runner) {
     BB_Mimic(b, (Obj*)a);
     TEST_TRUE(runner, BB_Equals(a, (Obj*)b), "Mimic");
 
+    String *string = Str_newf("baz");
+    BB_Mimic(b, (Obj*)string);
+    DECREF(string);
+    TEST_TRUE(runner, BB_Equals_Bytes(b, "baz", 3), "Mimic String");
+
     DECREF(a);
     DECREF(b);
 }
@@ -140,14 +146,35 @@ test_Cat(TestBatchRunner *runner) {
     DECREF(wanted);
 }
 
+static void
+test_Utf8_To_String(TestBatchRunner *runner) {
+    ByteBuf *bb = BB_new_bytes("foo", 3);
+
+    {
+        String *string = BB_Utf8_To_String(bb);
+        TEST_TRUE(runner, Str_Equals_Utf8(string, "foo", 3), "Utf8_To_String");
+        DECREF(string);
+    }
+
+    {
+        String *string = BB_Trusted_Utf8_To_String(bb);
+        TEST_TRUE(runner, Str_Equals_Utf8(string, "foo", 3),
+                  "Trusted_Utf8_To_String");
+        DECREF(string);
+    }
+
+    DECREF(bb);
+}
+
 void
 TestBB_Run_IMP(TestByteBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 19);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 22);
     test_Equals(runner);
     test_Grow(runner);
     test_Clone(runner);
     test_compare(runner);
     test_Mimic(runner);
+    test_Utf8_To_String(runner);
     test_Cat(runner);
 }
 

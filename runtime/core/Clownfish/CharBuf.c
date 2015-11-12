@@ -389,6 +389,11 @@ CB_Cat_IMP(CharBuf *self, String *string) {
 }
 
 void
+CB_Clear_IMP(CharBuf *self) {
+    self->size = 0;
+}
+
+void
 CB_Set_Size_IMP(CharBuf *self, size_t size) {
     if (size >= self->cap) {
         THROW(ERR, "Can't set size of CharBuf beyond capacity");
