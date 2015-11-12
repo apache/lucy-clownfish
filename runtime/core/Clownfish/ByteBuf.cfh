@@ -36,10 +36,13 @@ final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     init(ByteBuf *self, size_t capacity);
 
     /** Return a pointer to a new ByteBuf which holds a copy of the passed-in
-     * string.
+     * bytes.
      */
     inert incremented ByteBuf*
     new_bytes(const void *bytes, size_t size);
+
+    inert ByteBuf*
+    init_bytes(ByteBuf *self, const void *bytes, size_t size);
 
     /** Return a pointer to a new ByteBuf which assumes ownership of the
      * passed-in string.

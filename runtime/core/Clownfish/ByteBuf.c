@@ -50,6 +50,11 @@ BB_init(ByteBuf *self, size_t capacity) {
 ByteBuf*
 BB_new_bytes(const void *bytes, size_t size) {
     ByteBuf *self = (ByteBuf*)Class_Make_Obj(BYTEBUF);
+    return BB_init_bytes(self, bytes, size);
+}
+
+ByteBuf*
+BB_init_bytes(ByteBuf *self, const void *bytes, size_t size) {
     BB_init(self, size);
     memcpy(self->buf, bytes, size);
     self->size = size;
