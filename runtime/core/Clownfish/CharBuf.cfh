@@ -33,38 +33,6 @@ final class Clownfish::CharBuf nickname CB
     inert CharBuf*
     init(CharBuf *self, size_t size);
 
-    /** Return a new CharBuf which holds a copy of the passed-in String.
-     */
-    inert incremented CharBuf*
-    new_from_str(String *string);
-
-    /** Return a new CharBuf which holds a copy of the passed-in string.
-     * Check for UTF-8 validity.
-     */
-    inert incremented CharBuf*
-    new_from_utf8(const char *utf8, size_t size);
-
-    /** Return a new CharBuf which holds a copy of the passed-in string.  No
-     * validity checking is performed.
-     */
-    inert incremented CharBuf*
-    new_from_trusted_utf8(const char *utf8, size_t size);
-
-    /** Return a pointer to a new CharBuf which contains formatted data
-     * expanded according to CB_VCatF.
-     *
-     * Note: a user-supplied `pattern` string is a security hole
-     * and must not be allowed.
-     */
-    inert incremented CharBuf*
-    newf(const char *pattern, ...);
-
-    public void
-    Mimic(CharBuf *self, Obj *other);
-
-    void
-    Mimic_Utf8(CharBuf *self, const char *ptr, size_t size);
-
     /** Concatenate the passed-in string onto the end of the CharBuf.
      */
     void
@@ -111,10 +79,8 @@ final class Clownfish::CharBuf nickname CB
     /** Assign more memory to the CharBuf, if it doesn't already have enough
      * room to hold a string of `size` bytes.  Cannot shrink the
      * allocation.
-     *
-     * @return a pointer to the raw buffer.
      */
-    char*
+    void
     Grow(CharBuf *self, size_t size);
 
     /** Clear the CharBuf.
@@ -122,21 +88,10 @@ final class Clownfish::CharBuf nickname CB
     void
     Clear(CharBuf *self);
 
-    /** Set the CharBuf's `size` attribute.
-     */
-    void
-    Set_Size(CharBuf *self, size_t size);
-
     /** Get the CharBuf's `size` attribute.
      */
     size_t
     Get_Size(CharBuf *self);
-
-    /** Return the internal backing array for the CharBuf if its internal
-     * encoding is UTF-8.  If it is not encoded as UTF-8 throw an exception.
-     */
-    char*
-    Get_Ptr8(CharBuf *self);
 
     public incremented CharBuf*
     Clone(CharBuf *self);

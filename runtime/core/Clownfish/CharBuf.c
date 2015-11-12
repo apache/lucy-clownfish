@@ -68,60 +68,18 @@ CB_init(CharBuf *self, size_t size) {
     return self;
 }
 
-CharBuf*
-CB_new_from_str(String *string) {
-    return CB_new_from_trusted_utf8(string->ptr, string->size);
-}
-
-CharBuf*
-CB_new_from_utf8(const char *ptr, size_t size) {
-    if (!StrHelp_utf8_valid(ptr, size)) {
-        DIE_INVALID_UTF8(ptr, size);
-    }
-    return CB_new_from_trusted_utf8(ptr, size);
-}
-
-CharBuf*
-CB_new_from_trusted_utf8(const char *ptr, size_t size) {
-    CharBuf *self = (CharBuf*)Class_Make_Obj(CHARBUF);
-
-    // Derive.
-    self->ptr = (char*)MALLOCATE(size + 1);
-
-    // Copy.
-    memcpy(self->ptr, ptr, size);
-
-    // Assign.
-    self->size      = size;
-    self->cap       = size + 1;
-    self->ptr[size] = '\0'; // Null terminate.
-
-    return self;
-}
-
-CharBuf*
-CB_newf(const char *pattern, ...) {
-    CharBuf *self = CB_new(strlen(pattern));
-    va_list args;
-    va_start(args, pattern);
-    CB_VCatF(self, pattern, args);
-    va_end(args);
-    return self;
-}
-
 void
 CB_Destroy_IMP(CharBuf *self) {
     FREEMEM(self->ptr);
     SUPER_DESTROY(self, CHARBUF);
 }
 
-char*
+void
 CB_Grow_IMP(CharBuf *self, size_t size) {
     if (size >= self->cap) {
         self->cap = size + 1;
         self->ptr = (char*)REALLOCATE(self->ptr, self->cap);
     }
-    return self->ptr;
 }
 
 static void
@@ -318,44 +276,14 @@ CB_Cat_Char_IMP(CharBuf *self, int32_t code_point) {
 
 CharBuf*
 CB_Clone_IMP(CharBuf *self) {
-    return CB_new_from_trusted_utf8(self->ptr, self->size);
-}
+    size_t   size  = self->size;
+    CharBuf *clone = CB_new(size);
 
-static CFISH_INLINE void
-SI_mimic_utf8(CharBuf *self, const char* ptr, size_t size) {
-    if (size >= self->cap) { CB_Grow(self, size); }
-    memmove(self->ptr, ptr, size);
-    self->size = size;
-    self->ptr[size] = '\0';
-}
+    clone->size = size;
+    memcpy(clone->ptr, self->ptr, size);
+    clone->ptr[size] = '\0';
 
-void
-CB_Mimic_Utf8_IMP(CharBuf *self, const char* ptr, size_t size) {
-    if (!StrHelp_utf8_valid(ptr, size)) {
-        DIE_INVALID_UTF8(ptr, size);
-    }
-    SI_mimic_utf8(self, ptr, size);
-}
-
-void
-CB_Mimic_IMP(CharBuf *self, Obj *other) {
-    const char *ptr;
-    size_t size;
-    if (Obj_is_a(other, CHARBUF)) {
-        CharBuf *twin = (CharBuf*)other;
-        ptr  = twin->ptr;
-        size = twin->size;
-    }
-    else if (Obj_is_a(other, STRING)) {
-        String *twin = (String*)other;
-        ptr  = twin->ptr;
-        size = twin->size;
-    }
-    else {
-        THROW(ERR, "CharBuf can't mimic %o", Obj_get_class_name(other));
-        return; // unreachable
-    }
-    SI_mimic_utf8(self, ptr, size);
+    return clone;
 }
 
 static CFISH_INLINE void
@@ -393,23 +321,9 @@ CB_Clear_IMP(CharBuf *self) {
     self->size = 0;
 }
 
-void
-CB_Set_Size_IMP(CharBuf *self, size_t size) {
-    if (size >= self->cap) {
-        THROW(ERR, "Can't set size of CharBuf beyond capacity");
-        return; // unreachable
-    }
-    self->size = size;
-}
-
 size_t
 CB_Get_Size_IMP(CharBuf *self) {
     return self->size;
-}
-
-char*
-CB_Get_Ptr8_IMP(CharBuf *self) {
-    return self->ptr;
 }
 
 

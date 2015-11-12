@@ -42,7 +42,9 @@ TestCB_new() {
 
 static CharBuf*
 S_get_cb(const char *string) {
-    return CB_new_from_utf8(string, strlen(string));
+    CharBuf *cb = CB_new(0);
+    CB_Cat_Utf8(cb, string, strlen(string));
+    return cb;
 }
 
 static String*
@@ -56,25 +58,6 @@ S_cb_equals(CharBuf *cb, String *other) {
     bool retval = Str_Equals(string, (Obj*)other);
     DECREF(string);
     return retval;
-}
-
-static void
-test_new(TestBatchRunner *runner) {
-    {
-        String  *str = Str_newf("CharBuf from String");
-        CharBuf *cb  = CB_new_from_str(str);
-        TEST_TRUE(runner, S_cb_equals(cb, str), "CB_new_from_str");
-        DECREF(str);
-        DECREF(cb);
-    }
-
-    {
-        CharBuf *cb     = CB_newf("%i32 %s", 99, "Luftballons");
-        String  *wanted = Str_newf("99 Luftballons");
-        TEST_TRUE(runner, S_cb_equals(cb, wanted), "CB_newf");
-        DECREF(cb);
-        DECREF(wanted);
-    }
 }
 
 static void
@@ -105,61 +88,15 @@ test_Cat(TestBatchRunner *runner) {
 }
 
 static void
-test_Mimic_and_Clone(TestBatchRunner *runner) {
+test_Clone(TestBatchRunner *runner) {
     String  *wanted    = S_get_str("foo");
     CharBuf *wanted_cb = S_get_cb("foo");
-    CharBuf *got       = S_get_cb("bar");
-
-    CB_Mimic(got, (Obj*)wanted);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Mimic String");
-    DECREF(got);
-
-    got = S_get_cb("bar");
-    CB_Mimic(got, (Obj*)wanted_cb);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Mimic CharBuf");
-    DECREF(got);
-
-    got = S_get_cb("bar");
-    CB_Mimic_Utf8(got, "foo", 3);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Mimic_Utf8");
-    DECREF(got);
-
-    got = CB_Clone(wanted_cb);
+    CharBuf *got       = CB_Clone(wanted_cb);
     TEST_TRUE(runner, S_cb_equals(got, wanted), "Clone");
     DECREF(got);
-
     DECREF(wanted);
     DECREF(wanted_cb);
 }
-
-static void
-test_Get_Ptr8(TestBatchRunner *runner) {
-    CharBuf *cb = CB_new(64);
-
-    char *ptr8 = CB_Get_Ptr8(cb);
-    strcpy(ptr8, "0123456789");
-    CB_Set_Size(cb, 10);
-
-    TEST_INT_EQ(runner, CB_Get_Size(cb), 10, "Set_Size/Get_Size");
-
-    String *wanted = S_get_str("0123456789");
-    TEST_TRUE(runner, S_cb_equals(cb, wanted), "Get_Ptr8");
-
-    DECREF(cb);
-    DECREF(wanted);
-}
-
-/*
-static void
-test_Truncate(TestBatchRunner *runner) {
-    String  *wanted = Str_newf("a%s", smiley);
-    CharBuf *got    = CB_newf("a%s%sb%sc", smiley, smiley, smiley);
-    CB_Truncate(got, 2);
-    TEST_TRUE(runner, S_cb_equals(got, wanted), "Truncate");
-    DECREF(wanted);
-    DECREF(got);
-}
-*/
 
 static void
 test_vcatf_percent(TestBatchRunner *runner) {
@@ -336,8 +273,7 @@ test_Clear(TestBatchRunner *runner) {
 
 void
 TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 27);
-    test_new(runner);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 20);
     test_vcatf_percent(runner);
     test_vcatf_s(runner);
     test_vcatf_null_string(runner);
@@ -353,8 +289,7 @@ TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
     test_vcatf_f64(runner);
     test_vcatf_x32(runner);
     test_Cat(runner);
-    test_Mimic_and_Clone(runner);
-    test_Get_Ptr8(runner);
+    test_Clone(runner);
     test_Clear(runner);
 }
 
