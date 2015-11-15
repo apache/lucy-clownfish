@@ -26,6 +26,7 @@ sub bind_all {
     $class->bind_test_alias_obj;
     $class->bind_blob;
     $class->bind_bytebuf;
+    $class->bind_charbuf;
     $class->bind_string;
     $class->bind_err;
     $class->bind_hash;
@@ -169,6 +170,29 @@ END_XS_CODE
     );
     $binding->append_xs($xs_code);
     $binding->exclude_constructor;
+
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_charbuf {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $buf = Clownfish::CharBuf->new;
+    $buf->cat('abc');
+    $buf->cat_char(ord("\n"));
+    print $buf->to_string;
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+    my $buf = Clownfish::CharBuf->new( size => 256 );
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', sample => $constructor );
+
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "Clownfish",
+        class_name => "Clownfish::CharBuf",
+    );
+    $binding->set_pod_spec($pod_spec);
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
