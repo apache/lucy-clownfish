@@ -219,13 +219,6 @@ CODE:
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
 OUTPUT: RETVAL
-
-SV*
-_clone(self)
-    cfish_String *self;
-CODE:
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Str_Clone_IMP(self));
-OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
@@ -439,11 +432,16 @@ END_POD
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->set_description($description);
     $pod_spec->add_method(
+        method => 'Clone',
+        alias  => 'clone',
+    );
+    $pod_spec->add_method(
         method => 'Destroy',
         alias  => 'DESTROY',
         pod    => $destroy_pod,
     );
 
+    my @hand_rolled = qw( Clone );
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::Obj
 
@@ -473,6 +471,13 @@ CODE:
     RETVAL = cfish_Obj_is_a(self, target);
 }
 OUTPUT: RETVAL
+
+SV*
+clone(self)
+    cfish_Obj *self;
+CODE:
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Obj_Clone(self));
+OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
@@ -483,6 +488,7 @@ END_XS_CODE
         alias  => 'DESTROY',
         method => 'Destroy',
     );
+    $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
     $binding->set_pod_spec($pod_spec);
 
@@ -499,13 +505,6 @@ sub bind_varray {
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Vector
-
-SV*
-_clone(self)
-    cfish_Vector *self;
-CODE:
-    RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Vec_Clone(self));
-OUTPUT: RETVAL
 
 SV*
 pop(self)

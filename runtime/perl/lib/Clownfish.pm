@@ -134,21 +134,6 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::String;
-    our $VERSION = '0.004000';
-    $VERSION = eval $VERSION;
-
-    {
-        # Defeat obscure bugs in the XS auto-generation by redefining clone().
-        # (Because of how the typemap works for String*,
-        # the auto-generated methods return UTF-8 Perl scalars rather than
-        # actual String objects.)
-        no warnings 'redefine';
-        sub clone { shift->_clone(@_) }
-    }
-}
-
-{
     package Clownfish::Err;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
@@ -185,14 +170,6 @@ sub error {$Clownfish::Err::error}
         $error = $val;
     }
     sub get_error {$error}
-}
-
-{
-    package Clownfish::Vector;
-    our $VERSION = '0.004000';
-    $VERSION = eval $VERSION;
-    no warnings 'redefine';
-    sub clone       { CORE::shift->_clone }
 }
 
 1;

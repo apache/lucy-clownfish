@@ -29,6 +29,6 @@ $varray->insert(
     tick    => 0,
     element => 'elem',
 );
-$twin = $varray->_clone;
+$twin = $varray->clone;
 is_deeply( $twin->to_perl, $varray->to_perl, "clone" );
 
