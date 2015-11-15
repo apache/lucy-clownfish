@@ -31,7 +31,7 @@ sub bind_all {
     $class->bind_hash;
     $class->bind_float;
     $class->bind_obj;
-    $class->bind_varray;
+    $class->bind_vector;
     $class->bind_class;
     $class->bind_stringhelper;
 }
@@ -496,7 +496,7 @@ END_XS_CODE
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
 
-sub bind_varray {
+sub bind_vector {
     my @hand_rolled = qw(
         Pop
         Delete

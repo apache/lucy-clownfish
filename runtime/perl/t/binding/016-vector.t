@@ -19,16 +19,16 @@ use warnings;
 use Test::More tests => 1;
 use Clownfish;
 
-my ( $varray, $twin );
+my ( $vector, $twin );
 
-$varray = Clownfish::Vector->new;
-$varray->push( Clownfish::String->new($_) ) for 1 .. 5;
-$varray->delete(3);
-$varray->push('abc');
-$varray->insert(
+$vector = Clownfish::Vector->new;
+$vector->push( Clownfish::String->new($_) ) for 1 .. 5;
+$vector->delete(3);
+$vector->push('abc');
+$vector->insert(
     tick    => 0,
     element => 'elem',
 );
-$twin = $varray->clone;
-is_deeply( $twin->to_perl, $varray->to_perl, "clone" );
+$twin = $vector->clone;
+is_deeply( $twin->to_perl, $vector->to_perl, "clone" );
 
