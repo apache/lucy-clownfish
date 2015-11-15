@@ -30,6 +30,7 @@ sub bind_all {
     $class->bind_err;
     $class->bind_hash;
     $class->bind_float;
+    $class->bind_integer;
     $class->bind_obj;
     $class->bind_vector;
     $class->bind_class;
@@ -289,7 +290,7 @@ END_XS_CODE
 }
 
 sub bind_float {
-    my $float_xs_code = <<'END_XS_CODE';
+    my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Float
 
 SV*
@@ -310,7 +311,51 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::Float",
     );
-    $binding->append_xs($float_xs_code);
+    $binding->append_xs($xs_code);
+    $binding->exclude_constructor;
+
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_integer {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $integer = Clownfish::Integer->new(7);
+    my $value = $integer->get_value;
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+=head2 new(value)
+
+    my $integer = Clownfish::Integer->new($value);
+
+Create an Integer containing the passed-in value.
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+
+    my $xs_code = <<'END_XS_CODE';
+MODULE = Clownfish   PACKAGE = Clownfish::Integer
+
+SV*
+new(either_sv, value)
+    SV      *either_sv;
+    int64_t  value;
+CODE:
+{
+    cfish_Integer *self
+        = (cfish_Integer*)XSBind_new_blank_obj(aTHX_ either_sv);
+    cfish_Int_init(self, value);
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
+}
+OUTPUT: RETVAL
+END_XS_CODE
+
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "Clownfish",
+        class_name => "Clownfish::Integer",
+    );
+    $binding->set_pod_spec($pod_spec);
+    $binding->append_xs($xs_code);
     $binding->exclude_constructor;
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
