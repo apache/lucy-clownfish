@@ -168,6 +168,16 @@ sub error {$Clownfish::Err::error}
     sub get_error {$error}
 }
 
+{
+    package Clownfish::Boolean;
+    our $VERSION = '0.004000';
+    $VERSION = eval $VERSION;
+    use Exporter 'import';
+    our @EXPORT_OK = qw( $true_singleton $false_singleton );
+    our $true_singleton  = Clownfish::Boolean->singleton(1);
+    our $false_singleton = Clownfish::Boolean->singleton(0);
+}
+
 1;
 
 __END__

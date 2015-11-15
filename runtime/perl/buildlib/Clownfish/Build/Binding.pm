@@ -25,6 +25,7 @@ sub bind_all {
     $class->bind_test;
     $class->bind_test_alias_obj;
     $class->bind_blob;
+    $class->bind_boolean;
     $class->bind_bytebuf;
     $class->bind_charbuf;
     $class->bind_string;
@@ -140,6 +141,58 @@ END_XS_CODE
     );
     $binding->append_xs($xs_code);
     $binding->exclude_constructor;
+
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_boolean {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    use Clownfish::Boolean qw( $true_singleton $false_singleton );
+
+    my $bool = Clownfish::Boolean->singleton($truth_value);
+    my $truth_value = $bool->get_value;
+
+    if ($bool->equals($true_singleton)) {
+        print "true\n";
+    }
+END_SYNOPSIS
+    my $description = <<'END_DESCRIPTION';
+There are only two singleton instances of this class: `$true_singleton` and
+`$false_singleton` which are exported on demand.
+END_DESCRIPTION
+    my $constructor = <<'END_CONSTRUCTOR';
+=head2 singleton(truth_value)
+
+    my $bool = Clownfish::Boolean->singleton($truth_value);
+
+Return a Boolean singleton representing either true or false depending
+on the supplied truth value.
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->set_description($description);
+    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+
+    my $xs_code = <<'END_XS_CODE';
+MODULE = Clownfish   PACKAGE = Clownfish::Boolean
+
+SV*
+singleton(either_sv, value)
+    SV      *either_sv;
+    bool     value;
+CODE:
+{
+    RETVAL = CFISH_OBJ_TO_SV(cfish_Bool_singleton(value));
+}
+OUTPUT: RETVAL
+END_XS_CODE
+
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "Clownfish",
+        class_name => "Clownfish::Boolean",
+    );
+    $binding->set_pod_spec($pod_spec);
+    $binding->append_xs($xs_code);
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
