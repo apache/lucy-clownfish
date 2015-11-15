@@ -31,6 +31,7 @@ sub bind_all {
     $class->bind_string;
     $class->bind_err;
     $class->bind_hash;
+    $class->bind_hashiterator;
     $class->bind_float;
     $class->bind_integer;
     $class->bind_obj;
@@ -362,6 +363,53 @@ END_XS_CODE
     );
     $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
+
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_hashiterator {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $iter = Clownfish::HashIterator->new($hash);
+    while ($iter->next) {
+        my $key   = $iter->get_key;
+        my $value = $iter->get_value;
+    }
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+=head2 new(hash)
+
+    my $iter = Clownfish::HashIterator->new($hash);
+
+Return a HashIterator for the passed-in Hash.
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+
+    my $xs_code = <<'END_XS_CODE';
+MODULE = Clownfish   PACKAGE = Clownfish::HashIterator
+
+SV*
+new(either_sv, hash)
+    SV         *either_sv;
+    cfish_Hash *hash;
+CODE:
+{
+    cfish_HashIterator *self
+        = (cfish_HashIterator*)XSBind_new_blank_obj(aTHX_ either_sv);
+    cfish_HashIter_init(self, hash);
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
+}
+OUTPUT: RETVAL
+END_XS_CODE
+
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "Clownfish",
+        class_name => "Clownfish::HashIterator",
+    );
+    $binding->set_pod_spec($pod_spec);
+    $binding->append_xs($xs_code);
+    $binding->exclude_constructor;
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
