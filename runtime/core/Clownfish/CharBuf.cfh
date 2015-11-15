@@ -20,66 +20,34 @@ parcel Clownfish;
  * Growable buffer holding Unicode characters.
  */
 
-final class Clownfish::CharBuf nickname CB
+public final class Clownfish::CharBuf nickname CB
     inherits Clownfish::Obj {
 
     char    *ptr;
     size_t   size;
     size_t   cap;  /* allocated bytes, including terminating null */
 
-    inert incremented CharBuf*
+    public inert incremented CharBuf*
     new(size_t size);
 
-    inert CharBuf*
+    public inert CharBuf*
     init(CharBuf *self, size_t size);
-
-    /** Return a new CharBuf which holds a copy of the passed-in String.
-     */
-    inert incremented CharBuf*
-    new_from_str(String *string);
-
-    /** Return a new CharBuf which holds a copy of the passed-in string.
-     * Check for UTF-8 validity.
-     */
-    inert incremented CharBuf*
-    new_from_utf8(const char *utf8, size_t size);
-
-    /** Return a new CharBuf which holds a copy of the passed-in string.  No
-     * validity checking is performed.
-     */
-    inert incremented CharBuf*
-    new_from_trusted_utf8(const char *utf8, size_t size);
-
-    /** Return a pointer to a new CharBuf which contains formatted data
-     * expanded according to CB_VCatF.
-     *
-     * Note: a user-supplied `pattern` string is a security hole
-     * and must not be allowed.
-     */
-    inert incremented CharBuf*
-    newf(const char *pattern, ...);
-
-    public void
-    Mimic(CharBuf *self, Obj *other);
-
-    void
-    Mimic_Utf8(CharBuf *self, const char *ptr, size_t size);
 
     /** Concatenate the passed-in string onto the end of the CharBuf.
      */
-    void
+    public void
     Cat_Utf8(CharBuf *self, const char *ptr, size_t size);
 
     /** Concatenate the supplied text onto the end of the CharBuf.  Don't
      * check for UTF-8 validity.
      */
-    void
+    public void
     Cat_Trusted_Utf8(CharBuf *self, const char *ptr, size_t size);
 
     /** Concatenate the contents of `string` onto the end of the
      * caller.
      */
-    void
+    public void
     Cat(CharBuf *self, String *string);
 
     /** Concatenate formatted arguments.  Similar to the printf family, but
@@ -94,49 +62,36 @@ final class Clownfish::CharBuf nickname CB
      * Note that all Clownfish Objects, including CharBufs, are printed via
      * %o (which invokes [](Obj.To_String)).
      */
-    void
+    public void
     VCatF(CharBuf *self, const char *pattern, va_list args);
 
     /** Invokes CB_VCatF to concatenate formatted arguments.  Note that this
      * is only a function and not a method.
      */
-    inert void
+    public inert void
     catf(CharBuf *self, const char *pattern, ...);
 
     /** Concatenate one Unicode character onto the end of the CharBuf.
      */
-    void
+    public void
     Cat_Char(CharBuf *self, int32_t code_point);
 
     /** Assign more memory to the CharBuf, if it doesn't already have enough
      * room to hold a string of `size` bytes.  Cannot shrink the
      * allocation.
-     *
-     * @return a pointer to the raw buffer.
      */
-    char*
+    public void
     Grow(CharBuf *self, size_t size);
 
     /** Clear the CharBuf.
      */
-    void
+    public void
     Clear(CharBuf *self);
-
-    /** Set the CharBuf's `size` attribute.
-     */
-    void
-    Set_Size(CharBuf *self, size_t size);
 
     /** Get the CharBuf's `size` attribute.
      */
-    size_t
+    public size_t
     Get_Size(CharBuf *self);
-
-    /** Return the internal backing array for the CharBuf if its internal
-     * encoding is UTF-8.  If it is not encoded as UTF-8 throw an exception.
-     */
-    char*
-    Get_Ptr8(CharBuf *self);
 
     public incremented CharBuf*
     Clone(CharBuf *self);

@@ -20,17 +20,7 @@ import "testing"
 
 func TestCharBufCat(t *testing.T) {
 	cb := NewCharBuf(0)
-	cb.cat("foo")
-	if got := cb.ToString(); got != "foo" {
-		t.Errorf("Expected foo, got %v", got)
-	}
-}
-
-func TestCharBufMimic(t *testing.T) {
-	cb := NewCharBuf(0)
-	other := NewCharBuf(0)
-	other.cat("foo")
-	cb.Mimic(other)
+	cb.Cat("foo")
 	if got := cb.ToString(); got != "foo" {
 		t.Errorf("Expected foo, got %v", got)
 	}
@@ -38,27 +28,23 @@ func TestCharBufMimic(t *testing.T) {
 
 func TestCharBufCatChar(t *testing.T) {
 	cb := NewCharBuf(0)
-	cb.catChar('x')
+	cb.CatChar('x')
 	if got := cb.ToString(); got != "x" {
 		t.Errorf("Expected x, got %v", got)
 	}
 }
 
-func TestCharBufSetSizeGetSize(t *testing.T) {
+func TestCharBufGetSize(t *testing.T) {
 	cb := NewCharBuf(0)
-	cb.cat("abc")
-	cb.setSize(2)
-	if got := cb.getSize(); got != 2 {
-		t.Errorf("Size should be 2 but got %d", got)
-	}
-	if got := cb.ToString(); got != "ab" {
-		t.Errorf("Expected ab, got %v", got)
+	cb.Cat("abc")
+	if got := cb.GetSize(); got != 3 {
+		t.Errorf("Size should be 3 but got %d", got)
 	}
 }
 
 func TestCharBufClone(t *testing.T) {
 	cb := NewCharBuf(0)
-	cb.cat("foo")
+	cb.Cat("foo")
 	clone := cb.Clone()
 	if got := clone.ToString(); got != "foo" {
 		t.Errorf("Expected foo, got %v", got)
@@ -67,7 +53,7 @@ func TestCharBufClone(t *testing.T) {
 
 func TestCharBufYieldString(t *testing.T) {
 	cb := NewCharBuf(0)
-	cb.cat("foo")
+	cb.Cat("foo")
 	if got := cb.YieldString(); got != "foo" {
 		t.Errorf("Should yield foo, got %v", got)
 	}
