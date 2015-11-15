@@ -285,6 +285,10 @@ public final class Clownfish::String nickname Str
     Tail(String *self);
 }
 
+/**
+ * Iterate Unicode code points in a String.
+ */
+
 public final class Clownfish::StringIterator nickname StrIter
     inherits Clownfish::Obj {
 

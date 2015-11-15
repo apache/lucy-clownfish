@@ -29,6 +29,7 @@ sub bind_all {
     $class->bind_bytebuf;
     $class->bind_charbuf;
     $class->bind_string;
+    $class->bind_stringiterator;
     $class->bind_err;
     $class->bind_hash;
     $class->bind_hashiterator;
@@ -276,6 +277,100 @@ END_XS_CODE
     );
     $binding->append_xs($xs_code);
     $binding->exclude_constructor;
+
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_stringiterator {
+    my @hand_rolled = qw(
+        Next
+        Prev
+    );
+
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $iter = $string->top;
+    while (my $code_point = $iter->next) {
+        ...
+    }
+END_SYNOPSIS
+    my $next_pod = <<'END_POD';
+=head2 next()
+
+Return the code point after the current position and advance the
+iterator. Returns undef at the end of the string. Returns zero
+but true for U+0000.
+END_POD
+    my $prev_pod = <<'END_POD';
+=head2 prev()
+
+Return the code point before the current position and go one step back.
+Returns undef at the start of the string. Returns zero but true for
+U+0000.
+END_POD
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_method(
+        method => 'Next',
+        alias  => 'next',
+        pod    => $next_pod,
+    );
+    $pod_spec->add_method(
+        method => 'Prev',
+        alias  => 'prev',
+        pod    => $prev_pod,
+    );
+
+    my $xs_code = <<'END_XS_CODE';
+MODULE = Clownfish   PACKAGE = Clownfish::StringIterator
+
+SV*
+next(self)
+    cfish_StringIterator *self;
+CODE:
+{
+    int32_t cp = CFISH_StrIter_Next(self);
+
+    if (cp == CFISH_STR_OOB) {
+        RETVAL = &PL_sv_undef;
+    }
+    else if (cp == 0) {
+        /* Zero but true. */
+        RETVAL = newSVpvn("0e0", 3);
+    }
+    else {
+        RETVAL = newSViv(cp);
+    }
+}
+OUTPUT: RETVAL
+
+SV*
+prev(self)
+    cfish_StringIterator *self;
+CODE:
+{
+    int32_t cp = CFISH_StrIter_Prev(self);
+
+    if (cp == CFISH_STR_OOB) {
+        RETVAL = &PL_sv_undef;
+    }
+    else if (cp == 0) {
+        /* Zero but true. */
+        RETVAL = newSVpvn("0e0", 3);
+    }
+    else {
+        RETVAL = newSViv(cp);
+    }
+}
+OUTPUT: RETVAL
+END_XS_CODE
+
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "Clownfish",
+        class_name => "Clownfish::StringIterator",
+    );
+    $binding->set_pod_spec($pod_spec);
+    $binding->exclude_method($_) for @hand_rolled;
+    $binding->append_xs($xs_code);
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
