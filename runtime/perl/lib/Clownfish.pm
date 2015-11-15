@@ -67,7 +67,6 @@ sub error {$Clownfish::Err::error}
     package Clownfish::Obj;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
-    use Clownfish qw( to_clownfish to_perl );
     use Carp qw( confess );
     # Clownfish objects are not thread-safe.
     sub CLONE_SKIP { 1; }

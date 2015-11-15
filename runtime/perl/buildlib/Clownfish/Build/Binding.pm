@@ -423,6 +423,11 @@ error.
 
 Takes no arguments; if any are supplied, an error will be reported.
 END_DESCRIPTION
+    my $to_perl_pod = <<'END_POD';
+=head2 to_perl()
+
+Tries to convert the object to its native Perl representation.
+END_POD
     my $destroy_pod = <<'END_POD';
 =head2 DESTROY()
 
@@ -431,6 +436,11 @@ subclass, you must call C<< $self->SUPER::DESTROY >> to avoid leaking memory.
 END_POD
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->set_description($description);
+    $pod_spec->add_method(
+        method => 'To_Host',
+        alias  => 'to_perl',
+        pod    => $to_perl_pod,
+    );
     $pod_spec->add_method(
         method => 'Clone',
         alias  => 'clone',
@@ -477,6 +487,13 @@ clone(self)
     cfish_Obj *self;
 CODE:
     RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Obj_Clone(self));
+OUTPUT: RETVAL
+
+SV*
+to_perl(self)
+    cfish_Obj *self;
+CODE:
+    RETVAL = (SV*)CFISH_Obj_To_Host(self);
 OUTPUT: RETVAL
 END_XS_CODE
 
