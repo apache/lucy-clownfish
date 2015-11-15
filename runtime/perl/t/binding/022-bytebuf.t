@@ -17,17 +17,29 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 4;
+use Test::More tests => 11;
 use Clownfish;
 
-my $buf = Clownfish::CharBuf->new;
-isa_ok( $buf, 'Clownfish::CharBuf' );
+my $buf = Clownfish::ByteBuf->new('abc');
+isa_ok( $buf, 'Clownfish::ByteBuf' );
 
-$buf->cat('xyz');
-$buf->clear;
-$buf->cat('abc');
-$buf->cat_char(ord('d'));
-is ( $buf->to_string, 'abcd', 'to_string' );
-is ( $buf->get_size, 4, 'get_size' );
-is ( $buf->yield_string, 'abcd', 'yield_string' );
+is( $buf->to_perl, 'abc', 'to_perl' );
+is( $buf->get_size, 3, 'get_size' );
+
+$buf->set_size(2);
+is( $buf->to_perl, 'ab', 'set_size' );
+$buf->cat(Clownfish::Blob->new('c'));
+is( $buf->to_perl, 'abc', 'cat' );
+
+my $other = Clownfish::ByteBuf->new('abcd');
+ok( $buf->equals($buf), 'equals true');
+ok( !$buf->equals($other), 'equals false');
+ok( $buf->compare_to($other) < 0, 'compare_to');
+
+$buf->mimic($other);
+ok( $buf->equals($other), 'mimic' );
+
+$buf = $other->clone;
+isa_ok( $buf, 'Clownfish::ByteBuf', 'clone' );
+ok( $buf->equals($other), 'equals after clone' );
 

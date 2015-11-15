@@ -17,17 +17,21 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 4;
+use Test::More tests => 8;
 use Clownfish;
 
-my $buf = Clownfish::CharBuf->new;
-isa_ok( $buf, 'Clownfish::CharBuf' );
+my $blob = Clownfish::Blob->new('abc');
+isa_ok( $blob, 'Clownfish::Blob' );
 
-$buf->cat('xyz');
-$buf->clear;
-$buf->cat('abc');
-$buf->cat_char(ord('d'));
-is ( $buf->to_string, 'abcd', 'to_string' );
-is ( $buf->get_size, 4, 'get_size' );
-is ( $buf->yield_string, 'abcd', 'yield_string' );
+is( $blob->to_perl, 'abc', 'to_perl' );
+is( $blob->get_size, 3, 'get_size' );
+
+my $other = Clownfish::Blob->new('abcd');
+ok( $blob->equals($blob), 'equals true');
+ok( !$blob->equals($other), 'equals false');
+ok( $blob->compare_to($other) < 0, 'compare_to');
+
+$blob = $other->clone;
+isa_ok( $blob, 'Clownfish::Blob', 'clone' );
+ok( $blob->equals($other), 'equals after clone' );
 
