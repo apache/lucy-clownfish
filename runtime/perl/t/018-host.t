@@ -17,7 +17,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 3;
-use Clownfish qw( to_perl to_clownfish );
+use Clownfish qw( to_clownfish );
 
 my %complex_data_structure = (
     a => [ 1, 2, 3, { ooga => 'booga' } ],
@@ -25,7 +25,7 @@ my %complex_data_structure = (
 );
 my $kobj = to_clownfish( \%complex_data_structure );
 isa_ok( $kobj, 'Clownfish::Obj' );
-my $transformed = to_perl($kobj);
+my $transformed = $kobj->to_perl;
 is_deeply( $transformed, \%complex_data_structure,
     "transform from Perl to Clownfish data structures and back" );
 
@@ -35,7 +35,7 @@ my $salt_and_pepper = Clownfish::Hash->new;
 $salt_and_pepper->store( 'salt', Clownfish::ByteBuf->new('pepper') );
 $complex_data_structure{c} = $bread_and_butter;
 $complex_data_structure{d} = $salt_and_pepper;
-$transformed = to_perl( to_clownfish( \%complex_data_structure ) );
+$transformed = to_clownfish( \%complex_data_structure )->to_perl;
 $complex_data_structure{c} = { bread => 'butter' };
 $complex_data_structure{d} = { salt  => 'pepper' };
 is_deeply( $transformed, \%complex_data_structure,

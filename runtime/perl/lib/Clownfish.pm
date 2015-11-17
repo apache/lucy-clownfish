@@ -25,10 +25,7 @@ $VERSION = eval $VERSION;
 
 use Exporter 'import';
 BEGIN {
-    our @EXPORT_OK = qw(
-        to_clownfish
-        to_perl
-        );
+    our @EXPORT_OK = qw( to_clownfish );
 }
 
 # On most UNIX variants, this flag makes DynaLoader pass RTLD_GLOBAL to

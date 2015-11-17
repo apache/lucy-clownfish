@@ -17,7 +17,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 4;
-use Clownfish qw( to_perl to_clownfish );
+use Clownfish qw( to_clownfish );
 
 my $hash = Clownfish::Hash->new( capacity => 10 );
 $hash->store( "foo", Clownfish::String->new("bar") );
@@ -32,6 +32,6 @@ ok( !defined($hash->fetch("nada")), "store/fetch undef value" );
 is( $hash->get_size, 1, "size after storing undef value" );
 
 my %hash_with_utf8_keys = ( "\x{263a}" => "foo" );
-my $round_tripped = to_perl( to_clownfish( \%hash_with_utf8_keys ) );
+my $round_tripped = to_clownfish( \%hash_with_utf8_keys )->to_perl;
 is_deeply( $round_tripped, \%hash_with_utf8_keys,
     "Round trip conversion of hash with UTF-8 keys" );
