@@ -258,7 +258,7 @@ sub bind_hash {
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish    PACKAGE = Clownfish::Hash
 SV*
-_fetch(self, key)
+fetch_obj(self, key)
     cfish_Hash *self;
     cfish_String *key;
 CODE:
@@ -484,24 +484,21 @@ END_XS_CODE
 
 sub bind_vector {
     my @hand_rolled = qw(
-        Pop
-        Delete
         Store
-        Fetch
     );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Vector
 
 SV*
-pop(self)
+pop_obj(self)
     cfish_Vector *self;
 CODE:
     RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Vec_Pop(self));
 OUTPUT: RETVAL
 
 SV*
-delete(self, tick)
+delete_obj(self, tick)
     cfish_Vector *self;
     uint32_t    tick;
 CODE:
@@ -520,7 +517,7 @@ PPCODE:
 }
 
 SV*
-fetch(self, tick)
+fetch_obj(self, tick)
     cfish_Vector *self;
     uint32_t     tick;
 CODE:
