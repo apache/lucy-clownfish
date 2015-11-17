@@ -118,6 +118,21 @@ sub bind_test_alias_obj {
 }
 
 sub bind_blob {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $blob = Clownfish::Blob->new($byte_string);
+    my $byte_string = $blob->to_perl;
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+=head2 new(byte_string)
+
+    my $blob = Clownfish::Blob->new($byte_string);
+
+Create a Blob containing the passed-in bytes.
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::Blob
 
@@ -141,6 +156,7 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::Blob",
     );
+    $binding->set_pod_spec($pod_spec);
     $binding->append_xs($xs_code);
     $binding->exclude_constructor;
 
@@ -200,6 +216,21 @@ END_XS_CODE
 }
 
 sub bind_bytebuf {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $buf = Clownfish::ByteBuf->new($byte_string);
+    my $byte_string = $buf->to_perl;
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+=head2 new(byte_string)
+
+    my $buf = Clownfish::ByteBuf->new($byte_string);
+
+Create a ByteBuf containing the passed-in bytes.
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::ByteBuf
 
@@ -223,6 +254,7 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::ByteBuf",
     );
+    $binding->set_pod_spec($pod_spec);
     $binding->append_xs($xs_code);
     $binding->exclude_constructor;
 
@@ -253,6 +285,21 @@ END_CONSTRUCTOR
 }
 
 sub bind_string {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $string = Clownfish::String->new('abc');
+    print $string->to_perl, "\n";
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+=head2 new(perl_string)
+
+    my $string = Clownfish::String->new($perl_string);
+
+Return a String containing the passed-in Perl string.
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::String
 
@@ -275,6 +322,7 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::String",
     );
+    $binding->set_pod_spec($pod_spec);
     $binding->append_xs($xs_code);
     $binding->exclude_constructor;
 
@@ -429,6 +477,28 @@ sub bind_hash {
         Store
     );
 
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $hash = Clownfish::Hash->new;
+    $hash->store($key, $value);
+    my $value = $hash->fetch($key);
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+    my $hash = Clownfish::Hash->new( capacity => 256 );
+END_CONSTRUCTOR
+    my $store_pod = <<'END_POD';
+=head2 store(key, value)
+
+Store a key-value pair.
+END_POD
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', sample => $constructor );
+    $pod_spec->add_method(
+        method => 'Store',
+        alias  => 'store',
+        pod    => $store_pod,
+    );
+
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish    PACKAGE = Clownfish::Hash
 SV*
@@ -456,6 +526,7 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::Hash",
     );
+    $binding->set_pod_spec($pod_spec);
     $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
 
@@ -510,6 +581,21 @@ END_XS_CODE
 }
 
 sub bind_float {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $float = Clownfish::Float->new(2.5);
+    my $value = $float->get_value;
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+=head2 new(value)
+
+    my $float = Clownfish::Float->new($value);
+
+Create a Float containing the passed-in value.
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Float
 
@@ -531,6 +617,7 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::Float",
     );
+    $binding->set_pod_spec($pod_spec);
     $binding->append_xs($xs_code);
     $binding->exclude_constructor;
 
@@ -752,6 +839,28 @@ sub bind_vector {
         Store
     );
 
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $vector = Clownfish::Vector->new;
+    $vector->store($tick, $value);
+    my $value = $vector->fetch($tick);
+END_SYNOPSIS
+    my $constructor = <<'END_CONSTRUCTOR';
+    my $vector = Clownfish::Vector->new( capacity => 256 );
+END_CONSTRUCTOR
+    my $store_pod = <<'END_POD';
+=head2 store(tick, elem)
+
+Store an element at index `tick`, possibly displacing an existing element.
+END_POD
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor( alias => 'new', sample => $constructor );
+    $pod_spec->add_method(
+        method => 'Store',
+        alias  => 'store',
+        pod    => $store_pod,
+    );
+
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Vector
 
@@ -794,6 +903,7 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::Vector",
     );
+    $binding->set_pod_spec($pod_spec);
     $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
 
@@ -801,6 +911,34 @@ END_XS_CODE
 }
 
 sub bind_class {
+    my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
+    my $synopsis = <<'END_SYNOPSIS';
+    my $class = Clownfish::Class->fetch_class('Foo::Bar');
+    my $subclass = Clownfish::Class->singleton('Foo::Bar::Jr', $class);
+END_SYNOPSIS
+    my $fetch_class_pod = <<'END_CONSTRUCTOR';
+=head2 fetch_class(class_name)
+
+    my $class = Clownfish::Class->fetch_class($class_name);
+
+Find a registered class.  May return undef if the class is not registered.
+END_CONSTRUCTOR
+    my $singleton_sample = <<'END_CONSTRUCTOR';
+    my $class = Clownfish::Class->singleton(
+        class_name => $class_name,
+        parent     => $parent,
+    );
+END_CONSTRUCTOR
+    $pod_spec->set_synopsis($synopsis);
+    $pod_spec->add_constructor(
+        alias => 'fetch_class',
+        pod   => $fetch_class_pod,
+    );
+    $pod_spec->add_constructor(
+        alias  => 'singleton',
+        sample => $singleton_sample,
+    );
+
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Class
 
@@ -845,6 +983,7 @@ END_XS_CODE
         parcel     => "Clownfish",
         class_name => "Clownfish::Class",
     );
+    $binding->set_pod_spec($pod_spec);
     $binding->append_xs($xs_code);
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
