@@ -72,29 +72,23 @@ sub bind_test {
 MODULE = Clownfish   PACKAGE = Clownfish::Test
 
 bool
-run_tests(package)
-    char *package;
+run_tests(class_name)
+    cfish_String *class_name;
 CODE:
-    cfish_String *class_name = cfish_Str_newf("%s", package);
     cfish_TestFormatter *formatter
         = (cfish_TestFormatter*)cfish_TestFormatterTAP_new();
     cfish_TestSuite *suite = testcfish_Test_create_test_suite();
-    bool result = CFISH_TestSuite_Run_Batch(suite, class_name, formatter);
-    CFISH_DECREF(class_name);
+    RETVAL = CFISH_TestSuite_Run_Batch(suite, class_name, formatter);
     CFISH_DECREF(formatter);
     CFISH_DECREF(suite);
-
-    RETVAL = result;
 OUTPUT: RETVAL
 
 void
-invoke_to_string(sv)
-    SV *sv;
+invoke_to_string(obj)
+    cfish_Obj *obj;
 PPCODE:
-    cfish_Obj *obj = XSBind_perl_to_cfish(aTHX_ sv, CFISH_OBJ);
     cfish_String *str = CFISH_Obj_To_String(obj);
     CFISH_DECREF(str);
-    CFISH_DECREF(obj);
 
 int
 refcount(obj)
@@ -169,8 +163,7 @@ CODE:
     char *ptr = SvPV(sv, size);
     cfish_ByteBuf *self
         = (cfish_ByteBuf*)XSBind_new_blank_obj(aTHX_ either_sv);
-    cfish_BB_init(self, size);
-    CFISH_BB_Mimic_Bytes(self, ptr, size);
+    cfish_BB_init_bytes(self, ptr, size);
     RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
 OUTPUT: RETVAL
@@ -557,14 +550,11 @@ sub bind_class {
 MODULE = Clownfish   PACKAGE = Clownfish::Class
 
 SV*
-fetch_class(unused_sv, class_name_sv)
+fetch_class(unused_sv, class_name)
     SV *unused_sv;
-    SV *class_name_sv;
+    cfish_String *class_name;
 CODE:
 {
-    STRLEN size;
-    char *ptr = SvPVutf8(class_name_sv, size);
-    cfish_String *class_name = CFISH_SSTR_WRAP_UTF8(ptr, size);
     cfish_Class *klass = cfish_Class_fetch_class(class_name);
     CFISH_UNUSED_VAR(unused_sv);
     RETVAL = klass ? (SV*)CFISH_Class_To_Host(klass) : &PL_sv_undef;
