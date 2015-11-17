@@ -40,13 +40,6 @@ sub bind_clownfish {
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish    PACKAGE = Clownfish
 
-IV
-_dummy_function()
-CODE:
-    RETVAL = 1;
-OUTPUT:
-    RETVAL
-
 SV*
 to_clownfish(sv)
     SV *sv;
