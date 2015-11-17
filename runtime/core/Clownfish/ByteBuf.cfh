@@ -29,25 +29,25 @@ final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     /**
      * @param capacity initial capacity of the ByteBuf, in bytes.
      */
-    inert incremented ByteBuf*
+    public inert incremented ByteBuf*
     new(size_t capacity);
 
-    inert ByteBuf*
+    public inert ByteBuf*
     init(ByteBuf *self, size_t capacity);
 
     /** Return a pointer to a new ByteBuf which holds a copy of the passed-in
      * bytes.
      */
-    inert incremented ByteBuf*
+    public inert incremented ByteBuf*
     new_bytes(const void *bytes, size_t size);
 
-    inert ByteBuf*
+    public inert ByteBuf*
     init_bytes(ByteBuf *self, const void *bytes, size_t size);
 
     /** Return a pointer to a new ByteBuf which assumes ownership of the
      * passed-in string.
      */
-    inert incremented ByteBuf*
+    public inert incremented ByteBuf*
     new_steal_bytes(void *bytes, size_t size, size_t capacity);
 
     /** Initialize the ByteBuf and assume ownership of the passed-in string.
