@@ -89,17 +89,55 @@ CFCPerlConstructor_destroy(CFCPerlConstructor *self) {
 
 char*
 CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
-    const char *c_name = self->sub.c_name;
-    CFCParamList *param_list = self->sub.param_list;
-    char         *name_list  = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
-    CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
-    char *func_sym     = CFCFunction_full_func_sym(self->init_func, klass);
-    char *arg_decls    = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
-    char *allot_params = CFCPerlSub_build_allot_params((CFCPerlSub*)self, 1);
-    CFCVariable *self_var       = arg_vars[0];
-    CFCType     *self_type      = CFCVariable_get_type(self_var);
-    const char  *self_type_str  = CFCType_to_c(self_type);
-    const char  *self_name      = CFCVariable_get_name(self_var);
+    const char    *c_name        = self->sub.c_name;
+    CFCParamList  *param_list    = self->sub.param_list;
+    size_t         num_vars      = CFCParamList_num_vars(param_list);
+    CFCVariable  **arg_vars      = CFCParamList_get_variables(param_list);
+    CFCVariable   *self_var      = arg_vars[0];
+    CFCType       *self_type     = CFCVariable_get_type(self_var);
+    const char    *self_type_str = CFCType_to_c(self_type);
+    const char    *self_name     = CFCVariable_get_name(self_var);
+    const char    *items_check   = NULL;
+
+    char *param_specs = NULL;
+    char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
+    char *locs_decl   = NULL;
+    char *locate_args = NULL;
+    char *var_assigns = CFCUtil_strdup("");
+    char *func_sym    = CFCFunction_full_func_sym(self->init_func, klass);
+    char *name_list   = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
+
+    if (num_vars <= 1) {
+        // No params.
+        items_check = "items != 1";
+        param_specs = CFCUtil_strdup("");
+        locs_decl   = CFCUtil_strdup("");
+        locate_args = CFCUtil_strdup("");
+    }
+    else {
+        unsigned num_params = num_vars - 1;
+        items_check = "items < 1";
+        param_specs = CFCPerlSub_build_param_specs((CFCPerlSub*)self, 1);
+        locs_decl   = CFCUtil_sprintf("    int32_t locations[%u];\n",
+                                      num_params);
+
+        const char *pattern =
+            "    XSBind_locate_args(aTHX_ &ST(0), 1, items, param_specs,\n"
+            "                       locations, %u);\n";
+        locate_args = CFCUtil_sprintf(pattern, num_params);
+
+        // Var assignments.
+        const char  **arg_inits = CFCParamList_get_initial_values(param_list);
+        for (size_t i = 1; i < num_vars; i++) {
+            char stack_location[30];
+            sprintf(stack_location, "locations[%u]", (unsigned)(i - 1));
+            char *statement
+                = CFCPerlSub_arg_assignment(arg_vars[i], arg_inits[i],
+                                            stack_location);
+            var_assigns = CFCUtil_cat(var_assigns, statement, NULL);
+            FREEMEM(statement);
+        }
+    }
 
     // Compensate for swallowed refcounts.
     char *refcount_mods = CFCUtil_strdup("");
@@ -118,15 +156,17 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
-        "%s"
-        "    bool args_ok;\n"
+        "%s" // param_specs
+        "%s" // locs_decl
+        "%s" // arg_decls
         "    %s retval;\n"
         "\n"
         "    CFISH_UNUSED_VAR(cv);\n"
-        "    if (items < 1) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(class_name, ...)\",  GvNAME(CvGV(cv))); }\n"
+        "    if (%s) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(class_name, ...)\",  GvNAME(CvGV(cv))); }\n"
         "    SP -= items;\n"
         "\n"
-        "    %s\n"
+        "%s" // locate_args
+        "%s" // var_assigns
         // Create "self" last, so that earlier exceptions while fetching
         // params don't trigger a bad invocation of DESTROY.
         "    arg_%s = (%s)XSBind_new_blank_obj(aTHX_ ST(0));%s\n"
@@ -143,15 +183,19 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    XSRETURN(1);\n"
         "}\n\n";
     char *xsub_def
-        = CFCUtil_sprintf(pattern, c_name, c_name, arg_decls, self_type_str,
-                          allot_params, self_name, self_type_str,
-                          refcount_mods, func_sym, name_list);
+        = CFCUtil_sprintf(pattern, c_name, c_name, param_specs, locs_decl,
+                          arg_decls, self_type_str, items_check, locate_args,
+                          var_assigns, self_name, self_type_str, refcount_mods,
+                          func_sym, name_list);
 
     FREEMEM(refcount_mods);
-    FREEMEM(func_sym);
-    FREEMEM(arg_decls);
-    FREEMEM(allot_params);
     FREEMEM(name_list);
+    FREEMEM(func_sym);
+    FREEMEM(var_assigns);
+    FREEMEM(locate_args);
+    FREEMEM(locs_decl);
+    FREEMEM(arg_decls);
+    FREEMEM(param_specs);
 
     return xsub_def;
 }

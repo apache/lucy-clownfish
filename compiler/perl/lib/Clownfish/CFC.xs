@@ -2068,11 +2068,11 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-build_allot_params(self, first)
+build_param_specs(self, first)
     CFCPerlSub *self;
     size_t first;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlSub_build_allot_params(self, first));
+    RETVAL = S_sv_eat_c_string(CFCPerlSub_build_param_specs(self, first));
 OUTPUT: RETVAL
 
 
@@ -2418,11 +2418,12 @@ OUTPUT: RETVAL
 MODULE = Clownfish   PACKAGE = Clownfish::CFC::Binding::Perl::TypeMap
 
 SV*
-from_perl(type, xs_var)
-    CFCType *type;
+from_perl(type, xs_var, label)
+    CFCType    *type;
     const char *xs_var;
+    const char *label;
 CODE:
-    RETVAL = S_sv_eat_c_string(CFCPerlTypeMap_from_perl(type, xs_var));
+    RETVAL = S_sv_eat_c_string(CFCPerlTypeMap_from_perl(type, xs_var, label));
 OUTPUT: RETVAL
 
 SV*

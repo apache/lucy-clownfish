@@ -42,7 +42,8 @@ struct CFCType;
  * a value.
  */
 char*
-CFCPerlTypeMap_from_perl(struct CFCType *type, const char *xs_var);
+CFCPerlTypeMap_from_perl(struct CFCType *type, const char *xs_var,
+                         const char *label);
 
 /** Return an expression converts from a variable of type $type to a Perl
  * scalar.
