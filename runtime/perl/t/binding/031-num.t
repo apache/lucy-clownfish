@@ -17,7 +17,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 26;
+use Test::More tests => 25;
 use Clownfish;
 use Clownfish::Boolean qw( $true_singleton $false_singleton );
 
@@ -55,7 +55,6 @@ isa_ok( $bool, 'Clownfish::Boolean' );
 
 ok ( $bool->get_value, 'Boolean get_value true' );
 ok ( !$false_singleton->get_value, 'Boolean get_value false' );
-is ( $bool->to_i64, 1, 'Boolean to_i64' );
 is ( $bool->to_string, 'true', 'Boolean to_string' );
 ok ( $bool->equals($true_singleton), 'Boolean equals true' );
 ok ( !$bool->equals($false_singleton), 'Boolean equals false' );

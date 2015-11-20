@@ -53,16 +53,6 @@ Bool_Get_Value_IMP(Boolean *self) {
     return self->value;
 }
 
-double
-Bool_To_F64_IMP(Boolean *self) {
-    return (double)self->value;
-}
-
-int64_t
-Bool_To_I64_IMP(Boolean *self) {
-    return self->value;
-}
-
 Boolean*
 Bool_Clone_IMP(Boolean *self) {
     return self;
