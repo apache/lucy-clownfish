@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Clownfish qw( to_clownfish );
 
 my %complex_data_structure = (
@@ -40,3 +40,8 @@ $complex_data_structure{c} = { bread => 'butter' };
 $complex_data_structure{d} = { salt  => 'pepper' };
 is_deeply( $transformed, \%complex_data_structure,
     "handle mixed data structure correctly" );
+
+my $string = Clownfish::String->new("string");
+eval { $string->substring(offset => 0, len => 1, foo => 1) };
+like( $@, qr/Invalid parameter/, "Die on invalid parameter" );
+

@@ -416,29 +416,10 @@ S_extract_from_sv(pTHX_ SV *value, void *target, const char *label,
     return true;
 }
 
-static CFISH_INLINE bool
-S_u1get(const void *array, uint32_t tick) {
-    const uint8_t *const u8bits      = (const uint8_t*)array;
-    const uint32_t       byte_offset = tick >> 3;
-    const uint8_t        mask        = 1 << (tick & 0x7);
-    return (u8bits[byte_offset] & mask) != 0;
-}
-
-static CFISH_INLINE void
-S_u1set(void *array, uint32_t tick) {
-    uint8_t *const u8bits      = (uint8_t*)array;
-    const uint32_t byte_offset = tick >> 3;
-    const uint8_t  mask        = 1 << (tick & 0x7);
-    u8bits[byte_offset] |= mask;
-}
-
 bool
 XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
                     ...) {
     va_list args;
-    size_t size = sizeof(int64_t) + num_stack_elems / 64;
-    void *verified_labels = alloca(size);
-    memset(verified_labels, 0, size);
 
     // Verify that our args come in pairs. Return success if there are no
     // args.
@@ -450,6 +431,7 @@ XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
         return false;
     }
 
+    int32_t num_consumed = 0;
     void *target;
     va_start(args, num_stack_elems);
     while (NULL != (target = va_arg(args, void*))) {
@@ -470,7 +452,7 @@ XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
             if (SvCUR(key_sv) == (STRLEN)label_len) {
                 if (memcmp(SvPVX(key_sv), label, label_len) == 0) {
                     found_arg = tick;
-                    S_u1set(verified_labels, tick);
+                    ++num_consumed;
                 }
             }
         }
@@ -500,14 +482,39 @@ XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
     va_end(args);
 
     // Ensure that all parameter labels were valid.
-    for (int32_t tick = start; tick < num_stack_elems; tick += 2) {
-        if (!S_u1get(verified_labels, tick)) {
+    if (num_consumed != (num_stack_elems - start) / 2) {
+        // Find invalid parameter.
+        for (int32_t tick = start; tick < num_stack_elems; tick += 2) {
             SV *const key_sv = stack[tick];
-            char *key = SvPV_nolen(key_sv);
-            cfish_String *mess
-                = CFISH_MAKE_MESS("Invalid parameter: '%s'", key);
-            cfish_Err_set_error(cfish_Err_new(mess));
-            return false;
+            const char *key = SvPVX(key_sv);
+            STRLEN key_len = SvCUR(key_sv);
+            bool found = false;
+
+            va_start(args, num_stack_elems);
+            while (NULL != (target = va_arg(args, void*))) {
+                char *label     = va_arg(args, char*);
+                int   label_len = va_arg(args, int);
+                va_arg(args, int);
+                va_arg(args, int);
+                va_arg(args, cfish_Class*);
+                va_arg(args, void*);
+
+                if (key_len == (STRLEN)label_len
+                    && memcmp(key, label, label_len) == 0
+                   ) {
+                    found = true;
+                    break;
+                }
+            }
+            va_end(args);
+
+            if (!found) {
+                const char *key_c = SvPV_nolen(key_sv);
+                cfish_String *mess
+                    = CFISH_MAKE_MESS("Invalid parameter: '%s'", key_c);
+                cfish_Err_set_error(cfish_Err_new(mess));
+                return false;
+            }
         }
     }
 
