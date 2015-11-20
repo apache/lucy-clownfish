@@ -25,6 +25,7 @@ typedef struct CFCPerlSub CFCPerlSub;
 struct CFCFunction;
 struct CFCParamList;
 struct CFCType;
+struct CFCVariable;
 
 #ifdef CFC_NEED_PERLSUB_STRUCT_DEF
 #define CFC_NEED_BASE_STRUCT_DEF
@@ -83,12 +84,16 @@ CFCPerlSub_arg_declarations(CFCPerlSub *self, size_t first);
 char*
 CFCPerlSub_arg_name_list(CFCPerlSub *self);
 
-/** Generate code which will invoke XSBind_allot_params() to parse labeled
- * parameters supplied to an XSUB.  Parameters from `first` onwards are
- * included.
+/** Generate code that initializes a static array of XSBind_ParamSpecs.
+ * Parameters from `first` onwards are included.
  */
 char*
-CFCPerlSub_build_allot_params(CFCPerlSub *self, size_t first);
+CFCPerlSub_build_param_specs(CFCPerlSub *self, size_t first);
+
+/** Generate code that that converts and assigns the arguments.
+ */
+char*
+CFCPerlSub_arg_assignments(CFCPerlSub *self);
 
 /** Accessor for param list.
  */

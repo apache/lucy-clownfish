@@ -72,6 +72,12 @@ void
 CFCParamList_add_param(CFCParamList *self, CFCVariable *variable,
                        const char *value) {
     CFCUTIL_NULL_CHECK(variable);
+    // It might be better to enforce that object parameters with a NULL
+    // default are also nullable.
+    if (value && strcmp(value, "NULL") == 0) {
+        CFCType *type = CFCVariable_get_type(variable);
+        CFCType_set_nullable(type, 1);
+    }
     self->num_vars++;
     size_t amount = (self->num_vars + 1) * sizeof(void*);
     self->variables = (CFCVariable**)REALLOCATE(self->variables, amount);

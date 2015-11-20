@@ -307,218 +307,92 @@ XSBind_trap(SV *routine, SV *context) {
     return cfish_Err_trap(S_attempt_perl_call, &args);
 }
 
-static bool
-S_extract_from_sv(pTHX_ SV *value, void *target, const char *label,
-                  bool required, int type, cfish_Class *klass,
-                  void *allocation) {
-    bool valid_assignment = false;
-
-    if (XSBind_sv_defined(aTHX_ value)) {
-        switch (type) {
-            case XSBIND_WANT_I8:
-                *((int8_t*)target) = (int8_t)SvIV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_I16:
-                *((int16_t*)target) = (int16_t)SvIV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_I32:
-                *((int32_t*)target) = (int32_t)SvIV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_I64:
-                if (sizeof(IV) == 8) {
-                    *((int64_t*)target) = (int64_t)SvIV(value);
-                }
-                else { // sizeof(IV) == 4
-                    // lossy.
-                    *((int64_t*)target) = (int64_t)SvNV(value);
-                }
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_U8:
-                *((uint8_t*)target) = (uint8_t)SvUV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_U16:
-                *((uint16_t*)target) = (uint16_t)SvUV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_U32:
-                *((uint32_t*)target) = (uint32_t)SvUV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_U64:
-                if (sizeof(UV) == 8) {
-                    *((uint64_t*)target) = (uint64_t)SvUV(value);
-                }
-                else { // sizeof(UV) == 4
-                    // lossy.
-                    *((uint64_t*)target) = (uint64_t)SvNV(value);
-                }
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_BOOL:
-                *((bool*)target) = !!SvTRUE(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_F32:
-                *((float*)target) = (float)SvNV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_F64:
-                *((double*)target) = SvNV(value);
-                valid_assignment = true;
-                break;
-            case XSBIND_WANT_OBJ: {
-                    cfish_Obj *object = NULL;
-                    bool success
-                        = S_maybe_perl_to_cfish(aTHX_ value, klass, false,
-                                                allocation, &object);
-                    if (success && object) {
-                        *((cfish_Obj**)target) = object;
-                        valid_assignment = true;
-                    }
-                    else {
-                        cfish_String *mess
-                            = CFISH_MAKE_MESS(
-                                  "Invalid value for '%s' - not a %o",
-                                  label, CFISH_Class_Get_Name(klass));
-                        cfish_Err_set_error(cfish_Err_new(mess));
-                        return false;
-                    }
-                }
-                break;
-            case XSBIND_WANT_SV:
-                *((SV**)target) = value;
-                valid_assignment = true;
-                break;
-            default: {
-                    cfish_String *mess
-                        = CFISH_MAKE_MESS("Unrecognized type: %i32 for param '%s'",
-                                          (int32_t)type, label);
-                    cfish_Err_set_error(cfish_Err_new(mess));
-                    return false;
-                }
-        }
-    }
-
-    // Enforce that required params cannot be undef and must present valid
-    // values.
-    if (required && !valid_assignment) {
-        cfish_String *mess = CFISH_MAKE_MESS("Missing required param %s",
-                                             label);
-        cfish_Err_set_error(cfish_Err_new(mess));
-        return false;
-    }
-
-    return true;
-}
-
-bool
-XSBind_allot_params(pTHX_ SV** stack, int32_t start, int32_t num_stack_elems,
-                    ...) {
-    va_list args;
-
-    // Verify that our args come in pairs. Return success if there are no
-    // args.
-    if ((num_stack_elems - start) % 2 != 0) {
-        cfish_String *mess
-            = CFISH_MAKE_MESS(
-                  "Expecting hash-style params, got odd number of args");
-        cfish_Err_set_error(cfish_Err_new(mess));
-        return false;
+void
+cfish_XSBind_locate_args(pTHX_ SV** stack, int32_t start, int32_t items,
+                         const XSBind_ParamSpec *specs, int32_t *locations,
+                         int32_t num_params) {
+    // Verify that our args come in pairs.
+    if ((items - start) % 2 != 0) {
+        THROW(CFISH_ERR,
+              "Expecting hash-style params, got odd number of args");
+        return;
     }
 
     int32_t num_consumed = 0;
-    void *target;
-    va_start(args, num_stack_elems);
-    while (NULL != (target = va_arg(args, void*))) {
-        char *label     = va_arg(args, char*);
-        int   label_len = va_arg(args, int);
-        int   required  = va_arg(args, int);
-        int   type      = va_arg(args, int);
-        cfish_Class *klass = va_arg(args, cfish_Class*);
-        void *allocation = va_arg(args, void*);
+    for (int32_t i = 0; i < num_params; i++) {
+        const XSBind_ParamSpec *spec = &specs[i];
 
         // Iterate through the stack looking for labels which match this param
         // name.  If the label appears more than once, keep track of where it
         // appears *last*, as the last time a param appears overrides all
         // previous appearances.
-        int32_t found_arg = -1;
-        for (int32_t tick = start; tick < num_stack_elems; tick += 2) {
+        int32_t location = items;
+        for (int32_t tick = start; tick < items; tick += 2) {
             SV *const key_sv = stack[tick];
-            if (SvCUR(key_sv) == (STRLEN)label_len) {
-                if (memcmp(SvPVX(key_sv), label, label_len) == 0) {
-                    found_arg = tick;
+            if (SvCUR(key_sv) == (STRLEN)spec->label_len) {
+                if (memcmp(SvPVX(key_sv), spec->label, spec->label_len) == 0) {
+                    location = tick + 1;
                     ++num_consumed;
                 }
             }
         }
 
-        if (found_arg == -1) {
-            // Didn't find this parameter. Throw an error if it was required.
-            if (required) {
-                cfish_String *mess
-                    = CFISH_MAKE_MESS("Missing required parameter: '%s'",
-                                      label);
-                cfish_Err_set_error(cfish_Err_new(mess));
-                return false;
-            }
+        // Didn't find this parameter. Throw an error if it was required.
+        if (location == items && spec->required) {
+            THROW(CFISH_ERR, "Missing required parameter: '%s'", spec->label);
+            return;
         }
-        else {
-            // Found the arg.  Extract the value.
-            SV *value = stack[found_arg + 1];
-            bool got_arg = S_extract_from_sv(aTHX_ value, target, label,
-                                             required, type, klass,
-                                             allocation);
-            if (!got_arg) {
-                CFISH_ERR_ADD_FRAME(cfish_Err_get_error());
-                return false;
-            }
-        }
+
+        // Store the location.
+        locations[i] = location;
     }
-    va_end(args);
 
     // Ensure that all parameter labels were valid.
-    if (num_consumed != (num_stack_elems - start) / 2) {
+    if (num_consumed != (items - start) / 2) {
         // Find invalid parameter.
-        for (int32_t tick = start; tick < num_stack_elems; tick += 2) {
+        for (int32_t tick = start; tick < items; tick += 2) {
             SV *const key_sv = stack[tick];
             const char *key = SvPVX(key_sv);
             STRLEN key_len = SvCUR(key_sv);
             bool found = false;
 
-            va_start(args, num_stack_elems);
-            while (NULL != (target = va_arg(args, void*))) {
-                char *label     = va_arg(args, char*);
-                int   label_len = va_arg(args, int);
-                va_arg(args, int);
-                va_arg(args, int);
-                va_arg(args, cfish_Class*);
-                va_arg(args, void*);
+            for (int32_t i = 0; i < num_params; ++i) {
+                const XSBind_ParamSpec *spec = &specs[i];
 
-                if (key_len == (STRLEN)label_len
-                    && memcmp(key, label, label_len) == 0
+                if (key_len == (STRLEN)spec->label_len
+                    && memcmp(key, spec->label, key_len) == 0
                    ) {
                     found = true;
                     break;
                 }
             }
-            va_end(args);
 
             if (!found) {
                 const char *key_c = SvPV_nolen(key_sv);
-                cfish_String *mess
-                    = CFISH_MAKE_MESS("Invalid parameter: '%s'", key_c);
-                cfish_Err_set_error(cfish_Err_new(mess));
-                return false;
+                THROW(CFISH_ERR, "Invalid parameter: '%s'", key_c);
+                return;
             }
         }
     }
+}
 
-    return true;
+cfish_Obj*
+XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
+                    cfish_Class *klass, void *allocation) {
+    cfish_Obj *obj = NULL;
+
+    if (!S_maybe_perl_to_cfish(aTHX_ value, klass, false, allocation, &obj)) {
+        THROW(CFISH_ERR, "Invalid value for '%s' - not a %o", label,
+              CFISH_Class_Get_Name(klass));
+        CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+    }
+
+    if (!obj && !nullable) {
+        THROW(CFISH_ERR, "'%s' must not be undef", label);
+        CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+    }
+
+    return obj;
 }
 
 /***************************************************************************

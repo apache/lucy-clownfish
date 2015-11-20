@@ -103,7 +103,7 @@ ok( !$object->is_a(""),                  "custom is_a blank" );
 ok( !$object->is_a("thing"),             "custom is_a wrong" );
 
 eval { my $another_obj = TestObj->new( kill_me_now => 1 ) };
-like( $@, qr/kill_me_now/, "reject bad param" );
+like( $@, qr/Usage: new/, "reject bad param" );
 
 eval { $object->clone };
 like( $@, qr/Abstract method 'Clone' not defined by TestObj/,
