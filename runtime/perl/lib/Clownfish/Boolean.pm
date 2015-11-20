@@ -13,22 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-use strict;
-use warnings;
-
-use Test::More tests => 1;
+package Clownfish::Boolean;
 use Clownfish;
+our $VERSION = '0.004000';
+$VERSION = eval $VERSION;
 
-my ( $varray, $twin );
+1;
 
-$varray = Clownfish::Vector->new;
-$varray->push( Clownfish::String->new($_) ) for 1 .. 5;
-$varray->delete(3);
-$varray->push('abc');
-$varray->insert(
-    tick    => 0,
-    element => 'elem',
-);
-$twin = $varray->_clone;
-is_deeply( $twin->to_perl, $varray->to_perl, "clone" );
+__END__
+
 

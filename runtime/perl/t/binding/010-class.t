@@ -40,7 +40,7 @@ my $storage = Clownfish::Hash->new;
     $storage->store( "test", $subclassed_obj );
 }
 
-my $resurrected = $storage->_fetch("test");
+my $resurrected = $storage->fetch("test");
 
 isa_ok( $resurrected, "MyObj", "subclass name survived Perl destruction" );
 is( $resurrected->to_string, $stringified,

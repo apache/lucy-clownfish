@@ -13,21 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-use strict;
-use warnings;
-use lib 'buildlib';
-
-use Test::More tests => 4;
+package Clownfish::String;
 use Clownfish;
+our $VERSION = '0.004000';
+$VERSION = eval $VERSION;
 
-my $buf = Clownfish::CharBuf->new;
-isa_ok( $buf, 'Clownfish::CharBuf' );
+1;
 
-$buf->cat('xyz');
-$buf->clear;
-$buf->cat('abc');
-$buf->cat_char(ord('d'));
-is ( $buf->to_string, 'abcd', 'to_string' );
-is ( $buf->get_size, 4, 'get_size' );
-is ( $buf->yield_string, 'abcd', 'yield_string' );
+__END__
+
 

@@ -25,10 +25,7 @@ $VERSION = eval $VERSION;
 
 use Exporter 'import';
 BEGIN {
-    our @EXPORT_OK = qw(
-        to_clownfish
-        to_perl
-        );
+    our @EXPORT_OK = qw( to_clownfish );
 }
 
 # On most UNIX variants, this flag makes DynaLoader pass RTLD_GLOBAL to
@@ -67,7 +64,6 @@ sub error {$Clownfish::Err::error}
     package Clownfish::Obj;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
-    use Clownfish qw( to_clownfish to_perl );
     use Carp qw( confess );
     # Clownfish objects are not thread-safe.
     sub CLONE_SKIP { 1; }
@@ -134,21 +130,6 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::String;
-    our $VERSION = '0.004000';
-    $VERSION = eval $VERSION;
-
-    {
-        # Defeat obscure bugs in the XS auto-generation by redefining clone().
-        # (Because of how the typemap works for String*,
-        # the auto-generated methods return UTF-8 Perl scalars rather than
-        # actual String objects.)
-        no warnings 'redefine';
-        sub clone { shift->_clone(@_) }
-    }
-}
-
-{
     package Clownfish::Err;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
@@ -188,11 +169,13 @@ sub error {$Clownfish::Err::error}
 }
 
 {
-    package Clownfish::Vector;
+    package Clownfish::Boolean;
     our $VERSION = '0.004000';
     $VERSION = eval $VERSION;
-    no warnings 'redefine';
-    sub clone       { CORE::shift->_clone }
+    use Exporter 'import';
+    our @EXPORT_OK = qw( $true_singleton $false_singleton );
+    our $true_singleton  = Clownfish::Boolean->singleton(1);
+    our $false_singleton = Clownfish::Boolean->singleton(0);
 }
 
 1;

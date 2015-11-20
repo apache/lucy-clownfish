@@ -15,19 +15,20 @@
 
 use strict;
 use warnings;
-use lib 'buildlib';
 
-use Test::More tests => 4;
+use Test::More tests => 1;
 use Clownfish;
 
-my $buf = Clownfish::CharBuf->new;
-isa_ok( $buf, 'Clownfish::CharBuf' );
+my ( $vector, $twin );
 
-$buf->cat('xyz');
-$buf->clear;
-$buf->cat('abc');
-$buf->cat_char(ord('d'));
-is ( $buf->to_string, 'abcd', 'to_string' );
-is ( $buf->get_size, 4, 'get_size' );
-is ( $buf->yield_string, 'abcd', 'yield_string' );
+$vector = Clownfish::Vector->new;
+$vector->push( Clownfish::String->new($_) ) for 1 .. 5;
+$vector->delete(3);
+$vector->push('abc');
+$vector->insert(
+    tick    => 0,
+    element => 'elem',
+);
+$twin = $vector->clone;
+is_deeply( $twin->to_perl, $vector->to_perl, "clone" );
 
