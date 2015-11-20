@@ -63,11 +63,6 @@ Bool_To_I64_IMP(Boolean *self) {
     return self->value;
 }
 
-bool
-Bool_To_Bool_IMP(Boolean *self) {
-    return self->value;
-}
-
 Boolean*
 Bool_Clone_IMP(Boolean *self) {
     return self;

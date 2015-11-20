@@ -53,9 +53,6 @@ public final class Clownfish::Boolean nickname Bool {
     public double
     To_F64(Boolean *self);
 
-    public bool
-    To_Bool(Boolean *self);
-
     /* Returns self. */
     public incremented Boolean*
     Clone(Boolean *self);

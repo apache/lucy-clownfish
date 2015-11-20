@@ -51,17 +51,6 @@ func TestBooleanToI64(t *testing.T) {
 	}
 }
 
-func TestBooleanToBool(t *testing.T) {
-	myTrue := NewBoolean(true)
-	myFalse := NewBoolean(false)
-	if !myTrue.ToBool() {
-		t.Errorf("Expected true, got false")
-	}
-	if myFalse.ToBool() {
-		t.Errorf("Expected false, got true")
-	}
-}
-
 func TestBooleanToString(t *testing.T) {
 	myTrue := NewBoolean(true)
 	myFalse := NewBoolean(false)

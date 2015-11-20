@@ -17,7 +17,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 28;
+use Test::More tests => 26;
 use Clownfish;
 use Clownfish::Boolean qw( $true_singleton $false_singleton );
 
@@ -27,7 +27,6 @@ isa_ok( $float, 'Clownfish::Float' );
 
 is ( $float->get_value, 0.5, 'Float get_value' );
 is ( $float->to_i64, 0, 'Float to_i64' );
-ok ( $float->to_bool, 'Float to_bool' );
 is ( $float->to_string, '0.5', 'Float to_string' );
 ok ( $float->equals($float), 'Float equals true' );
 ok ( !$float->equals($neg_float), 'Float equals false' );
@@ -42,7 +41,6 @@ my $neg_int = Clownfish::Integer->new(-12345);
 isa_ok( $int, 'Clownfish::Integer' );
 
 is ( $int->get_value, 12345, 'Integer get_value' );
-ok ( $int->to_bool, 'Integer to_bool' );
 is ( $int->to_string, '12345', 'Integer to_string' );
 ok ( $int->equals($int), 'Integer equals true' );
 ok ( !$int->equals($neg_int), 'Integer equals false' );

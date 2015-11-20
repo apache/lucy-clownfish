@@ -111,11 +111,6 @@ Float_To_I64_IMP(Float *self) {
     return (int64_t)self->value;
 }
 
-bool
-Float_To_Bool_IMP(Float *self) {
-    return self->value != 0.0;
-}
-
 String*
 Float_To_String_IMP(Float *self) {
     return Str_newf("%f64", self->value);
@@ -179,11 +174,6 @@ Int_Get_Value_IMP(Integer *self) {
 double
 Int_To_F64_IMP(Integer *self) {
     return (double)self->value;
-}
-
-bool
-Int_To_Bool_IMP(Integer *self) {
-    return self->value != 0;
 }
 
 String*
