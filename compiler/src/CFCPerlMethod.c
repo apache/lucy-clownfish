@@ -240,26 +240,14 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     CFCVariable *self_var    = arg_vars[0];
     CFCType     *return_type = CFCMethod_get_return_type(method);
-    const char **arg_inits = CFCParamList_get_initial_values(param_list);
     size_t num_vars = CFCParamList_num_vars(param_list);
     const char  *self_name   = CFCVariable_get_name(self_var);
     char *param_specs = CFCPerlSub_build_param_specs((CFCPerlSub*)self, 1);
     char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
     char *meth_type_c = CFCMethod_full_typedef(method, klass);
     char *self_assign = S_self_assign_statement(self);
+    char *arg_assigns = CFCPerlSub_arg_assignments((CFCPerlSub*)self);
     char *body        = S_xsub_body(self, klass);
-
-    // Var assignments.
-    char *var_assignments = CFCUtil_strdup("");
-    for (size_t i = 1; i < num_vars; i++) {
-        char stack_location[30];
-        sprintf(stack_location, "locations[%u]", (unsigned)(i - 1));
-        char *statement = CFCPerlSub_arg_assignment(arg_vars[i], arg_inits[i],
-                                                    stack_location);
-        var_assignments
-            = CFCUtil_cat(var_assignments, statement, NULL);
-        FREEMEM(statement);
-    }
 
     char *retval_decl;
     if (CFCType_is_void(return_type)) {
@@ -288,7 +276,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
         "    XSBind_locate_args(aTHX_ &ST(0), 1, items, param_specs,\n"
         "                       locations, %d);\n"
         "    %s\n"  // self_assign
-        "%s"        // var_assignments
+        "%s"        // arg_assigns
         "\n"
         "    /* Execute */\n"
         "    %s\n"  // body
@@ -296,7 +284,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     char *xsub_def
         = CFCUtil_sprintf(pattern, c_name, c_name, param_specs, num_vars - 1,
                           arg_decls, meth_type_c, retval_decl, self_name,
-                          num_vars - 1, self_assign, var_assignments, body);
+                          num_vars - 1, self_assign, arg_assigns, body);
 
     FREEMEM(param_specs);
     FREEMEM(arg_decls);
@@ -318,6 +306,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
     char *meth_type_c = CFCMethod_full_typedef(method, klass);
     char *self_assign = S_self_assign_statement(self);
+    char *arg_assigns = CFCPerlSub_arg_assignments((CFCPerlSub*)self);
     char *body        = S_xsub_body(self, klass);
 
     // Determine how many args are truly required and build an error check.
@@ -352,18 +341,6 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
                                          xs_name_list);
     }
 
-    // Var assignments.
-    char *var_assignments = CFCUtil_strdup("");
-    for (size_t i = 1; i < num_vars; i++) {
-        char stack_location[20];
-        sprintf(stack_location, "%u", (unsigned)i);
-        char *statement = CFCPerlSub_arg_assignment(arg_vars[i], arg_inits[i],
-                                                    stack_location);
-        var_assignments
-            = CFCUtil_cat(var_assignments, statement, NULL);
-        FREEMEM(statement);
-    }
-
     char *retval_decl;
     if (CFCType_is_void(return_type)) {
         retval_decl = CFCUtil_strdup("");
@@ -387,7 +364,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "\n"
         "    /* Extract vars from Perl stack. */\n"
         "    %s\n"
-        "%s" // var_assignments
+        "%s" // arg_assigns
         "\n"
         "    /* Execute */\n"
         "    %s\n"
@@ -395,10 +372,10 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     char *xsub
         = CFCUtil_sprintf(pattern, self->sub.c_name, self->sub.c_name,
                           arg_decls, meth_type_c, retval_decl,
-                          num_args_check, self_assign, var_assignments, body);
+                          num_args_check, self_assign, arg_assigns, body);
 
     FREEMEM(num_args_check);
-    FREEMEM(var_assignments);
+    FREEMEM(arg_assigns);
     FREEMEM(arg_decls);
     FREEMEM(meth_type_c);
     FREEMEM(self_assign);

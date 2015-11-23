@@ -83,11 +83,10 @@ CFCPerlSub_arg_name_list(CFCPerlSub *self);
 char*
 CFCPerlSub_build_param_specs(CFCPerlSub *self, size_t first);
 
-/** Create a C statement that assigns an argument.
+/** Generate code that that converts and assigns the arguments.
  */
 char*
-CFCPerlSub_arg_assignment(struct CFCVariable *var, const char *val,
-                          const char *stack_location);
+CFCPerlSub_arg_assignments(CFCPerlSub *self);
 
 /** Accessor for param list.
  */

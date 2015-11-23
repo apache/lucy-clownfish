@@ -103,7 +103,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
     char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
     char *locs_decl   = NULL;
     char *locate_args = NULL;
-    char *var_assigns = CFCUtil_strdup("");
+    char *arg_assigns = CFCPerlSub_arg_assignments((CFCPerlSub*)self);
     char *func_sym    = CFCFunction_full_func_sym(self->init_func, klass);
     char *name_list   = CFCPerlSub_arg_name_list((CFCPerlSub*)self);
 
@@ -125,18 +125,6 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
             "    XSBind_locate_args(aTHX_ &ST(0), 1, items, param_specs,\n"
             "                       locations, %u);\n";
         locate_args = CFCUtil_sprintf(pattern, num_params);
-
-        // Var assignments.
-        const char  **arg_inits = CFCParamList_get_initial_values(param_list);
-        for (size_t i = 1; i < num_vars; i++) {
-            char stack_location[30];
-            sprintf(stack_location, "locations[%u]", (unsigned)(i - 1));
-            char *statement
-                = CFCPerlSub_arg_assignment(arg_vars[i], arg_inits[i],
-                                            stack_location);
-            var_assigns = CFCUtil_cat(var_assigns, statement, NULL);
-            FREEMEM(statement);
-        }
     }
 
     // Compensate for swallowed refcounts.
@@ -166,7 +154,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    SP -= items;\n"
         "\n"
         "%s" // locate_args
-        "%s" // var_assigns
+        "%s" // arg_assigns
         // Create "self" last, so that earlier exceptions while fetching
         // params don't trigger a bad invocation of DESTROY.
         "    arg_%s = (%s)XSBind_new_blank_obj(aTHX_ ST(0));%s\n"
@@ -185,13 +173,13 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
     char *xsub_def
         = CFCUtil_sprintf(pattern, c_name, c_name, param_specs, locs_decl,
                           arg_decls, self_type_str, items_check, locate_args,
-                          var_assigns, self_name, self_type_str, refcount_mods,
+                          arg_assigns, self_name, self_type_str, refcount_mods,
                           func_sym, name_list);
 
     FREEMEM(refcount_mods);
     FREEMEM(name_list);
     FREEMEM(func_sym);
-    FREEMEM(var_assigns);
+    FREEMEM(arg_assigns);
     FREEMEM(locate_args);
     FREEMEM(locs_decl);
     FREEMEM(arg_decls);

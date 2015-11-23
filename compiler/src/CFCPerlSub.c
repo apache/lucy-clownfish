@@ -32,6 +32,10 @@
     #define false 0
 #endif
 
+static char*
+S_arg_assignment(CFCVariable *var, const char *val,
+                 const char *stack_location);
+
 CFCPerlSub*
 CFCPerlSub_init(CFCPerlSub *self, CFCParamList *param_list,
                 const char *class_name, const char *alias,
@@ -146,8 +150,34 @@ CFCPerlSub_build_param_specs(CFCPerlSub *self, size_t first) {
 }
 
 char*
-CFCPerlSub_arg_assignment(CFCVariable *var, const char *val,
-                          const char *stack_location) {
+CFCPerlSub_arg_assignments(CFCPerlSub *self) {
+    CFCParamList  *param_list = self->param_list;
+    CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
+    const char   **arg_inits  = CFCParamList_get_initial_values(param_list);
+    size_t         num_vars   = CFCParamList_num_vars(param_list);
+
+    char *arg_assigns = CFCUtil_strdup("");
+
+    for (size_t i = 1; i < num_vars; i++) {
+        char stack_location[30];
+        if (self->use_labeled_params) {
+            sprintf(stack_location, "locations[%u]", (unsigned)(i - 1));
+        }
+        else {
+            sprintf(stack_location, "%u", (unsigned)i);
+        }
+        char *statement = S_arg_assignment(arg_vars[i], arg_inits[i],
+                                           stack_location);
+        arg_assigns = CFCUtil_cat(arg_assigns, statement, NULL);
+        FREEMEM(statement);
+    }
+
+    return arg_assigns;
+}
+
+static char*
+S_arg_assignment(CFCVariable *var, const char *val,
+                 const char *stack_location) {
     const char *var_name  = CFCVariable_get_name(var);
     CFCType    *var_type  = CFCVariable_get_type(var);
     char       *statement = NULL;
