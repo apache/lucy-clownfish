@@ -23,6 +23,7 @@
 #include "CFCFunction.h"
 #include "CFCUtil.h"
 #include "CFCParamList.h"
+#include "CFCPerlTypeMap.h"
 #include "CFCVariable.h"
 #include "CFCType.h"
 
@@ -30,6 +31,10 @@
     #define true 1
     #define false 0
 #endif
+
+static char*
+S_arg_assignment(CFCVariable *var, const char *val,
+                 const char *stack_location);
 
 CFCPerlSub*
 CFCPerlSub_init(CFCPerlSub *self, CFCParamList *param_list,
@@ -74,111 +79,6 @@ CFCPerlSub_destroy(CFCPerlSub *self) {
 }
 
 char*
-CFCPerlSub_params_hash_def(CFCPerlSub *self) {
-    if (!self->use_labeled_params) {
-        return NULL;
-    }
-
-    char *def = CFCUtil_strdup("");
-    def = CFCUtil_cat(def, "%", self->perl_name, "_PARAMS = (", NULL);
-
-    CFCVariable **arg_vars = CFCParamList_get_variables(self->param_list);
-    const char **vals = CFCParamList_get_initial_values(self->param_list);
-
-    // No labeled params means an empty params hash def.
-    if (!arg_vars[1]) {
-        def = CFCUtil_cat(def, ");\n", NULL);
-        return def;
-    }
-
-    for (int i = 1; arg_vars[i] != NULL; i++) {
-        CFCVariable *var = arg_vars[i];
-        const char *var_name = CFCVariable_get_name(var);
-        const char *val = vals[i];
-        val = val == NULL
-              ? "undef"
-              : strcmp(val, "NULL") == 0
-              ? "undef"
-              : strcmp(val, "true") == 0
-              ? "1"
-              : strcmp(val, "false") == 0
-              ? "0"
-              : val;
-        def = CFCUtil_cat(def, "\n    ", var_name, " => ", val, ",", NULL);
-    }
-    def = CFCUtil_cat(def, "\n);\n", NULL);
-
-    return def;
-}
-
-struct allot_macro_map {
-    const char *prim_type;
-    const char *allot_macro;
-};
-
-struct allot_macro_map prim_type_to_allot_macro[] = {
-    { "double",     "ALLOT_F64"    },
-    { "float",      "ALLOT_F32"    },
-    { "int",        "ALLOT_INT"    },
-    { "short",      "ALLOT_SHORT"  },
-    { "long",       "ALLOT_LONG"   },
-    { "size_t",     "ALLOT_SIZE_T" },
-    { "uint64_t",   "ALLOT_U64"    },
-    { "uint32_t",   "ALLOT_U32"    },
-    { "uint16_t",   "ALLOT_U16"    },
-    { "uint8_t",    "ALLOT_U8"     },
-    { "int64_t",    "ALLOT_I64"    },
-    { "int32_t",    "ALLOT_I32"    },
-    { "int16_t",    "ALLOT_I16"    },
-    { "int8_t",     "ALLOT_I8"     },
-    { "bool",       "ALLOT_BOOL"   },
-    { NULL, NULL }
-};
-
-static char*
-S_allot_params_arg(CFCType *type, const char *label, int required) {
-    const char *type_c_string = CFCType_to_c(type);
-    unsigned label_len = (unsigned)strlen(label);
-    const char *req_string = required ? "true" : "false";
-
-    if (CFCType_is_object(type)) {
-        const char *struct_sym = CFCType_get_specifier(type);
-        const char *class_var  = CFCType_get_class_var(type);
-
-        // Share buffers rather than copy between Perl scalars and Clownfish
-        // string types.
-        int use_sv_buffer = false;
-        if (strcmp(struct_sym, "cfish_String") == 0
-            || strcmp(struct_sym, "cfish_Obj") == 0
-           ) {
-            use_sv_buffer = true;
-        }
-        const char *allocation = use_sv_buffer
-                                 ? "CFISH_ALLOCA_OBJ(CFISH_STRING)"
-                                 : "NULL";
-        const char pattern[] = "ALLOT_OBJ(&arg_%s, \"%s\", %u, %s, %s, %s)";
-        char *arg = CFCUtil_sprintf(pattern, label, label, label_len,
-                                    req_string, class_var, allocation);
-        return arg;
-    }
-    else if (CFCType_is_primitive(type)) {
-        for (int i = 0; prim_type_to_allot_macro[i].prim_type != NULL; i++) {
-            const char *prim_type = prim_type_to_allot_macro[i].prim_type;
-            if (strcmp(prim_type, type_c_string) == 0) {
-                const char *allot = prim_type_to_allot_macro[i].allot_macro;
-                char pattern[] = "%s(&arg_%s, \"%s\", %u, %s)";
-                char *arg = CFCUtil_sprintf(pattern, allot, label, label,
-                                            label_len, req_string);
-                return arg;
-            }
-        }
-    }
-
-    CFCUtil_die("Missing typemap for %s", type_c_string);
-    return NULL; // unreachable
-}
-
-char*
 CFCPerlSub_arg_declarations(CFCPerlSub *self, size_t first) {
     CFCParamList *param_list = self->param_list;
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
@@ -217,51 +117,100 @@ CFCPerlSub_arg_name_list(CFCPerlSub *self) {
 }
 
 char*
-CFCPerlSub_build_allot_params(CFCPerlSub *self, size_t first) {
-    CFCParamList *param_list = self->param_list;
-    CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
-    const char  **arg_inits  = CFCParamList_get_initial_values(param_list);
-    size_t        num_vars   = CFCParamList_num_vars(param_list);
-    char *allot_params = CFCUtil_strdup("");
+CFCPerlSub_build_param_specs(CFCPerlSub *self, size_t first) {
+    CFCParamList  *param_list = self->param_list;
+    CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
+    const char   **arg_inits  = CFCParamList_get_initial_values(param_list);
+    size_t         num_vars   = CFCParamList_num_vars(param_list);
 
-    // Declare variables and assign default values.
-    for (size_t i = first; i < num_vars; i++) {
-        CFCVariable *arg_var  = arg_vars[i];
-        const char  *val      = arg_inits[i];
-        const char  *var_name = CFCVariable_get_name(arg_var);
-        if (val == NULL) {
-            CFCType *arg_type = CFCVariable_get_type(arg_var);
-            val = CFCType_is_object(arg_type)
-                  ? "NULL"
-                  : "0";
-        }
-        allot_params = CFCUtil_cat(allot_params, "arg_", var_name, " = ", val,
-                                   ";\n    ", NULL);
-    }
+    const char *pattern
+        = "    static const XSBind_ParamSpec param_specs[%d] = {";
+    char *param_specs = CFCUtil_sprintf(pattern, num_vars - first);
 
     // Iterate over args in param list.
-    allot_params
-        = CFCUtil_cat(allot_params,
-                      "args_ok = XSBind_allot_params(aTHX_\n"
-                      "        &(ST(0)), 1, items,\n", NULL);
     for (size_t i = first; i < num_vars; i++) {
-        CFCVariable *var = arg_vars[i];
-        const char  *val = arg_inits[i];
-        int required = val ? 0 : 1;
-        const char *name = CFCVariable_get_name(var);
-        CFCType *type = CFCVariable_get_type(var);
-        char *arg = S_allot_params_arg(type, name, required);
-        allot_params
-            = CFCUtil_cat(allot_params, "        ", arg, ",\n", NULL);
-        FREEMEM(arg);
-    }
-    allot_params
-        = CFCUtil_cat(allot_params, "        NULL);\n",
-                      "    if (!args_ok) {\n"
-                      "        CFISH_RETHROW(CFISH_INCREF(cfish_Err_get_error()));\n"
-                      "    }", NULL);
+        if (i != first) {
+            param_specs = CFCUtil_cat(param_specs, ",", NULL);
+        }
 
-    return allot_params;
+        CFCVariable *var  = arg_vars[i];
+        const char  *val  = arg_inits[i];
+        const char  *name = CFCVariable_get_name(var);
+        int required = val ? 0 : 1;
+
+        char *spec = CFCUtil_sprintf("XSBIND_PARAM(\"%s\", %d)", name,
+                                     required);
+        param_specs = CFCUtil_cat(param_specs, "\n        ", spec, NULL);
+        FREEMEM(spec);
+    }
+
+    param_specs = CFCUtil_cat(param_specs, "\n    };\n", NULL);
+
+    return param_specs;
+}
+
+char*
+CFCPerlSub_arg_assignments(CFCPerlSub *self) {
+    CFCParamList  *param_list = self->param_list;
+    CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
+    const char   **arg_inits  = CFCParamList_get_initial_values(param_list);
+    size_t         num_vars   = CFCParamList_num_vars(param_list);
+
+    char *arg_assigns = CFCUtil_strdup("");
+
+    for (size_t i = 1; i < num_vars; i++) {
+        char stack_location[30];
+        if (self->use_labeled_params) {
+            sprintf(stack_location, "locations[%u]", (unsigned)(i - 1));
+        }
+        else {
+            sprintf(stack_location, "%u", (unsigned)i);
+        }
+        char *statement = S_arg_assignment(arg_vars[i], arg_inits[i],
+                                           stack_location);
+        arg_assigns = CFCUtil_cat(arg_assigns, statement, NULL);
+        FREEMEM(statement);
+    }
+
+    return arg_assigns;
+}
+
+static char*
+S_arg_assignment(CFCVariable *var, const char *val,
+                 const char *stack_location) {
+    const char *var_name  = CFCVariable_get_name(var);
+    CFCType    *var_type  = CFCVariable_get_type(var);
+    char       *statement = NULL;
+
+    char perl_stack_var[40];
+    sprintf(perl_stack_var, "ST(%s)", stack_location);
+    char *conversion = CFCPerlTypeMap_from_perl(var_type, perl_stack_var,
+                                                var_name);
+    if (!conversion) {
+        const char *type_c = CFCType_to_c(var_type);
+        CFCUtil_die("Can't map type '%s'", type_c);
+    }
+    if (val) {
+        if (CFCType_is_object(var_type)) {
+            char pattern[] = "    arg_%s = %s < items ? %s : %s;\n";
+            statement = CFCUtil_sprintf(pattern, var_name, stack_location,
+                                        conversion, val);
+        }
+        else {
+            char pattern[] =
+                "    arg_%s = %s < items && XSBind_sv_defined(aTHX_ %s)\n"
+                "             ? %s : %s;\n";
+            statement = CFCUtil_sprintf(pattern, var_name, stack_location,
+                                        perl_stack_var, conversion, val);
+        }
+    }
+    else {
+        const char pattern[] = "    arg_%s = %s;\n";
+        statement = CFCUtil_sprintf(pattern, var_name, conversion);
+    }
+    FREEMEM(conversion);
+
+    return statement;
 }
 
 CFCParamList*

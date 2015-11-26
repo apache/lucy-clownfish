@@ -959,19 +959,22 @@ singleton(unused_sv, ...)
     SV *unused_sv;
 CODE:
 {
+    static const XSBind_ParamSpec param_specs[2] = {
+        XSBIND_PARAM("class_name", true),
+        XSBIND_PARAM("parent", false),
+    };
+    int32_t locations[2];
     cfish_String *class_name = NULL;
     cfish_Class  *parent     = NULL;
     cfish_Class  *singleton  = NULL;
-    bool args_ok
-        = XSBind_allot_params(aTHX_ &(ST(0)), 1, items,
-                              ALLOT_OBJ(&class_name, "class_name", 10, true,
-                                        CFISH_STRING, CFISH_ALLOCA_OBJ(CFISH_STRING)),
-                              ALLOT_OBJ(&parent, "parent", 6, false,
-                                        CFISH_CLASS, NULL),
-                              NULL);
     CFISH_UNUSED_VAR(unused_sv);
-    if (!args_ok) {
-        CFISH_RETHROW(CFISH_INCREF(cfish_Err_get_error()));
+    XSBind_locate_args(aTHX_ &(ST(0)), 1, items, param_specs, locations, 2);
+    class_name = (cfish_String*)XSBind_arg_to_cfish(
+            aTHX_ ST(locations[0]), "class_name", false, CFISH_STRING,
+            CFISH_ALLOCA_OBJ(CFISH_STRING));
+    if (locations[1] < items) {
+        parent = (cfish_Class*)XSBind_arg_to_cfish(
+                aTHX_ ST(locations[1]), "parent", true, CFISH_CLASS, NULL);
     }
     singleton = cfish_Class_singleton(class_name, parent);
     RETVAL = (SV*)CFISH_Class_To_Host(singleton);

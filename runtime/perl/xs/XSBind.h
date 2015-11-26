@@ -44,6 +44,12 @@
 extern "C" {
 #endif
 
+typedef struct cfish_XSBind_ParamSpec {
+    const char *label;
+    uint16_t    label_len;
+    char        required;
+} cfish_XSBind_ParamSpec;
+
 /** Given either a class name or a perl object, manufacture a new Clownfish
  * object suitable for supplying to a cfish_Foo_init() function.
  */
@@ -64,6 +70,12 @@ cfish_XSBind_sv_defined(pTHX_ SV *sv) {
     if (SvGMAGICAL(sv)) { mg_get(sv); }
     return !!SvOK(sv);
 }
+
+/** Test whether an SV is true.  Wraps the expensive SvTRUE macro in a
+ * function.
+ */
+CFISH_VISIBLE bool
+cfish_XSBind_sv_true(pTHX_ SV *sv);
 
 /** Derive an SV from a Clownfish object.  If the Clownfish object is NULL, the SV
  * will be undef.  Doesn't invoke To_Host and always returns a reference to a
@@ -153,157 +165,44 @@ cfish_XSBind_hash_key_to_utf8(pTHX_ HE *entry, STRLEN *size_ptr);
 cfish_Err*
 cfish_XSBind_trap(SV *routine, SV *context);
 
-/** Process hash-style params passed to an XS subroutine.  The varargs must be
- * a NULL-terminated series of ALLOT_ macros.
+/** Locate hash-style params passed to an XS subroutine.  If a required
+ * parameter is not present, locate_args() will throw an error.
  *
- *     cfish_XSBind_allot_params(stack, start, num_stack_elems,
- *          ALLOT_OBJ(&field, "field", 5, CFISH_STRING, true, CFISH_ALLOCA_OBJ(CFISH_STRING),
- *          ALLOT_OBJ(&term, "term", 4, CFISH_STRING, true, CFISH_ALLOCA_OBJ(CFISH_STRING),
- *          NULL);
- *
- * The following ALLOT_ macros are available for primitive types:
- *
- *     ALLOT_I8(ptr, key, keylen, required)
- *     ALLOT_I16(ptr, key, keylen, required)
- *     ALLOT_I32(ptr, key, keylen, required)
- *     ALLOT_I64(ptr, key, keylen, required)
- *     ALLOT_U8(ptr, key, keylen, required)
- *     ALLOT_U16(ptr, key, keylen, required)
- *     ALLOT_U32(ptr, key, keylen, required)
- *     ALLOT_U64(ptr, key, keylen, required)
- *     ALLOT_BOOL(ptr, key, keylen, required)
- *     ALLOT_CHAR(ptr, key, keylen, required)
- *     ALLOT_SHORT(ptr, key, keylen, required)
- *     ALLOT_INT(ptr, key, keylen, required)
- *     ALLOT_LONG(ptr, key, keylen, required)
- *     ALLOT_SIZE_T(ptr, key, keylen, required)
- *     ALLOT_F32(ptr, key, keylen, required)
- *     ALLOT_F64(ptr, key, keylen, required)
- *
- * The four arguments to these ALLOT_ macros have the following meanings:
- *
- *     ptr -- A pointer to the variable to be extracted.
- *     key -- The name of the parameter as a C string.
- *     keylen -- The length of the parameter name in bytes.
- *     required -- A boolean indicating whether the parameter is required.
- *
- * If a required parameter is not present, allot_params() will set the global
- * error object and return false.
- *
- * Use the following macro if a Clownfish object is desired:
- *
- *     ALLOT_OBJ(ptr, key, keylen, required, klass, allocation)
- *
- * The "klass" argument must be the Class corresponding to the class of the
- * desired object.  The "allocation" argument must be a blob of memory
- * allocated on the stack sufficient to hold a String.  (Use
- * CFISH_ALLOCA_OBJ to allocate the object.)
- *
- * To extract a Perl scalar, use the following ALLOT_ macro:
- *
- *     ALLOT_SV(ptr, key, keylen, required)
- *
- * All possible valid param names must be passed via the ALLOT_ macros; if a
- * user-supplied param cannot be matched up with an ALLOT_ macro,
- * allot_params() will set the global error object and return false.
+ * All possible valid param names must be passed in `specs`; if a
+ * user-supplied param cannot be matched up, locate_args() will throw an
+ * error.
  *
  * @param stack The Perl stack.
  * @param start Where on the Perl stack to start looking for params.  For
  * methods, this would typically be 1; for functions, most likely 0.
- * @param num_stack_elems The number of arguments passed to the Perl function
- * (generally, the XS variable "items").
- * @return true on success, false on failure (sets the global error object).
+ * @param items The number of arguments passed to the Perl function
+ * (generally, the XS variable `items`).
+ * @params specs An array of XSBind_ParamSpec structs describing the
+ * parameters.
+ * @param locations On success, this output argument will be set to the
+ * location on the stack of each param. Optional arguments that could not
+ * be found have their location set to `items`.
+ * @param The number of parameters in `specs` and elements in `locations`.
  */
-CFISH_VISIBLE bool
-cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
-                          int32_t num_stack_elems, ...);
+CFISH_VISIBLE void
+cfish_XSBind_locate_args(pTHX_ SV** stack, int32_t start, int32_t items,
+                         const cfish_XSBind_ParamSpec *specs,
+                         int32_t *locations, int32_t num_params);
 
-#define XSBIND_WANT_I8       0x1
-#define XSBIND_WANT_I16      0x2
-#define XSBIND_WANT_I32      0x3
-#define XSBIND_WANT_I64      0x4
-#define XSBIND_WANT_U8       0x5
-#define XSBIND_WANT_U16      0x6
-#define XSBIND_WANT_U32      0x7
-#define XSBIND_WANT_U64      0x8
-#define XSBIND_WANT_BOOL     0x9
-#define XSBIND_WANT_F32      0xA
-#define XSBIND_WANT_F64      0xB
-#define XSBIND_WANT_OBJ      0xC
-#define XSBIND_WANT_SV       0xD
+/** Convert an argument from the Perl stack to a Clownfish object.
+ *
+ * @param value The SV from the Perl stack.
+ * @param label The name of the param.
+ * @param nullable Whether undef is allowed for objects.
+ * @param klass The class to convert to.
+ * @param allocation Stack allocation for Obj and String.
+ */
+CFISH_VISIBLE cfish_Obj*
+cfish_XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
+                          cfish_Class *klass, void *allocation);
 
-#if (CFISH_SIZEOF_CHAR == 1)
-  #define XSBIND_WANT_CHAR XSBIND_WANT_I8
-#else
-  #error "Can't build unless sizeof(char) == 1"
-#endif
-
-#if (CFISH_SIZEOF_SHORT == 2)
-  #define XSBIND_WANT_SHORT XSBIND_WANT_I16
-#else
-  #error "Can't build unless sizeof(short) == 2"
-#endif
-
-#if (CFISH_SIZEOF_INT == 4)
-  #define XSBIND_WANT_INT XSBIND_WANT_I32
-#elif (CFISH_SIZEOF_INT == 8)
-  #define XSBIND_WANT_INT XSBIND_WANT_I64
-#else
-  #error "Can't build unless sizeof(int) == 4 or sizeof(int) == 8"
-#endif
-
-#if (CFISH_SIZEOF_LONG == 4)
-  #define XSBIND_WANT_LONG XSBIND_WANT_I32
-#elif (CFISH_SIZEOF_LONG == 8)
-  #define XSBIND_WANT_LONG XSBIND_WANT_I64
-#else
-  #error "Can't build unless sizeof(long) == 4 or sizeof(long) == 8"
-#endif
-
-#if (CFISH_SIZEOF_SIZE_T == 4)
-  #define XSBIND_WANT_SIZE_T XSBIND_WANT_U32
-#elif (CFISH_SIZEOF_SIZE_T == 8)
-  #define XSBIND_WANT_SIZE_T XSBIND_WANT_U64
-#else
-  #error "Can't build unless sizeof(size_t) == 4 or sizeof(size_t) == 8"
-#endif
-
-#define XSBIND_ALLOT_I8(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_I8, NULL, NULL
-#define XSBIND_ALLOT_I16(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_I16, NULL, NULL
-#define XSBIND_ALLOT_I32(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_I32, NULL, NULL
-#define XSBIND_ALLOT_I64(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_I64, NULL, NULL
-#define XSBIND_ALLOT_U8(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_U8, NULL, NULL
-#define XSBIND_ALLOT_U16(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_U16, NULL, NULL
-#define XSBIND_ALLOT_U32(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_U32, NULL, NULL
-#define XSBIND_ALLOT_U64(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_U64, NULL, NULL
-#define XSBIND_ALLOT_BOOL(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_BOOL, NULL, NULL
-#define XSBIND_ALLOT_CHAR(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_CHAR, NULL, NULL
-#define XSBIND_ALLOT_SHORT(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_SHORT, NULL, NULL
-#define XSBIND_ALLOT_INT(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_INT, NULL, NULL
-#define XSBIND_ALLOT_LONG(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_LONG, NULL, NULL
-#define XSBIND_ALLOT_SIZE_T(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_SIZE_T, NULL, NULL
-#define XSBIND_ALLOT_F32(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_F32, NULL, NULL
-#define XSBIND_ALLOT_F64(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_F64, NULL, NULL
-#define XSBIND_ALLOT_OBJ(ptr, key, keylen, required, klass, allocation) \
-    ptr, key, keylen, required, XSBIND_WANT_OBJ, klass, allocation
-#define XSBIND_ALLOT_SV(ptr, key, keylen, required) \
-    ptr, key, keylen, required, XSBIND_WANT_SV, NULL, NULL
+#define XSBIND_PARAM(key, required) \
+    { key, (int16_t)sizeof("" key) - 1, (char)required }
 
 /* Define short names for most of the symbols in this file.  Note that these
  * short names are ALWAYS in effect, since they are only used for Perl and we
@@ -311,9 +210,11 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
  * full symbols nevertheless in case someone else defines e.g. a function
  * named "XSBind_sv_defined".)
  */
+#define XSBind_ParamSpec               cfish_XSBind_ParamSpec
 #define XSBind_new_blank_obj           cfish_XSBind_new_blank_obj
 #define XSBind_foster_obj              cfish_XSBind_foster_obj
 #define XSBind_sv_defined              cfish_XSBind_sv_defined
+#define XSBind_sv_true                 cfish_XSBind_sv_true
 #define XSBind_cfish_obj_to_sv         cfish_XSBind_cfish_obj_to_sv
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
@@ -322,25 +223,8 @@ cfish_XSBind_allot_params(pTHX_ SV** stack, int32_t start,
 #define XSBind_perl_to_cfish_noinc     cfish_XSBind_perl_to_cfish_noinc
 #define XSBind_hash_key_to_utf8        cfish_XSBind_hash_key_to_utf8
 #define XSBind_trap                    cfish_XSBind_trap
-#define XSBind_allot_params            cfish_XSBind_allot_params
-#define ALLOT_I8                       XSBIND_ALLOT_I8
-#define ALLOT_I16                      XSBIND_ALLOT_I16
-#define ALLOT_I32                      XSBIND_ALLOT_I32
-#define ALLOT_I64                      XSBIND_ALLOT_I64
-#define ALLOT_U8                       XSBIND_ALLOT_U8
-#define ALLOT_U16                      XSBIND_ALLOT_U16
-#define ALLOT_U32                      XSBIND_ALLOT_U32
-#define ALLOT_U64                      XSBIND_ALLOT_U64
-#define ALLOT_BOOL                     XSBIND_ALLOT_BOOL
-#define ALLOT_CHAR                     XSBIND_ALLOT_CHAR
-#define ALLOT_SHORT                    XSBIND_ALLOT_SHORT
-#define ALLOT_INT                      XSBIND_ALLOT_INT
-#define ALLOT_LONG                     XSBIND_ALLOT_LONG
-#define ALLOT_SIZE_T                   XSBIND_ALLOT_SIZE_T
-#define ALLOT_F32                      XSBIND_ALLOT_F32
-#define ALLOT_F64                      XSBIND_ALLOT_F64
-#define ALLOT_OBJ                      XSBIND_ALLOT_OBJ
-#define ALLOT_SV                       XSBIND_ALLOT_SV
+#define XSBind_locate_args             cfish_XSBind_locate_args
+#define XSBind_arg_to_cfish            cfish_XSBind_arg_to_cfish
 
 /* Strip the prefix from some common ClownFish symbols where we know there's
  * no conflict with Perl.  It's a little inconsistent to do this rather than
