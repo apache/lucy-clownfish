@@ -71,6 +71,12 @@ cfish_XSBind_sv_defined(pTHX_ SV *sv) {
     return !!SvOK(sv);
 }
 
+/** Test whether an SV is true.  Wraps the expensive SvTRUE macro in a
+ * function.
+ */
+CFISH_VISIBLE bool
+cfish_XSBind_sv_true(pTHX_ SV *sv);
+
 /** Derive an SV from a Clownfish object.  If the Clownfish object is NULL, the SV
  * will be undef.  Doesn't invoke To_Host and always returns a reference to a
  * Clownfish::Obj.
@@ -208,6 +214,7 @@ cfish_XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
 #define XSBind_new_blank_obj           cfish_XSBind_new_blank_obj
 #define XSBind_foster_obj              cfish_XSBind_foster_obj
 #define XSBind_sv_defined              cfish_XSBind_sv_defined
+#define XSBind_sv_true                 cfish_XSBind_sv_true
 #define XSBind_cfish_obj_to_sv         cfish_XSBind_cfish_obj_to_sv
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
