@@ -160,14 +160,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    arg_%s = (%s)XSBind_new_blank_obj(aTHX_ ST(0));%s\n"
         "\n"
         "    retval = %s(%s);\n"
-        "    if (retval) {\n"
-        "        ST(0) = CFISH_OBJ_TO_SV(retval);\n"
-        "        CFISH_DECREF_NN(retval);\n"
-        "    }\n"
-        "    else {\n"
-        "        ST(0) = newSV(0);\n"
-        "    }\n"
-        "    sv_2mortal(ST(0));\n"
+        "    ST(0) = sv_2mortal(CFISH_OBJ_TO_SV_NOINC(retval));\n"
         "    XSRETURN(1);\n"
         "}\n\n";
     char *xsub_def

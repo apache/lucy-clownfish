@@ -200,7 +200,7 @@ singleton(either_sv, value)
     bool     value;
 CODE:
 {
-    RETVAL = CFISH_OBJ_TO_SV(cfish_Bool_singleton(value));
+    RETVAL = CFISH_OBJ_TO_SV_INC(cfish_Bool_singleton(value));
 }
 OUTPUT: RETVAL
 END_XS_CODE
@@ -506,7 +506,7 @@ fetch_obj(self, key)
     cfish_Hash *self;
     cfish_String *key;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV(CFISH_Hash_Fetch_IMP(self, key));
+    RETVAL = CFISH_OBJ_TO_SV_INC(CFISH_Hash_Fetch_IMP(self, key));
 OUTPUT: RETVAL
 
 void
@@ -895,7 +895,7 @@ fetch_obj(self, tick)
     cfish_Vector *self;
     uint32_t     tick;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV(CFISH_Vec_Fetch(self, tick));
+    RETVAL = CFISH_OBJ_TO_SV_INC(CFISH_Vec_Fetch(self, tick));
 OUTPUT: RETVAL
 END_XS_CODE
 

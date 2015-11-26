@@ -77,37 +77,27 @@ cfish_XSBind_sv_defined(pTHX_ SV *sv) {
 CFISH_VISIBLE bool
 cfish_XSBind_sv_true(pTHX_ SV *sv);
 
-/** Derive an SV from a Clownfish object.  If the Clownfish object is NULL, the SV
- * will be undef.  Doesn't invoke To_Host and always returns a reference to a
- * Clownfish::Obj.
+/** Derive an SV from a Clownfish object.  If the Clownfish object is NULL,
+ * the SV will be undef.  Doesn't invoke To_Host and always returns a
+ * reference to a Clownfish::Obj.
  *
  * The new SV has single refcount for which the caller must take
  * responsibility.
  */
 CFISH_VISIBLE SV*
-cfish_XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj);
+cfish_XSBind_cfish_obj_to_sv_inc(pTHX_ cfish_Obj *obj);
 
-/** XSBind_cfish_obj_to_sv, with a cast.
+/** XSBind_cfish_obj_to_sv_inc, with a cast.
  */
-#define CFISH_OBJ_TO_SV(_obj) \
-    cfish_XSBind_cfish_obj_to_sv(aTHX_ (cfish_Obj*)_obj)
+#define CFISH_OBJ_TO_SV_INC(_obj) \
+    cfish_XSBind_cfish_obj_to_sv_inc(aTHX_ (cfish_Obj*)_obj)
 
-/** As XSBind_cfish_obj_to_sv above, except decrements the object's refcount
- * after creating the SV. This is useful when the Clownfish expression creates a new
- * refcount, e.g.  a call to a constructor.
+/** As XSBind_cfish_obj_to_sv_inc above, except decrements the object's
+ * refcount after creating the SV. This is useful when the Clownfish
+ * expression creates a new refcount, e.g.  a call to a constructor.
  */
-static CFISH_INLINE SV*
-cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
-    SV *retval;
-    if (obj) {
-        retval = cfish_XSBind_cfish_obj_to_sv(aTHX_ obj);
-        CFISH_DECREF_NN(obj);
-    }
-    else {
-        retval = newSV(0);
-    }
-    return retval;
-}
+CFISH_VISIBLE SV*
+cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj);
 
 /** XSBind_cfish_obj_to_sv_noinc, with a cast.
  */
@@ -215,7 +205,7 @@ cfish_XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
 #define XSBind_foster_obj              cfish_XSBind_foster_obj
 #define XSBind_sv_defined              cfish_XSBind_sv_defined
 #define XSBind_sv_true                 cfish_XSBind_sv_true
-#define XSBind_cfish_obj_to_sv         cfish_XSBind_cfish_obj_to_sv
+#define XSBind_cfish_obj_to_sv_inc     cfish_XSBind_cfish_obj_to_sv_inc
 #define XSBind_cfish_obj_to_sv_noinc   cfish_XSBind_cfish_obj_to_sv_noinc
 #define XSBind_cfish_to_perl           cfish_XSBind_cfish_to_perl
 #define XSBind_perl_to_cfish           cfish_XSBind_perl_to_cfish

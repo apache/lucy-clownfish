@@ -176,9 +176,7 @@ S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
                 // Mortalize the converted object -- which is somewhat
                 // dangerous, but is the only way to avoid requiring that the
                 // caller take responsibility for a refcount.
-                SV *mortal = XSBind_cfish_obj_to_sv(aTHX_ obj);
-                CFISH_DECREF(obj);
-                sv_2mortal(mortal);
+                sv_2mortal(XSBind_cfish_obj_to_sv_noinc(aTHX_ obj));
             }
 
             *obj_ptr = obj;
@@ -426,9 +424,9 @@ SI_is_string_type(cfish_Class *klass) {
     return false;
 }
 
-// Returns an incref'd, blessed RV.
+// Returns a blessed RV.
 static SV*
-S_lazy_init_host_obj(pTHX_ cfish_Obj *self) {
+S_lazy_init_host_obj(pTHX_ cfish_Obj *self, bool increment) {
     cfish_Class  *klass      = self->klass;
     cfish_String *class_name = CFISH_Class_Get_Name(klass);
 
@@ -441,6 +439,7 @@ S_lazy_init_host_obj(pTHX_ cfish_Obj *self) {
      * will assume responsibility for maintaining the refcount. */
     cfish_ref_t old_ref = self->ref;
     size_t excess = old_ref.count >> XSBIND_REFCOUNT_SHIFT;
+    if (!increment) { excess -= 1; }
     SvREFCNT(inner_obj) += excess;
 
     // Overwrite refcount with host object.
@@ -550,12 +549,12 @@ cfish_dec_refcount(void *vself) {
 }
 
 SV*
-XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj) {
+XSBind_cfish_obj_to_sv_inc(pTHX_ cfish_Obj *obj) {
     if (obj == NULL) { return newSV(0); }
 
     SV *perl_obj;
     if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
-        perl_obj = S_lazy_init_host_obj(aTHX_ obj);
+        perl_obj = S_lazy_init_host_obj(aTHX_ obj, true);
     }
     else {
         perl_obj = newRV_inc((SV*)obj->ref.host_obj);
@@ -572,10 +571,33 @@ XSBind_cfish_obj_to_sv(pTHX_ cfish_Obj *obj) {
     return perl_obj;
 }
 
+SV*
+XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
+    if (obj == NULL) { return newSV(0); }
+
+    SV *perl_obj;
+    if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
+        perl_obj = S_lazy_init_host_obj(aTHX_ obj, false);
+    }
+    else {
+        perl_obj = newRV_noinc((SV*)obj->ref.host_obj);
+    }
+
+    // Enable overloading for Perl 5.8.x
+#if PERL_VERSION <= 8
+    HV *stash = SvSTASH((SV*)obj->ref.host_obj);
+    if (Gv_AMG(stash)) {
+        SvAMAGIC_on(perl_obj);
+    }
+#endif
+
+    return perl_obj;
+}
+
 void*
 CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
     dTHX;
-    return XSBind_cfish_obj_to_sv(aTHX_ self);
+    return XSBind_cfish_obj_to_sv_inc(aTHX_ self);
 }
 
 /*************************** Clownfish::Class ******************************/
