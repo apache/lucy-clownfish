@@ -88,6 +88,11 @@ XSBind_foster_obj(pTHX_ SV *sv, cfish_Class *klass) {
     return obj;
 }
 
+bool
+XSBind_sv_true(pTHX_ SV *sv) {
+    return !!SvTRUE(sv);
+}
+
 cfish_Obj*
 XSBind_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass) {
     cfish_Obj *retval = NULL;

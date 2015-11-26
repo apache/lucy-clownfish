@@ -108,7 +108,7 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var,
             result = CFCUtil_sprintf("(int8_t)SvIV(%s)", xs_var);
         }
         else if (strcmp(specifier, "bool") == 0) {
-            result = CFCUtil_sprintf("SvTRUE(%s) ? 1 : 0", xs_var);
+            result = CFCUtil_sprintf("XSBind_sv_true(aTHX_ %s)", xs_var);
         }
         else {
             FREEMEM(result);
@@ -212,7 +212,7 @@ static const char typemap_input[] =
     "INPUT\n"
     "\n"
     "CFISH_BOOL\n"
-    "    $var = ($type)SvTRUE($arg);\n"
+    "    $var = ($type)XSBind_sv_true(aTHX_ $arg);\n"
     "\n"
     "CFISH_SIGNED_INT \n"
     "    $var = ($type)SvIV($arg);\n"
