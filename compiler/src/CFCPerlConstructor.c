@@ -150,7 +150,9 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    %s retval;\n"
         "\n"
         "    CFISH_UNUSED_VAR(cv);\n"
-        "    if (%s) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(class_name, ...)\",  GvNAME(CvGV(cv))); }\n"
+        "    if (%s) {\n"
+        "        XSBind_invalid_args_error(aTHX_ cv, \"class_name, ...\");\n"
+        "    }\n"
         "    SP -= items;\n"
         "\n"
         "%s" // locate_args

@@ -412,6 +412,11 @@ XSBind_arg_to_cfish_nullable(pTHX_ SV *value, const char *label,
     return obj;
 }
 
+void
+XSBind_invalid_args_error(pTHX_ CV *cv, const char *param_list) {
+    THROW(CFISH_ERR, "Usage: %s(%s)", GvNAME(CvGV(cv)), param_list);
+}
+
 /***************************************************************************
  * The routines below are declared within the Clownfish core but left
  * unimplemented and must be defined for each host language.

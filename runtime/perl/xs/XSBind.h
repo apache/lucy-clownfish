@@ -197,6 +197,11 @@ CFISH_VISIBLE cfish_Obj*
 cfish_XSBind_arg_to_cfish_nullable(pTHX_ SV *value, const char *label,
                                    cfish_Class *klass, void *allocation);
 
+/** Throw an error because of invalid number of arguments.
+ */
+CFISH_VISIBLE void
+cfish_XSBind_invalid_args_error(pTHX_ CV *cv, const char *param_list);
+
 #define XSBIND_PARAM(key, required) \
     { key, (int16_t)sizeof("" key) - 1, (char)required }
 
@@ -222,6 +227,7 @@ cfish_XSBind_arg_to_cfish_nullable(pTHX_ SV *value, const char *label,
 #define XSBind_locate_args             cfish_XSBind_locate_args
 #define XSBind_arg_to_cfish            cfish_XSBind_arg_to_cfish
 #define XSBind_arg_to_cfish_nullable   cfish_XSBind_arg_to_cfish_nullable
+#define XSBind_invalid_args_error      cfish_XSBind_invalid_args_error
 
 /* Strip the prefix from some common ClownFish symbols where we know there's
  * no conflict with Perl.  It's a little inconsistent to do this rather than
