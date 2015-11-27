@@ -316,6 +316,15 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
             min_required = i + 1;
         }
     }
+    char *num_args_cond;
+    if (min_required < num_vars) {
+        const char cond_pattern[] = "items < %u || items > %u";
+        num_args_cond = CFCUtil_sprintf(cond_pattern, (unsigned)min_required,
+                                        (unsigned)num_vars);
+    }
+    else {
+        num_args_cond = CFCUtil_sprintf("items != %u", (unsigned)num_vars);
+    }
     char *xs_name_list = num_vars > 0
                          ? CFCUtil_strdup(CFCVariable_get_name(arg_vars[0]))
                          : CFCUtil_strdup("");
@@ -328,17 +337,6 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
             xs_name_list = CFCUtil_cat(xs_name_list, ", [", var_name, "]",
                                        NULL);
         }
-    }
-    const char num_args_pattern[] =
-        "if (items %s %u) { CFISH_THROW(CFISH_ERR, \"Usage: %%s(%s)\", GvNAME(CvGV(cv))); }";
-    char *num_args_check;
-    if (min_required < num_vars) {
-        num_args_check = CFCUtil_sprintf(num_args_pattern, "<", min_required,
-                                         xs_name_list);
-    }
-    else {
-        num_args_check = CFCUtil_sprintf(num_args_pattern, "!=", num_vars,
-                                         xs_name_list);
     }
 
     char *retval_decl;
@@ -360,7 +358,9 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "\n"
         "    CFISH_UNUSED_VAR(cv);\n"
         "    SP -= items;\n"
-        "    %s;\n"
+        "    if (%s) {\n"
+        "        CFISH_THROW(CFISH_ERR, \"Usage: %%s(%s)\", GvNAME(CvGV(cv)));\n"
+        "    }\n"
         "\n"
         "    /* Extract vars from Perl stack. */\n"
         "    %s\n"
@@ -371,15 +371,16 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "}\n";
     char *xsub
         = CFCUtil_sprintf(pattern, self->sub.c_name, self->sub.c_name,
-                          arg_decls, meth_type_c, retval_decl,
-                          num_args_check, self_assign, arg_assigns, body);
+                          arg_decls, meth_type_c, retval_decl, num_args_cond,
+                          xs_name_list, self_assign, arg_assigns, body);
 
-    FREEMEM(num_args_check);
     FREEMEM(arg_assigns);
     FREEMEM(arg_decls);
     FREEMEM(meth_type_c);
     FREEMEM(self_assign);
     FREEMEM(body);
+    FREEMEM(num_args_cond);
+    FREEMEM(xs_name_list);
     FREEMEM(retval_decl);
     return xsub;
 }

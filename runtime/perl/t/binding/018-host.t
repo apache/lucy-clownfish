@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 5;
 use Clownfish qw( to_clownfish );
 
 my %complex_data_structure = (
@@ -44,4 +44,7 @@ is_deeply( $transformed, \%complex_data_structure,
 my $string = Clownfish::String->new("string");
 eval { $string->substring(offset => 0, len => 1, foo => 1) };
 like( $@, qr/Invalid parameter/, "Die on invalid parameter" );
+
+eval { $string->length(undef) };
+like( $@, qr/Usage: length/, "Die on extra parameter" );
 
