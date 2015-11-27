@@ -380,8 +380,8 @@ cfish_XSBind_locate_args(pTHX_ SV** stack, int32_t start, int32_t items,
 }
 
 cfish_Obj*
-XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
-                    cfish_Class *klass, void *allocation) {
+XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, cfish_Class *klass,
+                    void *allocation) {
     cfish_Obj *obj = NULL;
 
     if (!S_maybe_perl_to_cfish(aTHX_ value, klass, false, allocation, &obj)) {
@@ -390,8 +390,22 @@ XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
         CFISH_UNREACHABLE_RETURN(cfish_Obj*);
     }
 
-    if (!obj && !nullable) {
+    if (!obj) {
         THROW(CFISH_ERR, "'%s' must not be undef", label);
+        CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+    }
+
+    return obj;
+}
+
+cfish_Obj*
+XSBind_arg_to_cfish_nullable(pTHX_ SV *value, const char *label,
+                             cfish_Class *klass, void *allocation) {
+    cfish_Obj *obj = NULL;
+
+    if (!S_maybe_perl_to_cfish(aTHX_ value, klass, false, allocation, &obj)) {
+        THROW(CFISH_ERR, "Invalid value for '%s' - not a %o", label,
+              CFISH_Class_Get_Name(klass));
         CFISH_UNREACHABLE_RETURN(cfish_Obj*);
     }
 

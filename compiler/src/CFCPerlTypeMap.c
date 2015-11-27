@@ -42,7 +42,7 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var,
     if (CFCType_is_object(type)) {
         const char *struct_sym   = CFCType_get_specifier(type);
         const char *class_var    = CFCType_get_class_var(type);
-        const char *nullable_str = CFCType_nullable(type) ? "true" : "false";
+        const char *nullable_str = CFCType_nullable(type) ? "_nullable" : "";
         const char *allocation;
         if (strcmp(struct_sym, "cfish_String") == 0
             || strcmp(struct_sym, "cfish_Obj") == 0
@@ -55,9 +55,9 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var,
             allocation = "NULL";
         }
         const char pattern[]
-            = "(%s*)XSBind_arg_to_cfish(aTHX_ %s, \"%s\", %s, %s, %s)";
-        result = CFCUtil_sprintf(pattern, struct_sym, xs_var, label,
-                                 nullable_str, class_var, allocation);
+            = "(%s*)XSBind_arg_to_cfish%s(aTHX_ %s, \"%s\", %s, %s)";
+        result = CFCUtil_sprintf(pattern, struct_sym, nullable_str, xs_var,
+                                 label, class_var, allocation);
     }
     else if (CFCType_is_primitive(type)) {
         const char *specifier = CFCType_get_specifier(type);

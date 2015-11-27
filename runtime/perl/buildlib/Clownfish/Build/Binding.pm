@@ -970,11 +970,11 @@ CODE:
     CFISH_UNUSED_VAR(unused_sv);
     XSBind_locate_args(aTHX_ &(ST(0)), 1, items, param_specs, locations, 2);
     class_name = (cfish_String*)XSBind_arg_to_cfish(
-            aTHX_ ST(locations[0]), "class_name", false, CFISH_STRING,
+            aTHX_ ST(locations[0]), "class_name", CFISH_STRING,
             CFISH_ALLOCA_OBJ(CFISH_STRING));
     if (locations[1] < items) {
-        parent = (cfish_Class*)XSBind_arg_to_cfish(
-                aTHX_ ST(locations[1]), "parent", true, CFISH_CLASS, NULL);
+        parent = (cfish_Class*)XSBind_arg_to_cfish_nullable(
+                aTHX_ ST(locations[1]), "parent", CFISH_CLASS, NULL);
     }
     singleton = cfish_Class_singleton(class_name, parent);
     RETVAL = (SV*)CFISH_Class_To_Host(singleton);

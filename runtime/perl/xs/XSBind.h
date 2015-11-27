@@ -179,17 +179,23 @@ cfish_XSBind_locate_args(pTHX_ SV** stack, int32_t start, int32_t items,
                          const cfish_XSBind_ParamSpec *specs,
                          int32_t *locations, int32_t num_params);
 
-/** Convert an argument from the Perl stack to a Clownfish object.
+/** Convert an argument from the Perl stack to a Clownfish object. Throws
+ * an error if the SV can't be converted.
  *
  * @param value The SV from the Perl stack.
  * @param label The name of the param.
- * @param nullable Whether undef is allowed for objects.
  * @param klass The class to convert to.
  * @param allocation Stack allocation for Obj and String.
  */
 CFISH_VISIBLE cfish_Obj*
-cfish_XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
+cfish_XSBind_arg_to_cfish(pTHX_ SV *value, const char *label,
                           cfish_Class *klass, void *allocation);
+
+/** Like XSBind_arg_to_cfish, but allows undef which is converted to NULL.
+ */
+CFISH_VISIBLE cfish_Obj*
+cfish_XSBind_arg_to_cfish_nullable(pTHX_ SV *value, const char *label,
+                                   cfish_Class *klass, void *allocation);
 
 #define XSBIND_PARAM(key, required) \
     { key, (int16_t)sizeof("" key) - 1, (char)required }
@@ -215,6 +221,7 @@ cfish_XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, bool nullable,
 #define XSBind_trap                    cfish_XSBind_trap
 #define XSBind_locate_args             cfish_XSBind_locate_args
 #define XSBind_arg_to_cfish            cfish_XSBind_arg_to_cfish
+#define XSBind_arg_to_cfish_nullable   cfish_XSBind_arg_to_cfish_nullable
 
 /* Strip the prefix from some common ClownFish symbols where we know there's
  * no conflict with Perl.  It's a little inconsistent to do this rather than
