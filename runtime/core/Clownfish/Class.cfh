@@ -130,7 +130,7 @@ public final class Clownfish::Class inherits Clownfish::Obj {
 
     /** Return novel methods of the class.
      */
-    Vector*
+    incremented Vector*
     Get_Methods(Class *self);
 
     public void

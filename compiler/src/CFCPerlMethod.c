@@ -292,6 +292,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     FREEMEM(arg_decls);
     FREEMEM(meth_type_c);
     FREEMEM(self_assign);
+    FREEMEM(arg_assigns);
     FREEMEM(body);
     FREEMEM(retval_decl);
     return xsub_def;

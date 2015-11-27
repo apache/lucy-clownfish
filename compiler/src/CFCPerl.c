@@ -558,6 +558,8 @@ CFCPerl_write_bindings(CFCPerl *self) {
 
             // Add XSUB initialization at boot.
             xs_init = S_add_xs_init(xs_init, xsub);
+
+            CFCBase_decref((CFCBase*)constructors[j]);
         }
         FREEMEM(constructors);
 
@@ -574,6 +576,8 @@ CFCPerl_write_bindings(CFCPerl *self) {
 
             // Add XSUB initialization at boot.
             xs_init = S_add_xs_init(xs_init, xsub);
+
+            CFCBase_decref((CFCBase*)methods[j]);
         }
         FREEMEM(methods);
     }
