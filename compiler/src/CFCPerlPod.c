@@ -170,74 +170,75 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
     char *abstract_pod = CFCUtil_strdup("");
     char *methods_pod  = CFCUtil_strdup("");
 
+    // Start with methods that don't map to a Clownfish method.
     for (size_t i = 0; i < self->num_methods; i++) {
         NamePod meth_spec = self->methods[i];
         CFCMethod *method = CFCClass_method(klass, meth_spec.func);
-        if (!method) {
-            method = CFCClass_method(klass, meth_spec.alias);
-        }
-        if (!method) {
-            CFCUtil_die("Can't find method '%s' in class '%s'",
+        if (method) { continue; }
+        if (!meth_spec.pod) {
+            CFCUtil_die("No POD specified for method '%s' in class '%s'",
                         meth_spec.alias, CFCClass_get_name(klass));
         }
-        char *meth_pod;
-        if (meth_spec.pod) {
-            meth_pod = CFCUtil_sprintf("%s\n", meth_spec.pod);
-        }
-        else {
-            meth_pod
-                = CFCPerlPod_gen_subroutine_pod((CFCFunction*)method,
-                                                meth_spec.alias, klass,
-                                                meth_spec.sample, class_name,
-                                                false);
-        }
-        if (CFCMethod_abstract(method)) {
-            abstract_pod = CFCUtil_cat(abstract_pod, meth_pod, NULL);
-        }
-        else {
-            methods_pod = CFCUtil_cat(methods_pod, meth_pod, NULL);
-        }
-        FREEMEM(meth_pod);
+        methods_pod = CFCUtil_cat(methods_pod, meth_spec.pod, "\n", NULL);
     }
 
-    // Add POD for public novel methods by default.
     CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
     for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
         CFCMethod *method = fresh_methods[meth_num];
         const char *name = CFCMethod_get_name(method);
+        char *meth_pod = NULL;
 
-        if (!CFCMethod_public(method)) {
-            continue;
-        }
-        if (CFCMethod_excluded_from_host(method)) {
-            continue;
-        }
-        if (!CFCMethod_can_be_bound(method)) {
-            continue;
-        }
-        if (!CFCMethod_novel(method)) {
-            // Add POD for first implementation of abstract methods.
-            if (CFCMethod_abstract(method)) { continue; }
-            CFCClass *parent = CFCClass_get_parent(klass);
-            CFCMethod *parent_method = CFCClass_method(parent, name);
-            if (!CFCMethod_abstract(parent_method)) { continue; }
-        }
-
-        // Skip methods that were added manually.
-        int found = false;
+        // Try to find custom POD for method.
+        NamePod *meth_spec = NULL;
         for (size_t j = 0; j < self->num_methods; j++) {
-            const char *other_name = self->methods[j].func;
+            NamePod *candidate = &self->methods[j];
+            const char *other_name = candidate->func;
             if (other_name && strcmp(other_name, name) == 0) {
-                found = true;
+                meth_spec = candidate;
                 break;
             }
         }
-        if (found) { continue; }
 
-        char *perl_name = CFCPerlMethod_perl_name(method);
-        char *meth_pod
-            = CFCPerlPod_gen_subroutine_pod((CFCFunction*)method, perl_name,
-                                            klass, NULL, class_name, false);
+        if (meth_spec) {
+            // Found custom POD.
+            if (meth_spec->pod) {
+                meth_pod = CFCUtil_sprintf("%s\n", meth_spec->pod);
+            }
+            else {
+                meth_pod
+                    = CFCPerlPod_gen_subroutine_pod((CFCFunction*)method,
+                                                    meth_spec->alias, klass,
+                                                    meth_spec->sample,
+                                                    class_name, false);
+            }
+        }
+        else {
+            // No custom POD found. Add POD for public methods with Perl
+            // bindings.
+            if (!CFCMethod_public(method)
+                || CFCMethod_excluded_from_host(method)
+                || !CFCMethod_can_be_bound(method)
+               ) {
+                continue;
+            }
+
+            // Only add POD for novel methods and the first implementation
+            // of abstract methods.
+            if (!CFCMethod_novel(method)) {
+                if (CFCMethod_abstract(method)) { continue; }
+                CFCClass *parent = CFCClass_get_parent(klass);
+                CFCMethod *parent_method = CFCClass_method(parent, name);
+                if (!CFCMethod_abstract(parent_method)) { continue; }
+            }
+
+            char *perl_name = CFCPerlMethod_perl_name(method);
+            meth_pod
+                = CFCPerlPod_gen_subroutine_pod((CFCFunction*)method,
+                                                perl_name, klass, NULL,
+                                                class_name, false);
+            FREEMEM(perl_name);
+        }
+
         if (CFCMethod_abstract(method)) {
             abstract_pod = CFCUtil_cat(abstract_pod, meth_pod, NULL);
         }
@@ -245,7 +246,6 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
             methods_pod = CFCUtil_cat(methods_pod, meth_pod, NULL);
         }
         FREEMEM(meth_pod);
-        FREEMEM(perl_name);
     }
 
     char *pod = CFCUtil_strdup("");
