@@ -391,8 +391,7 @@ XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, cfish_Class *klass,
     }
 
     if (!obj) {
-        THROW(CFISH_ERR, "'%s' must not be undef", label);
-        CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+        XSBind_undef_arg_error(aTHX_ label);
     }
 
     return obj;
@@ -415,6 +414,11 @@ XSBind_arg_to_cfish_nullable(pTHX_ SV *value, const char *label,
 void
 XSBind_invalid_args_error(pTHX_ CV *cv, const char *param_list) {
     THROW(CFISH_ERR, "Usage: %s(%s)", GvNAME(CvGV(cv)), param_list);
+}
+
+void
+XSBind_undef_arg_error(pTHX_ const char *label) {
+    THROW(CFISH_ERR, "'%s' must not be undef", label);
 }
 
 /***************************************************************************

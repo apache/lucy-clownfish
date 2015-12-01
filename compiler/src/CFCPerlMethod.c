@@ -264,6 +264,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
         "    dXSARGS;\n"
         "%s"        // param_specs
         "    int32_t locations[%d];\n"
+        "    SV *sv;\n"
         "%s"        // arg_decls
         "    %s method;\n"
         "%s"
@@ -355,7 +356,8 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
-        "%s"
+        "    SV *sv;\n"
+        "%s" // arg_decls
         "    %s method;\n"
         "%s"
         "\n"

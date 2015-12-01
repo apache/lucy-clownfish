@@ -146,6 +146,7 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    dXSARGS;\n"
         "%s" // param_specs
         "%s" // locs_decl
+        "    SV *sv;\n"
         "%s" // arg_decls
         "    %s retval;\n"
         "\n"

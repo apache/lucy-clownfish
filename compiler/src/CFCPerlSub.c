@@ -182,35 +182,50 @@ S_arg_assignment(CFCVariable *var, const char *val,
     CFCType    *var_type  = CFCVariable_get_type(var);
     char       *statement = NULL;
 
-    char perl_stack_var[40];
-    sprintf(perl_stack_var, "ST(%s)", stack_location);
-    char *conversion = CFCPerlTypeMap_from_perl(var_type, perl_stack_var,
-                                                var_name);
+    char *conversion = CFCPerlTypeMap_from_perl(var_type, "sv", var_name);
     if (!conversion) {
         const char *type_c = CFCType_to_c(var_type);
         CFCUtil_die("Can't map type '%s'", type_c);
     }
+
     if (val) {
         if (CFCType_is_object(var_type)) {
-            char pattern[] = "    arg_%s = %s < items ? %s : %s;\n";
+            const char pattern[] = "    arg_%s = %s < items ? %s : %s;\n";
             statement = CFCUtil_sprintf(pattern, var_name, stack_location,
                                         conversion, val);
         }
         else {
-            char pattern[] =
-                "    arg_%s = %s < items && XSBind_sv_defined(aTHX_ %s)\n"
+            const char pattern[] =
+                "    arg_%s = %s < items && XSBind_sv_defined(aTHX_ sv)\n"
                 "             ? %s : %s;\n";
             statement = CFCUtil_sprintf(pattern, var_name, stack_location,
-                                        perl_stack_var, conversion, val);
+                                        conversion, val);
         }
     }
     else {
-        const char pattern[] = "    arg_%s = %s;\n";
-        statement = CFCUtil_sprintf(pattern, var_name, conversion);
+        if (CFCType_is_object(var_type)) {
+            const char pattern[] = "    arg_%s = %s;\n";
+            statement = CFCUtil_sprintf(pattern, var_name, conversion);
+        }
+        else {
+            const char pattern[] =
+                "    if (!XSBind_sv_defined(aTHX_ sv)) {\n"
+                "        XSBind_undef_arg_error(aTHX_ \"%s\");\n"
+                "    }\n"
+                "    arg_%s = %s;\n";
+            statement = CFCUtil_sprintf(pattern, var_name, var_name,
+                                        conversion);
+        }
     }
-    FREEMEM(conversion);
 
-    return statement;
+    const char pattern[] =
+        "    sv = ST(%s);\n"
+        "%s";
+    char *retval = CFCUtil_sprintf(pattern, stack_location, statement);
+
+    FREEMEM(conversion);
+    FREEMEM(statement);
+    return retval;
 }
 
 CFCParamList*
