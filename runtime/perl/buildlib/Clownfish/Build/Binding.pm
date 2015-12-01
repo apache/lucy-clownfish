@@ -23,6 +23,7 @@ sub bind_all {
     my $class = shift;
     $class->bind_clownfish;
     $class->bind_test;
+    $class->bind_test_host;
     $class->bind_test_alias_obj;
     $class->bind_blob;
     $class->bind_boolean;
@@ -102,6 +103,14 @@ END_XS_CODE
     );
     $binding->append_xs($xs_code);
 
+    Clownfish::CFC::Binding::Perl::Class->register($binding);
+}
+
+sub bind_test_host {
+    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
+        parcel     => "TestClownfish",
+        class_name => "Clownfish::Test::TestHost",
+    );
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
 

@@ -16,8 +16,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More tests => 39;
 use Clownfish qw( to_clownfish );
+use Clownfish::Test;
 
 my %complex_data_structure = (
     a => [ 1, 2, 3, { ooga => 'booga' } ],
@@ -47,4 +48,88 @@ like( $@, qr/Invalid parameter/, "Die on invalid parameter" );
 
 eval { $string->length(undef) };
 like( $@, qr/Usage: length/, "Die on extra parameter" );
+
+my $th = Clownfish::Test::TestHost->new;
+$string = Clownfish::String->new("string");
+my $retval;
+
+$retval = $th->test_obj_pos_arg($string);
+is( $retval, 'string', "positional object arg" );
+eval { $th->test_obj_pos_arg(undef) };
+like( $@, qr/undef/, "die on undef positional object arg" );
+
+$retval = $th->test_obj_pos_arg_def($string);
+is( $retval, 'string', "positional object arg w/default" );
+$retval = $th->test_obj_pos_arg_def(undef);
+ok( !defined($retval), "undef positional object arg w/default" );
+$retval = $th->test_obj_pos_arg_def();
+ok( !defined($retval), "empty positional object arg w/default" );
+
+$retval = $th->test_obj_label_arg(arg => $string);
+is( $retval, 'string', "labeled object arg" );
+eval { $th->test_obj_label_arg(arg => undef) };
+like( $@, qr/undef/, "die on undef labeled object arg" );
+
+$retval = $th->test_obj_label_arg_def(arg => $string);
+is( $retval, 'string', "labeled object arg w/default" );
+$retval = $th->test_obj_label_arg_def(arg => undef);
+ok( !defined($retval), "undef labeled object arg w/default" );
+$retval = $th->test_obj_label_arg_def();
+ok( !defined($retval), "empty labeled object arg w/default" );
+
+$retval = $th->test_int32_pos_arg(102);
+is( $retval, 102, "positional int32 arg" );
+eval { $th->test_int32_pos_arg(undef) };
+like( $@, qr/undef/, "die on undef positional int32 arg" );
+
+$retval = $th->test_int32_pos_arg_def(102);
+is( $retval, 102, "positional int32 arg w/default" );
+$retval = $th->test_int32_pos_arg_def(undef);
+is( $retval, 101, "undef positional int32 arg w/default" );
+$retval = $th->test_int32_pos_arg_def();
+is( $retval, 101, "empty positional int32 arg w/default" );
+
+$retval = $th->test_int32_label_arg(arg => 102);
+is( $retval, 102, "labeled int32 arg" );
+eval { $th->test_int32_label_arg(arg => undef) };
+like( $@, qr/undef/, "die on undef labeled int32 arg" );
+
+$retval = $th->test_int32_label_arg_def(arg => 102);
+is( $retval, 102, "labeled int32 arg w/default" );
+$retval = $th->test_int32_label_arg_def(arg => undef);
+is( $retval, 101, "undef labeled int32 arg w/default" );
+$retval = $th->test_int32_label_arg_def();
+is( $retval, 101, "empty labeled int32 arg w/default" );
+
+$retval = $th->test_bool_pos_arg(1);
+ok( $retval, "true positional bool arg" );
+$retval = $th->test_bool_pos_arg(0);
+ok( !$retval, "false positional bool arg" );
+eval { $th->test_bool_pos_arg(undef) };
+like( $@, qr/undef/, "die on undef positional bool arg" );
+
+$retval = $th->test_bool_pos_arg_def(1);
+ok( $retval, "true positional bool arg w/default" );
+$retval = $th->test_bool_pos_arg_def(0);
+ok( !$retval, "false positional bool arg w/default" );
+$retval = $th->test_bool_pos_arg_def(undef);
+ok( $retval, "undef positional bool arg w/default" );
+$retval = $th->test_bool_pos_arg_def();
+ok( $retval, "empty positional bool arg w/default" );
+
+$retval = $th->test_bool_label_arg(arg => 1);
+ok( $retval, "true labeled bool arg" );
+$retval = $th->test_bool_label_arg(arg => 0);
+ok( !$retval, "false labeled bool arg" );
+eval { $th->test_bool_label_arg(arg => undef) };
+like( $@, qr/undef/, "die on undef labeled bool arg" );
+
+$retval = $th->test_bool_label_arg_def(arg => 1);
+ok( $retval, "true labeled bool arg w/default" );
+$retval = $th->test_bool_label_arg_def(arg => 0);
+ok( !$retval, "false labeled bool arg w/default" );
+$retval = $th->test_bool_label_arg_def(arg => undef);
+ok( $retval, "undef labeled bool arg w/default" );
+$retval = $th->test_bool_label_arg_def();
+ok( $retval, "empty labeled bool arg w/default" );
 
