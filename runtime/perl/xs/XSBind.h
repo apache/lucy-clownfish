@@ -64,12 +64,8 @@ cfish_XSBind_foster_obj(pTHX_ SV *sv, cfish_Class *klass);
 /** Test whether an SV is defined.  Handles "get" magic, unlike SvOK on its
  * own.
  */
-static CFISH_INLINE bool
-cfish_XSBind_sv_defined(pTHX_ SV *sv) {
-    if (!sv || !SvANY(sv)) { return false; }
-    if (SvGMAGICAL(sv)) { mg_get(sv); }
-    return !!SvOK(sv);
-}
+CFISH_VISIBLE bool
+cfish_XSBind_sv_defined(pTHX_ SV *sv);
 
 /** Test whether an SV is true.  Wraps the expensive SvTRUE macro in a
  * function.

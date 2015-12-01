@@ -89,6 +89,13 @@ XSBind_foster_obj(pTHX_ SV *sv, cfish_Class *klass) {
 }
 
 bool
+XSBind_sv_defined(pTHX_ SV *sv) {
+    if (!sv || !SvANY(sv)) { return false; }
+    if (SvGMAGICAL(sv)) { mg_get(sv); }
+    return !!SvOK(sv);
+}
+
+bool
 XSBind_sv_true(pTHX_ SV *sv) {
     return !!SvTRUE(sv);
 }
