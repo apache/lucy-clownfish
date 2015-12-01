@@ -502,7 +502,7 @@ END_POD
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish    PACKAGE = Clownfish::Hash
 SV*
-fetch_obj(self, key)
+fetch_raw(self, key)
     cfish_Hash *self;
     cfish_String *key;
 CODE:
@@ -865,14 +865,14 @@ END_POD
 MODULE = Clownfish   PACKAGE = Clownfish::Vector
 
 SV*
-pop_obj(self)
+pop_raw(self)
     cfish_Vector *self;
 CODE:
     RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Vec_Pop(self));
 OUTPUT: RETVAL
 
 SV*
-delete_obj(self, tick)
+delete_raw(self, tick)
     cfish_Vector *self;
     uint32_t    tick;
 CODE:
@@ -891,7 +891,7 @@ PPCODE:
 }
 
 SV*
-fetch_obj(self, tick)
+fetch_raw(self, tick)
     cfish_Vector *self;
     uint32_t     tick;
 CODE:
