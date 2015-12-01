@@ -60,6 +60,22 @@ class Clownfish::Test::TestHost {
     bool
     Test_Bool_Label_Arg_Def(TestHost *self, bool arg = true,
                             bool unused = false);
+
+    /** A method that can't be overridden from the host language.
+     */
+    abstract void*
+    Invalid_Callback(TestHost *self);
+
+    void
+    Invoke_Invalid_Callback_From_C(TestHost *self);
+
+    /** A method with a custom host language alias.
+     */
+    incremented String*
+    Aliased(TestHost *self);
+
+    incremented String*
+    Invoke_Aliased_From_C(TestHost* self);
 }
 
 

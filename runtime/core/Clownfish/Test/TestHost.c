@@ -19,6 +19,7 @@
 
 #include "Clownfish/Test/TestHost.h"
 #include "Clownfish/Class.h"
+#include "Clownfish/String.h"
 
 TestHost*
 TestHost_new() {
@@ -102,6 +103,23 @@ TestHost_Test_Bool_Label_Arg_Def_IMP(TestHost *self, bool arg, bool unused) {
     UNUSED_VAR(self);
     UNUSED_VAR(unused);
     return arg;
+}
+
+void
+TestHost_Invoke_Invalid_Callback_From_C_IMP(TestHost *self) {
+    TestHost_Invalid_Callback(self);
+}
+
+String*
+TestHost_Aliased_IMP(TestHost *self) {
+    UNUSED_VAR(self);
+    return Str_newf("C");
+}
+
+String*
+TestHost_Invoke_Aliased_From_C_IMP(TestHost *self) {
+    UNUSED_VAR(self);
+    return TestHost_Aliased(self);
 }
 
 

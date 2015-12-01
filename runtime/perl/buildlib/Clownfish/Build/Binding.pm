@@ -24,7 +24,6 @@ sub bind_all {
     $class->bind_clownfish;
     $class->bind_test;
     $class->bind_test_host;
-    $class->bind_test_alias_obj;
     $class->bind_blob;
     $class->bind_boolean;
     $class->bind_bytebuf;
@@ -110,14 +109,6 @@ sub bind_test_host {
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         parcel     => "TestClownfish",
         class_name => "Clownfish::Test::TestHost",
-    );
-    Clownfish::CFC::Binding::Perl::Class->register($binding);
-}
-
-sub bind_test_alias_obj {
-    my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "TestClownfish",
-        class_name => "Clownfish::Test::AliasTestObj",
     );
     $binding->bind_method(
         alias  => 'perl_alias',

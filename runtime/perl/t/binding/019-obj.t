@@ -46,13 +46,13 @@ use base qw( Clownfish::Obj );
 }
 
 package InvalidCallbackTestObj;
-use base qw( Clownfish::Test::CallbackTestObj );
+use base qw( Clownfish::Test::TestHost );
 {
     sub invalid_callback {}
 }
 
 package OverriddenAliasTestObj;
-use base qw( Clownfish::Test::AliasTestObj );
+use base qw( Clownfish::Test::TestHost );
 {
     sub perl_alias {"Perl"}
 }
@@ -141,18 +141,18 @@ SKIP: {
     like( $@, qr/NULL/,
         "Don't allow methods without nullable return values to return NULL" );
 
-    eval { InvalidCallbackTestObj->new->invoke_callback; };
+    eval { InvalidCallbackTestObj->new->invoke_invalid_callback_from_c; };
     like( $@, qr/Can't override invalid_callback via binding/ );
 }
 
-my $alias_test = Clownfish::Test::AliasTestObj->new;
+my $alias_test = Clownfish::Test::TestHost->new;
 is( $alias_test->perl_alias, 'C', "Host method aliases work" );
 
 eval { $alias_test->aliased; };
 like( $@, qr/aliased/, "Original method can't be called" );
 
 my $overridden_alias_test = OverriddenAliasTestObj->new;
-is( $overridden_alias_test->call_aliased_from_c, 'Perl',
+is( $overridden_alias_test->invoke_aliased_from_c, 'Perl',
     'Overriding aliased methods works' );
 
 eval { SubclassFinalTestObj->new; };
