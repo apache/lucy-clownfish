@@ -29,6 +29,6 @@ $vector->insert(
     tick    => 0,
     element => 'elem',
 );
-$twin = $vector->clone;
+$twin = $vector->clone_raw;
 is_deeply( $twin->to_perl, $vector->to_perl, "clone" );
 

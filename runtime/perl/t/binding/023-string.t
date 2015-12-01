@@ -38,7 +38,7 @@ isa_ok( $string, "Clownfish::String" );
 is( $string->to_perl, $smiley, "round trip UTF-8" );
 
 $string = Clownfish::String->new($smiley);
-my $clone = $string->clone;
+my $clone = $string->clone_raw;
 is( $clone->to_perl, Clownfish::String->new($smiley)->to_perl, "clone" );
 
 my $wanted = "abc\x00de";

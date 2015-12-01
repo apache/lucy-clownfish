@@ -39,7 +39,7 @@ ok( $buf->compare_to($other) < 0, 'compare_to');
 $buf->mimic($other);
 ok( $buf->equals($other), 'mimic' );
 
-$buf = $other->clone;
+$buf = $other->clone_raw;
 isa_ok( $buf, 'Clownfish::ByteBuf', 'clone' );
 ok( $buf->equals($other), 'equals after clone' );
 

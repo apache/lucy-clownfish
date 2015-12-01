@@ -33,7 +33,7 @@ ok ( $float->equals($float), 'Float equals true' );
 ok ( !$float->equals($neg_float), 'Float equals false' );
 ok ( $float->compare_to($neg_float) > 0, 'Float compare_to' );
 
-my $float_clone = $float->clone;
+my $float_clone = $float->clone_raw;
 isa_ok( $float_clone, 'Clownfish::Float', 'Float clone' );
 ok ( $float->equals($float_clone), 'Float clone is equal' );
 
@@ -48,7 +48,7 @@ ok ( $int->equals($int), 'Integer equals true' );
 ok ( !$int->equals($neg_int), 'Integer equals false' );
 ok ( $int->compare_to($neg_int) > 0, 'Integer compare_to' );
 
-my $int_clone = $int->clone;
+my $int_clone = $int->clone_raw;
 isa_ok( $int_clone, 'Clownfish::Integer', 'Integer clone' );
 ok ( $int->equals($int_clone), 'Integer clone is equal' );
 
@@ -62,7 +62,7 @@ is ( $bool->to_string, 'true', 'Boolean to_string' );
 ok ( $bool->equals($true_singleton), 'Boolean equals true' );
 ok ( !$bool->equals($false_singleton), 'Boolean equals false' );
 
-my $bool_clone = $bool->clone;
+my $bool_clone = $bool->clone_raw;
 isa_ok( $bool_clone, 'Clownfish::Boolean', 'Boolean clone' );
 ok ( $bool->equals($bool_clone), 'Boolean clone is equal' );
 

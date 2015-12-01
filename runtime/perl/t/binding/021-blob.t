@@ -31,7 +31,7 @@ ok( $blob->equals($blob), 'equals true');
 ok( !$blob->equals($other), 'equals false');
 ok( $blob->compare_to($other) < 0, 'compare_to');
 
-$blob = $other->clone;
+$blob = $other->clone_raw;
 isa_ok( $blob, 'Clownfish::Blob', 'clone' );
 ok( $blob->equals($other), 'equals after clone' );
 

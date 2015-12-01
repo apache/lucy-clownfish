@@ -764,16 +764,11 @@ END_POD
         pod    => $to_perl_pod,
     );
     $pod_spec->add_method(
-        method => 'Clone',
-        alias  => 'clone',
-    );
-    $pod_spec->add_method(
         method => 'Destroy',
         alias  => 'DESTROY',
         pod    => $destroy_pod,
     );
 
-    my @hand_rolled = qw( Clone );
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::Obj
 
@@ -805,7 +800,7 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-clone(self)
+clone_raw(self)
     cfish_Obj *self;
 CODE:
     RETVAL = CFISH_OBJ_TO_SV_NOINC(CFISH_Obj_Clone(self));
@@ -827,7 +822,6 @@ END_XS_CODE
         alias  => 'DESTROY',
         method => 'Destroy',
     );
-    $binding->exclude_method($_) for @hand_rolled;
     $binding->append_xs($xs_code);
     $binding->set_pod_spec($pod_spec);
 
