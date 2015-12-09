@@ -36,29 +36,37 @@ TestBB_new() {
 
 static void
 test_Equals(TestBatchRunner *runner) {
-    ByteBuf *wanted = BB_new_bytes("foo", 4); // Include terminating NULL.
-    ByteBuf *got    = BB_new_bytes("foo", 4);
+    ByteBuf *bb = BB_new_bytes("foo", 4); // Include terminating NULL.
 
-    TEST_TRUE(runner, BB_Equals(wanted, (Obj*)got), "Equals");
+    {
+        ByteBuf *other = BB_new_bytes("foo", 4);
+        TEST_TRUE(runner, BB_Equals(bb, (Obj*)other), "Equals");
+        DECREF(other);
+    }
 
-    TEST_TRUE(runner, BB_Equals_Bytes(got, "foo", 4), "Equals_Bytes");
-    TEST_FALSE(runner, BB_Equals_Bytes(got, "foo", 3),
+    TEST_TRUE(runner, BB_Equals_Bytes(bb, "foo", 4), "Equals_Bytes");
+    TEST_FALSE(runner, BB_Equals_Bytes(bb, "foo", 3),
                "Equals_Bytes spoiled by different size");
-    TEST_FALSE(runner, BB_Equals_Bytes(got, "bar", 4),
+    TEST_FALSE(runner, BB_Equals_Bytes(bb, "bar", 4),
                "Equals_Bytes spoiled by different content");
 
-    BB_Set_Size(got, 3);
-    TEST_FALSE(runner, BB_Equals(wanted, (Obj*)got),
-               "Different size spoils Equals");
+    {
+        ByteBuf *other = BB_new_bytes("foo", 3);
+        TEST_FALSE(runner, BB_Equals(bb, (Obj*)other),
+                   "Different size spoils Equals");
+        DECREF(other);
+    }
 
-    BB_Mimic_Bytes(got, "bar", 4);
-    TEST_INT_EQ(runner, BB_Get_Size(wanted), BB_Get_Size(got),
-                "same length");
-    TEST_FALSE(runner, BB_Equals(wanted, (Obj*)got),
-               "Different content spoils Equals");
+    {
+        ByteBuf *other = BB_new_bytes("bar", 4);
+        TEST_INT_EQ(runner, BB_Get_Size(bb), BB_Get_Size(other),
+                    "same length");
+        TEST_FALSE(runner, BB_Equals(bb, (Obj*)other),
+                   "Different content spoils Equals");
+        DECREF(other);
+    }
 
-    DECREF(got);
-    DECREF(wanted);
+    DECREF(bb);
 }
 
 static void
@@ -105,46 +113,20 @@ test_Compare_To(TestBatchRunner *runner) {
 }
 
 static void
-test_Mimic(TestBatchRunner *runner) {
-    ByteBuf *a = BB_new_bytes("foo", 3);
-    ByteBuf *b = BB_new(0);
-
-    BB_Mimic(b, (Obj*)a);
-    TEST_TRUE(runner, BB_Equals(a, (Obj*)b), "Mimic");
-
-    BB_Mimic_Bytes(a, "bar", 4);
-    TEST_TRUE(runner, strcmp(BB_Get_Buf(a), "bar") == 0,
-              "Mimic_Bytes content");
-    TEST_INT_EQ(runner, BB_Get_Size(a), 4, "Mimic_Bytes size");
-
-    BB_Mimic(b, (Obj*)a);
-    TEST_TRUE(runner, BB_Equals(a, (Obj*)b), "Mimic");
-
-    String *string = Str_newf("baz");
-    BB_Mimic(b, (Obj*)string);
-    DECREF(string);
-    TEST_TRUE(runner, BB_Equals_Bytes(b, "baz", 3), "Mimic String");
-
-    DECREF(a);
-    DECREF(b);
-}
-
-static void
 test_Cat(TestBatchRunner *runner) {
-    ByteBuf *wanted  = BB_new_bytes("foobar", 6);
-    ByteBuf *got     = BB_new_bytes("foo", 3);
-    Blob    *blob    = Blob_new("bar", 3);
+    ByteBuf *bb = BB_new_bytes("foo", 3);
 
-    BB_Cat(got, blob);
-    TEST_TRUE(runner, BB_Equals(wanted, (Obj*)got), "Cat");
+    {
+        Blob *blob = Blob_new("bar", 3);
+        BB_Cat(bb, blob);
+        TEST_TRUE(runner, BB_Equals_Bytes(bb, "foobar", 6), "Cat");
+        DECREF(blob);
+    }
 
-    BB_Mimic_Bytes(wanted, "foobarbaz", 9);
-    BB_Cat_Bytes(got, "baz", 3);
-    TEST_TRUE(runner, BB_Equals(wanted, (Obj*)got), "Cat_Bytes");
+    BB_Cat_Bytes(bb, "baz", 3);
+    TEST_TRUE(runner, BB_Equals_Bytes(bb, "foobarbaz", 9), "Cat_Bytes");
 
-    DECREF(blob);
-    DECREF(got);
-    DECREF(wanted);
+    DECREF(bb);
 }
 
 static void
@@ -169,12 +151,11 @@ test_Utf8_To_String(TestBatchRunner *runner) {
 
 void
 TestBB_Run_IMP(TestByteBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 22);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 17);
     test_Equals(runner);
     test_Grow(runner);
     test_Clone(runner);
     test_Compare_To(runner);
-    test_Mimic(runner);
     test_Utf8_To_String(runner);
     test_Cat(runner);
 }

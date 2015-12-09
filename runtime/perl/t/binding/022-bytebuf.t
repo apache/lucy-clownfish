@@ -17,7 +17,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 11;
+use Test::More tests => 10;
 use Clownfish;
 
 my $buf = Clownfish::ByteBuf->new('abc');
@@ -35,9 +35,6 @@ my $other = Clownfish::ByteBuf->new('abcd');
 ok( $buf->equals($buf), 'equals true');
 ok( !$buf->equals($other), 'equals false');
 ok( $buf->compare_to($other) < 0, 'compare_to');
-
-$buf->mimic($other);
-ok( $buf->equals($other), 'mimic' );
 
 $buf = $other->clone_raw;
 isa_ok( $buf, 'Clownfish::ByteBuf', 'clone' );

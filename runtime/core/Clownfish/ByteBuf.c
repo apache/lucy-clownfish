@@ -132,33 +132,6 @@ BB_Equals_Bytes_IMP(ByteBuf *self, const void *bytes, size_t size) {
 }
 
 static CFISH_INLINE void
-SI_mimic_bytes(ByteBuf *self, const void *bytes, size_t size) {
-    if (size > self->cap) { S_grow(self, size); }
-    memmove(self->buf, bytes, size);
-    self->size = size;
-}
-
-void
-BB_Mimic_Bytes_IMP(ByteBuf *self, const void *bytes, size_t size) {
-    SI_mimic_bytes(self, bytes, size);
-}
-
-void
-BB_Mimic_IMP(ByteBuf *self, Obj *other) {
-    if (Obj_is_a(other, BYTEBUF)) {
-        ByteBuf *twin = (ByteBuf*)other;
-        SI_mimic_bytes(self, twin->buf, twin->size);
-    }
-    else if (Obj_is_a(other, STRING)) {
-        String *string = (String*)other;
-        SI_mimic_bytes(self, Str_Get_Ptr8(string), Str_Get_Size(string));
-    }
-    else {
-        THROW(ERR, "ByteBuf can't mimic %o", Obj_get_class_name(other));
-    }
-}
-
-static CFISH_INLINE void
 SI_cat_bytes(ByteBuf *self, const void *bytes, size_t size) {
     const size_t new_size = self->size + size;
     if (new_size > self->cap) {

@@ -80,12 +80,6 @@ final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     size_t
     Get_Capacity(ByteBuf *self);
 
-    public void
-    Mimic(ByteBuf *self, Obj *other);
-
-    void
-    Mimic_Bytes(ByteBuf *self, const void *bytes, size_t size);
-
     /** Concatenate the passed-in bytes onto the end of the ByteBuf. Allocate
      * more memory as needed.
      */

@@ -49,17 +49,6 @@ func TestByteBufGetCapacity(t *testing.T) {
 	}
 }
 
-func TestByteBufMimic(t *testing.T) {
-	bb := NewByteBuf(0)
-	content := []byte("foo")
-	bb.cat(content)
-	other := NewByteBuf(0)
-	other.Mimic(bb)
-	if got := other.yieldBlob(); !reflect.DeepEqual(got, content) {
-		t.Errorf("Expected %v, got %v", content, got)
-	}
-}
-
 func TestByteBufEquals(t *testing.T) {
 	bb := NewByteBuf(0)
 	other := NewByteBuf(0)
