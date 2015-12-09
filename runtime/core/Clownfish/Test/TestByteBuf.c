@@ -82,22 +82,23 @@ test_Clone(TestBatchRunner *runner) {
 }
 
 static void
-test_compare(TestBatchRunner *runner) {
+test_Compare_To(TestBatchRunner *runner) {
     ByteBuf *a = BB_new_bytes("foo\0a", 5);
     ByteBuf *b = BB_new_bytes("foo\0b", 5);
 
     BB_Set_Size(a, 4);
     BB_Set_Size(b, 4);
-    TEST_INT_EQ(runner, BB_compare(&a, &b), 0,
-                "BB_compare returns 0 for equal ByteBufs");
+    TEST_INT_EQ(runner, BB_Compare_To(a, (Obj*)b), 0,
+                "Compare_To returns 0 for equal ByteBufs");
 
     BB_Set_Size(a, 3);
-    TEST_TRUE(runner, BB_compare(&a, &b) < 0, "shorter ByteBuf sorts first");
+    TEST_TRUE(runner, BB_Compare_To(a, (Obj*)b) < 0,
+              "shorter ByteBuf sorts first");
 
     BB_Set_Size(a, 5);
     BB_Set_Size(b, 5);
-    TEST_TRUE(runner, BB_compare(&a, &b) < 0,
-              "NULL doesn't interfere with BB_compare");
+    TEST_TRUE(runner, BB_Compare_To(a, (Obj*)b) < 0,
+              "NULL doesn't interfere with Compare_To");
 
     DECREF(a);
     DECREF(b);
@@ -172,7 +173,7 @@ TestBB_Run_IMP(TestByteBuf *self, TestBatchRunner *runner) {
     test_Equals(runner);
     test_Grow(runner);
     test_Clone(runner);
-    test_compare(runner);
+    test_Compare_To(runner);
     test_Mimic(runner);
     test_Utf8_To_String(runner);
     test_Cat(runner);

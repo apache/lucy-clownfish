@@ -114,25 +114,18 @@ Blob_Equals_Bytes_IMP(Blob *self, const void *bytes, size_t size) {
     return SI_equals_bytes(self, bytes, size);
 }
 
-int
-Blob_compare(const void *va, const void *vb) {
-    Blob *a = *(Blob**)va;
-    Blob *b = *(Blob**)vb;
-    const size_t size = a->size < b->size ? a->size : b->size;
+int32_t
+Blob_Compare_To_IMP(Blob *self, Obj *other) {
+    Blob *twin = (Blob*)CERTIFY(other, BLOB);
+    const size_t size = self->size < twin->size ? self->size : twin->size;
 
-    int32_t comparison = memcmp(a->buf, b->buf, size);
+    int32_t comparison = memcmp(self->buf, twin->buf, size);
 
-    if (comparison == 0 && a->size != b->size) {
-        comparison = a->size < b->size ? -1 : 1;
+    if (comparison == 0 && self->size != twin->size) {
+        comparison = self->size < twin->size ? -1 : 1;
     }
 
     return comparison;
-}
-
-int32_t
-Blob_Compare_To_IMP(Blob *self, Obj *other) {
-    CERTIFY(other, BLOB);
-    return Blob_compare(&self, &other);
 }
 
 

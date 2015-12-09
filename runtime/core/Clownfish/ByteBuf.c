@@ -217,25 +217,18 @@ BB_Trusted_Utf8_To_String_IMP(ByteBuf *self) {
     return Str_new_from_trusted_utf8(self->buf, self->size);
 }
 
-int
-BB_compare(const void *va, const void *vb) {
-    ByteBuf *a = *(ByteBuf**)va;
-    ByteBuf *b = *(ByteBuf**)vb;
-    const size_t size = a->size < b->size ? a->size : b->size;
+int32_t
+BB_Compare_To_IMP(ByteBuf *self, Obj *other) {
+    ByteBuf *twin = (ByteBuf*)CERTIFY(other, BYTEBUF);
+    const size_t size = self->size < twin->size ? self->size : twin->size;
 
-    int32_t comparison = memcmp(a->buf, b->buf, size);
+    int32_t comparison = memcmp(self->buf, twin->buf, size);
 
-    if (comparison == 0 && a->size != b->size) {
-        comparison = a->size < b->size ? -1 : 1;
+    if (comparison == 0 && self->size != twin->size) {
+        comparison = self->size < twin->size ? -1 : 1;
     }
 
     return comparison;
-}
-
-int32_t
-BB_Compare_To_IMP(ByteBuf *self, Obj *other) {
-    CERTIFY(other, BYTEBUF);
-    return BB_compare(&self, &other);
 }
 
 

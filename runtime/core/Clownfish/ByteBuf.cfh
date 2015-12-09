@@ -56,12 +56,6 @@ final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     init_steal_bytes(ByteBuf *self, void *bytes, size_t size,
                      size_t capacity);
 
-    /** Lexical comparison of two ByteBufs, with level of indirection set to
-     * please qsort and friends.
-     */
-    inert int
-    compare(const void *va, const void *vb);
-
     void*
     To_Host(ByteBuf *self);
 

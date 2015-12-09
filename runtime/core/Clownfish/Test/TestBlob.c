@@ -75,12 +75,12 @@ test_Clone(TestBatchRunner *runner) {
 }
 
 static void
-test_compare(TestBatchRunner *runner) {
+test_Compare_To(TestBatchRunner *runner) {
     {
         Blob *a = Blob_new("foo", 4);
         Blob *b = Blob_new("foo", 4);
-        TEST_INT_EQ(runner, Blob_compare(&a, &b), 0,
-                    "Blob_compare returns 0 for equal Blobs");
+        TEST_INT_EQ(runner, Blob_Compare_To(a, (Obj*)b), 0,
+                    "Compare_To returns 0 for equal Blobs");
         DECREF(a);
         DECREF(b);
     }
@@ -88,7 +88,8 @@ test_compare(TestBatchRunner *runner) {
     {
         Blob *a = Blob_new("foo", 3);
         Blob *b = Blob_new("foo\0b", 5);
-        TEST_TRUE(runner, Blob_compare(&a, &b) < 0, "shorter Blob sorts first");
+        TEST_TRUE(runner, Blob_Compare_To(a, (Obj*)b) < 0,
+                  "shorter Blob sorts first");
         DECREF(a);
         DECREF(b);
     }
@@ -96,8 +97,8 @@ test_compare(TestBatchRunner *runner) {
     {
         Blob *a = Blob_new("foo\0a", 5);
         Blob *b = Blob_new("foo\0b", 5);
-        TEST_TRUE(runner, Blob_compare(&a, &b) < 0,
-                  "NULL doesn't interfere with Blob_compare");
+        TEST_TRUE(runner, Blob_Compare_To(a, (Obj*)b) < 0,
+                  "NULL doesn't interfere with Compare_To");
         DECREF(a);
         DECREF(b);
     }
@@ -108,7 +109,7 @@ TestBlob_Run_IMP(TestBlob *self, TestBatchRunner *runner) {
     TestBatchRunner_Plan(runner, (TestBatch*)self, 11);
     test_Equals(runner);
     test_Clone(runner);
-    test_compare(runner);
+    test_Compare_To(runner);
 }
 
 
