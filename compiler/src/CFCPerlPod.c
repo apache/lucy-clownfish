@@ -876,6 +876,16 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
                 perl_name[i] = tolower(perl_name[i]);
             }
 
+            // The Perl POD only contains sections for novel methods. Link
+            // to the class where the method is declared first.
+            if (type == CFC_URI_METHOD) {
+                CFCClass *parent = CFCClass_get_parent(klass);
+                while (parent && CFCClass_method(parent, name)) {
+                    klass = parent;
+                    parent = CFCClass_get_parent(klass);
+                }
+            }
+
             if (klass == doc_class) {
                 new_uri = CFCUtil_sprintf("/%s", perl_name);
             }
