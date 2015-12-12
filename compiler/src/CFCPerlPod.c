@@ -322,25 +322,7 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
         CFCUtil_die("%s#%s is not public", class_name, alias);
     }
 
-    CFCParamList *param_list = CFCFunction_get_param_list(func);
-    int num_vars = (int)CFCParamList_num_vars(param_list);
-    char *pod = CFCUtil_sprintf("=head2 %s", alias);
-
-    // Build string summarizing arguments to use in header.
-    if (num_vars > 2 || (is_constructor && num_vars > 1)) {
-        pod = CFCUtil_cat(pod, "( I<[labeled params]> )\n\n", NULL);
-    }
-    else if (num_vars == 2) {
-        // Kill self param.
-        const char *name_list = CFCParamList_name_list(param_list);
-        const char *after_comma = strchr(name_list, ',') + 1;
-        while (isspace(*after_comma)) { after_comma++; }
-        pod = CFCUtil_cat(pod, "(", after_comma, ")\n\n", NULL);
-    }
-    else {
-        // num_args == 1, leave off 'self'.
-        pod = CFCUtil_cat(pod, "()\n\n", NULL);
-    }
+    char *pod = CFCUtil_sprintf("=head2 %s\n\n", alias);
 
     // Add code sample.
     if (!code_sample) {
