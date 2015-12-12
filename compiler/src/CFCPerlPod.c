@@ -871,22 +871,24 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
                 break;
             }
 
-            // TODO: Link to relevant POD section. This isn't easy because
-            // the section headers for functions also contain a description
-            // of the parameters.
+            char *perl_name = CFCUtil_strdup(name);
+            for (size_t i = 0; perl_name[i] != '\0'; ++i) {
+                perl_name[i] = tolower(perl_name[i]);
+            }
 
-            if (klass != doc_class) {
+            if (klass == doc_class) {
+                new_uri = CFCUtil_sprintf("/%s", perl_name);
+            }
+            else {
                 const char *class_name = CFCClass_get_name(klass);
-                new_uri = CFCUtil_strdup(class_name);
+                new_uri = CFCUtil_sprintf("%s/%s", class_name, perl_name);
             }
 
             if (text[0] == '\0') {
-                new_text = CFCUtil_sprintf("%s()", name);
-                for (size_t i = 0; new_text[i] != '\0'; ++i) {
-                    new_text[i] = tolower(new_text[i]);
-                }
+                new_text = CFCUtil_sprintf("%s()", perl_name);
             }
 
+            FREEMEM(perl_name);
             break;
         }
 
