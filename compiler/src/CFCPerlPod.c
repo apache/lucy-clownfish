@@ -557,7 +557,7 @@ S_camel_to_lower(const char *camel) {
         }
         alloc += 1;
     }
-    char *lower = MALLOCATE(alloc + 1);
+    char *lower = (char*)MALLOCATE(alloc + 1);
 
     lower[0] = tolower(camel[0]);
     size_t j = 1;
