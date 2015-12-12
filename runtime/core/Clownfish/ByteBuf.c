@@ -29,8 +29,21 @@
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 
+// Ensure that the ByteBuf's capacity is at least (size + extra).
+// If the buffer must be grown, oversize the allocation.
+static CFISH_INLINE void
+SI_add_grow_and_oversize(ByteBuf *self, size_t size, size_t extra);
+
+// Compilers tend to inline this function although this is the unlikely
+// slow path. If we ever add cross-platform support for the noinline
+// attribute, it should be marked as such to reduce code size.
 static void
-S_grow(ByteBuf *self, size_t size);
+S_grow_and_oversize(ByteBuf *self, size_t min_size);
+
+// Not inlining the THROW macro reduces code size and complexity of
+// SI_add_grow_and_oversize.
+static void
+S_overflow_error();
 
 ByteBuf*
 BB_new(size_t capacity) {
@@ -39,12 +52,15 @@ BB_new(size_t capacity) {
 }
 
 ByteBuf*
-BB_init(ByteBuf *self, size_t capacity) {
-    size_t amount = capacity ? capacity : sizeof(int64_t);
-    self->buf   = NULL;
-    self->size  = 0;
-    self->cap   = 0;
-    S_grow(self, amount);
+BB_init(ByteBuf *self, size_t min_cap) {
+    // Round up to next multiple of eight.
+    size_t capacity = (min_cap + 7) & ~7;
+    // Check for overflow.
+    if (capacity < min_cap) { capacity = SIZE_MAX; }
+
+    self->buf  = (char*)MALLOCATE(capacity);
+    self->size = 0;
+    self->cap  = capacity;
     return self;
 }
 
@@ -56,9 +72,15 @@ BB_new_bytes(const void *bytes, size_t size) {
 
 ByteBuf*
 BB_init_bytes(ByteBuf *self, const void *bytes, size_t size) {
-    BB_init(self, size);
-    memcpy(self->buf, bytes, size);
+    // Round up to next multiple of eight.
+    size_t capacity = (size + 7) & ~7;
+    // Check for overflow.
+    if (capacity < size) { capacity = SIZE_MAX; }
+
+    self->buf  = (char*)MALLOCATE(capacity);
     self->size = size;
+    self->cap  = capacity;
+    memcpy(self->buf, bytes, size);
     return self;
 }
 
@@ -132,40 +154,10 @@ BB_Equals_Bytes_IMP(ByteBuf *self, const void *bytes, size_t size) {
 }
 
 static CFISH_INLINE void
-SI_mimic_bytes(ByteBuf *self, const void *bytes, size_t size) {
-    if (size > self->cap) { S_grow(self, size); }
-    memmove(self->buf, bytes, size);
-    self->size = size;
-}
-
-void
-BB_Mimic_Bytes_IMP(ByteBuf *self, const void *bytes, size_t size) {
-    SI_mimic_bytes(self, bytes, size);
-}
-
-void
-BB_Mimic_IMP(ByteBuf *self, Obj *other) {
-    if (Obj_is_a(other, BYTEBUF)) {
-        ByteBuf *twin = (ByteBuf*)other;
-        SI_mimic_bytes(self, twin->buf, twin->size);
-    }
-    else if (Obj_is_a(other, STRING)) {
-        String *string = (String*)other;
-        SI_mimic_bytes(self, Str_Get_Ptr8(string), Str_Get_Size(string));
-    }
-    else {
-        THROW(ERR, "ByteBuf can't mimic %o", Obj_get_class_name(other));
-    }
-}
-
-static CFISH_INLINE void
 SI_cat_bytes(ByteBuf *self, const void *bytes, size_t size) {
-    const size_t new_size = self->size + size;
-    if (new_size > self->cap) {
-        S_grow(self, Memory_oversize(new_size, sizeof(char)));
-    }
-    memcpy((self->buf + self->size), bytes, size);
-    self->size = new_size;
+    SI_add_grow_and_oversize(self, self->size, size);
+    memcpy(self->buf + self->size, bytes, size);
+    self->size += size;
 }
 
 void
@@ -178,23 +170,18 @@ BB_Cat_IMP(ByteBuf *self, Blob *blob) {
     SI_cat_bytes(self, Blob_Get_Buf(blob), Blob_Get_Size(blob));
 }
 
-static void
-S_grow(ByteBuf *self, size_t size) {
-    if (size > self->cap) {
-        size_t amount    = size;
-        size_t remainder = amount % sizeof(int64_t);
-        if (remainder) {
-            amount += sizeof(int64_t);
-            amount -= remainder;
-        }
-        self->buf = (char*)REALLOCATE(self->buf, amount);
-        self->cap = amount;
-    }
-}
-
 char*
-BB_Grow_IMP(ByteBuf *self, size_t size) {
-    if (size > self->cap) { S_grow(self, size); }
+BB_Grow_IMP(ByteBuf *self, size_t min_cap) {
+    if (min_cap > self->cap) {
+        // Round up to next multiple of eight.
+        size_t capacity = (min_cap + 7) & ~7;
+        // Check for overflow.
+        if (capacity < min_cap) { capacity = SIZE_MAX; }
+
+        self->buf = (char*)REALLOCATE(self->buf, capacity);
+        self->cap = capacity;
+    }
+
     return self->buf;
 }
 
@@ -217,25 +204,51 @@ BB_Trusted_Utf8_To_String_IMP(ByteBuf *self) {
     return Str_new_from_trusted_utf8(self->buf, self->size);
 }
 
-int
-BB_compare(const void *va, const void *vb) {
-    ByteBuf *a = *(ByteBuf**)va;
-    ByteBuf *b = *(ByteBuf**)vb;
-    const size_t size = a->size < b->size ? a->size : b->size;
+int32_t
+BB_Compare_To_IMP(ByteBuf *self, Obj *other) {
+    ByteBuf *twin = (ByteBuf*)CERTIFY(other, BYTEBUF);
+    const size_t size = self->size < twin->size ? self->size : twin->size;
 
-    int32_t comparison = memcmp(a->buf, b->buf, size);
+    int32_t comparison = memcmp(self->buf, twin->buf, size);
 
-    if (comparison == 0 && a->size != b->size) {
-        comparison = a->size < b->size ? -1 : 1;
+    if (comparison == 0 && self->size != twin->size) {
+        comparison = self->size < twin->size ? -1 : 1;
     }
 
     return comparison;
 }
 
-int32_t
-BB_Compare_To_IMP(ByteBuf *self, Obj *other) {
-    CERTIFY(other, BYTEBUF);
-    return BB_compare(&self, &other);
+static CFISH_INLINE void
+SI_add_grow_and_oversize(ByteBuf *self, size_t size, size_t extra) {
+    size_t min_size = size + extra;
+    if (min_size < size) {
+        S_overflow_error();
+        return;
+    }
+
+    if (min_size > self->cap) {
+        S_grow_and_oversize(self, min_size);
+    }
+}
+
+static void
+S_grow_and_oversize(ByteBuf *self, size_t min_size) {
+    // Oversize by 25%, but at least eight bytes.
+    size_t extra = min_size / 4;
+    // Round up to next multiple of eight.
+    extra = (extra + 7) & ~7;
+
+    size_t capacity = min_size + extra;
+    // Check for overflow.
+    if (capacity < min_size) { capacity = SIZE_MAX; }
+
+    self->buf = (char*)REALLOCATE(self->buf, capacity);
+    self->cap = capacity;
+}
+
+static void
+S_overflow_error() {
+    THROW(ERR, "ByteBuf buffer overflow");
 }
 
 

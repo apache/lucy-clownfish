@@ -22,8 +22,8 @@ import "reflect"
 func TestByteBufCat(t *testing.T) {
 	bb := NewByteBuf(0)
 	content := []byte("foo")
-	bb.cat(content)
-	if got := bb.yieldBlob(); !reflect.DeepEqual(got, content) {
+	bb.Cat(content)
+	if got := bb.YieldBlob(); !reflect.DeepEqual(got, content) {
 		t.Errorf("Expected %v, got %v", content, got)
 	}
 }
@@ -31,32 +31,21 @@ func TestByteBufCat(t *testing.T) {
 func TestByteBufSetSizeGetSize(t *testing.T) {
 	bb := NewByteBuf(0)
 	content := []byte("abc")
-	bb.cat(content)
-	bb.setSize(2)
-	if got := bb.getSize(); got != 2 {
+	bb.Cat(content)
+	bb.SetSize(2)
+	if got := bb.GetSize(); got != 2 {
 		t.Errorf("Expected size 2, got %d", got)
 	}
 	expected := []byte("ab")
-	if got := bb.yieldBlob(); !reflect.DeepEqual(got, expected) {
+	if got := bb.YieldBlob(); !reflect.DeepEqual(got, expected) {
 		t.Errorf("Expected %v, got %v", expected, got)
 	}
 }
 
 func TestByteBufGetCapacity(t *testing.T) {
 	bb := NewByteBuf(5)
-	if cap := bb.getCapacity(); cap < 5 {
+	if cap := bb.GetCapacity(); cap < 5 {
 		t.Errorf("Expected at least 5, got %d", cap)
-	}
-}
-
-func TestByteBufMimic(t *testing.T) {
-	bb := NewByteBuf(0)
-	content := []byte("foo")
-	bb.cat(content)
-	other := NewByteBuf(0)
-	other.Mimic(bb)
-	if got := other.yieldBlob(); !reflect.DeepEqual(got, content) {
-		t.Errorf("Expected %v, got %v", content, got)
 	}
 }
 
@@ -64,12 +53,12 @@ func TestByteBufEquals(t *testing.T) {
 	bb := NewByteBuf(0)
 	other := NewByteBuf(0)
 	content := []byte("foo")
-	bb.cat(content)
-	other.cat(content)
+	bb.Cat(content)
+	other.Cat(content)
 	if !bb.Equals(other) {
 		t.Errorf("Equals against equal ByteBuf")
 	}
-	other.setSize(2)
+	other.SetSize(2)
 	if bb.Equals(other) {
 		t.Errorf("Equals against non-equal ByteBuf")
 	}
@@ -81,9 +70,9 @@ func TestByteBufEquals(t *testing.T) {
 func TestByteBufClone(t *testing.T) {
 	content := []byte("foo")
 	bb := NewByteBuf(0)
-	bb.cat(content)
+	bb.Cat(content)
 	clone := bb.Clone().(ByteBuf)
-	if got := clone.yieldBlob(); !reflect.DeepEqual(got, content) {
+	if got := clone.YieldBlob(); !reflect.DeepEqual(got, content) {
 		t.Errorf("Expected %v, got %v", content, got)
 	}
 }
@@ -92,12 +81,12 @@ func TestByteBufCompareTo(t *testing.T) {
 	bb := NewByteBuf(0)
 	other := NewByteBuf(0)
 	content := []byte("foo")
-	bb.cat(content)
-	other.cat(content)
+	bb.Cat(content)
+	other.Cat(content)
 	if got := bb.CompareTo(other); got != 0 {
 		t.Errorf("CompareTo equal, got %d", got)
 	}
-	other.setSize(2)
+	other.SetSize(2)
 	if got := bb.CompareTo(other); got <= 0 {
 		t.Errorf("CompareTo lesser, got %d", got)
 	}
