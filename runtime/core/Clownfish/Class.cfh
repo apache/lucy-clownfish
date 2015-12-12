@@ -47,9 +47,8 @@ public final class Clownfish::Class inherits Clownfish::Obj {
      * the supplied class name, it will be returned.  Otherwise, a new Class
      * will be created using [parent] as a base.
      *
-     * If [parent] is NULL, an attempt will be made to find it using
-     * [](.find_parent_class).  If the attempt fails, an error will
-     * result.
+     * If [parent] is NULL, an attempt will be made to find it.  If the
+     * attempt fails, an error will result.
      */
     public inert Class*
     singleton(String *class_name, Class *parent);
