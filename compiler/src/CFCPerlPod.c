@@ -34,6 +34,8 @@
 #include "CFCDocuComment.h"
 #include "CFCUri.h"
 #include "CFCDocument.h"
+#include "CFCType.h"
+#include "CFCVariable.h"
 
 #ifndef true
   #define true 1
@@ -62,6 +64,24 @@ static const CFCMeta CFCPERLPOD_META = {
     sizeof(CFCPerlPod),
     (CFCBase_destroy_t)CFCPerlPod_destroy
 };
+
+static char*
+S_gen_code_sample(CFCFunction *func, const char *alias, CFCClass *klass,
+                  int is_constructor);
+
+static char*
+S_gen_positional_sample(const char *invocant, const char *alias,
+                        CFCParamList *param_list, size_t start);
+
+static char*
+S_gen_labeled_sample(const char *invocant, const char *alias,
+                     CFCParamList *param_list, size_t start);
+
+static char*
+S_perl_var_name(CFCVariable *var);
+
+static char*
+S_camel_to_lower(const char *camel);
 
 static char*
 S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level);
@@ -124,7 +144,7 @@ CFCPerlPod_add_method(CFCPerlPod *self, const char *alias, const char *method,
     NamePod *slot = &self->methods[self->num_methods - 1];
     slot->alias  = CFCUtil_strdup(alias);
     slot->func   = method ? CFCUtil_strdup(method) : NULL;
-    slot->sample = CFCUtil_strdup(sample ? sample : "");
+    slot->sample = sample ? CFCUtil_strdup(sample) : NULL;
     slot->pod    = pod ? CFCUtil_strdup(pod) : NULL;
 }
 
@@ -138,7 +158,7 @@ CFCPerlPod_add_constructor(CFCPerlPod *self, const char *alias,
     NamePod *slot = &self->constructors[self->num_constructors - 1];
     slot->alias  = CFCUtil_strdup(alias ? alias : "new");
     slot->func   = CFCUtil_strdup(initializer ? initializer : "init");
-    slot->sample = CFCUtil_strdup(sample ? sample : "");
+    slot->sample = sample ? CFCUtil_strdup(sample) : NULL;
     slot->pod    = pod ? CFCUtil_strdup(pod) : NULL;
 }
 
@@ -302,28 +322,16 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
         CFCUtil_die("%s#%s is not public", class_name, alias);
     }
 
-    CFCParamList *param_list = CFCFunction_get_param_list(func);
-    int num_vars = (int)CFCParamList_num_vars(param_list);
-    char *pod = CFCUtil_sprintf("=head2 %s", alias);
-
-    // Build string summarizing arguments to use in header.
-    if (num_vars > 2 || (is_constructor && num_vars > 1)) {
-        pod = CFCUtil_cat(pod, "( I<[labeled params]> )\n\n", NULL);
-    }
-    else if (num_vars == 2) {
-        // Kill self param.
-        const char *name_list = CFCParamList_name_list(param_list);
-        const char *after_comma = strchr(name_list, ',') + 1;
-        while (isspace(*after_comma)) { after_comma++; }
-        pod = CFCUtil_cat(pod, "(", after_comma, ")\n\n", NULL);
-    }
-    else {
-        // num_args == 1, leave off 'self'.
-        pod = CFCUtil_cat(pod, "()\n\n", NULL);
-    }
+    char *pod = CFCUtil_sprintf("=head2 %s\n\n", alias);
 
     // Add code sample.
-    if (code_sample && strlen(code_sample)) {
+    if (!code_sample) {
+        char *auto_sample
+            = S_gen_code_sample(func, alias, klass, is_constructor);
+        pod = CFCUtil_cat(pod, auto_sample, "\n", NULL);
+        FREEMEM(auto_sample);
+    }
+    else {
         pod = CFCUtil_cat(pod, code_sample, "\n", NULL);
     }
 
@@ -375,6 +383,194 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     }
 
     return pod;
+}
+
+static char*
+S_gen_code_sample(CFCFunction *func, const char *alias, CFCClass *klass,
+                  int is_constructor) {
+    char *invocant = NULL;
+
+    if (is_constructor) {
+        invocant = CFCUtil_strdup(CFCClass_get_name(klass));
+    }
+    else {
+        char *lower = S_camel_to_lower(CFCClass_get_struct_sym(klass));
+        invocant = CFCUtil_sprintf("$%s", lower);
+        FREEMEM(lower);
+    }
+
+    CFCParamList *param_list = CFCFunction_get_param_list(func);
+    size_t        num_vars   = CFCParamList_num_vars(param_list);
+    size_t        start      = is_constructor ? 0 : 1;
+    char         *sample     = NULL;
+
+    if (start == num_vars) {
+        sample = CFCUtil_sprintf("    %s->%s();\n", invocant, alias);
+    }
+    else if (is_constructor || num_vars - start >= 2) {
+        sample = S_gen_labeled_sample(invocant, alias, param_list, start);
+    }
+    else {
+        sample = S_gen_positional_sample(invocant, alias, param_list, start);
+    }
+
+    return sample;
+}
+
+static char*
+S_gen_positional_sample(const char *invocant, const char *alias,
+                        CFCParamList *param_list, size_t start) {
+    size_t        num_vars = CFCParamList_num_vars(param_list);
+    CFCVariable **vars     = CFCParamList_get_variables(param_list);
+    const char  **inits    = CFCParamList_get_initial_values(param_list);
+
+    if (num_vars - start != 1) {
+        CFCUtil_die("Code samples with multiple positional parameters"
+                    " are not supported yet.");
+    }
+
+    const char *name = CFCVariable_get_name(vars[start]);
+    char *sample
+        = CFCUtil_sprintf("    %s->%s($%s);\n", invocant, alias, name);
+
+    const char *init = inits[start];
+    if (init) {
+        if (strcmp(init, "NULL") == 0) { init = "undef"; }
+        char *def_sample = CFCUtil_sprintf("    %s->%s();  # default: %s\n",
+                                           invocant, alias, init);
+        sample = CFCUtil_cat(sample, def_sample, NULL);
+        FREEMEM(def_sample);
+    }
+
+    return sample;
+}
+
+static char*
+S_gen_labeled_sample(const char *invocant, const char *alias,
+                     CFCParamList *param_list, size_t start) {
+    size_t        num_vars = CFCParamList_num_vars(param_list);
+    CFCVariable **vars     = CFCParamList_get_variables(param_list);
+    const char  **inits    = CFCParamList_get_initial_values(param_list);
+
+    size_t max_label_len = 0;
+    size_t max_var_len   = 0;
+
+    // Find maximum length of label and Perl variable.
+    for (size_t i = start; i < num_vars; i++) {
+        CFCVariable *var = vars[i];
+
+        const char *label = CFCVariable_get_name(var);
+        size_t label_len = strlen(label);
+        if (label_len > max_label_len) { max_label_len = label_len; }
+
+        char *perl_var = S_perl_var_name(var);
+        size_t perl_var_len = strlen(perl_var);
+        if (perl_var_len > max_var_len) { max_var_len = perl_var_len; }
+        FREEMEM(perl_var);
+    }
+
+    char *params = CFCUtil_strdup("");
+
+    for (size_t i = start; i < num_vars; i++) {
+        CFCVariable *var      = vars[i];
+        const char  *label    = CFCVariable_get_name(var);
+        char        *perl_var = S_perl_var_name(var);
+        perl_var = CFCUtil_cat(perl_var, ",", NULL);
+
+        char       *comment = NULL;
+        const char *init    = inits[i];
+
+        if (init) {
+            if (strcmp(init, "NULL") == 0) { init = "undef"; }
+            comment = CFCUtil_sprintf("default: %s", init);
+        }
+        else {
+            comment = CFCUtil_strdup("required");
+        }
+
+        char *line = CFCUtil_sprintf("        %-*s => $%-*s  # %s\n",
+                                     max_label_len, label,
+                                     max_var_len + 1, perl_var,
+                                     comment);
+        params = CFCUtil_cat(params, line, NULL);
+        FREEMEM(line);
+        FREEMEM(comment);
+        FREEMEM(perl_var);
+    }
+
+    const char pattern[] =
+        "    %s->%s(\n"
+        "%s"
+        "    );\n";
+    char *sample = CFCUtil_sprintf(pattern, invocant, alias, params);
+
+    FREEMEM(params);
+    return sample;
+}
+
+static char*
+S_perl_var_name(CFCVariable *var) {
+    CFCType    *type      = CFCVariable_get_type(var);
+    const char *specifier = CFCType_get_specifier(type);
+    char       *perl_name = NULL;
+
+    if (CFCType_is_object(type)) {
+        // Skip parcel prefix.
+        if (islower(*specifier)) {
+            for (specifier++; *specifier; specifier++) {
+                if (*specifier == '_') {
+                    specifier++;
+                    break;
+                }
+            }
+        }
+
+        perl_name = S_camel_to_lower(specifier);
+    }
+    else if (CFCType_is_integer(type)) {
+        if (strcmp(specifier, "bool") == 0) {
+            perl_name = CFCUtil_strdup("bool");
+        }
+        else {
+            perl_name = CFCUtil_strdup("int");
+        }
+    }
+    else if (CFCType_is_floating(type)) {
+        perl_name = CFCUtil_strdup("float");
+    }
+    else {
+        CFCUtil_die("Don't know how to create code sample for type '%s'",
+                    specifier);
+    }
+
+    return perl_name;
+}
+
+static char*
+S_camel_to_lower(const char *camel) {
+    if (camel[0] == '\0') { return CFCUtil_strdup(""); }
+
+    size_t alloc = 1;
+    for (size_t i = 1; camel[i]; i++) {
+        if (isupper(camel[i]) && islower(camel[i+1])) {
+            alloc += 1;
+        }
+        alloc += 1;
+    }
+    char *lower = (char*)MALLOCATE(alloc + 1);
+
+    lower[0] = tolower(camel[0]);
+    size_t j = 1;
+    for (size_t i = 1; camel[i]; i++) {
+        // Only insert underscore if next char is lowercase.
+        if (isupper(camel[i]) && islower(camel[i+1])) {
+            lower[j++] = '_';
+        }
+        lower[j++] = tolower(camel[i]);
+    }
+    lower[j] = '\0';
+
+    return lower;
 }
 
 char*
@@ -675,22 +871,34 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
                 break;
             }
 
-            // TODO: Link to relevant POD section. This isn't easy because
-            // the section headers for functions also contain a description
-            // of the parameters.
-
-            if (klass != doc_class) {
-                const char *class_name = CFCClass_get_name(klass);
-                new_uri = CFCUtil_strdup(class_name);
+            char *perl_name = CFCUtil_strdup(name);
+            for (size_t i = 0; perl_name[i] != '\0'; ++i) {
+                perl_name[i] = tolower(perl_name[i]);
             }
 
-            if (text[0] == '\0') {
-                new_text = CFCUtil_sprintf("%s()", name);
-                for (size_t i = 0; new_text[i] != '\0'; ++i) {
-                    new_text[i] = tolower(new_text[i]);
+            // The Perl POD only contains sections for novel methods. Link
+            // to the class where the method is declared first.
+            if (type == CFC_URI_METHOD) {
+                CFCClass *parent = CFCClass_get_parent(klass);
+                while (parent && CFCClass_method(parent, name)) {
+                    klass = parent;
+                    parent = CFCClass_get_parent(klass);
                 }
             }
 
+            if (klass == doc_class) {
+                new_uri = CFCUtil_sprintf("/%s", perl_name);
+            }
+            else {
+                const char *class_name = CFCClass_get_name(klass);
+                new_uri = CFCUtil_sprintf("%s/%s", class_name, perl_name);
+            }
+
+            if (text[0] == '\0') {
+                new_text = CFCUtil_sprintf("%s()", perl_name);
+            }
+
+            FREEMEM(perl_name);
             break;
         }
 
