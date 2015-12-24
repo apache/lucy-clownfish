@@ -609,7 +609,7 @@ func (e *ErrIMP) Error() string {
 
 //export GoCfish_PanicErr_internal
 func GoCfish_PanicErr_internal(cfErr *C.cfish_Err) {
-	goErr := WRAPErr(unsafe.Pointer(cfErr))
+	goErr := WRAPAny(unsafe.Pointer(cfErr)).(Err)
 	panic(goErr)
 }
 
