@@ -1,13 +1,12 @@
 # Apache Clownfish symbiotic object system
 
-Apache Clownfish is a "symbiotic" object system for C which is designed to
-pair with a "host" dynamic language environment, facilitating the development
-of high performance host language extensions.
+The Apache Clownfish "symbiotic" object system pairs with "host" programming
+language environments and facilitates the development of high performance
+language extensions.
 
 ## Features
 
-* Designed to support multiple host languages. Currently, only Perl is
-  supported.
+* Support for multiple host languages.
 * Support for stand-alone C libraries and executables.
 * Subclassing and method overriding from the host language.
 * Support for host language idioms like named parameters or default argument
@@ -51,6 +50,25 @@ The Clownfish runtime provides:
   [dynamic arrays](cfish.Vector), and [hashes](cfish.Hash).
 * The [](cfish.Class) metaclass.
 * Some helper classes.
+
+## Host language support
+
+Bindings for the following hosts are under development:
+
+* C (feature-complete)
+* Go (experimental)
+* Perl 5 (feature-complete)
+* Python 3 / CPython (nascent)
+* Ruby / MRI (nascent)
+
+## Help wanted
+
+The target audience for the current release of Clownfish is developers.
+Clownfish is developed by the Apache Lucy community, where it is used to
+provide host language bindings for the Lucy search engine library; we expect
+that as Clownfish matures it will eventually spin off as an independent
+project.  If you would like to contribute to Clownfish, please join the [Lucy
+developers mailing list](http://lucy.apache.org/mailing_lists).
 
 ## Documentation
 
