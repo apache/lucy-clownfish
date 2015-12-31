@@ -46,6 +46,16 @@ Please bear the following in mind:
   within the Lucy development community; the simpler the contribution, the
   more quickly it can be reviewed and integrated.
 
+Github pull requests
+--------------------
+
+Github users may submit pull requests against our
+[mirror](https://github.com/apache/lucy-clownfish).  An email notifying the
+Lucy developers list of your pull request will be triggered automatically.
+
+Ideally, open a JIRA issue and reference it by its `CLOWNFISH-NNN` identifier
+in your pull request -- but this is not required.
+
 Open an issue
 -------------
 
@@ -56,30 +66,22 @@ because not every contribution fixes a "bug":
 1. Create a JIRA account for yourself and sign in.
 2. Once you have signed in, the "create new issue" link will appear.  Either
    use it to open a new issue or navigate to an existing one as appropriate.
-3. To attach files to an issue, use the menu command
-   'More Actions > Attach Files'.
+
+Attach a patch to an issue
+--------------------------
+
+If you are not a Github user, you may propose changes by submitting patches
+via JIRA.  The easiest way to create a patch with Git is to capture the output
+of `git diff`:
+
+    git diff > my_changes.patch
+
+The resulting patch file can then be attached to a JIRA issue.  Make sure that
+you are logged in as a JIRA user, then select the menu command 'More Actions >
+Attach Files'.
 
 Attaching a file to an issue causes an email notification to be sent to the
 lucy-issues list signalling that a patch has arrived.  Please be patient but
 persistent while engaging with the Lucy committers who review and apply such
 patches.
-
-Contribute a patch
-------------------
-
-The easiest way to create a patch with Git is to capture the output of
-`git diff`:
-
-    git diff > my_changes.patch
-
-The resulting patch file can then be attached to a JIRA issue.
-
-Github pull requests
---------------------
-
-Github users may submit pull requests against our
-[mirror](https://github.com/apache/lucy-clownfish).
-
-An email notifying the Lucy developers list of your pull request will be
-triggered automatically.
 
