@@ -32,17 +32,6 @@ func TestFloatToI64(t *testing.T) {
 	}
 }
 
-func TestFloatToBool(t *testing.T) {
-	num := NewFloat(0.1)
-	if got := num.ToBool(); !got {
-		t.Errorf("Expected true, got %v", got)
-	}
-	zero := NewFloat(0)
-	if got := zero.ToBool(); got {
-		t.Errorf("Expected false, got %v", got)
-	}
-}
-
 func TestFloatToString(t *testing.T) {
 	num := NewFloat(2.5)
 	if got := num.ToString(); got != "2.5" {

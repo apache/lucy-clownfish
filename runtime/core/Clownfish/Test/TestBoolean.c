@@ -51,12 +51,6 @@ test_accessors(TestBatchRunner *runner) {
                 "Bool_Get_Value [true]");
     TEST_INT_EQ(runner, Bool_Get_Value(CFISH_FALSE), false,
                 "Bool_Get_Value [false]");
-    TEST_INT_EQ(runner, Bool_To_I64(CFISH_TRUE), 1, "Bool_To_I64 [true]");
-    TEST_INT_EQ(runner, Bool_To_I64(CFISH_FALSE), 0, "Bool_To_I64 [false]");
-    TEST_TRUE(runner, Bool_To_F64(CFISH_TRUE) == 1.0,
-              "Bool_To_F64 [true]");
-    TEST_TRUE(runner, Bool_To_F64(CFISH_FALSE) == 0.0,
-              "Bool_To_F64 [false]");
 }
 
 static void
@@ -81,7 +75,7 @@ test_Clone(TestBatchRunner *runner) {
 
 void
 TestBoolean_Run_IMP(TestBoolean *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 14);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 10);
     test_To_String(runner);
     test_accessors(runner);
     test_Equals_and_Compare_To(runner);

@@ -40,12 +40,6 @@ public final class Clownfish::Float {
     public int64_t
     To_I64(Float *self);
 
-    /** Evaluate the number in a boolean context.  Returns true if it is
-     * non-zero.
-     */
-    public bool
-    To_Bool(Float *self);
-
     public incremented String*
     To_String(Float *self);
 
@@ -83,12 +77,6 @@ public final class Clownfish::Integer nickname Int {
 
     public double
     To_F64(Integer *self);
-
-    /** Evaluate the number in a boolean context.  Returns true if it is
-     * non-zero.
-     */
-    public bool
-    To_Bool(Integer *self);
 
     public incremented String*
     To_String(Integer *self);

@@ -32,17 +32,6 @@ func TestIntToF64(t *testing.T) {
 	}
 }
 
-func TestIntToBool(t *testing.T) {
-	fortyTwo := NewInteger(42)
-	if got := fortyTwo.ToBool(); !got {
-		t.Errorf("Expected true, got %v", got)
-	}
-	zero := NewInteger(0)
-	if got := zero.ToBool(); got {
-		t.Errorf("Expected false, got %v", got)
-	}
-}
-
 func TestIntToString(t *testing.T) {
 	fortyTwo := NewInteger(42)
 	if got := fortyTwo.ToString(); got != "42" {

@@ -29,39 +29,6 @@ func TestBooleanGetValue(t *testing.T) {
 	}
 }
 
-func TestBooleanToF64(t *testing.T) {
-	myTrue := NewBoolean(true)
-	myFalse := NewBoolean(false)
-	if got := myTrue.ToF64(); got != 1.0 {
-		t.Errorf("Expected 1.0, got %v", got)
-	}
-	if got := myFalse.ToF64(); got != 0.0 {
-		t.Errorf("Expected 0.0, got %v", got)
-	}
-}
-
-func TestBooleanToI64(t *testing.T) {
-	myTrue := NewBoolean(true)
-	myFalse := NewBoolean(false)
-	if got := myTrue.ToI64(); got != 1 {
-		t.Errorf("Expected 1, got %v", got)
-	}
-	if got := myFalse.ToI64(); got != 0 {
-		t.Errorf("Expected 0, got %v", got)
-	}
-}
-
-func TestBooleanToBool(t *testing.T) {
-	myTrue := NewBoolean(true)
-	myFalse := NewBoolean(false)
-	if !myTrue.ToBool() {
-		t.Errorf("Expected true, got false")
-	}
-	if myFalse.ToBool() {
-		t.Errorf("Expected false, got true")
-	}
-}
-
 func TestBooleanToString(t *testing.T) {
 	myTrue := NewBoolean(true)
 	myFalse := NewBoolean(false)
