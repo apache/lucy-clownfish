@@ -19,7 +19,7 @@ Clownfish - Symbiotic object system.
 
 =head1 VERSION
 
-0.4.2
+0.4.3
 
 =head1 DESCRIPTION
 
