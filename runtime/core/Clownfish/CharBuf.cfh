@@ -36,13 +36,13 @@ public final class Clownfish::CharBuf nickname CB
     /** Concatenate the passed-in string onto the end of the CharBuf.
      */
     public void
-    Cat_Utf8(CharBuf *self, const char *ptr, size_t size);
+    Cat_Utf8(CharBuf *self, const char *utf8, size_t size);
 
     /** Concatenate the supplied text onto the end of the CharBuf.  Don't
      * check for UTF-8 validity.
      */
     public void
-    Cat_Trusted_Utf8(CharBuf *self, const char *ptr, size_t size);
+    Cat_Trusted_Utf8(CharBuf *self, const char *utf8, size_t size);
 
     /** Concatenate the contents of `string` onto the end of the
      * caller.

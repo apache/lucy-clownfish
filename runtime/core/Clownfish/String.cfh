@@ -122,13 +122,13 @@ public final class Clownfish::String nickname Str
      * character data after checking for validity.
      */
     public incremented String*
-    Cat_Utf8(String *self, const char *ptr, size_t size);
+    Cat_Utf8(String *self, const char *utf8, size_t size);
 
     /** Return the concatenation of the String and the supplied UTF-8
      * character data, skipping validity checks.
      */
     public incremented String*
-    Cat_Trusted_Utf8(String *self, const char *ptr, size_t size);
+    Cat_Trusted_Utf8(String *self, const char *utf8, size_t size);
 
     public int64_t
     To_I64(String *self);
@@ -149,7 +149,7 @@ public final class Clownfish::String nickname Str
     /** Test whether the String starts with `prefix`.
      */
     public bool
-    Starts_With_Utf8(String *self, const char *prefix, size_t size);
+    Starts_With_Utf8(String *self, const char *utf8, size_t size);
 
     /** Test whether the String ends with `suffix`.
      */
@@ -159,7 +159,7 @@ public final class Clownfish::String nickname Str
     /** Test whether the String ends with `suffix`.
      */
     public bool
-    Ends_With_Utf8(String *self, const char *suffix, size_t size);
+    Ends_With_Utf8(String *self, const char *utf8, size_t size);
 
     /** Test whether the String contains `substring`.
      */
@@ -169,7 +169,7 @@ public final class Clownfish::String nickname Str
     /** Test whether the String contains `substring`.
      */
     public bool
-    Contains_Utf8(String *self, const char *ptr, size_t size);
+    Contains_Utf8(String *self, const char *utf8, size_t size);
 
     /** Return a [](StringIterator) pointing to the first occurrence of the
      * substring within the String, or [](@null) if the substring does not
@@ -183,12 +183,12 @@ public final class Clownfish::String nickname Str
      * match.
      */
     public incremented nullable StringIterator*
-    Find_Utf8(String *self, const char *ptr, size_t size);
+    Find_Utf8(String *self, const char *utf8, size_t size);
 
     /** Test whether the String matches the supplied UTF-8 character data.
      */
     public bool
-    Equals_Utf8(String *self, const char *ptr, size_t size);
+    Equals_Utf8(String *self, const char *utf8, size_t size);
 
     /** Return the number of Unicode code points the String contains.
      */
@@ -375,7 +375,7 @@ public final class Clownfish::StringIterator nickname StrIter
     /** Test whether the content after the iterator starts with `prefix`.
      */
     public bool
-    Starts_With_Utf8(StringIterator *self, const char *prefix, size_t size);
+    Starts_With_Utf8(StringIterator *self, const char *utf8, size_t size);
 
     /** Test whether the content before the iterator ends with
      * `suffix`.
@@ -386,7 +386,7 @@ public final class Clownfish::StringIterator nickname StrIter
     /** Test whether the content before the iterator ends with `suffix`.
      */
     public bool
-    Ends_With_Utf8(StringIterator *self, const char *suffix, size_t size);
+    Ends_With_Utf8(StringIterator *self, const char *utf8, size_t size);
 
     public void
     Destroy(StringIterator *self);

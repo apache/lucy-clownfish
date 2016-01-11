@@ -58,7 +58,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     Store(Hash *self, String *key, decremented nullable Obj *value);
 
     public void
-    Store_Utf8(Hash *self, const char *str, size_t len,
+    Store_Utf8(Hash *self, const char *utf8, size_t size,
                decremented nullable Obj *value);
 
     /** Fetch the value associated with `key`.
@@ -69,7 +69,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     Fetch(Hash *self, String *key);
 
     public nullable Obj*
-    Fetch_Utf8(Hash *self, const char *key, size_t key_len);
+    Fetch_Utf8(Hash *self, const char *utf8, size_t size);
 
     /** Attempt to delete a key-value pair from the hash.
      *
@@ -80,7 +80,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     Delete(Hash *self, String *key);
 
     public incremented nullable Obj*
-    Delete_Utf8(Hash *self, const char *key, size_t key_len);
+    Delete_Utf8(Hash *self, const char *utf8, size_t size);
 
     /** Indicate whether the supplied `key` is present.
      */
