@@ -121,7 +121,7 @@ public final class Clownfish::Class inherits Clownfish::Obj {
     public String*
     Get_Name(Class *self);
 
-    public Class*
+    public nullable Class*
     Get_Parent(Class *self);
 
     uint32_t
