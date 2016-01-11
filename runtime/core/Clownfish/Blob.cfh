@@ -27,22 +27,22 @@ public final class Clownfish::Blob inherits Clownfish::Obj {
     bool        owns_buf;
 
     public inert incremented Blob*
-    new(const char *buf, size_t size);
+    new(const void *bytes, size_t size);
 
     public inert Blob*
-    init(Blob *self, const char *buf, size_t size);
+    init(Blob *self, const void *bytes, size_t size);
 
     public inert incremented Blob*
-    new_steal(char *buf, size_t size);
+    new_steal(void *bytes, size_t size);
 
     public inert Blob*
-    init_steal(Blob *self, char *buf, size_t size);
+    init_steal(Blob *self, void *bytes, size_t size);
 
     public inert incremented Blob*
-    new_wrap(const char *buf, size_t size);
+    new_wrap(const void *bytes, size_t size);
 
     public inert Blob*
-    init_wrap(Blob *self, const char *buf, size_t size);
+    init_wrap(Blob *self, const void *bytes, size_t size);
 
     void*
     To_Host(Blob *self);
