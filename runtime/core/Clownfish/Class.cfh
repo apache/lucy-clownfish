@@ -124,7 +124,7 @@ public final class Clownfish::Class inherits Clownfish::Obj {
     public nullable Class*
     Get_Parent(Class *self);
 
-    uint32_t
+    public uint32_t
     Get_Obj_Alloc_Size(Class *self);
 
     /** Return novel methods of the class.
