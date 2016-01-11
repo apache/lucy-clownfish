@@ -28,10 +28,10 @@ public final class Clownfish::CharBuf nickname CB
     size_t   cap;  /* allocated bytes, including terminating null */
 
     public inert incremented CharBuf*
-    new(size_t size = 0);
+    new(size_t capacity = 0);
 
     public inert CharBuf*
-    init(CharBuf *self, size_t size = 0);
+    init(CharBuf *self, size_t capacity = 0);
 
     /** Concatenate the passed-in string onto the end of the CharBuf.
      */
@@ -81,7 +81,7 @@ public final class Clownfish::CharBuf nickname CB
      * allocation.
      */
     public void
-    Grow(CharBuf *self, size_t size);
+    Grow(CharBuf *self, size_t capacity);
 
     /** Clear the CharBuf.
      */
