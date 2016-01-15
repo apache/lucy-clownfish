@@ -13,5 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import clownfish._cfc
 from clownfish._cfc import *
+import site
+import os.path
+
+def _get_inc_dirs():
+    dirs = []
+    for path in site.getsitepackages():
+        path = os.path.join(path, "clownfish/_include")
+        dirs.append(path)
+    return dirs
+
+clownfish._cfc._get_inc_dirs = _get_inc_dirs
 
