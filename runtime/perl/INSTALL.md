@@ -9,7 +9,3 @@ commands:
     perl Build test
     perl Build install
 
-Module::Build is required.  Since Perl 5.10.0, Module::Build has been bundled
-with the Perl core, but on older systems it may be necessary to install it
-from CPAN first.
-
