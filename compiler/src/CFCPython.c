@@ -108,8 +108,68 @@ S_write_hostdefs(CFCPython *self) {
     FREEMEM(content);
 }
 
+static void
+S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
+    const char *parcel_name = CFCParcel_get_name(parcel);
+    char *pymod_name = CFCUtil_strdup(parcel_name);
+    // TODO: Stop lowercasing when parcels are restricted to lowercase.
+    for (int i = 0; pymod_name[i] != '\0'; i++) {
+        pymod_name[i] = tolower(pymod_name[i]);
+    }
+    const char *last_dot = strrchr(pymod_name, '.');
+    const char *last_component = last_dot != NULL
+                                 ? last_dot + 1
+                                 : pymod_name;
+    char *helper_mod_name = CFCUtil_sprintf("%s._%s", pymod_name, last_component);
+    for (int i = 0; helper_mod_name[i] != '\0'; i++) {
+        helper_mod_name[i] = tolower(helper_mod_name[i]);
+    }
+
+    const char pattern[] =
+        "%s\n"
+        "\n"
+        "#include \"Python.h\"\n"
+        "#include \"cfish_parcel.h\"\n"
+        "#include \"CFBind.h\"\n"
+        "\n"
+        "static PyModuleDef module_def = {\n"
+        "    PyModuleDef_HEAD_INIT,\n"
+        "    \"%s\",\n" // module name
+        "    NULL,\n" // docstring
+        "    -1,\n"
+        "    NULL, NULL, NULL, NULL, NULL\n"
+        "};\n"
+        "\n"
+        "PyMODINIT_FUNC\n"
+        "PyInit__%s(void) {\n"
+        "    PyObject *module = PyModule_Create(&module_def);\n"
+        "    return module;\n"
+        "}\n"
+        "\n"
+        "%s\n"
+        "\n";
+
+    char *content
+        = CFCUtil_sprintf(pattern, self->header,
+                          helper_mod_name, last_component, self->footer);
+
+    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
+                                     last_component);
+    CFCUtil_write_if_changed(filepath, content, strlen(content));
+    FREEMEM(filepath);
+
+    FREEMEM(content);
+    FREEMEM(helper_mod_name);
+    FREEMEM(pymod_name);
+}
+
 void
 CFCPython_write_bindings(CFCPython *self, const char *parcel_name, const char *dest) {
+    CFCParcel *parcel = CFCParcel_fetch(parcel_name);
+    if (parcel == NULL) {
+        CFCUtil_die("Unknown parcel: %s", parcel_name);
+    }
     S_write_hostdefs(self);
+    S_write_module_file(self, parcel, dest);
 }
 
