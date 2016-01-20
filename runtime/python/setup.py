@@ -24,6 +24,8 @@ import glob
 import shutil
 import subprocess
 import sysconfig
+import sys
+import unittest
 
 # Get a compiler object and and strings representing the compiler type and
 # CFLAGS.  Add the Python headers include dir to CFLAGS.
@@ -113,6 +115,33 @@ class my_build(_build):
         self.run_command('charmony')
         _build.run(self)
 
+class test(_Command):
+    description = "Run unit tests."
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def ext_build_dir(self):
+        """Returns the build directory for compiled extensions"""
+        pattern = "lib.{platform}-{version[0]}.{version[1]}"
+        dirname = pattern.format(platform=sysconfig.get_platform(),
+                                 version=sys.version_info)
+        return os.path.join('build', dirname)
+
+    def run(self):
+        self.run_command('build')
+        orig_sys_path = sys.path[:]
+        sys.path.append(self.ext_build_dir())
+
+        loader = unittest.TestLoader()
+        tests = loader.discover("test")
+        test_runner = unittest.runner.TextTestRunner()
+        test_runner.run(tests)
+
+        # restore sys.path
+        sys.path = orig_sys_path
+
 setup(name = 'clownfish',
       version = '0.4.0',
       description = 'Clownfish runtime',
@@ -125,6 +154,7 @@ setup(name = 'clownfish',
           'build': my_build,
           'clean': my_clean,
           'charmony': charmony,
+          'test': test,
       },
       package_dir={'': 'src'},)
 
