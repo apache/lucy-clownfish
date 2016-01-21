@@ -92,7 +92,17 @@ sub ACTION_charmony {
     }
     print join( " ", @command ), $/;
 
-    system(@command) and die "Failed to run $CHARMONIZER_EXE_PATH: $!";
+    if ( system(@command) != 0 ) {
+        warn "Failed to run $CHARMONIZER_EXE_PATH: $!\n";
+
+        if ( ( $ENV{CHARM_VERBOSITY} || 0 ) < 2 ) {
+            print "Rerunning $CHARMONIZER_EXE_PATH with CHARM_VERBOSITY=2\n\n";
+            $ENV{CHARM_VERBOSITY} = 2;
+            system(@command);
+        }
+
+        die "Aborted";
+    }
 }
 
 my $config;
