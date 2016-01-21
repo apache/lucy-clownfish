@@ -16,20 +16,25 @@
 use strict;
 use warnings;
 
-use lib '../../compiler/perl/blib/arch';
-use lib '../../compiler/perl/blib/lib';
-
 package Clownfish::Build;
 
-# We want to subclass Clownfish::CFC::Perl::Build, but CFC might not be built
-# yet. So we look in 'clownfish/compiler/perl/lib' directly and cleanup @INC
-# afterwards.
-use lib '../../compiler/perl/lib';
+my $IS_CPAN_DIST;
+
+BEGIN {
+    $IS_CPAN_DIST = -e 'core';
+
+    if (!$IS_CPAN_DIST) {
+        unshift @INC,
+                '../../compiler/perl/blib/lib',
+                '../../compiler/perl/blib/arch',
+                '../../compiler/perl/lib'; # blib dir might not exist yet.
+    }
+}
+
 use base qw(
     Clownfish::CFC::Perl::Build
     Clownfish::CFC::Perl::Build::Charmonic
 );
-no lib '../../compiler/perl/lib';
 
 our $VERSION = '0.004000';
 $VERSION = eval $VERSION;
@@ -51,7 +56,6 @@ my $XS_SOURCE_DIR = 'xs';
 my $CFC_BUILD     = catfile( $CFC_DIR, 'Build' );
 my $LIB_DIR       = 'lib';
 my $CHARMONIZER_C;
-my $IS_CPAN_DIST = !@BASE_PATH;
 if ($IS_CPAN_DIST) {
     $CHARMONIZER_C = 'charmonizer.c';
 }
@@ -67,10 +71,6 @@ sub new {
         include        => [],                  # Don't use default includes.
         source => [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ],
     };
-    if (!$IS_CPAN_DIST) {
-        delete $args{build_requires}{'Clownfish::CFC'};
-        delete $args{configure_requires}{'Clownfish::CFC::Perl::Build'};
-    }
     my $self = $class->SUPER::new( recursive_test_files => 1, %args );
 
     # Fix for MSVC: Although the generated XS should be C89-compliant, it
