@@ -19,6 +19,8 @@
 #define C_CFISH_METHOD
 #define C_CFISH_ERR
 
+#include <setjmp.h>
+
 #include "charmony.h"
 #include "CFBind.h"
 
@@ -35,6 +37,8 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Vector.h"
+
+static bool Err_initialized;
 
 /**** refcounting **********************************************************/
 
@@ -114,48 +118,74 @@ CFISH_Method_Host_Name_IMP(cfish_Method *self) {
 
 /**** Err ******************************************************************/
 
+/* TODO: Thread safety */
+static cfish_Err *current_error;
+static cfish_Err *thrown_error;
+static jmp_buf  *current_env;
+
 void
-cfish_Err_init_class() {
-    CFISH_THROW(CFISH_ERR, "TODO");
+cfish_Err_init_class(void) {
+    Err_initialized = true;
 }
 
 cfish_Err*
 cfish_Err_get_error() {
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Err*);
+    return current_error;
 }
 
 void
 cfish_Err_set_error(cfish_Err *error) {
-    CFISH_UNUSED_VAR(error);
-    CFISH_THROW(CFISH_ERR, "TODO");
+    if (current_error) {
+        CFISH_DECREF(current_error);
+    }
+    current_error = error;
 }
 
 void
 cfish_Err_do_throw(cfish_Err *error) {
-    CFISH_UNUSED_VAR(error);
-    CFISH_THROW(CFISH_ERR, "TODO");
+    if (current_env) {
+        thrown_error = error;
+        longjmp(*current_env, 1);
+    }
+    else {
+        cfish_String *message = CFISH_Err_Get_Mess(error);
+        char *utf8 = CFISH_Str_To_Utf8(message);
+        fprintf(stderr, "%s", utf8);
+        CFISH_FREEMEM(utf8);
+        exit(EXIT_FAILURE);
+    }
 }
 
 void
 cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
-    CFISH_UNUSED_VAR(klass);
-    CFISH_UNUSED_VAR(message);
-    CFISH_THROW(CFISH_ERR, "TODO");
+    CFISH_UNUSED_VAR(klass); // TODO use klass
+    cfish_Err *err = cfish_Err_new(message);
+    cfish_Err_do_throw(err);
 }
 
 void
 cfish_Err_warn_mess(cfish_String *message) {
-    CFISH_UNUSED_VAR(message);
-    CFISH_THROW(CFISH_ERR, "TODO");
+    char *utf8 = CFISH_Str_To_Utf8(message);
+    fprintf(stderr, "%s", utf8);
+    CFISH_FREEMEM(utf8);
+    CFISH_DECREF(message);
 }
 
 cfish_Err*
-cfish_Err_trap(CFISH_Err_Attempt_t routine, void *routine_context) {
-    CFISH_UNUSED_VAR(routine);
-    CFISH_UNUSED_VAR(routine_context);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Err*);
+cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
+    jmp_buf  env;
+    jmp_buf *prev_env = current_env;
+    current_env = &env;
+
+    if (!setjmp(env)) {
+        routine(context);
+    }
+
+    current_env = prev_env;
+
+    cfish_Err *error = thrown_error;
+    thrown_error = NULL;
+    return error;
 }
 
 /**** TestUtils ************************************************************/
