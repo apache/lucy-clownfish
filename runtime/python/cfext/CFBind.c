@@ -76,6 +76,311 @@ CFBind_reraise_pyerr(cfish_Class *err_klass, cfish_String *mess) {
     cfish_Err_throw_mess(err_klass, new_mess);
 }
 
+static int
+S_convert_sint(PyObject *py_obj, void *ptr, bool nullable, unsigned width) {
+    if (py_obj == Py_None) {
+        if (nullable) {
+            return 1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    int overflow = 0;
+    int64_t value = PyLong_AsLongLongAndOverflow(py_obj, &overflow);
+    if (value == -1 && PyErr_Occurred()) {
+        return 0;
+    }
+    switch (width & 0xF) {
+        case 1:
+            if (value < INT8_MIN  || value > INT8_MAX)  { overflow = 1; }
+            break;
+        case 2:
+            if (value < INT16_MIN || value > INT16_MAX) { overflow = 1; }
+            break;
+        case 4:
+            if (value < INT32_MIN || value > INT32_MAX) { overflow = 1; }
+            break;
+        case 8:
+            break;
+    }
+    if (overflow) {
+        PyErr_SetString(PyExc_OverflowError, "Python int out of range");
+        return 0;
+    }
+    switch (width & 0xF) {
+        case 1:
+            *((int8_t*)ptr) = (int8_t)value;
+            break;
+        case 2:
+            *((int16_t*)ptr) = (int16_t)value;
+            break;
+        case 4:
+            *((int32_t*)ptr) = (int32_t)value;
+            break;
+        case 8:
+            *((int64_t*)ptr) = value;
+            break;
+    }
+    return 1;
+}
+
+static int
+S_convert_uint(PyObject *py_obj, void *ptr, bool nullable, unsigned width) {
+    if (py_obj == Py_None) {
+        if (nullable) {
+            return 1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    uint64_t value = PyLong_AsUnsignedLongLong(py_obj);
+    if (PyErr_Occurred()) {
+        return 0;
+    }
+    int overflow = 0;
+    switch (width & 0xF) {
+        case 1:
+            if (value > UINT8_MAX)  { overflow = 1; }
+            break;
+        case 2:
+            if (value > UINT16_MAX) { overflow = 1; }
+            break;
+        case 4:
+            if (value > UINT32_MAX) { overflow = 1; }
+            break;
+        case 8:
+            break;
+    }
+    if (overflow) {
+        PyErr_SetString(PyExc_OverflowError, "Python int out of range");
+        return 0;
+    }
+    switch (width & 0xF) {
+        case 1:
+            *((uint8_t*)ptr) = (uint8_t)value;
+            break;
+        case 2:
+            *((uint16_t*)ptr) = (uint16_t)value;
+            break;
+        case 4:
+            *((uint32_t*)ptr) = (uint32_t)value;
+            break;
+        case 8:
+            *((uint64_t*)ptr) = value;
+            break;
+    }
+    return 1;
+}
+
+int
+CFBind_convert_char(PyObject *py_obj, char *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(char));
+}
+
+int
+CFBind_convert_short(PyObject *py_obj, short *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(short));
+}
+
+int
+CFBind_convert_int(PyObject *py_obj, int *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(int));
+}
+
+int
+CFBind_convert_long(PyObject *py_obj, long *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(long));
+}
+
+int
+CFBind_convert_int8_t(PyObject *py_obj, int8_t *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(int8_t));
+}
+
+int
+CFBind_convert_int16_t(PyObject *py_obj, int16_t *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(int16_t));
+}
+
+int
+CFBind_convert_int32_t(PyObject *py_obj, int32_t *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(int32_t));
+}
+
+int
+CFBind_convert_int64_t(PyObject *py_obj, int64_t *ptr) {
+    return S_convert_sint(py_obj, ptr, false, sizeof(int64_t));
+}
+
+int
+CFBind_convert_uint8_t(PyObject *py_obj, uint8_t *ptr) {
+    return S_convert_uint(py_obj, ptr, false, sizeof(uint8_t));
+}
+
+int
+CFBind_convert_uint16_t(PyObject *py_obj, uint16_t *ptr) {
+    return S_convert_uint(py_obj, ptr, false, sizeof(uint16_t));
+}
+
+int
+CFBind_convert_uint32_t(PyObject *py_obj, uint32_t *ptr) {
+    return S_convert_uint(py_obj, ptr, false, sizeof(uint32_t));
+}
+
+int
+CFBind_convert_uint64_t(PyObject *py_obj, uint64_t *ptr) {
+    return S_convert_uint(py_obj, ptr, false, sizeof(uint64_t));
+}
+
+int
+CFBind_convert_size_t(PyObject *py_obj, size_t *ptr) {
+    return S_convert_uint(py_obj, ptr, false, sizeof(size_t));
+}
+
+int
+CFBind_maybe_convert_char(PyObject *py_obj, char *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(char));
+}
+
+int
+CFBind_maybe_convert_short(PyObject *py_obj, short *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(short));
+}
+
+int
+CFBind_maybe_convert_int(PyObject *py_obj, int *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(int));
+}
+
+int
+CFBind_maybe_convert_long(PyObject *py_obj, long *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(long));
+}
+
+int
+CFBind_maybe_convert_int8_t(PyObject *py_obj, int8_t *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(int8_t));
+}
+
+int
+CFBind_maybe_convert_int16_t(PyObject *py_obj, int16_t *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(int16_t));
+}
+
+int
+CFBind_maybe_convert_int32_t(PyObject *py_obj, int32_t *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(int32_t));
+}
+
+int
+CFBind_maybe_convert_int64_t(PyObject *py_obj, int64_t *ptr) {
+    return S_convert_sint(py_obj, ptr, true, sizeof(int64_t));
+}
+
+int
+CFBind_maybe_convert_uint8_t(PyObject *py_obj, uint8_t *ptr) {
+    return S_convert_uint(py_obj, ptr, true, sizeof(uint8_t));
+}
+
+int
+CFBind_maybe_convert_uint16_t(PyObject *py_obj, uint16_t *ptr) {
+    return S_convert_uint(py_obj, ptr, true, sizeof(uint16_t));
+}
+
+int
+CFBind_maybe_convert_uint32_t(PyObject *py_obj, uint32_t *ptr) {
+    return S_convert_uint(py_obj, ptr, true, sizeof(uint32_t));
+}
+
+int
+CFBind_maybe_convert_uint64_t(PyObject *py_obj, uint64_t *ptr) {
+    return S_convert_uint(py_obj, ptr, true, sizeof(uint64_t));
+}
+
+int
+CFBind_maybe_convert_size_t(PyObject *py_obj, size_t *ptr) {
+    return S_convert_uint(py_obj, ptr, true, sizeof(size_t));
+}
+
+static int
+S_convert_floating(PyObject *py_obj, void *ptr, bool nullable, int width) {
+    if (py_obj == Py_None) {
+        if (nullable) {
+            return 1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    double value = PyFloat_AsDouble(py_obj);
+    if (PyErr_Occurred()) {
+        return 0;
+    }
+    switch (width & 0xF) {
+        case sizeof(float):
+            *((float*)ptr) = (float)value;
+            break;
+        case sizeof(double):
+            *((double*)ptr) = value;
+            break;
+    }
+    return 1;
+}
+
+int
+CFBind_convert_float(PyObject *py_obj, float *ptr) {
+    return S_convert_floating(py_obj, ptr, false, sizeof(float));
+}
+
+int
+CFBind_convert_double(PyObject *py_obj, double *ptr) {
+    return S_convert_floating(py_obj, ptr, false, sizeof(double));
+}
+
+int
+CFBind_maybe_convert_float(PyObject *py_obj, float *ptr) {
+    return S_convert_floating(py_obj, ptr, true, sizeof(float));
+}
+
+int
+CFBind_maybe_convert_double(PyObject *py_obj, double *ptr) {
+    return S_convert_floating(py_obj, ptr, true, sizeof(double));
+}
+
+static int
+S_convert_bool(PyObject *py_obj, bool *ptr, bool nullable) {
+    if (py_obj == Py_None) {
+        if (nullable) {
+            return 1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    int truth = PyObject_IsTrue(py_obj);
+    if (truth == -1) {
+        return 0;
+    }
+    *ptr = !!truth;
+    return 1;
+}
+
+int
+CFBind_convert_bool(PyObject *py_obj, bool *ptr) {
+    return S_convert_bool(py_obj, ptr, false);
+}
+
+int
+CFBind_maybe_convert_bool(PyObject *py_obj, bool *ptr) {
+    return S_convert_bool(py_obj, ptr, true);
+}
+
 /**** refcounting **********************************************************/
 
 uint32_t

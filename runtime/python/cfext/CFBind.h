@@ -37,6 +37,79 @@ struct cfish_String;
 void
 CFBind_reraise_pyerr(struct cfish_Class *err_klass, struct cfish_String *mess);
 
+/* ParseTuple conversion routines for primitive numeric types.
+ *
+ * If the value of `input` is out of range for the an integer C type, an
+ * OverflowError will be raised.
+ *
+ * If `input` is `None`, the "maybe_convert" variants will leave `ptr`
+ * untouched, while the "convert" routines will raise a TypeError.
+ */
+int
+CFBind_convert_char(PyObject *input, char *ptr);
+int
+CFBind_convert_short(PyObject *input, short *ptr);
+int
+CFBind_convert_int(PyObject *input, int *ptr);
+int
+CFBind_convert_long(PyObject *input, long *ptr);
+int
+CFBind_convert_int8_t(PyObject *input, int8_t *ptr);
+int
+CFBind_convert_int16_t(PyObject *input, int16_t *ptr);
+int
+CFBind_convert_int32_t(PyObject *input, int32_t *ptr);
+int
+CFBind_convert_int64_t(PyObject *input, int64_t *ptr);
+int
+CFBind_convert_uint8_t(PyObject *input, uint8_t *ptr);
+int
+CFBind_convert_uint16_t(PyObject *input, uint16_t *ptr);
+int
+CFBind_convert_uint32_t(PyObject *input, uint32_t *ptr);
+int
+CFBind_convert_uint64_t(PyObject *input, uint64_t *ptr);
+int
+CFBind_convert_bool(PyObject *input, bool *ptr);
+int
+CFBind_convert_size_t(PyObject *input, size_t *ptr);
+int
+CFBind_convert_float(PyObject *input, float *ptr);
+int
+CFBind_convert_double(PyObject *input, double *ptr);
+int
+CFBind_maybe_convert_char(PyObject *input, char *ptr);
+int
+CFBind_maybe_convert_short(PyObject *input, short *ptr);
+int
+CFBind_maybe_convert_int(PyObject *input, int *ptr);
+int
+CFBind_maybe_convert_long(PyObject *input, long *ptr);
+int
+CFBind_maybe_convert_int8_t(PyObject *input, int8_t *ptr);
+int
+CFBind_maybe_convert_int16_t(PyObject *input, int16_t *ptr);
+int
+CFBind_maybe_convert_int32_t(PyObject *input, int32_t *ptr);
+int
+CFBind_maybe_convert_int64_t(PyObject *input, int64_t *ptr);
+int
+CFBind_maybe_convert_uint8_t(PyObject *input, uint8_t *ptr);
+int
+CFBind_maybe_convert_uint16_t(PyObject *input, uint16_t *ptr);
+int
+CFBind_maybe_convert_uint32_t(PyObject *input, uint32_t *ptr);
+int
+CFBind_maybe_convert_uint64_t(PyObject *input, uint64_t *ptr);
+int
+CFBind_maybe_convert_bool(PyObject *input, bool *ptr);
+int
+CFBind_maybe_convert_size_t(PyObject *input, size_t *ptr);
+int
+CFBind_maybe_convert_float(PyObject *input, float *ptr);
+int
+CFBind_maybe_convert_double(PyObject *input, double *ptr);
+
 #ifdef __cplusplus
 }
 #endif
