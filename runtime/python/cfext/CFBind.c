@@ -40,6 +40,42 @@
 
 static bool Err_initialized;
 
+/**** Utility **************************************************************/
+
+void
+CFBind_reraise_pyerr(cfish_Class *err_klass, cfish_String *mess) {
+    PyObject *type, *value, *traceback;
+    PyObject *type_pystr = NULL;
+    PyObject *value_pystr = NULL;
+    PyObject *traceback_pystr = NULL;
+    char *type_str = "";
+    char *value_str = "";
+    char *traceback_str = "";
+    PyErr_GetExcInfo(&type, &value, &traceback);
+    if (type != NULL) {
+        PyObject *type_pystr = PyObject_Str(type);
+        type_str = PyUnicode_AsUTF8(type_pystr);
+    }
+    if (value != NULL) {
+        PyObject *value_pystr = PyObject_Str(value);
+        value_str = PyUnicode_AsUTF8(value_pystr);
+    }
+    if (traceback != NULL) {
+        PyObject *traceback_pystr = PyObject_Str(traceback);
+        traceback_str = PyUnicode_AsUTF8(traceback_pystr);
+    }
+    cfish_String *new_mess = cfish_Str_newf("%o... %s: %s %s", mess, type_str,
+                                            value_str, traceback_str);
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(traceback);
+    Py_XDECREF(type_pystr);
+    Py_XDECREF(value_pystr);
+    Py_XDECREF(traceback_pystr);
+    CFISH_DECREF(mess);
+    cfish_Err_throw_mess(err_klass, new_mess);
+}
+
 /**** refcounting **********************************************************/
 
 uint32_t

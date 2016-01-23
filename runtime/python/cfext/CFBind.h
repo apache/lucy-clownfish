@@ -24,6 +24,19 @@ extern "C" {
 #include "cfish_platform.h"
 #include "Python.h"
 
+struct cfish_Class;
+struct cfish_String;
+
+/** Wrap the current state of Python's sys.exc_info in a Clownfish Err and
+  * throw it.
+  *
+  * One refcount of `mess` will be consumed by this function.
+  *
+  * TODO: Leave the original exception intact.
+  */
+void
+CFBind_reraise_pyerr(struct cfish_Class *err_klass, struct cfish_String *mess);
+
 #ifdef __cplusplus
 }
 #endif
