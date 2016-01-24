@@ -37,7 +37,6 @@ test_perl() {
     perl Build.PL
     ./Build test
     cd ../../runtime/perl
-    cpanm --quiet --installdeps --notest .
     perl Build.PL
     ./Build test
 }
