@@ -23,6 +23,7 @@ extern "C" {
 
 #include "cfish_platform.h"
 #include "Python.h"
+#include "Clownfish/Obj.h"
 
 struct cfish_Class;
 struct cfish_String;
@@ -36,6 +37,34 @@ struct cfish_String;
   */
 void
 CFBind_reraise_pyerr(struct cfish_Class *err_klass, struct cfish_String *mess);
+
+/** Null-safe invocation of Obj_To_Host.
+  */
+static CFISH_INLINE PyObject*
+CFBind_cfish_to_py(struct cfish_Obj *obj) {
+    if (obj != NULL) {
+        return (PyObject*)CFISH_Obj_To_Host(obj);
+    }
+    else {
+        Py_RETURN_NONE;
+    }
+}
+
+/** Perform the same conversion as `CFBind_cfish_to_py`, but ensure that the
+  * result is refcount-neutral, decrementing a refcount from `obj` and passing
+  * it along.
+  */
+static CFISH_INLINE PyObject*
+CFBind_cfish_to_py_zeroref(struct cfish_Obj *obj) {
+    if (obj != NULL) {
+        PyObject *result = (PyObject*)CFISH_Obj_To_Host(obj);
+        CFISH_DECREF(obj);
+        return result;
+    }
+    else {
+        return Py_None;
+    }
+}
 
 /* ParseTuple conversion routines for primitive numeric types.
  *
