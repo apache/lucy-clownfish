@@ -552,23 +552,23 @@ cfish_TestUtils_destroy_host_runtime(void *runtime) {
 
 void*
 CFISH_Str_To_Host_IMP(cfish_String *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    const char *ptr = CFISH_Str_Get_Ptr8(self);
+    size_t size = CFISH_Str_Get_Size(self);
+    return PyUnicode_FromStringAndSize(ptr, size);
 }
 
 void*
 CFISH_Blob_To_Host_IMP(cfish_Blob *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    const char *buf = CFISH_Blob_Get_Buf(self);
+    size_t size = CFISH_Blob_Get_Size(self);
+    return PyBytes_FromStringAndSize(buf, size);
 }
 
 void*
 CFISH_BB_To_Host_IMP(cfish_ByteBuf *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    CFISH_BB_To_Host_t super_to_host
+        = CFISH_SUPER_METHOD_PTR(CFISH_BYTEBUF, CFISH_BB_To_Host);
+    return super_to_host(self);
 }
 
 void*
@@ -613,22 +613,24 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
 
 void*
 CFISH_Float_To_Host_IMP(cfish_Float *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    return PyFloat_FromDouble(CFISH_Float_Get_Value(self));
 }
 
 void*
 CFISH_Int_To_Host_IMP(cfish_Integer *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    int64_t num = CFISH_Int_Get_Value(self);
+    return PyLong_FromLongLong(num);
 }
 
 void*
 CFISH_Bool_To_Host_IMP(cfish_Boolean *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    if (self == CFISH_TRUE) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    else {
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
 }
 
