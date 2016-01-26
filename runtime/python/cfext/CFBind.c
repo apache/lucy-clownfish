@@ -31,6 +31,7 @@
 #include "Clownfish/ByteBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Hash.h"
+#include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/String.h"
@@ -572,16 +573,42 @@ CFISH_BB_To_Host_IMP(cfish_ByteBuf *self) {
 
 void*
 CFISH_Vec_To_Host_IMP(cfish_Vector *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    uint32_t num_elems = CFISH_Vec_Get_Size(self);
+    PyObject *list = PyList_New(num_elems);
+
+    // Iterate over vector items.
+    for (uint32_t i = 0; i < num_elems; i++) {
+        cfish_Obj *val = CFISH_Vec_Fetch(self, i);
+        PyObject *item = CFBind_cfish_to_py(val);
+        PyList_SET_ITEM(list, i, item);
+    }
+
+    return list;
 }
 
 void*
 CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    PyObject *dict = PyDict_New();
+
+    // Iterate over key-value pairs.
+    cfish_HashIterator *iter = cfish_HashIter_new(self);
+    while (CFISH_HashIter_Next(iter)) {
+        cfish_String *key = (cfish_String*)CFISH_HashIter_Get_Key(iter);
+        if (!cfish_Obj_is_a((cfish_Obj*)key, CFISH_STRING)) {
+            CFISH_THROW(CFISH_ERR, "Non-string key: %o",
+                        cfish_Obj_get_class_name((cfish_Obj*)key));
+        }
+        size_t size = CFISH_Str_Get_Size(key);
+        const char *ptr = CFISH_Str_Get_Ptr8(key);
+        PyObject *py_key = PyUnicode_FromStringAndSize(ptr, size);
+        PyObject *py_val = CFBind_cfish_to_py(CFISH_HashIter_Get_Value(iter));
+        PyDict_SetItem(dict, py_key, py_val);
+        Py_DECREF(py_key);
+        Py_DECREF(py_val);
+    }
+    CFISH_DECREF(iter);
+
+    return dict;
 }
 
 void*
