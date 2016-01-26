@@ -7809,7 +7809,7 @@ typedef struct SourceFileContext {
     chaz_MakeVar *var;
 } SourceFileContext;
 
-static const char cfish_version[]       = "0.4.3";
+static const char cfish_version[]       = "0.4.4";
 static const char cfish_major_version[] = "0.4";
 
 static void

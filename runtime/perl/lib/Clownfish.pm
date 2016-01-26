@@ -20,7 +20,7 @@ package Clownfish;
 
 use 5.008003;
 
-our $VERSION = '0.004003';
+our $VERSION = '0.004004';
 $VERSION = eval $VERSION;
 
 use Exporter 'import';
@@ -41,7 +41,7 @@ BEGIN {
     require DynaLoader;
     our @ISA = qw( DynaLoader );
     # This loads a large number of disparate subs.
-    bootstrap Clownfish '0.4.3';
+    bootstrap Clownfish '0.4.4';
 }
 
 sub kdump {
@@ -56,7 +56,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::Util::StringHelper;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     BEGIN {
         push our @ISA, 'Exporter';
@@ -74,7 +74,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::LockFreeRegistry;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     no warnings 'redefine';
     sub DESTROY { }    # leak all
@@ -82,7 +82,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::Obj;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     use Clownfish qw( to_clownfish to_perl );
     use Carp qw( confess );
@@ -100,7 +100,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::Class;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
 
     sub _find_parent_class {
@@ -142,7 +142,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::Method;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     no warnings 'redefine';
     sub DESTROY { }    # leak all
@@ -150,7 +150,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::ViewByteBuf;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     use Carp;
     sub new { confess "ViewByteBuf objects can only be created from C." }
@@ -158,7 +158,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::String;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
 
     {
@@ -173,7 +173,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::StackString;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     use Carp;
     sub new { confess "StackString objects can only be created from C." }
@@ -183,7 +183,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::Err;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     sub do_to_string { shift->to_string }
     use Scalar::Util qw( blessed );
@@ -222,7 +222,7 @@ sub error {$Clownfish::Err::error}
 
 {
     package Clownfish::VArray;
-    our $VERSION = '0.004003';
+    our $VERSION = '0.004004';
     $VERSION = eval $VERSION;
     no warnings 'redefine';
     sub clone       { CORE::shift->_clone }
@@ -238,7 +238,7 @@ Clownfish - Apache Clownfish symbiotic object system.
 
 =head1 VERSION
 
-0.4.3
+0.4.4
 
 =head1 DESCRIPTION
 

@@ -185,7 +185,7 @@ cfc_extension = Extension('clownfish._cfc',
                           sources = c_filepaths)
 
 setup(name = 'clownfish-cfc',
-      version = '0.4.3',
+      version = '0.4.4',
       description = 'Clownfish compiler',
       author = 'Apache Lucy Project',
       author_email = 'dev at lucy dot apache dot org',
