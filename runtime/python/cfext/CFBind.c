@@ -77,6 +77,69 @@ CFBind_reraise_pyerr(cfish_Class *err_klass, cfish_String *mess) {
     cfish_Err_throw_mess(err_klass, new_mess);
 }
 
+PyObject*
+CFBind_run_trapped(CFISH_Err_Attempt_t func, void *vcontext, int ret_type) {
+    CFBindTrapContext *context = (CFBindTrapContext*)vcontext;
+    cfish_Err *err = cfish_Err_trap(func, context);
+    for (int32_t i = 0, max = context->num_decrefs; i < max; i++) {
+        cfish_Obj **decrefs = (cfish_Obj**)context->decrefs;
+        CFISH_DECREF(decrefs[i]);
+    }
+    if (err != NULL) {
+        cfish_String *mess = CFISH_Err_Get_Mess(err);
+        char *utf8 = CFISH_Str_To_Utf8(mess);
+        // TODO: change error type.
+        PyErr_SetString(PyExc_RuntimeError, utf8);
+        free(utf8);
+        CFISH_DECREF(err);
+        return NULL;
+    }
+    switch (ret_type & CFBIND_TYPE_MASK) {
+        case CFBIND_TYPE_void:
+            Py_RETURN_NONE;
+        case CFBIND_TYPE_int8_t:
+            return PyLong_FromLong(context->retval.int8_t_);
+        case CFBIND_TYPE_int16_t:
+            return PyLong_FromLong(context->retval.int16_t_);
+        case CFBIND_TYPE_int32_t:
+            return PyLong_FromLong(context->retval.int32_t_);
+        case CFBIND_TYPE_int64_t:
+            return PyLong_FromLongLong(context->retval.int64_t_);
+        case CFBIND_TYPE_uint8_t:
+            return PyLong_FromUnsignedLong(context->retval.uint8_t_);
+        case CFBIND_TYPE_uint16_t:
+            return PyLong_FromUnsignedLong(context->retval.uint16_t_);
+        case CFBIND_TYPE_uint32_t:
+            return PyLong_FromUnsignedLong(context->retval.uint32_t_);
+        case CFBIND_TYPE_uint64_t:
+            return PyLong_FromUnsignedLongLong(context->retval.uint64_t_);
+        case CFBIND_TYPE_char:
+            return PyLong_FromLong(context->retval.char_);
+        case CFBIND_TYPE_short:
+            return PyLong_FromLong(context->retval.short_);
+        case CFBIND_TYPE_long:
+            return PyLong_FromLong(context->retval.long_);
+        case CFBIND_TYPE_size_t:
+            return PyLong_FromSize_t(context->retval.size_t_);
+        case CFBIND_TYPE_bool:
+            return PyBool_FromLong(context->retval.bool_);
+        case CFBIND_TYPE_float:
+            return PyFloat_FromDouble(context->retval.float_);
+        case CFBIND_TYPE_double:
+            return PyFloat_FromDouble(context->retval.double_);
+        case CFBIND_TYPE_obj:
+            return CFBind_cfish_to_py_zeroref((cfish_Obj*)context->retval.ptr);
+        case CFBIND_TYPE_inc_obj:
+            return CFBind_cfish_to_py((cfish_Obj*)context->retval.ptr);
+        case CFBIND_TYPE_raw_obj:
+            return (PyObject*)context->retval.ptr;
+        default:
+            PyErr_Format(PyExc_RuntimeError, "Unexpected CFBIND_TYPE: %d",
+                         ret_type);
+            return NULL;
+    }
+}
+
 static int
 S_convert_sint(PyObject *py_obj, void *ptr, bool nullable, unsigned width) {
     if (py_obj == Py_None) {
