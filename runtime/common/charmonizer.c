@@ -5200,8 +5200,20 @@ chaz_OS_init(void) {
         printf("Trying to find a bit-bucket a la /dev/null...\n");
     }
 
-    /* Detect shell based on whether the bitbucket is "/dev/null" or "nul". */
-    if (chaz_Util_can_open_file("/dev/null")) {
+    /* Detect shell based on whether the bitbucket is "/dev/null" or "nul".
+     * Start with "nul" as some Windows boxes seem to have a "/dev/null".
+     */
+    if (chaz_Util_can_open_file("nul")) {
+        strcpy(chaz_OS.name, "windows");
+        strcpy(chaz_OS.dev_null, "nul");
+        strcpy(chaz_OS.dir_sep, "\\");
+        strcpy(chaz_OS.exe_ext, ".exe");
+        strcpy(chaz_OS.shared_lib_ext, ".dll");
+        strcpy(chaz_OS.static_lib_ext, ".lib");
+        strcpy(chaz_OS.local_command_start, ".\\");
+        chaz_OS.shell_type = CHAZ_OS_CMD_EXE;
+    }
+    else if (chaz_Util_can_open_file("/dev/null")) {
         char   *uname;
         size_t  uname_len;
         size_t i;
@@ -5234,19 +5246,13 @@ chaz_OS_init(void) {
         }
         strcpy(chaz_OS.local_command_start, "./");
     }
-    else if (chaz_Util_can_open_file("nul")) {
-        strcpy(chaz_OS.name, "windows");
-        strcpy(chaz_OS.dev_null, "nul");
-        strcpy(chaz_OS.dir_sep, "\\");
-        strcpy(chaz_OS.exe_ext, ".exe");
-        strcpy(chaz_OS.shared_lib_ext, ".dll");
-        strcpy(chaz_OS.static_lib_ext, ".lib");
-        strcpy(chaz_OS.local_command_start, ".\\");
-        chaz_OS.shell_type = CHAZ_OS_CMD_EXE;
-    }
     else {
         /* Bail out because we couldn't find anything like /dev/null. */
         chaz_Util_die("Couldn't find anything like /dev/null");
+    }
+
+    if (chaz_Util_verbosity) {
+        printf("Detected OS: %s\n", chaz_OS.name);
     }
 }
 
