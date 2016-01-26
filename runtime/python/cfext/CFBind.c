@@ -405,9 +405,7 @@ cfish_dec_refcount(void *vself) {
 
 void*
 CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(void*);
+    return CFISH_INCREF(self);
 }
 
 /**** Class ****************************************************************/
