@@ -1,5 +1,13 @@
 Revision history for Apache Clownfish
 
+0.4.4 2016-01-26
+
+  Bugfixes:
+
+    * [CLOWNFISH-3] - Charmonizer bombs out trying to set warnings as
+                      errors with Strawberry Perl
+    * [CLOWNFISH-69] - Clownfish::CFC missing from CPAN prereqs
+
 0.4.3 2016-01-09
 
   Bugfixes:
