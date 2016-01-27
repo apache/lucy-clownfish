@@ -125,12 +125,26 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         helper_mod_name[i] = tolower(helper_mod_name[i]);
     }
 
+    CFCClass  **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCParcel **parcels = CFCParcel_all_parcels();
+    char *pound_includes     = CFCUtil_strdup("");
+
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass)) { continue; }
+
+        const char *include_h  = CFCClass_include_h(klass);
+        pound_includes = CFCUtil_cat(pound_includes, "#include \"",
+                                     include_h, "\"\n", NULL);
+    }
+
     const char pattern[] =
         "%s\n"
         "\n"
         "#include \"Python.h\"\n"
         "#include \"cfish_parcel.h\"\n"
         "#include \"CFBind.h\"\n"
+        "%s\n"
         "\n"
         "static PyModuleDef module_def = {\n"
         "    PyModuleDef_HEAD_INIT,\n"
@@ -150,7 +164,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "\n";
 
     char *content
-        = CFCUtil_sprintf(pattern, self->header,
+        = CFCUtil_sprintf(pattern, self->header, pound_includes,
                           helper_mod_name, last_component, self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
@@ -161,6 +175,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(content);
     FREEMEM(helper_mod_name);
     FREEMEM(pymod_name);
+    FREEMEM(pound_includes);
+    FREEMEM(ordered);
 }
 
 void
