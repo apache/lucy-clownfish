@@ -37,6 +37,7 @@
 #include "Clownfish/String.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Memory.h"
+#include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Vector.h"
 
 static bool Err_initialized;
@@ -146,6 +147,201 @@ CFBind_run_trapped(CFISH_Err_Attempt_t func, void *vcontext, int ret_type) {
                          ret_type);
             return NULL;
     }
+}
+
+static cfish_Vector*
+S_py_list_to_vector(PyObject *list) {
+    Py_ssize_t size = PyList_GET_SIZE(list);
+    cfish_Vector *vec = cfish_Vec_new(size);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        CFISH_Vec_Store(vec, i, CFBind_py_to_cfish(PyList_GET_ITEM(list, i), NULL));
+    }
+    return vec;
+}
+
+static cfish_Hash*
+S_py_dict_to_hash(PyObject *dict) {
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    cfish_Hash *hash = cfish_Hash_new(PyDict_Size(dict));
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        char *ptr;
+        Py_ssize_t size;
+        PyObject *stringified = key;
+        if (!PyUnicode_CheckExact(key)) {
+            stringified = PyObject_Str(key);
+        }
+        ptr = PyUnicode_AsUTF8AndSize(stringified, &size);
+        if (!ptr) {
+            cfish_String *mess
+                = CFISH_MAKE_MESS("Failed to stringify as UTF-8");
+            CFBind_reraise_pyerr(CFISH_ERR, mess);
+        }
+        CFISH_Hash_Store_Utf8(hash, ptr, size, CFBind_py_to_cfish(value, NULL));
+        if (stringified != key) {
+            Py_DECREF(stringified);
+        }
+    }
+    return hash;
+}
+
+static cfish_Obj*
+S_maybe_increment(void *vobj, bool increment) {
+    if (increment) {
+        return CFISH_INCREF((cfish_Obj*)vobj);
+    }
+    return (cfish_Obj*)vobj;
+}
+
+static bool
+S_maybe_py_to_cfish(PyObject *py_obj, cfish_Class *klass, bool increment,
+                    bool nullable, void *allocation, cfish_Obj **obj_ptr) {
+    CFISH_UNUSED_VAR(allocation); // FIXME implement stack strings
+
+    if (!py_obj || py_obj == Py_None) {
+        *obj_ptr = NULL;
+        return nullable;
+    }
+
+	// Default to accepting any type.
+	if (klass == NULL) {
+		klass = CFISH_OBJ;
+	}
+
+    if (S_py_obj_is_a(py_obj, klass)) {
+        *obj_ptr = S_maybe_increment(py_obj, increment);
+        return true;
+    }
+    else if (py_obj == Py_True) {
+        if (klass != CFISH_BOOLEAN && klass != CFISH_OBJ) {
+            return false;
+        }
+        *obj_ptr = S_maybe_increment(CFISH_TRUE, increment);
+        return true;
+    }
+    else if (py_obj == Py_False) {
+        if (klass != CFISH_BOOLEAN && klass != CFISH_OBJ) {
+            return false;
+        }
+        *obj_ptr = S_maybe_increment(CFISH_FALSE, increment);
+        return true;
+    }
+    else if (klass == CFISH_BOOLEAN) {
+        int truthiness = PyObject_IsTrue(py_obj);
+        if (truthiness == 1) {
+            *obj_ptr = S_maybe_increment(CFISH_TRUE, increment);
+        }
+        else if (truthiness == 0) {
+            *obj_ptr = S_maybe_increment(CFISH_FALSE, increment);
+        }
+        else {
+            return false;
+        }
+        return true;
+    }
+
+    // From here on out, we're going to return a new Clownfish object.  The
+    // caller has to take ownership of a refcount; if they don't want to, then
+    // fail rather than attempt to return an object with a refcount of 0.
+    if (!increment) {
+        return false;
+    }
+
+    if (PyUnicode_CheckExact(py_obj)) {
+        if (klass != CFISH_STRING && klass != CFISH_OBJ) {
+            return false;
+        }
+        // TODO: Allow Clownfish String to wrap buffer of Python str?
+        Py_ssize_t size;
+        char *ptr = PyUnicode_AsUTF8AndSize(py_obj, &size);
+        // TODO: Can we guarantee that Python will always supply valid UTF-8?
+        if (!ptr || !cfish_StrHelp_utf8_valid(ptr, size)) {
+            return false;
+        }
+        *obj_ptr = (cfish_Obj*)cfish_Str_new_from_trusted_utf8(ptr, size);
+        return true;
+    }
+    else if (PyBytes_CheckExact(py_obj)) {
+        if (klass != CFISH_BLOB && klass != CFISH_OBJ) {
+            return false;
+        }
+        char *ptr = PyBytes_AS_STRING(py_obj);
+        Py_ssize_t size = PyBytes_GET_SIZE(py_obj);
+        *obj_ptr = (cfish_Obj*)cfish_BB_new_bytes(ptr, size);
+        return true;
+    }
+    else if (PyList_CheckExact(py_obj)) {
+        if (klass != CFISH_VECTOR && klass != CFISH_OBJ) {
+            return false;
+        }
+        *obj_ptr = (cfish_Obj*)S_py_list_to_vector(py_obj);
+        return true;
+    }
+    else if (PyDict_CheckExact(py_obj)) {
+        if (klass != CFISH_HASH && klass != CFISH_OBJ) {
+            return false;
+        }
+        *obj_ptr = (cfish_Obj*)S_py_dict_to_hash(py_obj);
+        return true;
+    }
+    else if (PyLong_CheckExact(py_obj)) {
+        if (klass != CFISH_INTEGER && klass != CFISH_OBJ) {
+            return false;
+        }
+        // Raises ValueError on overflow.
+        int64_t value = PyLong_AsLongLong(py_obj);
+        if (PyErr_Occurred()) {
+            return false;
+        }
+        *obj_ptr = (cfish_Obj*)cfish_Int_new(value);
+        return true;
+    }
+    else if (PyFloat_CheckExact(py_obj)) {
+        if (klass != CFISH_FLOAT && klass != CFISH_OBJ) {
+            return false;
+        }
+        double value = PyFloat_AsDouble(py_obj);
+        if (PyErr_Occurred()) {
+            return false;
+        }
+        *obj_ptr = (cfish_Obj*)cfish_Float_new(value);
+        return true;
+    }
+
+    // The value did not meet the required spec, so return false to indicate
+    // failure.
+    return false;
+}
+
+cfish_Obj*
+CFBind_py_to_cfish_nullable(PyObject *py_obj, cfish_Class *klass) {
+    cfish_Obj *retval;
+    bool success = S_maybe_py_to_cfish(py_obj, klass, true, true, NULL, &retval);
+    if (!success) {
+        CFISH_THROW(CFISH_ERR, "Can't convert to %o", klass);
+    }
+    return retval;
+}
+
+cfish_Obj*
+CFBind_py_to_cfish(PyObject *py_obj, cfish_Class *klass) {
+    cfish_Obj *retval;
+    bool success = S_maybe_py_to_cfish(py_obj, klass, true, false, NULL, &retval);
+    if (!success) {
+        CFISH_THROW(CFISH_ERR, "Can't convert to %o", klass);
+    }
+    return retval;
+}
+
+cfish_Obj*
+CFBind_py_to_cfish_noinc(PyObject *py_obj, cfish_Class *klass,
+                         void *allocation) {
+    cfish_Obj *retval;
+    bool success = S_maybe_py_to_cfish(py_obj, klass, false, false, allocation, &retval);
+    if (!success) {
+        CFISH_THROW(CFISH_ERR, "Can't convert to %o", klass);
+    }
+    return retval;
 }
 
 static int
