@@ -43,6 +43,14 @@ static bool Err_initialized;
 
 /**** Utility **************************************************************/
 
+static bool
+S_py_obj_is_a(PyObject *py_obj, cfish_Class *klass) {
+    CFISH_UNUSED_VAR(py_obj);
+    CFISH_UNUSED_VAR(klass);
+    CFISH_THROW(CFISH_ERR, "TODO");
+    CFISH_UNREACHABLE_RETURN(bool);
+}
+
 void
 CFBind_reraise_pyerr(cfish_Class *err_klass, cfish_String *mess) {
     PyObject *type, *value, *traceback;
