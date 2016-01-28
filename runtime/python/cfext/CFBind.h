@@ -196,6 +196,20 @@ cfish_Obj*
 CFBind_py_to_cfish_noinc(PyObject *py_obj, cfish_Class *klass,
                          void *allocation);
 
+/* ParseTuple conversion routines for reference types.
+ *
+ * If `input` is `None`, the "maybe_convert" variants will leave `ptr`
+ * untouched, while the "convert" routines will raise a TypeError.
+ */
+int
+CFBind_convert_hash(PyObject *input, cfish_Hash **ptr);
+int
+CFBind_convert_vec(PyObject *input, cfish_Vector **ptr);
+int
+CFBind_maybe_convert_hash(PyObject *input, cfish_Hash **ptr);
+int
+CFBind_maybe_convert_vec(PyObject *input, cfish_Vector **ptr);
+
 /* ParseTuple conversion routines for primitive numeric types.
  *
  * If the value of `input` is out of range for the an integer C type, an
