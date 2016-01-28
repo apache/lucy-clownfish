@@ -42,6 +42,9 @@
 
 static bool Err_initialized;
 
+static PyTypeObject*
+S_get_cached_py_type(cfish_Class *klass);
+
 /**** Utility **************************************************************/
 
 static bool
@@ -692,6 +695,13 @@ CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
 }
 
 /**** Class ****************************************************************/
+
+static PyTypeObject*
+S_get_cached_py_type(cfish_Class *self) {
+    // FIXME: dummy implementation
+    CFISH_UNUSED_VAR(self);
+    return NULL;
+}
 
 cfish_Obj*
 CFISH_Class_Make_Obj_IMP(cfish_Class *self) {
