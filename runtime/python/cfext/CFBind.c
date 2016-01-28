@@ -285,6 +285,106 @@ CFBind_py_to_cfish_noinc(PyObject *py_obj, cfish_Class *klass,
 }
 
 static int
+S_convert_obj(PyObject *py_obj, CFBindArg *arg, bool nullable) {
+    if (py_obj == Py_None) {
+        if (nullable) {
+            return 1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    PyTypeObject *py_type = S_get_cached_py_type(arg->klass);
+    if (!PyObject_TypeCheck(py_obj, py_type)) {
+        PyErr_SetString(PyExc_TypeError, "Invalid argument type");
+        return 0;
+    }
+    *((PyObject**)arg->ptr) = py_obj;
+    return 1;
+}
+
+int
+CFBind_convert_obj(PyObject *py_obj, CFBindArg *arg) {
+    return S_convert_obj(py_obj, arg, false);
+}
+
+int
+CFBind_maybe_convert_obj(PyObject *py_obj, CFBindArg *arg) {
+    return S_convert_obj(py_obj, arg, true);
+}
+
+static int
+S_convert_string(PyObject *py_obj, cfish_String **ptr, bool nullable) {
+    if (py_obj == NULL) { // Py_CLEANUP_SUPPORTED cleanup
+        if (*ptr != NULL) {
+            if (!CFISH_Str_Is_Copy_On_IncRef(*ptr)) {
+                CFISH_DECREF(*ptr);
+            }
+            *ptr = NULL;
+        }
+        return 1;
+    }
+
+    if (py_obj == Py_None) {
+        if (*ptr != NULL) {
+            // Default value passed as stack string.
+            *ptr = CFISH_Str_Clone(*ptr);
+            return Py_CLEANUP_SUPPORTED;
+        }
+        else if (nullable) {
+            return 1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    else if (PyUnicode_CheckExact(py_obj)) {
+        Py_ssize_t size;
+        char *utf8 = PyUnicode_AsUTF8AndSize(py_obj, &size);
+        if (!utf8) {
+            return 0;
+        }
+        *ptr = cfish_Str_new_from_trusted_utf8(utf8, size);
+        return Py_CLEANUP_SUPPORTED;
+    }
+    else if (S_py_obj_is_a(py_obj, CFISH_STRING)) {
+        *ptr = (cfish_String*)CFISH_INCREF(py_obj);
+        return Py_CLEANUP_SUPPORTED;
+    }
+    else if (S_py_obj_is_a(py_obj, CFISH_OBJ)) {
+        *ptr = CFISH_Obj_To_String((cfish_Obj*)py_obj);
+        return Py_CLEANUP_SUPPORTED;
+    }
+    else {
+        PyObject *stringified = PyObject_Str(py_obj);
+        if (stringified == NULL) {
+            return 0;
+        }
+        Py_ssize_t size;
+        char *utf8 = PyUnicode_AsUTF8AndSize(stringified, &size);
+        if (!utf8) {
+            Py_DECREF(stringified);
+            return 0;
+        }
+        *ptr = cfish_Str_new_from_trusted_utf8(utf8, size);
+        Py_DECREF(stringified);
+        return Py_CLEANUP_SUPPORTED;
+    }
+}
+
+int
+CFBind_convert_string(PyObject *py_obj, cfish_String **ptr) {
+    return S_convert_string(py_obj, ptr, false);
+}
+
+int
+CFBind_maybe_convert_string(PyObject *py_obj, cfish_String **ptr) {
+    return S_convert_string(py_obj, ptr, true);
+}
+
+static int
 S_convert_hash(PyObject *py_obj, cfish_Hash **hash_ptr, bool nullable) {
     if (py_obj == NULL) { // Py_CLEANUP_SUPPORTED cleanup
         CFISH_DECREF(*hash_ptr);

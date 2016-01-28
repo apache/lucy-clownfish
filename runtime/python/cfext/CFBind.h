@@ -100,15 +100,28 @@ cfish_Obj*
 CFBind_py_to_cfish_noinc(PyObject *py_obj, cfish_Class *klass,
                          void *allocation);
 
+typedef struct CFBindArg {
+    cfish_Class *klass;
+    void        *ptr;
+} CFBindArg;
+
 /* ParseTuple conversion routines for reference types.
  *
  * If `input` is `None`, the "maybe_convert" variants will leave `ptr`
  * untouched, while the "convert" routines will raise a TypeError.
  */
 int
+CFBind_convert_obj(PyObject *input, CFBindArg *arg);
+int
+CFBind_convert_string(PyObject *input, cfish_String **ptr);
+int
 CFBind_convert_hash(PyObject *input, cfish_Hash **ptr);
 int
 CFBind_convert_vec(PyObject *input, cfish_Vector **ptr);
+int
+CFBind_maybe_convert_obj(PyObject *input, CFBindArg *arg);
+int
+CFBind_maybe_convert_string(PyObject *input, cfish_String **ptr);
 int
 CFBind_maybe_convert_hash(PyObject *input, cfish_Hash **ptr);
 int
