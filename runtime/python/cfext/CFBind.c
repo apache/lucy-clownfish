@@ -282,6 +282,84 @@ CFBind_py_to_cfish_noinc(PyObject *py_obj, cfish_Class *klass,
 }
 
 static int
+S_convert_hash(PyObject *py_obj, cfish_Hash **hash_ptr, bool nullable) {
+    if (py_obj == NULL) { // Py_CLEANUP_SUPPORTED cleanup
+        CFISH_DECREF(*hash_ptr);
+        return 1;
+    }
+
+    if (py_obj == Py_None) {
+        if (nullable) {
+            return Py_CLEANUP_SUPPORTED;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    else if (PyDict_CheckExact(py_obj)) {
+        *hash_ptr = S_py_dict_to_hash(py_obj);
+        return Py_CLEANUP_SUPPORTED;
+    }
+    else if (S_py_obj_is_a(py_obj, CFISH_HASH)) {
+        *hash_ptr = (cfish_Hash*)CFISH_INCREF(py_obj);
+        return Py_CLEANUP_SUPPORTED;
+    }
+    else {
+        return 0;
+    }
+}
+
+int
+CFBind_convert_hash(PyObject *py_obj, cfish_Hash **hash_ptr) {
+    return S_convert_hash(py_obj, hash_ptr, false);
+}
+
+int
+CFBind_maybe_convert_hash(PyObject *py_obj, cfish_Hash **hash_ptr) {
+    return S_convert_hash(py_obj, hash_ptr, true);
+}
+
+static int
+S_convert_vec(PyObject *py_obj, cfish_Vector **vec_ptr, bool nullable) {
+    if (py_obj == NULL) { // Py_CLEANUP_SUPPORTED cleanup
+        CFISH_DECREF(*vec_ptr);
+        return 1;
+    }
+
+    if (py_obj == Py_None) {
+        if (nullable) {
+            return Py_CLEANUP_SUPPORTED;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Required argument cannot be None");
+            return 0;
+        }
+    }
+    else if (PyList_CheckExact(py_obj)) {
+        *vec_ptr = S_py_list_to_vector(py_obj);
+        return Py_CLEANUP_SUPPORTED;
+    }
+    else if (S_py_obj_is_a(py_obj, CFISH_VECTOR)) {
+        *vec_ptr = (cfish_Vector*)CFISH_INCREF(py_obj);
+        return Py_CLEANUP_SUPPORTED;
+    }
+    else {
+        return 0;
+    }
+}
+
+int
+CFBind_convert_vec(PyObject *py_obj, cfish_Vector **vec_ptr) {
+    return S_convert_vec(py_obj, vec_ptr, false);
+}
+
+int
+CFBind_maybe_convert_vec(PyObject *py_obj, cfish_Vector **vec_ptr) {
+    return S_convert_vec(py_obj, vec_ptr, true);
+}
+
+static int
 S_convert_sint(PyObject *py_obj, void *ptr, bool nullable, unsigned width) {
     if (py_obj == Py_None) {
         if (nullable) {
