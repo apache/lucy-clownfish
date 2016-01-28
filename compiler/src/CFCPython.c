@@ -24,6 +24,7 @@
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCPython.h"
+#include "CFCPyMethod.h"
 #include "CFCParcel.h"
 #include "CFCClass.h"
 #include "CFCMethod.h"
@@ -108,6 +109,48 @@ S_write_hostdefs(CFCPython *self) {
     FREEMEM(content);
 }
 
+static char*
+S_gen_callbacks(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
+    char *callbacks  = CFCUtil_strdup("");
+
+    // Generate implementation files containing callback definitions.
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass)
+            || CFCClass_inert(klass)
+            //|| CFCClass_get_parcel(klass) != parcel
+           ) {
+            continue;
+        }
+
+        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
+        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
+            CFCMethod *method = fresh_methods[meth_num];
+
+            // Define callback.
+            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
+                char *cb_def = CFCPyMethod_callback_def(method, klass);
+                callbacks = CFCUtil_cat(callbacks, cb_def, "\n", NULL);
+                FREEMEM(cb_def);
+            }
+        }
+    }
+
+    static const char helpers[] =
+        ""
+        ;
+
+    static const char pattern[] =
+        "%s\n"
+        "\n"
+        "%s"
+        ;
+    char *content = CFCUtil_sprintf(pattern, helpers, callbacks);
+
+    FREEMEM(callbacks);
+    return content;
+}
+
 static void
 S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     const char *parcel_name = CFCParcel_get_name(parcel);
@@ -127,6 +170,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
 
     CFCClass  **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
     CFCParcel **parcels = CFCParcel_all_parcels();
+    char *callbacks          = S_gen_callbacks(self, parcel, ordered);
     char *pound_includes     = CFCUtil_strdup("");
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
@@ -146,6 +190,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "#include \"CFBind.h\"\n"
         "%s\n"
         "\n"
+        "%s\n" // callbacks
+        "\n"
         "static PyModuleDef module_def = {\n"
         "    PyModuleDef_HEAD_INIT,\n"
         "    \"%s\",\n" // module name
@@ -164,7 +210,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "\n";
 
     char *content
-        = CFCUtil_sprintf(pattern, self->header, pound_includes,
+        = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
                           helper_mod_name, last_component, self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
@@ -176,6 +222,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(helper_mod_name);
     FREEMEM(pymod_name);
     FREEMEM(pound_includes);
+    FREEMEM(callbacks);
     FREEMEM(ordered);
 }
 
