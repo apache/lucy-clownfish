@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#include <string.h>
+#include <stdlib.h>
+
 #define CFC_NEED_BASE_STRUCT_DEF 1
 
 #include "CFCBase.h"
@@ -33,6 +36,10 @@ struct CFCPyClass {
     char *pre_code;
     char *meth_defs;
 };
+
+static CFCPyClass **registry = NULL;
+static size_t registry_size = 0;
+static size_t registry_cap  = 0;
 
 static void
 S_CFCPyClass_destroy(CFCPyClass *self);
@@ -66,3 +73,66 @@ S_CFCPyClass_destroy(CFCPyClass *self) {
     CFCBase_destroy((CFCBase*)self);
 }
 
+static int
+S_compare_cfcperlclass(const void *va, const void *vb) {
+    CFCPyClass *a = *(CFCPyClass**)va;
+    CFCPyClass *b = *(CFCPyClass**)vb;
+    return strcmp(a->class_name, b->class_name);
+}
+
+void
+CFCPyClass_add_to_registry(CFCPyClass *self) {
+    if (registry_size == registry_cap) {
+        size_t new_cap = registry_cap + 10;
+        registry = (CFCPyClass**)REALLOCATE(registry,
+                                            (new_cap + 1) * sizeof(CFCPyClass*));
+        for (size_t i = registry_cap; i <= new_cap; i++) {
+            registry[i] = NULL;
+        }
+        registry_cap = new_cap;
+    }
+    CFCPyClass *existing = CFCPyClass_singleton(self->class_name);
+    if (existing) {
+        CFCUtil_die("Class '%s' already registered", self->class_name);
+    }
+    registry[registry_size] = (CFCPyClass*)CFCBase_incref((CFCBase*)self);
+    registry_size++;
+    qsort(registry, registry_size, sizeof(CFCPyClass*),
+          S_compare_cfcperlclass);
+}
+
+CFCPyClass*
+CFCPyClass_singleton(const char *class_name) {
+    CFCUTIL_NULL_CHECK(class_name);
+    for (size_t i = 0; i < registry_size; i++) {
+        CFCPyClass *existing = registry[i];
+        if (strcmp(class_name, existing->class_name) == 0) {
+            return existing;
+        }
+    }
+    return NULL;
+}
+
+CFCPyClass**
+CFCPyClass_registry() {
+    if (!registry) {
+        registry = (CFCPyClass**)CALLOCATE(1, sizeof(CFCPyClass*));
+    }
+    return registry;
+}
+
+void
+CFCPyClass_clear_registry(void) {
+    for (size_t i = 0; i < registry_size; i++) {
+        CFCBase_decref((CFCBase*)registry[i]);
+    }
+    FREEMEM(registry);
+    registry_size = 0;
+    registry_cap  = 0;
+    registry      = NULL;
+}
+
+char*
+CFCPyClass_gen_binding_code(CFCPyClass *self) {
+    return CFCUtil_strdup("");
+}

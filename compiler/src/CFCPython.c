@@ -24,6 +24,7 @@
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCPython.h"
+#include "CFCPyClass.h"
 #include "CFCPyMethod.h"
 #include "CFCParcel.h"
 #include "CFCClass.h"
@@ -361,6 +362,30 @@ S_gen_callbacks(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
     return content;
 }
 
+static char*
+S_gen_class_bindings(CFCPython *self, CFCParcel *parcel,
+                     const char *pymod_name, CFCClass **ordered) {
+    char *bindings = CFCUtil_strdup("");
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass)) {
+            continue;
+        }
+        const char *class_name = CFCClass_get_name(klass);
+        CFCPyClass *class_binding = CFCPyClass_singleton(class_name);
+        if (!class_binding) {
+            // No binding spec'd out, so create one using defaults.
+            class_binding = CFCPyClass_new(klass);
+            CFCPyClass_add_to_registry(class_binding);
+        }
+
+        char *code = CFCPyClass_gen_binding_code(class_binding);
+        bindings = CFCUtil_cat(bindings, code, NULL);
+        FREEMEM(code);
+    }
+    return bindings;
+}
+
 static void
 S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     const char *parcel_name = CFCParcel_get_name(parcel);
@@ -382,6 +407,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     CFCParcel **parcels = CFCParcel_all_parcels();
     char *callbacks          = S_gen_callbacks(self, parcel, ordered);
     char *pound_includes     = CFCUtil_strdup("");
+    char *class_bindings     = S_gen_class_bindings(self, parcel, pymod_name, ordered);
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
@@ -410,6 +436,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "    NULL, NULL, NULL, NULL, NULL\n"
         "};\n"
         "\n"
+        "%s" // class bindings
+        "\n"
         "PyMODINIT_FUNC\n"
         "PyInit__%s(void) {\n"
         "    PyObject *module = PyModule_Create(&module_def);\n"
@@ -421,7 +449,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
 
     char *content
         = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
-                          helper_mod_name, last_component, self->footer);
+                          helper_mod_name, class_bindings, last_component,
+                          self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
                                      last_component);
@@ -429,6 +458,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(filepath);
 
     FREEMEM(content);
+    FREEMEM(class_bindings);
     FREEMEM(helper_mod_name);
     FREEMEM(pymod_name);
     FREEMEM(pound_includes);
