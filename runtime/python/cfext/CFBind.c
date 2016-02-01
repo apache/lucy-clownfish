@@ -912,23 +912,26 @@ CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
 
 void
 cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
+    // FIXME
     CFISH_UNUSED_VAR(singleton);
     CFISH_UNUSED_VAR(parent);
-    CFISH_THROW(CFISH_ERR, "TODO");
 }
 
 cfish_Vector*
 cfish_Class_fresh_host_methods(cfish_String *class_name) {
+    // FIXME Scan Python class for host methods which override.  Until this is
+    // implemented, it will be impossible to override Clownfish methods from
+    // Python.
     CFISH_UNUSED_VAR(class_name);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Vector*);
+    return cfish_Vec_new(0);
 }
 
 cfish_String*
 cfish_Class_find_parent_class(cfish_String *class_name) {
+    // FIXME Until this is implemented, subclassing from Python will be
+    // impossible.
     CFISH_UNUSED_VAR(class_name);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_String*);
+    return NULL;
 }
 
 /**** Method ***************************************************************/
