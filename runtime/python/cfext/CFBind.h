@@ -112,6 +112,13 @@ cfish_Obj*
 CFBind_py_to_cfish_noinc(PyObject *py_obj, cfish_Class *klass,
                          void *allocation);
 
+/** Associate Clownfish classes with Python type objects.  (Internal-only,
+  * used during bootstrapping.)
+  */
+void
+CFBind_assoc_py_types(struct cfish_Class ***klass_handles,
+                      PyTypeObject **py_types, int32_t num_items);
+
 typedef struct CFBindArg {
     cfish_Class *klass;
     void        *ptr;

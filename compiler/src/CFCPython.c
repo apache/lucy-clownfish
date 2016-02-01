@@ -398,7 +398,7 @@ S_gen_type_linkups(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
         "    PyTypeObject **py_types = (PyTypeObject**)CFISH_MALLOCATE(py_types_size);\n"
         "%s\n"
         "%s\n"
-        "    //CFBind_assoc_py_types(handles, py_types, num_items);\n"
+        "    CFBind_assoc_py_types(handles, py_types, num_items);\n"
         "    CFISH_FREEMEM(handles);\n"
         "    CFISH_FREEMEM(py_types);\n"
         "}\n"

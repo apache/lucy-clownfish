@@ -36,6 +36,7 @@
 #include "Clownfish/Num.h"
 #include "Clownfish/String.h"
 #include "Clownfish/TestHarness/TestUtils.h"
+#include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Vector.h"
@@ -765,6 +766,68 @@ CFBind_convert_bool(PyObject *py_obj, bool *ptr) {
 int
 CFBind_maybe_convert_bool(PyObject *py_obj, bool *ptr) {
     return S_convert_bool(py_obj, ptr, true);
+}
+
+typedef struct ClassMapElem {
+    cfish_Class **klass_handle;
+    PyTypeObject *py_type;
+} ClassMapElem;
+
+typedef struct ClassMap {
+    int32_t size;
+    ClassMapElem *elems;
+} ClassMap;
+
+/* Before we can invoke methods on any Clownfish object safely, we must know
+ * about its corresponding Python type object.  This association must be made
+ * early in the bootstrapping process, which is tricky.  We can't use any
+ * of Clownfish's convenient data structures yet!
+ */
+static ClassMap *klass_map = NULL;
+
+static ClassMap*
+S_revise_class_map(ClassMap *current, cfish_Class ***klass_handles,
+                   PyTypeObject **py_types, int32_t num_items) {
+    int32_t num_current = current ? current->size : 0;
+    int32_t total = num_current + num_items;
+    ClassMap *revised = (ClassMap*)malloc(sizeof(ClassMap));
+    revised->elems = (ClassMapElem*)malloc(total * sizeof(ClassMapElem));
+    if (current) {
+        size_t size = num_current * sizeof(ClassMapElem);
+        memcpy(revised->elems, current->elems, size);
+    }
+    for (int32_t i = 0; i < num_items; i++) {
+        revised->elems[i + num_current].klass_handle = klass_handles[i];
+        revised->elems[i + num_current].py_type      = py_types[i];
+    }
+    revised->size = total;
+    return revised;
+}
+
+void
+CFBind_assoc_py_types(cfish_Class ***klass_handles, PyTypeObject **py_types,
+                      int32_t num_items) {
+    while (1) {
+        ClassMap *current = klass_map;
+        ClassMap *revised = S_revise_class_map(current, klass_handles,
+                                               py_types, num_items);
+        if (cfish_Atomic_cas_ptr((void*volatile*)&klass_map, current, revised)) {
+            if (current) {
+                // TODO: Use read locking.  For now we have to leak this
+                // memory to avoid memory errors in case another thread isn't
+                // done reading it yet.
+
+                //free(current->elems);
+                //free(current);
+            }
+            break;
+        }
+        else {
+            // Another thread beat us to it.  Try again.
+            free(revised->elems);
+            free(revised);
+        }
+    }
 }
 
 /**** refcounting **********************************************************/
