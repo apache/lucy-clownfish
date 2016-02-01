@@ -363,6 +363,54 @@ S_gen_callbacks(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
 }
 
 static char*
+S_gen_type_linkups(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
+    char *handles  = CFCUtil_strdup("");
+    char *py_types = CFCUtil_strdup("");
+    int num_items = 0;
+
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass) || CFCClass_inert(klass)) {
+            continue;
+        }
+        const char *class_var = CFCClass_full_class_var(klass);
+        const char *struct_sym = CFCClass_get_struct_sym(klass);
+        char *handles_temp
+            = CFCUtil_sprintf("%s    handles[%d]  = &%s;\n",
+                              handles, num_items, class_var);
+        char *py_types_temp
+            = CFCUtil_sprintf("%s    py_types[%d] = &%s_pytype_struct;\n",
+                              py_types, num_items, struct_sym);
+        FREEMEM(handles);
+        FREEMEM(py_types);
+        handles  = handles_temp;
+        py_types = py_types_temp;
+        num_items++;
+    }
+
+    char pattern[] =
+        "static void\n"
+        "S_link_py_types(void) {\n"
+        "    const int num_items = %d;\n"
+        "    size_t handles_size  = num_items * sizeof(cfish_Class**);\n"
+        "    size_t py_types_size = num_items * sizeof(PyTypeObject*);\n"
+        "    cfish_Class ***handles  = (cfish_Class***)CFISH_MALLOCATE(handles_size);\n"
+        "    PyTypeObject **py_types = (PyTypeObject**)CFISH_MALLOCATE(py_types_size);\n"
+        "%s\n"
+        "%s\n"
+        "    //CFBind_assoc_py_types(handles, py_types, num_items);\n"
+        "    CFISH_FREEMEM(handles);\n"
+        "    CFISH_FREEMEM(py_types);\n"
+        "}\n"
+        ;
+    char *content = CFCUtil_sprintf(pattern, num_items, handles, py_types);
+
+    FREEMEM(handles);
+    FREEMEM(py_types);
+    return content;
+}
+
+static char*
 S_gen_class_bindings(CFCPython *self, CFCParcel *parcel,
                      const char *pymod_name, CFCClass **ordered) {
     char *bindings = CFCUtil_strdup("");
@@ -406,6 +454,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     CFCClass  **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
     CFCParcel **parcels = CFCParcel_all_parcels();
     char *callbacks          = S_gen_callbacks(self, parcel, ordered);
+    char *type_linkups       = S_gen_type_linkups(self, parcel, ordered);
     char *pound_includes     = CFCUtil_strdup("");
     char *class_bindings     = S_gen_class_bindings(self, parcel, pymod_name, ordered);
 
@@ -438,8 +487,11 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "\n"
         "%s" // class bindings
         "\n"
+        "%s" // S_link_py_types function
+        "\n"
         "PyMODINIT_FUNC\n"
         "PyInit__%s(void) {\n"
+        "    S_link_py_types();\n"
         "    PyObject *module = PyModule_Create(&module_def);\n"
         "    return module;\n"
         "}\n"
@@ -449,8 +501,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
 
     char *content
         = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
-                          helper_mod_name, class_bindings, last_component,
-                          self->footer);
+                          helper_mod_name, class_bindings, type_linkups,
+                          last_component, self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
                                      last_component);
@@ -462,6 +514,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(helper_mod_name);
     FREEMEM(pymod_name);
     FREEMEM(pound_includes);
+    FREEMEM(type_linkups);
     FREEMEM(callbacks);
     FREEMEM(ordered);
 }
