@@ -50,10 +50,8 @@ S_get_cached_py_type(cfish_Class *klass);
 
 static bool
 S_py_obj_is_a(PyObject *py_obj, cfish_Class *klass) {
-    CFISH_UNUSED_VAR(py_obj);
-    CFISH_UNUSED_VAR(klass);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(bool);
+    PyTypeObject *py_type = S_get_cached_py_type(klass);
+    return !!PyObject_TypeCheck(py_obj, py_type);
 }
 
 void
@@ -859,11 +857,42 @@ CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
 
 /**** Class ****************************************************************/
 
+/* Check the Class object for its associated PyTypeObject, which is stored in
+ * `klass->host_type`.  If it is not there yet, search the class mapping and
+ * cache it in the object.  Return the PyTypeObject.
+ */
 static PyTypeObject*
 S_get_cached_py_type(cfish_Class *self) {
-    // FIXME: dummy implementation
-    CFISH_UNUSED_VAR(self);
-    return NULL;
+    PyTypeObject *py_type = (PyTypeObject*)self->host_type;
+    if (py_type == NULL) {
+        ClassMap *current = klass_map;
+        for (int32_t i = 0; i < current->size; i++) {
+            cfish_Class **handle = current->elems[i].klass_handle;
+            if (handle == NULL || *handle != self) {
+                continue;
+            }
+            py_type = current->elems[i].py_type;
+            Py_INCREF(py_type);
+            if (!cfish_Atomic_cas_ptr((void*volatile*)&self->host_type, py_type, NULL)) {
+                // Lost the race to another thread, so get rid of the refcount.
+                Py_DECREF(py_type);
+            }
+            break;
+        }
+    }
+    if (py_type == NULL) {
+        if (Err_initialized) {
+            CFISH_THROW(CFISH_ERR,
+                        "Can't find a Python type object corresponding to %o",
+                        CFISH_Class_Get_Name(self));
+        }
+        else {
+            fprintf(stderr, "Can't find a Python type corresponding to a "
+                            "Clownfish class\n");
+            exit(1);
+        }
+    }
+    return py_type;
 }
 
 cfish_Obj*
