@@ -215,3 +215,21 @@ S_maybe_unreachable(CFCType *return_type) {
     return return_statement;
 }
 
+char*
+CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
+    char *meth_sym   = CFCMethod_full_method_sym(method, invoker);
+
+    char pattern[] =
+        "static PyObject*\n"
+        "S_%s(PyObject *unused1, PyObject *unused2) {\n"
+        "    CFISH_UNUSED_VAR(unused1);\n"
+        "    CFISH_UNUSED_VAR(unused2);\n"
+        "    Py_RETURN_NONE;\n"
+        "}\n"
+        ;
+    char *wrapper = CFCUtil_sprintf(pattern, meth_sym);
+    FREEMEM(meth_sym);
+
+    return wrapper;
+}
+

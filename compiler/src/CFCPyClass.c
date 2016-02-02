@@ -145,6 +145,23 @@ CFCPyClass_gen_binding_code(CFCPyClass *self) {
     char *bindings  = CFCUtil_strdup(self->pre_code ? self->pre_code : "");
     char *meth_defs = CFCUtil_strdup(self->meth_defs);
 
+    // Instance methods.
+    CFCMethod **methods = CFCClass_fresh_methods(klass);
+    for (size_t j = 0; methods[j] != NULL; j++) {
+        CFCMethod *meth = methods[j];
+
+        if (CFCMethod_excluded_from_host(meth)
+            || !CFCMethod_can_be_bound(meth)
+           ) {
+            continue;
+        }
+
+        // Add the function wrapper.
+        char *wrapper = CFCPyMethod_wrapper(meth, klass);
+        bindings = CFCUtil_cat(bindings, wrapper, "\n", NULL);
+        FREEMEM(wrapper);
+    }
+
     // Complete the PyMethodDef array.
     const char *struct_sym = CFCClass_get_struct_sym(klass);
     char *meth_defs_pattern =

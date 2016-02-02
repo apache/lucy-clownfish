@@ -31,6 +31,9 @@ struct CFCClass;
 char*
 CFCPyMethod_callback_def(struct CFCMethod *method, struct CFCClass *invoker);
 
+char*
+CFCPyMethod_wrapper(struct CFCMethod *method, struct CFCClass *invoker);
+
 #ifdef __cplusplus
 }
 #endif
