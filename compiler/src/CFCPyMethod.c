@@ -67,6 +67,41 @@ S_build_py_args(CFCParamList *param_list) {
     return py_args;
 }
 
+/* Generate the code which parses arguments passed from Python and converts
+ * them to Clownfish-flavored C values.
+ */
+static char*
+S_gen_arg_parsing(CFCParamList *param_list) {
+    char *content = NULL;
+
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    const char **vals = CFCParamList_get_initial_values(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+
+    char *declarations = CFCUtil_strdup("");
+    char *keywords     = CFCUtil_strdup("");
+    char *format_str   = CFCUtil_strdup("");
+    char *targets      = CFCUtil_strdup("");
+    int optional_started = 0;
+
+    char parse_pattern[] =
+        "%s"
+        "    char *keywords[] = {%sNULL};\n"
+        "    char *fmt = \"%s\";\n"
+        "    int ok = PyArg_ParseTupleAndKeywords(args, kwargs, fmt,\n"
+        "        keywords%s);\n"
+        "    if (!ok) { return NULL; }\n"
+        ;
+    content = CFCUtil_sprintf(parse_pattern, declarations, keywords,
+                              format_str, targets);
+
+    FREEMEM(declarations);
+    FREEMEM(keywords);
+    FREEMEM(format_str);
+    FREEMEM(targets);
+    return content;
+}
+
 static char*
 S_build_pymeth_invocation(CFCMethod *method) {
     CFCType *return_type = CFCMethod_get_return_type(method);
@@ -227,10 +262,13 @@ S_meth_top(CFCMethod *method) {
         return CFCUtil_sprintf(pattern);
     }
     else {
+        char *arg_parsing = S_gen_arg_parsing(param_list);
         char pattern[] =
             "(PyObject *self, PyObject *args, PyObject *kwargs) {\n"
+            "%s"
             ;
-        char *result = CFCUtil_sprintf(pattern);
+        char *result = CFCUtil_sprintf(pattern, arg_parsing);
+        FREEMEM(arg_parsing);
         return result;
     }
 }
