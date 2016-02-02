@@ -201,6 +201,10 @@ S_gen_arg_parsing(CFCParamList *param_list, int first_tick, char **error) {
         CFCVariable *var  = vars[i];
         const char  *val  = vals[i];
 
+        const char *var_name = CFCVariable_get_name(var);
+        keywords = CFCUtil_cat(keywords, "\"", var_name, "\", ", NULL);
+
+        // Build up ParseTuple format string.
         if (val == NULL) {
             if (optional_started) { // problem!
                 *error = "Required after optional param";
@@ -210,8 +214,10 @@ S_gen_arg_parsing(CFCParamList *param_list, int first_tick, char **error) {
         else {
             if (!optional_started) {
                 optional_started = 1;
+                format_str = CFCUtil_cat(format_str, "|", NULL);
             }
         }
+        format_str = CFCUtil_cat(format_str, "O&", NULL);
 
         char *declaration = S_gen_declaration(var, val);
         declarations = CFCUtil_cat(declarations, declaration, NULL);
