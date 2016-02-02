@@ -457,7 +457,17 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *type_linkups       = S_gen_type_linkups(self, parcel, ordered);
     char *pound_includes     = CFCUtil_strdup("");
     char *class_bindings     = S_gen_class_bindings(self, parcel, pymod_name, ordered);
+    char *parcel_boots       = CFCUtil_strdup("");
     char *pytype_ready_calls = CFCUtil_strdup("");
+
+    // Add parcel bootstrapping calls.
+    for (size_t i = 0; parcels[i]; ++i) {
+        if (!CFCParcel_included(parcels[i])) {
+            const char *prefix = CFCParcel_get_prefix(parcels[i]);
+            parcel_boots = CFCUtil_cat(parcel_boots, "    ", prefix,
+                                       "bootstrap_parcel();\n", NULL);
+        }
+    }
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
@@ -508,6 +518,9 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "%s\n" // PyType_Ready calls
         "\n"
         "    S_link_py_types();\n"
+        "\n"
+        "%s\n" // parcel boots
+        "\n"
         "    PyObject *module = PyModule_Create(&module_def);\n"
         "    return module;\n"
         "}\n"
@@ -518,7 +531,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *content
         = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
                           helper_mod_name, class_bindings, type_linkups,
-                          last_component, pytype_ready_calls, self->footer);
+                          last_component, pytype_ready_calls, parcel_boots,
+                          self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
                                      last_component);
@@ -527,6 +541,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
 
     FREEMEM(content);
     FREEMEM(pytype_ready_calls);
+    FREEMEM(parcel_boots);
     FREEMEM(class_bindings);
     FREEMEM(helper_mod_name);
     FREEMEM(pymod_name);
