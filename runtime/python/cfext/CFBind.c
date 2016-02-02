@@ -938,9 +938,7 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
 
 cfish_String*
 CFISH_Method_Host_Name_IMP(cfish_Method *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_String*);
+    return cfish_Method_lower_snake_alias(self);
 }
 
 /**** Err ******************************************************************/
