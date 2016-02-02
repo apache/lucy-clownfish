@@ -447,22 +447,51 @@ S_gen_arg_increfs(CFCParamList *param_list, int first_tick) {
     return content;
 }
 
+// Prep refcount decrement calls to follow the Clownfish subroutine
+// invocation.
+static char*
+S_gen_decrefs(CFCParamList *param_list, int first_tick) {
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+    char *decrefs = CFCUtil_strdup("");
+
+    for (int i = first_tick; i < num_vars; i++) {
+        CFCVariable *var = vars[i];
+        CFCType *type = CFCVariable_get_type(var);
+        const char *micro_sym = CFCVariable_get_name(var);
+        const char *specifier = CFCType_get_specifier(type);
+
+        if (strcmp(specifier, "cfish_String") == 0
+             || strcmp(specifier, "cfish_Vector") == 0
+             || strcmp(specifier, "cfish_Hash") == 0
+            ) {
+            decrefs = CFCUtil_cat(decrefs, "    CFISH_DECREF(", micro_sym,
+                                  "_ARG);\n", NULL);
+        }
+    }
+
+    return decrefs;
+}
+
 char*
 CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
     CFCParamList *param_list  = CFCMethod_get_param_list(method);
     char *meth_sym   = CFCMethod_full_method_sym(method, invoker);
     char *meth_top   = S_meth_top(method);
     char *increfs    = S_gen_arg_increfs(param_list, 1);
+    char *decrefs    = S_gen_decrefs(param_list, 1);
 
     char pattern[] =
         "static PyObject*\n"
         "S_%s%s"
         "%s" // increfs
+        "%s" // decrefs
         "    Py_RETURN_NONE;\n"
         "}\n"
         ;
     char *wrapper = CFCUtil_sprintf(pattern, meth_sym, meth_top,
-                                    increfs);
+                                    increfs, decrefs);
+    FREEMEM(decrefs);
     FREEMEM(increfs);
     FREEMEM(meth_sym);
     FREEMEM(meth_top);
