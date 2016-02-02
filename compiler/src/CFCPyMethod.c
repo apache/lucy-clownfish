@@ -427,18 +427,43 @@ S_meth_top(CFCMethod *method) {
     }
 }
 
+static char*
+S_gen_arg_increfs(CFCParamList *param_list, int first_tick) {
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+    char *content = CFCUtil_strdup("");
+    for (int i = first_tick;i < num_vars; i++) {
+        CFCType *type = CFCVariable_get_type(vars[i]);
+        if (CFCType_decremented(type)) {
+            const char *name = CFCVariable_get_name(vars[i]);
+            const char *specifier = CFCType_get_specifier(type);
+            char pattern[] =
+                "    %s_ARG = (%s*)CFISH_INCREF(%s_ARG);\n";
+            char *incref = CFCUtil_sprintf(pattern, name, specifier, name);
+            content = CFCUtil_cat(content, incref, NULL);
+            FREEMEM(incref);
+        }
+    }
+    return content;
+}
+
 char*
 CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
+    CFCParamList *param_list  = CFCMethod_get_param_list(method);
     char *meth_sym   = CFCMethod_full_method_sym(method, invoker);
     char *meth_top   = S_meth_top(method);
+    char *increfs    = S_gen_arg_increfs(param_list, 1);
 
     char pattern[] =
         "static PyObject*\n"
         "S_%s%s"
+        "%s" // increfs
         "    Py_RETURN_NONE;\n"
         "}\n"
         ;
-    char *wrapper = CFCUtil_sprintf(pattern, meth_sym, meth_top);
+    char *wrapper = CFCUtil_sprintf(pattern, meth_sym, meth_top,
+                                    increfs);
+    FREEMEM(increfs);
     FREEMEM(meth_sym);
     FREEMEM(meth_top);
 
