@@ -459,6 +459,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *class_bindings     = S_gen_class_bindings(self, parcel, pymod_name, ordered);
     char *parcel_boots       = CFCUtil_strdup("");
     char *pytype_ready_calls = CFCUtil_strdup("");
+    char *module_adds        = CFCUtil_strdup("");
 
     // Add parcel bootstrapping calls.
     for (size_t i = 0; parcels[i]; ++i) {
@@ -487,6 +488,10 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
                 "    if (PyType_Ready(&", struct_sym,
                 "_pytype_struct) < 0) { return NULL; }\n", NULL);
         }
+
+        module_adds = CFCUtil_cat(module_adds, "    PyModule_AddObject(module, \"",
+                                  struct_sym, "\", (PyObject*)&", struct_sym,
+                                  "_pytype_struct);\n", NULL);
     }
 
     const char pattern[] =
@@ -522,6 +527,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "%s\n" // parcel boots
         "\n"
         "    PyObject *module = PyModule_Create(&module_def);\n"
+        "%s\n" // Add types to module
+        "\n"
         "    return module;\n"
         "}\n"
         "\n"
@@ -532,7 +539,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
                           helper_mod_name, class_bindings, type_linkups,
                           last_component, pytype_ready_calls, parcel_boots,
-                          self->footer);
+                          module_adds, self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
                                      last_component);
@@ -540,6 +547,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(filepath);
 
     FREEMEM(content);
+    FREEMEM(module_adds);
     FREEMEM(pytype_ready_calls);
     FREEMEM(parcel_boots);
     FREEMEM(class_bindings);
