@@ -930,17 +930,28 @@ S_get_cached_py_type(cfish_Class *self) {
 
 cfish_Obj*
 CFISH_Class_Make_Obj_IMP(cfish_Class *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+    PyTypeObject *py_type = S_get_cached_py_type(self);
+    cfish_Obj *obj = (cfish_Obj*)py_type->tp_alloc(py_type, 0);
+    obj->klass = self;
+    return obj;
 }
 
 cfish_Obj*
 CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_UNUSED_VAR(allocation);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+    PyTypeObject *py_type = S_get_cached_py_type(self);
+    // It would be nice if we could call PyObject_Init() here and feel
+    // confident that we have performed all Python-specific initialization
+    // under all possible configurations, but that's not possible.  In
+    // addition to setting ob_refcnt and ob_type, PyObject_Init() performs
+    // tracking for heap allocated objects under special builds -- but
+    // Class_Init_Obj() may be called on non-heap memory, such as
+    // stack-allocated Clownfish Strings.  Therefore, we must perform a subset
+    // of tasks selected from PyObject_Init() manually.
+    cfish_Obj *obj = (cfish_Obj*)allocation;
+    obj->ob_base.ob_refcnt = 1;
+    obj->ob_base.ob_type = py_type;
+    obj->klass = self;
+    return obj;
 }
 
 void
