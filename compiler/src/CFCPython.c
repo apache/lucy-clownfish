@@ -457,14 +457,26 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *type_linkups       = S_gen_type_linkups(self, parcel, ordered);
     char *pound_includes     = CFCUtil_strdup("");
     char *class_bindings     = S_gen_class_bindings(self, parcel, pymod_name, ordered);
+    char *pytype_ready_calls = CFCUtil_strdup("");
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
         if (CFCClass_included(klass)) { continue; }
+        const char *struct_sym = CFCClass_get_struct_sym(klass);
 
         const char *include_h  = CFCClass_include_h(klass);
         pound_includes = CFCUtil_cat(pound_includes, "#include \"",
                                      include_h, "\"\n", NULL);
+
+        // The PyType_Ready invocations for instantiable classes are handled
+        // via bootstrapping of Clownfish Class objects.  Since inert classes
+        // do not at present have Class objects, we need to handle their
+        // PyType_Ready calls independently.
+        if (CFCClass_inert(klass)) {
+            pytype_ready_calls = CFCUtil_cat(pytype_ready_calls,
+                "    if (PyType_Ready(&", struct_sym,
+                "_pytype_struct) < 0) { return NULL; }\n", NULL);
+        }
     }
 
     const char pattern[] =
@@ -492,6 +504,9 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "PyMODINIT_FUNC\n"
         "PyInit__%s(void) {\n"
         "    cfish_Class_bootstrap_hook1 = CFBind_class_bootstrap_hook1;\n"
+        "\n"
+        "%s\n" // PyType_Ready calls
+        "\n"
         "    S_link_py_types();\n"
         "    PyObject *module = PyModule_Create(&module_def);\n"
         "    return module;\n"
@@ -503,7 +518,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *content
         = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
                           helper_mod_name, class_bindings, type_linkups,
-                          last_component, self->footer);
+                          last_component, pytype_ready_calls, self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
                                      last_component);
@@ -511,6 +526,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(filepath);
 
     FREEMEM(content);
+    FREEMEM(pytype_ready_calls);
     FREEMEM(class_bindings);
     FREEMEM(helper_mod_name);
     FREEMEM(pymod_name);
