@@ -133,6 +133,53 @@ S_gen_declaration(CFCVariable *var, const char *val) {
     return result;
 }
 
+static char*
+S_gen_target(CFCVariable *var, const char *value) {
+    CFCType *type = CFCVariable_get_type(var);
+    const char *specifier = CFCType_get_specifier(type);
+    const char *micro_sym = CFCVariable_get_name(var);
+    const char *maybe_maybe = "";
+    const char *dest_name;
+    char *var_name = NULL;
+    if (CFCType_is_primitive(type)) {
+        dest_name = CFCType_get_specifier(type);
+        if (value != NULL) {
+            maybe_maybe = "maybe_";
+        }
+        var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+    }
+    else if (CFCType_is_object(type)) {
+        if (CFCType_nullable(type) ||
+            (value && strcmp(value, "NULL") == 0)
+           ) {
+            maybe_maybe = "maybe_";
+        }
+        if (strcmp(specifier, "cfish_String") == 0) {
+            dest_name = "string";
+            var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+        }
+        else if (strcmp(specifier, "cfish_Hash") == 0) {
+            dest_name = "hash";
+            var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+        }
+        else if (strcmp(specifier, "cfish_Vector") == 0) {
+            dest_name = "vec";
+            var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+        }
+        else {
+            dest_name = "obj";
+            var_name = CFCUtil_sprintf("wrap_arg_%s", micro_sym);
+        }
+    }
+    else {
+        dest_name = "INVALID";
+    }
+    char *content = CFCUtil_sprintf(", CFBind_%sconvert_%s, &%s",
+                                    maybe_maybe, dest_name, var_name);
+    FREEMEM(var_name);
+    return content;
+}
+
 /* Generate the code which parses arguments passed from Python and converts
  * them to Clownfish-flavored C values.
  */
@@ -169,6 +216,10 @@ S_gen_arg_parsing(CFCParamList *param_list, int first_tick, char **error) {
         char *declaration = S_gen_declaration(var, val);
         declarations = CFCUtil_cat(declarations, declaration, NULL);
         FREEMEM(declaration);
+
+        char *target = S_gen_target(var, val);
+        targets = CFCUtil_cat(targets, target, NULL);
+        FREEMEM(target);
     }
 
     char parse_pattern[] =
