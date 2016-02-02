@@ -857,6 +857,39 @@ CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
 
 /**** Class ****************************************************************/
 
+/* Tell Python about the size of Clownfish objects, by copying
+ * `cfclass->obj_alloc_size` into `pytype->tp_basicsize`.
+ * **THIS MUST BE RUN BEFORE Class_Make_Obj IS CALLED** because under the
+ * Python bindings, Clownfish uses Python object allocation internally.
+ * Furthermore, `tp_basicsize` is supposed to be set before `PyType_Ready()`
+ * is called.
+ *
+ * Ideally we would set `tp_basicsize` from within `Class_register_with_host`,
+ * but it doesn't get called until too late.
+ */
+void
+CFBind_class_bootstrap_hook1(cfish_Class *self) {
+    PyTypeObject *py_type = S_get_cached_py_type(self);
+    if (PyType_HasFeature(py_type, Py_TPFLAGS_READY)) {
+        if (py_type->tp_basicsize != (Py_ssize_t)self->obj_alloc_size) {
+            fprintf(stderr, "PyType for %s readied with wrong alloc size\n",
+                    py_type->tp_name),
+            exit(1);
+        }
+    }
+    else {
+        if (self->parent) {
+            py_type->tp_base = S_get_cached_py_type(self->parent);
+        }
+        py_type->tp_basicsize = self->obj_alloc_size;
+        if (PyType_Ready(py_type) < 0) {
+            fprintf(stderr, "PyType_Ready failed for %s\n",
+                    py_type->tp_name),
+            exit(1);
+        }
+    }
+}
+
 /* Check the Class object for its associated PyTypeObject, which is stored in
  * `klass->host_type`.  If it is not there yet, search the class mapping and
  * cache it in the object.  Return the PyTypeObject.

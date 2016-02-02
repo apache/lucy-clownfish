@@ -219,6 +219,9 @@ CFBind_maybe_convert_float(PyObject *input, float *ptr);
 int
 CFBind_maybe_convert_double(PyObject *input, double *ptr);
 
+void
+CFBind_class_bootstrap_hook1(struct cfish_Class *self);
+
 #ifdef __cplusplus
 }
 #endif

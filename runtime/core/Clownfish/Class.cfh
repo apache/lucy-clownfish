@@ -149,5 +149,13 @@ __C__
 #define CFISH_ALLOCA_OBJ(class) \
     cfish_alloca(CFISH_Class_Get_Obj_Alloc_Size(class))
 
+/** Bootstrapping hook/hack needed by the Python bindings.
+ *
+ * TODO: Refactor this away in favor of a more general solution.
+ */
+typedef void
+(*cfish_Class_bootstrap_hook1_t)(cfish_Class *self);
+extern cfish_Class_bootstrap_hook1_t cfish_Class_bootstrap_hook1;
+
 __END_C__
 

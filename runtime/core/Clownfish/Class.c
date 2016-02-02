@@ -54,6 +54,7 @@ static int32_t
 S_claim_parcel_id(void);
 
 static LockFreeRegistry *Class_registry;
+cfish_Class_bootstrap_hook1_t cfish_Class_bootstrap_hook1;
 
 void
 Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
@@ -145,6 +146,9 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         }
         else {
             klass->obj_alloc_size = ivars_offset + spec->ivars_size;
+        }
+        if (cfish_Class_bootstrap_hook1 != NULL) {
+            cfish_Class_bootstrap_hook1(klass);
         }
 
         klass->flags = 0;

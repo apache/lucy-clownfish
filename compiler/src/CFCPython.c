@@ -491,6 +491,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "\n"
         "PyMODINIT_FUNC\n"
         "PyInit__%s(void) {\n"
+        "    cfish_Class_bootstrap_hook1 = CFBind_class_bootstrap_hook1;\n"
         "    S_link_py_types();\n"
         "    PyObject *module = PyModule_Create(&module_def);\n"
         "    return module;\n"
