@@ -215,20 +215,40 @@ S_maybe_unreachable(CFCType *return_type) {
     return return_statement;
 }
 
+static char*
+S_meth_top(CFCMethod *method) {
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+
+    if (CFCParamList_num_vars(param_list) == 1) {
+        char pattern[] =
+            "(PyObject *self, PyObject *unused) {\n"
+            "    CFISH_UNUSED_VAR(unused);\n"
+            ;
+        return CFCUtil_sprintf(pattern);
+    }
+    else {
+        char pattern[] =
+            "(PyObject *self, PyObject *args, PyObject *kwargs) {\n"
+            ;
+        char *result = CFCUtil_sprintf(pattern);
+        return result;
+    }
+}
+
 char*
 CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
     char *meth_sym   = CFCMethod_full_method_sym(method, invoker);
+    char *meth_top   = S_meth_top(method);
 
     char pattern[] =
         "static PyObject*\n"
-        "S_%s(PyObject *unused1, PyObject *unused2) {\n"
-        "    CFISH_UNUSED_VAR(unused1);\n"
-        "    CFISH_UNUSED_VAR(unused2);\n"
+        "S_%s%s"
         "    Py_RETURN_NONE;\n"
         "}\n"
         ;
-    char *wrapper = CFCUtil_sprintf(pattern, meth_sym);
+    char *wrapper = CFCUtil_sprintf(pattern, meth_sym, meth_top);
     FREEMEM(meth_sym);
+    FREEMEM(meth_top);
 
     return wrapper;
 }
