@@ -523,6 +523,8 @@ char*
 CFCPyMethod_constructor_wrapper(CFCFunction *init_func, CFCClass *invoker) {
     CFCParamList *param_list  = CFCFunction_get_param_list(init_func);
     char *decs       = S_gen_decs(param_list, 1);
+    char *increfs    = S_gen_arg_increfs(param_list, 1);
+    char *decrefs    = S_gen_decrefs(param_list, 1);
     const char *struct_sym = CFCClass_full_struct_sym(invoker);
     char *error = NULL;
     char *arg_parsing = S_gen_arg_parsing(param_list, 1, &error);
@@ -540,12 +542,16 @@ CFCPyMethod_constructor_wrapper(CFCFunction *init_func, CFCClass *invoker) {
         "S_%s_PY_NEW(PyTypeObject *type, PyObject *args, PyObject *kwargs) {\n"
         "%s" // decs
         "%s" // arg_parsing
+        "%s" // increfs
+        "%s" // decrefs
         "    Py_RETURN_NONE;\n"
         "}\n"
         ;
     char *wrapper = CFCUtil_sprintf(pattern, struct_sym, decs,
-                                    arg_parsing);
+                                    arg_parsing, increfs, decrefs);
 
+    FREEMEM(decrefs);
+    FREEMEM(increfs);
     FREEMEM(decs);
     FREEMEM(arg_parsing);
     return wrapper;
