@@ -20,7 +20,9 @@ parcel Clownfish;
  * Hashtable Iterator.
  */
 
-final class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
+public final class Clownfish::HashIterator nickname HashIter
+    inherits Clownfish::Obj {
+
     Hash   *hash;
     size_t  tick;
     size_t  capacity;
@@ -28,10 +30,10 @@ final class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
     inert void
     init_class();
 
-    inert incremented HashIterator*
+    public inert incremented HashIterator*
     new(Hash *hash);
 
-    inert HashIterator*
+    public inert HashIterator*
     init(HashIterator *self, Hash *hash);
 
     public bool
