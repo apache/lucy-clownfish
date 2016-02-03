@@ -55,7 +55,7 @@ public class Clownfish::Err inherits Clownfish::Obj {
     public incremented String*
     To_String(Err *self);
 
-    /** Concatenate the supplied argument onto the internal "mess".
+    /** Concatenate the supplied argument onto the error message.
      */
     public void
     Cat_Mess(Err *self, String *mess);
@@ -63,17 +63,17 @@ public class Clownfish::Err inherits Clownfish::Obj {
     public String*
     Get_Mess(Err *self);
 
-    /** Add information about the current stack frame onto `mess`.
+    /** Add information about the current stack frame onto the error message.
      */
     void
     Add_Frame(Err *self, const char *file, int line, const char *func);
 
-    /** Set the value of "error", a per-thread Err shared variable.
+    /** Set the global error object, a per-thread Err shared variable.
      */
     public inert void
     set_error(decremented Err *error);
 
-    /** Retrieve per-thread Err shared variable "error".
+    /** Retrieve the global error object, a per-thread Err shared variable.
      */
     public inert nullable Err*
     get_error();
@@ -100,7 +100,7 @@ public class Clownfish::Err inherits Clownfish::Obj {
      */
     inert void
     throw_at(Class *klass, const char *file, int line, const char *func,
-               const char *pattern, ...);
+             const char *pattern, ...);
 
     /** Throw an existing exception after tacking on additional context data.
      */

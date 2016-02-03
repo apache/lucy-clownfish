@@ -22,30 +22,52 @@ public final class Clownfish::Float {
 
     double value;
 
-    /**
+    /** Return a new Float.
+     *
+     * @param value Initial value.
+     */
+    public inert Float*
+    new(double value);
+
+    /** Initialize a Float.
+     *
      * @param value Initial value.
      */
     public inert Float*
     init(Float* self, double value);
 
-    public inert Float*
-    new(double value);
-
     void*
     To_Host(Float *self);
 
+    /** Return the value of the Float.
+     */
     public double
     Get_Value(Float *self);
 
+    /** Convert the Float to an integer, truncating toward zero.  Throw an
+     * exception if the value is out of the range of an `int64_t`.
+     */
     public int64_t
     To_I64(Float *self);
 
     public incremented String*
     To_String(Float *self);
 
+    /** Indicate whether two numbers are the same.
+     *
+     * @param other A Float or an Integer.
+     */
     public bool
     Equals(Float *self, Obj *other);
 
+    /** Indicate whether one number is less than, equal to, or greater than
+     * another.
+     *
+     * @param other A Float or an Integer.
+     * @return 0 if the numbers are equal, a negative number if `self` is
+     * less than `other`, and a positive number if `self` is greater than
+     * `other`.
+     */
     public int32_t
     Compare_To(Float *self, Obj *other);
 
@@ -60,30 +82,51 @@ public final class Clownfish::Integer nickname Int {
 
     int64_t value;
 
-    /**
+    /** Return a new Integer.
+     *
+     * @param value Initial value.
+     */
+    public inert Integer*
+    new(int64_t value);
+
+    /** Initialize an Integer.
+     *
      * @param value Initial value.
      */
     public inert Integer*
     init(Integer* self, int64_t value);
 
-    public inert Integer*
-    new(int64_t value);
-
     void*
     To_Host(Integer *self);
 
+    /** Return the value of the Integer.
+     */
     public int64_t
     Get_Value(Integer *self);
 
+    /** Convert the Integer to floating point.
+     */
     public double
     To_F64(Integer *self);
 
     public incremented String*
     To_String(Integer *self);
 
+    /** Indicate whether two numbers are the same.
+     *
+     * @param other An Integer or a Float.
+     */
     public bool
     Equals(Integer *self, Obj *other);
 
+    /** Indicate whether one number is less than, equal to, or greater than
+     * another.
+     *
+     * @param other An Integer or a Float.
+     * @return 0 if the numbers are equal, a negative number if `self` is
+     * less than `other`, and a positive number if `self` is greater than
+     * `other`.
+     */
     public int32_t
     Compare_To(Integer *self, Obj *other);
 

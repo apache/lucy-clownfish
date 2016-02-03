@@ -44,6 +44,8 @@ public final class Clownfish::Boolean nickname Bool {
     void*
     To_Host(Boolean *self);
 
+    /** Return the value of the Boolean.
+     */
     public bool
     Get_Value(Boolean *self);
 

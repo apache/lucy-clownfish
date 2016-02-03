@@ -26,28 +26,60 @@ public final class Clownfish::Blob inherits Clownfish::Obj {
     size_t      size;
     bool        owns_buf;
 
+    /** Return a new Blob which holds a copy of the passed-in bytes.
+     *
+     * @param bytes Pointer to an array of bytes.
+     * @param size Size of the array in bytes.
+     */
     public inert incremented Blob*
     new(const void *bytes, size_t size);
 
+    /** Initialize a Blob which holds a copy of the passed-in bytes.
+     *
+     * @param bytes Pointer to an array of bytes.
+     * @param size Size of the array in bytes.
+     */
     public inert Blob*
     init(Blob *self, const void *bytes, size_t size);
 
+    /** Return a new Blob which assumes ownership of the passed-in bytes.
+     *
+     * @param bytes Pointer to an array of bytes.
+     * @param size Size of the array in bytes.
+     */
     public inert incremented Blob*
     new_steal(void *bytes, size_t size);
 
+    /** Initialize a Blob which assumes ownership of the passed-in bytes.
+     *
+     * @param bytes Pointer to an array of bytes.
+     * @param size Size of the array in bytes.
+     */
     public inert Blob*
     init_steal(Blob *self, void *bytes, size_t size);
 
+    /** Return a new Blob which wraps an external buffer.  The buffer must
+     * stay unchanged for the lifetime of the Blob.
+     *
+     * @param bytes Pointer to an array of bytes.
+     * @param size Size of the array in bytes.
+     */
     public inert incremented Blob*
     new_wrap(const void *bytes, size_t size);
 
+    /** Initialize a Blob which wraps an external buffer.  The buffer must
+     * stay unchanged for the lifetime of the Blob.
+     *
+     * @param bytes Pointer to an array of bytes.
+     * @param size Size of the array in bytes.
+     */
     public inert Blob*
     init_wrap(Blob *self, const void *bytes, size_t size);
 
     void*
     To_Host(Blob *self);
 
-    /** Accessor for "size" member.
+    /** Return the number of bytes held by the Blob.
      */
     public size_t
     Get_Size(Blob *self);
@@ -58,6 +90,9 @@ public final class Clownfish::Blob inherits Clownfish::Obj {
     Get_Buf(Blob *self);
 
     /** Test whether the Blob matches the passed-in bytes.
+     *
+     * @param bytes Pointer to an array of bytes.
+     * @param size Size of the array in bytes.
      */
     public bool
     Equals_Bytes(Blob *self, const void *bytes, size_t size);
