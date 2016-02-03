@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import unittest
+import inspect
 import clownfish
 
 class MyTest(unittest.TestCase):
@@ -23,6 +24,7 @@ class MyTest(unittest.TestCase):
 
     def testClassesPresent(self):
         self.assertIsInstance(clownfish.Hash, type)
+        self.assertTrue(inspect.ismethoddescriptor(clownfish.Hash.store))
 
 if __name__ == '__main__':
     unittest.main()

@@ -160,6 +160,11 @@ CFCPyClass_gen_binding_code(CFCPyClass *self) {
         char *wrapper = CFCPyMethod_wrapper(meth, klass);
         bindings = CFCUtil_cat(bindings, wrapper, "\n", NULL);
         FREEMEM(wrapper);
+
+        // Add PyMethodDef entry.
+        char *meth_def = CFCPyMethod_pymethoddef(meth, klass);
+        meth_defs = CFCUtil_cat(meth_defs, "    ", meth_def, "\n", NULL);
+        FREEMEM(meth_def);
     }
 
     // Complete the PyMethodDef array.

@@ -519,3 +519,24 @@ CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
     return wrapper;
 }
 
+char*
+CFCPyMethod_pymethoddef(CFCMethod *method, CFCClass *invoker) {
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+    const char *flags = CFCParamList_num_vars(param_list) == 1
+                        ? "METH_NOARGS"
+                        : "METH_KEYWORDS|METH_VARARGS";
+    char *meth_sym = CFCMethod_full_method_sym(method, invoker);
+    char *micro_sym = CFCUtil_strdup(CFCSymbol_get_name((CFCSymbol*)method));
+    for (int i = 0; micro_sym[i] != 0; i++) {
+        micro_sym[i] = tolower(micro_sym[i]);
+    }
+
+    char pattern[] =
+        "{\"%s\", (PyCFunction)S_%s, %s, NULL},";
+    char *py_meth_def = CFCUtil_sprintf(pattern, micro_sym, meth_sym, flags);
+
+    FREEMEM(meth_sym);
+    FREEMEM(micro_sym);
+    return py_meth_def;
+}
+
