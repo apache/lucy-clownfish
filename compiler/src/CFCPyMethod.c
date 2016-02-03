@@ -473,6 +473,26 @@ S_gen_decrefs(CFCParamList *param_list, int first_tick) {
     return decrefs;
 }
 
+static char*
+S_gen_arg_list(CFCParamList *param_list, const char *first_arg) {
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+    char *arg_list = CFCUtil_strdup("");
+    for (int i = 0; i < num_vars; i++) {
+        if (i > 0) {
+            arg_list = CFCUtil_cat(arg_list, ", ", NULL);
+        }
+        if (i == 0 && first_arg != NULL) {
+            arg_list = CFCUtil_cat(arg_list, first_arg, NULL);
+        }
+        else {
+            arg_list = CFCUtil_cat(arg_list, CFCVariable_get_name(vars[i]),
+                                   "_ARG", NULL);
+        }
+    }
+    return arg_list;
+}
+
 char*
 CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
     CFCParamList *param_list  = CFCMethod_get_param_list(method);
