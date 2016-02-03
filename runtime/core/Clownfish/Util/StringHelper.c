@@ -135,7 +135,6 @@ StrHelp_is_whitespace(int32_t code_point) {
         case 0x0085: // <control-0085>
         case 0x00A0: // NO-BREAK SPACE
         case 0x1680: // OGHAM SPACE MARK
-        case 0x180E: // MONGOLIAN VOWEL SEPARATOR
             // EN QUAD..HAIR SPACE
         case 0x2000: case 0x2001: case 0x2002: case 0x2003: case 0x2004:
         case 0x2005: case 0x2006: case 0x2007: case 0x2008: case 0x2009:

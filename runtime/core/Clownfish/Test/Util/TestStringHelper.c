@@ -263,8 +263,6 @@ test_is_whitespace(TestBatchRunner *runner) {
     TEST_TRUE(runner, StrHelp_is_whitespace('\t'), "tab is whitespace");
     TEST_TRUE(runner, StrHelp_is_whitespace('\v'),
               "vertical tab is whitespace");
-    TEST_TRUE(runner, StrHelp_is_whitespace(0x180E),
-              "Mongolian vowel separator is whitespace");
     TEST_FALSE(runner, StrHelp_is_whitespace('a'), "'a' isn't whitespace");
     TEST_FALSE(runner, StrHelp_is_whitespace(0), "NULL isn't whitespace");
     TEST_FALSE(runner, StrHelp_is_whitespace(0x263A),
@@ -287,7 +285,7 @@ test_back_utf8_char(TestBatchRunner *runner) {
 
 void
 TestStrHelp_Run_IMP(TestStringHelper *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 40);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 39);
     test_overlap(runner);
     test_to_base36(runner);
     test_utf8_round_trip(runner);
