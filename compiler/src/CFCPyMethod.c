@@ -520,6 +520,24 @@ CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
 }
 
 char*
+CFCPyMethod_constructor_wrapper(CFCFunction *init_func, CFCClass *invoker) {
+    const char *struct_sym = CFCClass_full_struct_sym(invoker);
+
+    char pattern[] =
+        "static PyObject*\n"
+        "S_%s_PY_NEW(PyTypeObject *type, PyObject *args, PyObject *kwargs) {\n"
+        "    CFISH_UNUSED_VAR(type);\n"
+        "    CFISH_UNUSED_VAR(args);\n"
+        "    CFISH_UNUSED_VAR(kwargs);\n"
+        "    Py_RETURN_NONE;\n"
+        "}\n"
+        ;
+    char *wrapper = CFCUtil_sprintf(pattern, struct_sym);
+
+    return wrapper;
+}
+
+char*
 CFCPyMethod_pymethoddef(CFCMethod *method, CFCClass *invoker) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     const char *flags = CFCParamList_num_vars(param_list) == 1
