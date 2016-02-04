@@ -67,7 +67,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
      *
      * @param utf8 Pointer to UTF-8 character data of the key.
      * @param size Size of UTF-8 character data in bytes.
-     * @param The Obj to store.
+     * @param value The Obj to store.
      */
     public void
     Store_Utf8(Hash *self, const char *utf8, size_t size,

@@ -69,14 +69,14 @@ public final class Clownfish::CharBuf nickname CB
     /** Concatenate formatted arguments.  Similar to the printf family, but
      * only accepts minimal options (just enough for decent error messages).
      *
-     * Objects:  %o
-     * char*:    %s
-     * integers: %i8 %i32 %i64 %u8 %u32 %u64
-     * floats:   %f64
-     * hex:      %x32
+     *     Objects:  %o
+     *     char*:    %s
+     *     integers: %i8 %i32 %i64 %u8 %u32 %u64
+     *     floats:   %f64
+     *     hex:      %x32
      *
      * Note that all Clownfish Objects, including Strings, are printed via
-     * %o (which invokes [](Obj.To_String)).
+     * `%o` (which invokes [](Obj.To_String)).
      *
      * @param pattern The format string.
      * @param args A `va_list` containing the arguments.

@@ -123,7 +123,7 @@ public final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     public nullable char*
     Grow(ByteBuf *self, size_t capacity);
 
-    /** Return the content of the ByteBuf as ()[Blob] and clear the ByteBuf.
+    /** Return the content of the ByteBuf as [](Blob) and clear the ByteBuf.
      */
     public incremented Blob*
     Yield_Blob(ByteBuf *self);

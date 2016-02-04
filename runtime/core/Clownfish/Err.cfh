@@ -60,6 +60,8 @@ public class Clownfish::Err inherits Clownfish::Obj {
     public void
     Cat_Mess(Err *self, String *mess);
 
+    /** Return the error message.
+     */
     public String*
     Get_Mess(Err *self);
 
