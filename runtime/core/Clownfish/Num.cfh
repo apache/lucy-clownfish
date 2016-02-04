@@ -50,6 +50,9 @@ public final class Clownfish::Float {
     public int64_t
     To_I64(Float *self);
 
+    /** Return the Float formatted as String using `sprintf` with conversion
+     * specifier `%g`.
+     */
     public incremented String*
     To_String(Float *self);
 
@@ -110,6 +113,8 @@ public final class Clownfish::Integer nickname Int {
     public double
     To_F64(Integer *self);
 
+    /** Return the Integer formatted as String.
+     */
     public incremented String*
     To_String(Integer *self);
 

@@ -124,6 +124,8 @@ public final class Clownfish::CharBuf nickname CB
     public void
     Destroy(CharBuf *self);
 
+    /** Return the content of the CharBuf as String.
+     */
     public incremented String*
     To_String(CharBuf *self);
 

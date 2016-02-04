@@ -60,6 +60,8 @@ public final class Clownfish::Boolean nickname Bool {
     public bool
     Equals(Boolean *self, Obj *other);
 
+    /** Return "true" for true values and "false" for false values.
+     */
     public incremented String*
     To_String(Boolean *self);
 }

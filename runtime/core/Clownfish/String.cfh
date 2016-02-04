@@ -310,6 +310,8 @@ public final class Clownfish::String nickname Str
     size_t
     Hash_Sum(String *self);
 
+    /** Return a copy of the String.
+     */
     public incremented String*
     To_String(String *self);
 
