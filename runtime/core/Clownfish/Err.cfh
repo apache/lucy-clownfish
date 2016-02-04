@@ -49,9 +49,6 @@ public class Clownfish::Err inherits Clownfish::Obj {
     inert Err*
     init(Err *self, decremented String *mess);
 
-    public void
-    Destroy(Err *self);
-
     /** Return a copy of the error message.
      */
     public incremented String*
@@ -71,6 +68,9 @@ public class Clownfish::Err inherits Clownfish::Obj {
      */
     void
     Add_Frame(Err *self, const char *file, int line, const char *func);
+
+    public void
+    Destroy(Err *self);
 
     /** Set the global error object, a per-thread Err shared variable.
      */

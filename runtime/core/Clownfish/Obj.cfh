@@ -38,12 +38,6 @@ public abstract class Clownfish::Obj {
     public abstract incremented Obj*
     Clone(Obj *self);
 
-    /** Generic destructor.  Frees the struct itself but not any complex
-     * member elements.
-     */
-    public void
-    Destroy(Obj *self);
-
     /** Indicate whether two objects are the same.  By default, compares the
      * memory address.
      *
@@ -62,6 +56,12 @@ public abstract class Clownfish::Obj {
      */
     public abstract int32_t
     Compare_To(Obj *self, Obj *other);
+
+    /** Generic destructor.  Frees the struct itself but not any complex
+     * member elements.
+     */
+    public void
+    Destroy(Obj *self);
 
     /** Return the object's Class.
      */

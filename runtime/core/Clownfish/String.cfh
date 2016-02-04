@@ -292,9 +292,6 @@ public final class Clownfish::String nickname Str
     bool
     Is_Copy_On_IncRef(String *self);
 
-    public void
-    Destroy(String *self);
-
     /** Indicate whether one String is less than, equal to, or greater than
      * another.  The Unicode code points of the Strings are compared
      * lexicographically.  Throws an exception if `other` is not a String.
@@ -363,6 +360,9 @@ public final class Clownfish::String nickname Str
      */
     public incremented StringIterator*
     Tail(String *self);
+
+    public void
+    Destroy(String *self);
 }
 
 /**
