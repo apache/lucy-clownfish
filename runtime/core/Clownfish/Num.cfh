@@ -55,15 +55,16 @@ public final class Clownfish::Float {
 
     /** Indicate whether two numbers are the same.
      *
-     * @param other A Float or an Integer.
+     * @return true if `other` is a Float or Integer with the same value as
+     * `self`.
      */
     public bool
     Equals(Float *self, Obj *other);
 
     /** Indicate whether one number is less than, equal to, or greater than
-     * another.
+     * another.  Throws an exception if `other` is neither a Float nor an
+     * Integer.
      *
-     * @param other A Float or an Integer.
      * @return 0 if the numbers are equal, a negative number if `self` is
      * less than `other`, and a positive number if `self` is greater than
      * `other`.
@@ -114,15 +115,16 @@ public final class Clownfish::Integer nickname Int {
 
     /** Indicate whether two numbers are the same.
      *
-     * @param other An Integer or a Float.
+     * @return true if `other` is an Integer or Float with the same value as
+     * `self`.
      */
     public bool
     Equals(Integer *self, Obj *other);
 
     /** Indicate whether one number is less than, equal to, or greater than
-     * another.
+     * another.  Throws an exception if `other` is neither an Integer nor a
+     * Float.
      *
-     * @param other An Integer or a Float.
      * @return 0 if the numbers are equal, a negative number if `self` is
      * less than `other`, and a positive number if `self` is greater than
      * `other`.

@@ -140,6 +140,13 @@ public final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     public incremented String*
     Trusted_Utf8_To_String(ByteBuf *self);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a ByteBuf with the same content as `self`.
+     */
+    public bool
+    Equals(ByteBuf *self, Obj *other);
+
     /** Test whether the ByteBuf matches the passed-in bytes.
      *
      * @param bytes Pointer to an array of bytes.
@@ -148,6 +155,14 @@ public final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
     public bool
     Equals_Bytes(ByteBuf *self, const void *bytes, size_t size);
 
+    /** Indicate whether one ByteBuf is less than, equal to, or greater than
+     * another.  The byte contents of the ByteBufs are compared
+     * lexicographically.  Throws an exception if `other` is not a ByteBuf.
+     *
+     * @return 0 if the ByteBufs are equal, a negative number if `self` is
+     * less than `other`, and a positive number if `self` is greater than
+     * `other`.
+     */
     public int32_t
     Compare_To(ByteBuf *self, Obj *other);
 
@@ -156,9 +171,6 @@ public final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
 
     public void
     Destroy(ByteBuf *self);
-
-    public bool
-    Equals(ByteBuf *self, Obj *other);
 }
 
 

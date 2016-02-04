@@ -245,6 +245,14 @@ public final class Clownfish::String nickname Str
     public incremented nullable StringIterator*
     Find_Utf8(String *self, const char *utf8, size_t size);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a String with the same character data as
+     * `self`.
+     */
+    public bool
+    Equals(String *self, Obj *other);
+
     /** Test whether the String matches the supplied UTF-8 character data.
      */
     public bool
@@ -287,9 +295,13 @@ public final class Clownfish::String nickname Str
     public void
     Destroy(String *self);
 
-    public bool
-    Equals(String *self, Obj *other);
-
+    /** Indicate whether one String is less than, equal to, or greater than
+     * another.  The Unicode code points of the Strings are compared
+     * lexicographically.  Throws an exception if `other` is not a String.
+     *
+     * @return 0 if the Strings are equal, a negative number if `self` is less
+     * than `other`, and a positive number if `self` is greater than `other`.
+     */
     public int32_t
     Compare_To(String *self, Obj *other);
 
@@ -380,9 +392,23 @@ public final class Clownfish::StringIterator nickname StrIter
     public void
     Assign(StringIterator *self, StringIterator *other);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a StringIterator with the same source
+     * string and character position as `self`.
+     */
     public bool
     Equals(StringIterator *self, Obj *other);
 
+    /** Indicate whether one StringIterator is less than, equal to, or
+     * greater than another by comparing their character positions. Throws an
+     * exception if `other` is not a StringIterator pointing to the same
+     * source string as `self`.
+     *
+     * @return 0 if the StringIterators are equal, a negative number if `self`
+     * is less than `other`, and a positive number if `self` is greater than
+     * `other`.
+     */
     public int32_t
     Compare_To(StringIterator *self, Obj *other);
 

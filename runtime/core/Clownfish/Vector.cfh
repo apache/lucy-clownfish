@@ -148,6 +148,11 @@ public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     public incremented Vector*
     Slice(Vector *self, size_t offset, size_t length);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a Vector with the same values as `self`.
+     * Values are compared using their respective `Equals` methods.
+     */
     public bool
     Equals(Vector *self, Obj *other);
 

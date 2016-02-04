@@ -89,6 +89,13 @@ public final class Clownfish::Blob inherits Clownfish::Obj {
     public const char*
     Get_Buf(Blob *self);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a Blob and has the same content as `self`.
+     */
+    public bool
+    Equals(Blob *self, Obj *other);
+
     /** Test whether the Blob matches the passed-in bytes.
      *
      * @param bytes Pointer to an array of bytes.
@@ -97,6 +104,13 @@ public final class Clownfish::Blob inherits Clownfish::Obj {
     public bool
     Equals_Bytes(Blob *self, const void *bytes, size_t size);
 
+    /** Indicate whether one Blob is less than, equal to, or greater than
+     * another.  The byte contents of the Blobs are compared
+     * lexicographically.  Throws an exception if `other` is not a Blob.
+     *
+     * @return 0 if the Blobs are equal, a negative number if `self` is less
+     * than `other`, and a positive number if `self` is greater than `other`.
+     */
     public int32_t
     Compare_To(Blob *self, Obj *other);
 
@@ -105,9 +119,6 @@ public final class Clownfish::Blob inherits Clownfish::Obj {
 
     public void
     Destroy(Blob *self);
-
-    public bool
-    Equals(Blob *self, Obj *other);
 }
 
 

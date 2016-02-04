@@ -53,6 +53,10 @@ public final class Clownfish::Boolean nickname Bool {
     public incremented Boolean*
     Clone(Boolean *self);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a Boolean with the same value as `self`.
+     */
     public bool
     Equals(Boolean *self, Obj *other);
 

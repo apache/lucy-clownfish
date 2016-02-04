@@ -130,6 +130,12 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     public size_t
     Get_Size(Hash *self);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a Hash with the same key-value pairs as
+     * `self`.  Keys and values are compared using their respective `Equals`
+     * methods.
+     */
     public bool
     Equals(Hash *self, Obj *other);
 
