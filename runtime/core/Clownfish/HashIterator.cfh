@@ -20,7 +20,9 @@ parcel Clownfish;
  * Hashtable Iterator.
  */
 
-final class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
+public final class Clownfish::HashIterator nickname HashIter
+    inherits Clownfish::Obj {
+
     Hash   *hash;
     size_t  tick;
     size_t  capacity;
@@ -28,18 +30,35 @@ final class Clownfish::HashIterator nickname HashIter inherits Clownfish::Obj {
     inert void
     init_class();
 
-    inert incremented HashIterator*
+    /** Return a HashIterator for `hash`.
+     */
+    public inert incremented HashIterator*
     new(Hash *hash);
 
-    inert HashIterator*
+    /** Initialize a HashIterator for `hash`.
+     */
+    public inert HashIterator*
     init(HashIterator *self, Hash *hash);
 
+    /** Advance the iterator to the next key-value pair.
+     *
+     * @return true if there's another key-value pair, false if the iterator
+     * is exhausted.
+     */
     public bool
     Next(HashIterator *self);
 
+    /** Return the key of the current key-value pair.  It's not allowed to
+     * call this method before [](.Next) was called for the first time or
+     * after the iterator was exhausted.
+     */
     public String*
     Get_Key(HashIterator *self);
 
+    /** Return the value of the current key-value pair.  It's not allowed to
+     * call this method before [](.Next) was called for the first time or
+     * after the iterator was exhausted.
+     */
     public nullable Obj*
     Get_Value(HashIterator *self);
 

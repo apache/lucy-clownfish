@@ -349,9 +349,9 @@ func goToBlob(value interface{}, nullable bool) unsafe.Pointer {
 			}
 		} else {
 			size := C.size_t(len(v))
-			var buf *C.char = nil
+			var buf unsafe.Pointer = nil
 			if size > 0 {
-				buf = ((*C.char)(unsafe.Pointer(&v[0])))
+				buf = unsafe.Pointer(&v[0])
 			}
 			return unsafe.Pointer(C.cfish_Blob_new(buf, size))
 		}
@@ -665,9 +665,9 @@ func NewBoolean(val bool) Boolean {
 
 func NewBlob(content []byte) Blob {
 	size := C.size_t(len(content))
-	var buf *C.char = nil
+	var buf unsafe.Pointer = nil
 	if size > 0 {
-		buf = ((*C.char)(unsafe.Pointer(&content[0])))
+		buf = unsafe.Pointer(&content[0])
 	}
 	obj := C.cfish_Blob_new(buf, size)
 	return WRAPBlob(unsafe.Pointer(obj))

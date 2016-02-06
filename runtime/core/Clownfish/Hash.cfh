@@ -31,10 +31,16 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     inert void
     init_class();
 
+    /** Return a new Hash.
+     *
+     * @param capacity The number of elements that the hash will be asked to
+     * hold initially.
+     */
     public inert incremented Hash*
     new(size_t capacity = 0);
 
-    /**
+    /** Initialize a Hash.
+     *
      * @param capacity The number of elements that the hash will be asked to
      * hold initially.
      */
@@ -57,8 +63,14 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     public void
     Store(Hash *self, String *key, decremented nullable Obj *value);
 
+    /** Store a key-value pair using a raw UTF-8 key.
+     *
+     * @param utf8 Pointer to UTF-8 character data of the key.
+     * @param size Size of UTF-8 character data in bytes.
+     * @param value The Obj to store.
+     */
     public void
-    Store_Utf8(Hash *self, const char *str, size_t len,
+    Store_Utf8(Hash *self, const char *utf8, size_t size,
                decremented nullable Obj *value);
 
     /** Fetch the value associated with `key`.
@@ -68,8 +80,14 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     public nullable Obj*
     Fetch(Hash *self, String *key);
 
+    /** Fetch the value associated with a raw UTF-8 key.
+     *
+     * @param utf8 Pointer to UTF-8 character data of the key.
+     * @param size Size of UTF-8 character data in bytes.
+     * @return the value, or NULL if `key` is not present.
+     */
     public nullable Obj*
-    Fetch_Utf8(Hash *self, const char *key, size_t key_len);
+    Fetch_Utf8(Hash *self, const char *utf8, size_t size);
 
     /** Attempt to delete a key-value pair from the hash.
      *
@@ -79,20 +97,27 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     public incremented nullable Obj*
     Delete(Hash *self, String *key);
 
+    /** Attempt to delete a key-value pair from the hash.
+     *
+     * @param utf8 Pointer to UTF-8 character data of the key.
+     * @param size Size of UTF-8 character data in bytes.
+     * @return the value if `key` exists and thus deletion
+     * succeeds; otherwise NULL.
+     */
     public incremented nullable Obj*
-    Delete_Utf8(Hash *self, const char *key, size_t key_len);
+    Delete_Utf8(Hash *self, const char *utf8, size_t size);
 
     /** Indicate whether the supplied `key` is present.
      */
     public bool
     Has_Key(Hash *self, String *key);
 
-    /** Return an Vector of pointers to the hash's keys.
+    /** Return a Vector of pointers to the hash's keys.
      */
     public incremented Vector*
     Keys(Hash *self);
 
-    /** Return an Vector of pointers to the hash's values.
+    /** Return a Vector of pointers to the hash's values.
      */
     public incremented Vector*
     Values(Hash *self);
@@ -100,13 +125,17 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     size_t
     Get_Capacity(Hash *self);
 
-    /** Accessor for Hash's "size" member.
-     *
-     * @return the number of key-value pairs.
+    /** Return the number of key-value pairs.
      */
     public size_t
     Get_Size(Hash *self);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a Hash with the same key-value pairs as
+     * `self`.  Keys and values are compared using their respective `Equals`
+     * methods.
+     */
     public bool
     Equals(Hash *self, Obj *other);
 

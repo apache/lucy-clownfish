@@ -39,36 +39,54 @@ public final class Clownfish::String nickname Str
 
     /** Return a String which holds a copy of the supplied UTF-8 character
      * data after checking for validity.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert incremented String*
     new_from_utf8(const char *utf8, size_t size);
 
     /** Return a String which holds a copy of the supplied UTF-8 character
      * data, skipping validity checks.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert incremented String*
     new_from_trusted_utf8(const char *utf8, size_t size);
 
     /** Initialize a String which holds a copy of the supplied UTF-8 character
      * data, skipping validity checks.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert String*
     init_from_trusted_utf8(String *self, const char *utf8, size_t size);
 
     /** Return a String which assumes ownership of the supplied buffer
      * containing UTF-8 character data after checking for validity.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert incremented String*
     new_steal_utf8(char *utf8, size_t size);
 
     /** Return a String which assumes ownership of the supplied buffer
      * containing UTF-8 character data, skipping validity checks.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert incremented String*
     new_steal_trusted_utf8(char *utf8, size_t size);
 
     /** Initialize a String which assumes ownership of the supplied buffer
      * containing UTF-8 character data, skipping validity checks.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert String*
     init_steal_trusted_utf8(String *self, char *utf8, size_t size);
@@ -76,6 +94,9 @@ public final class Clownfish::String nickname Str
     /** Return a String which wraps an external buffer containing UTF-8
      * character data after checking for validity.  The buffer must stay
      * unchanged for the lifetime of the String.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert incremented String*
     new_wrap_utf8(const char *utf8, size_t size);
@@ -83,6 +104,9 @@ public final class Clownfish::String nickname Str
     /** Return a String which wraps an external buffer containing UTF-8
      * character data, skipping validity checks.  The buffer must stay
      * unchanged for the lifetime of the String.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert incremented String*
     new_wrap_trusted_utf8(const char *utf8, size_t size);
@@ -92,20 +116,27 @@ public final class Clownfish::String nickname Str
 
     /** Initialize a String which wraps an external buffer containing UTF-8
      * character data after checking for validity.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public inert String*
     init_wrap_trusted_utf8(String *self, const char *utf8, size_t size);
 
     /** Return a String which holds a single character.
+     *
+     * @param code_point Unicode code point of the character.
      */
     public inert incremented String*
     new_from_char(int32_t code_point);
 
     /** Return a String with content expanded from a pattern and arguments
-     * conforming to the spec defined by CharBuf.
+     * conforming to the spec defined by [](CharBuf.VCatF).
      *
      * Note: a user-supplied `pattern` string is a security hole
      * and must not be allowed.
+     *
+     * @param pattern A format string.
      */
     public inert incremented String*
     newf(const char *pattern, ...);
@@ -120,24 +151,41 @@ public final class Clownfish::String nickname Str
 
     /** Return the concatenation of the String and the supplied UTF-8
      * character data after checking for validity.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public incremented String*
-    Cat_Utf8(String *self, const char *ptr, size_t size);
+    Cat_Utf8(String *self, const char *utf8, size_t size);
 
     /** Return the concatenation of the String and the supplied UTF-8
      * character data, skipping validity checks.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public incremented String*
-    Cat_Trusted_Utf8(String *self, const char *ptr, size_t size);
+    Cat_Trusted_Utf8(String *self, const char *utf8, size_t size);
 
+    /** Extract a 64-bit integer from a decimal string.  See [](.BaseX_To_I64)
+     * for details.
+     */
     public int64_t
     To_I64(String *self);
 
     /** Extract a 64-bit integer from a variable-base stringified version.
+     * Expects an optional minus sign followed by base-x digits, stopping at
+     * any non-digit character.  Returns zero if no digits are found.  If the
+     * value exceeds the range of an `int64_t`, the result is undefined.
+     *
+     * @param base A base between 2 and 36.
      */
     public int64_t
     BaseX_To_I64(String *self, uint32_t base);
 
+    /** Convert a string to a floating-point number using the C library
+     * function `strtod`.
+     */
     public double
     To_F64(String *self);
 
@@ -146,33 +194,42 @@ public final class Clownfish::String nickname Str
     public bool
     Starts_With(String *self, String *prefix);
 
-    /** Test whether the String starts with `prefix`.
+    /** Test whether the String starts with a prefix supplied as raw UTF-8.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public bool
-    Starts_With_Utf8(String *self, const char *prefix, size_t size);
+    Starts_With_Utf8(String *self, const char *utf8, size_t size);
 
     /** Test whether the String ends with `suffix`.
      */
     public bool
     Ends_With(String *self, String *suffix);
 
-    /** Test whether the String ends with `suffix`.
+    /** Test whether the String ends with a suffix supplied as raw UTF-8.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public bool
-    Ends_With_Utf8(String *self, const char *suffix, size_t size);
+    Ends_With_Utf8(String *self, const char *utf8, size_t size);
 
     /** Test whether the String contains `substring`.
      */
     public bool
     Contains(String *self, String *substring);
 
-    /** Test whether the String contains `substring`.
+    /** Test whether the String contains a substring supplied as raw UTF-8.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public bool
-    Contains_Utf8(String *self, const char *ptr, size_t size);
+    Contains_Utf8(String *self, const char *utf8, size_t size);
 
-    /** Return a [](StringIterator) pointing to the first occurrence of the
-     * substring within the String, or [](@null) if the substring does not
+    /** Return a [](StringIterator) pointing to the first occurrence of
+     * `substring` within the String, or [](@null) if the substring does not
      * match.
      */
     public incremented nullable StringIterator*
@@ -180,15 +237,26 @@ public final class Clownfish::String nickname Str
 
     /** Return a [](StringIterator) pointing to the first occurrence of the
      * substring within the String, or [](@null) if the substring does not
-     * match.
+     * match.  The substring is supplied as raw UTF-8.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public incremented nullable StringIterator*
-    Find_Utf8(String *self, const char *ptr, size_t size);
+    Find_Utf8(String *self, const char *utf8, size_t size);
+
+    /** Equality test.
+     *
+     * @return true if `other` is a String with the same character data as
+     * `self`.
+     */
+    public bool
+    Equals(String *self, Obj *other);
 
     /** Test whether the String matches the supplied UTF-8 character data.
      */
     public bool
-    Equals_Utf8(String *self, const char *ptr, size_t size);
+    Equals_Utf8(String *self, const char *utf8, size_t size);
 
     /** Return the number of Unicode code points the String contains.
      */
@@ -202,6 +270,7 @@ public final class Clownfish::String nickname Str
 
     /** Return the internal backing array for the String if its internal
      * encoding is UTF-8.  If it is not encoded as UTF-8 throw an exception.
+     * The character data is not null-terminated.
      */
     public const char*
     Get_Ptr8(String *self);
@@ -223,12 +292,13 @@ public final class Clownfish::String nickname Str
     bool
     Is_Copy_On_IncRef(String *self);
 
-    public void
-    Destroy(String *self);
-
-    public bool
-    Equals(String *self, Obj *other);
-
+    /** Indicate whether one String is less than, equal to, or greater than
+     * another.  The Unicode code points of the Strings are compared
+     * lexicographically.  Throws an exception if `other` is not a String.
+     *
+     * @return 0 if the Strings are equal, a negative number if `self` is less
+     * than `other`, and a positive number if `self` is greater than `other`.
+     */
     public int32_t
     Compare_To(String *self, Obj *other);
 
@@ -237,37 +307,44 @@ public final class Clownfish::String nickname Str
     size_t
     Hash_Sum(String *self);
 
+    /** Return a copy of the String.
+     */
     public incremented String*
     To_String(String *self);
 
     /** Remove Unicode whitespace characters from both top and tail.
+     * Whitespace is any character that has the Unicode property
+     * `White_Space`.
      */
     public incremented String*
     Trim(String *self);
 
-    /** Remove leading Unicode whitespace.
+    /** Remove leading Unicode whitespace.  Whitespace is any character
+     * that has the Unicode property `White_Space`.
      */
     public incremented String*
     Trim_Top(String *self);
 
-    /** Remove trailing Unicode whitespace.
+    /** Remove trailing Unicode whitespace.  Whitespace is any character
+     * that has the Unicode property `White_Space`.
      */
     public incremented String*
     Trim_Tail(String *self);
 
     /** Return the Unicode code point located `tick` code points in from the
-     * top.  Return CFISH_STR_OOB if out of bounds.
+     * top.  Return `CFISH_STR_OOB` if out of bounds.
      */
     public int32_t
     Code_Point_At(String *self, size_t tick);
 
     /** Return the Unicode code point located `tick` code points counting
-     * backwards from the end.  Return CFISH_STR_OOB if out of bounds.
+     * backwards from the end.  Return `CFISH_STR_OOB` if out of bounds.
      */
     public int32_t
     Code_Point_From(String *self, size_t tick);
 
     /** Return a new String containing a copy of the specified substring.
+     *
      * @param offset Offset from the top, in code points.
      * @param len The desired length of the substring, in code points.
      */
@@ -283,6 +360,9 @@ public final class Clownfish::String nickname Str
      */
     public incremented StringIterator*
     Tail(String *self);
+
+    public void
+    Destroy(String *self);
 }
 
 /**
@@ -299,6 +379,7 @@ public final class Clownfish::StringIterator nickname StrIter
     new(String *string, size_t byte_offset);
 
     /** Return the substring between the top and tail iterators.
+     *
      * @param top Top iterator. Use start of string if [](@null).
      * @param tail Tail iterator. Use end of string if [](@null).
      */
@@ -308,12 +389,28 @@ public final class Clownfish::StringIterator nickname StrIter
     public incremented StringIterator*
     Clone(StringIterator *self);
 
+    /** Assign the source string and current position of `other` to `self`.
+     */
     public void
     Assign(StringIterator *self, StringIterator *other);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a StringIterator with the same source
+     * string and character position as `self`.
+     */
     public bool
     Equals(StringIterator *self, Obj *other);
 
+    /** Indicate whether one StringIterator is less than, equal to, or
+     * greater than another by comparing their character positions. Throws an
+     * exception if `other` is not a StringIterator pointing to the same
+     * source string as `self`.
+     *
+     * @return 0 if the StringIterators are equal, a negative number if `self`
+     * is less than `other`, and a positive number if `self` is greater than
+     * `other`.
+     */
     public int32_t
     Compare_To(StringIterator *self, Obj *other);
 
@@ -328,18 +425,19 @@ public final class Clownfish::StringIterator nickname StrIter
     Has_Prev(StringIterator *self);
 
     /** Return the code point after the current position and advance the
-     * iterator. Return CFISH_STR_OOB at the end of the string.
+     * iterator. Return `CFISH_STR_OOB` at the end of the string.
      */
     public int32_t
     Next(StringIterator *self);
 
     /** Return the code point before the current position and go one step back.
-     * Return CFISH_STR_OOB at the start of the string.
+     * Return `CFISH_STR_OOB` at the start of the string.
      */
     public int32_t
     Prev(StringIterator *self);
 
     /** Skip code points.
+     *
      * @param num The number of code points to skip.
      * @return the number of code points actually skipped. This can be less
      * than the requested number if the end of the string is reached.
@@ -348,6 +446,7 @@ public final class Clownfish::StringIterator nickname StrIter
     Advance(StringIterator *self, size_t num);
 
     /** Skip code points backward.
+     *
      * @param num The number of code points to skip.
      * @return the number of code points actually skipped. This can be less
      * than the requested number if the start of the string is reached.
@@ -355,13 +454,17 @@ public final class Clownfish::StringIterator nickname StrIter
     public size_t
     Recede(StringIterator *self, size_t num);
 
-    /** Skip whitespace.
+    /** Skip whitespace.  Whitespace is any character that has the Unicode
+     * property `White_Space`.
+     *
      * @return the number of code points skipped.
      */
     public size_t
     Skip_Whitespace(StringIterator *self);
 
-    /** Skip whitespace backward.
+    /** Skip whitespace backward.  Whitespace is any character that has the
+     * Unicode property `White_Space`.
+     *
      * @return the number of code points skipped.
      */
     public size_t
@@ -372,21 +475,28 @@ public final class Clownfish::StringIterator nickname StrIter
     public bool
     Starts_With(StringIterator *self, String *prefix);
 
-    /** Test whether the content after the iterator starts with `prefix`.
+    /** Test whether the content after the iterator starts with a prefix
+     * supplied as raw UTF-8.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
      */
     public bool
-    Starts_With_Utf8(StringIterator *self, const char *prefix, size_t size);
-
-    /** Test whether the content before the iterator ends with
-     * `suffix`.
-     */
-    public bool
-    Ends_With(StringIterator *self, String *suffix);
+    Starts_With_Utf8(StringIterator *self, const char *utf8, size_t size);
 
     /** Test whether the content before the iterator ends with `suffix`.
      */
     public bool
-    Ends_With_Utf8(StringIterator *self, const char *suffix, size_t size);
+    Ends_With(StringIterator *self, String *suffix);
+
+    /** Test whether the content before the iterator ends with a suffix
+     * supplied as raw UTF-8.
+     *
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
+     */
+    public bool
+    Ends_With_Utf8(StringIterator *self, const char *utf8, size_t size);
 
     public void
     Destroy(StringIterator *self);

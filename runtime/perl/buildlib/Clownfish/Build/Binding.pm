@@ -124,7 +124,7 @@ sub bind_blob {
     my $byte_string = $blob->to_perl;
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new(byte_string)
+=head2 new
 
     my $blob = Clownfish::Blob->new($byte_string);
 
@@ -176,11 +176,11 @@ sub bind_boolean {
     }
 END_SYNOPSIS
     my $description = <<'END_DESCRIPTION';
-There are only two singleton instances of this class: `$true_singleton` and
-`$false_singleton` which are exported on demand.
+There are only two singleton instances of this class: C<$true_singleton> and
+C<$false_singleton> which are exported on demand.
 END_DESCRIPTION
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 singleton(truth_value)
+=head2 singleton
 
     my $bool = Clownfish::Boolean->singleton($truth_value);
 
@@ -222,7 +222,7 @@ sub bind_bytebuf {
     my $byte_string = $buf->to_perl;
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new(byte_string)
+=head2 new
 
     my $buf = Clownfish::ByteBuf->new($byte_string);
 
@@ -291,7 +291,7 @@ sub bind_string {
     print $string->to_perl, "\n";
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new(perl_string)
+=head2 new
 
     my $string = Clownfish::String->new($perl_string);
 
@@ -343,14 +343,18 @@ sub bind_stringiterator {
     }
 END_SYNOPSIS
     my $next_pod = <<'END_POD';
-=head2 next()
+=head2 next
+
+    my $code_point = $iter->next;
 
 Return the code point after the current position and advance the
 iterator. Returns undef at the end of the string. Returns zero
 but true for U+0000.
 END_POD
     my $prev_pod = <<'END_POD';
-=head2 prev()
+=head2 prev
+
+    my $code_point = $iter->prev;
 
 Return the code point before the current position and go one step back.
 Returns undef at the start of the string. Returns zero but true for
@@ -487,7 +491,9 @@ END_SYNOPSIS
     my $hash = Clownfish::Hash->new( capacity => 256 );
 END_CONSTRUCTOR
     my $store_pod = <<'END_POD';
-=head2 store(key, value)
+=head2 store
+
+    $hash->store($key, $value);
 
 Store a key-value pair.
 END_POD
@@ -543,7 +549,7 @@ sub bind_hashiterator {
     }
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new(hash)
+=head2 new
 
     my $iter = Clownfish::HashIterator->new($hash);
 
@@ -587,7 +593,7 @@ sub bind_float {
     my $value = $float->get_value;
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new(value)
+=head2 new
 
     my $float = Clownfish::Float->new($value);
 
@@ -631,7 +637,7 @@ sub bind_integer {
     my $value = $integer->get_value;
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new(value)
+=head2 new
 
     my $integer = Clownfish::Integer->new($value);
 
@@ -737,7 +743,9 @@ results in a segfault rather than an exception.)
 
 =head1 CONSTRUCTOR
 
-=head2 new()
+=head2 new
+
+    my $self = $class->SUPER::new;
 
 Abstract constructor -- must be invoked via a subclass.  Attempting to
 instantiate objects of class "Clownfish::Obj" directly causes an
@@ -746,12 +754,14 @@ error.
 Takes no arguments; if any are supplied, an error will be reported.
 END_DESCRIPTION
     my $to_perl_pod = <<'END_POD';
-=head2 to_perl()
+=head2 to_perl
+
+    my $native = $obj->to_perl;
 
 Tries to convert the object to its native Perl representation.
 END_POD
     my $destroy_pod = <<'END_POD';
-=head2 DESTROY()
+=head2 DESTROY
 
 All Clownfish classes implement a DESTROY method; if you override it in a
 subclass, you must call C<< $self->SUPER::DESTROY >> to avoid leaking memory.
@@ -843,9 +853,11 @@ END_SYNOPSIS
     my $vector = Clownfish::Vector->new( capacity => 256 );
 END_CONSTRUCTOR
     my $store_pod = <<'END_POD';
-=head2 store(tick, elem)
+=head2 store
 
-Store an element at index `tick`, possibly displacing an existing element.
+    $vector->store($tick, $elem)
+
+Store an element at index C<tick>, possibly displacing an existing element.
 END_POD
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->add_constructor( alias => 'new', sample => $constructor );
@@ -911,7 +923,7 @@ sub bind_class {
     my $subclass = Clownfish::Class->singleton('Foo::Bar::Jr', $class);
 END_SYNOPSIS
     my $fetch_class_pod = <<'END_CONSTRUCTOR';
-=head2 fetch_class(class_name)
+=head2 fetch_class
 
     my $class = Clownfish::Class->fetch_class($class_name);
 

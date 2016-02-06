@@ -18,20 +18,20 @@ parcel Clownfish;
 
 inert class Clownfish::Util::Memory {
 
-    /** Attempt to allocate memory with malloc, but print an error and exit if the
-     * call fails.
+    /** Attempt to allocate memory with malloc, but print an error and exit
+     * if the call fails.
      */
     inert nullable void*
     wrapped_malloc(size_t count);
 
-    /** Attempt to allocate memory with calloc, but print an error and exit if the
-     * call fails.
+    /** Attempt to allocate memory with calloc, but print an error and exit
+     * if the call fails.
      */
     inert nullable void*
     wrapped_calloc(size_t count, size_t size);
 
-    /** Attempt to allocate memory with realloc, but print an error and exit if
-     * the call fails.
+    /** Attempt to allocate memory with realloc, but print an error and exit
+     * if the call fails.
      */
     inert nullable void*
     wrapped_realloc(void *ptr, size_t size);

@@ -45,9 +45,9 @@ public final class Clownfish::Class inherits Clownfish::Obj {
 
     /** Return a singleton.  If a Class can be found in the registry based on
      * the supplied class name, it will be returned.  Otherwise, a new Class
-     * will be created using [parent] as a base.
+     * will be created using `parent` as a base.
      *
-     * If [parent] is NULL, an attempt will be made to find it.  If the
+     * If `parent` is [](@null), an attempt will be made to find it.  If the
      * attempt fails, an error will result.
      */
     public inert Class*
@@ -118,13 +118,20 @@ public final class Clownfish::Class inherits Clownfish::Obj {
     void
     Exclude_Host_Method(Class *self, const char *meth_name);
 
+    /** Return the name of the class.
+     */
     public String*
     Get_Name(Class *self);
 
-    public Class*
+    /** Return the parent class, or [](@null) for a root of the class
+     * hierarchy.
+     */
+    public nullable Class*
     Get_Parent(Class *self);
 
-    uint32_t
+    /** Return the number of bytes needed to hold an object the class.
+     */
+    public uint32_t
     Get_Obj_Alloc_Size(Class *self);
 
     /** Return novel methods of the class.

@@ -38,12 +38,11 @@ public final class Clownfish::Boolean nickname Bool {
     public inert Boolean*
     singleton(bool value);
 
-    public void
-    Destroy(Boolean *self);
-
     void*
     To_Host(Boolean *self);
 
+    /** Return the value of the Boolean.
+     */
     public bool
     Get_Value(Boolean *self);
 
@@ -51,11 +50,20 @@ public final class Clownfish::Boolean nickname Bool {
     public incremented Boolean*
     Clone(Boolean *self);
 
+    /** Equality test.
+     *
+     * @return true if `other` is a Boolean with the same value as `self`.
+     */
     public bool
     Equals(Boolean *self, Obj *other);
 
+    /** Return "true" for true values and "false" for false values.
+     */
     public incremented String*
     To_String(Boolean *self);
+
+    public void
+    Destroy(Boolean *self);
 }
 
 __C__

@@ -25,16 +25,16 @@
 #include "Clownfish/Util/Memory.h"
 
 Blob*
-Blob_new(const char *buf, size_t size) {
+Blob_new(const void *bytes, size_t size) {
     Blob *self = (Blob*)Class_Make_Obj(BLOB);
-    return Blob_init(self, buf, size);
+    return Blob_init(self, bytes, size);
 }
 
 Blob*
-Blob_init(Blob *self, const char *buf, size_t size) {
+Blob_init(Blob *self, const void *bytes, size_t size) {
     char *copy = (char*)MALLOCATE(size);
     if (size > 0) {
-        memcpy(copy, buf, size);
+        memcpy(copy, bytes, size);
     }
 
     self->buf      = copy;
@@ -45,14 +45,14 @@ Blob_init(Blob *self, const char *buf, size_t size) {
 }
 
 Blob*
-Blob_new_steal(char *buf, size_t size) {
+Blob_new_steal(void *bytes, size_t size) {
     Blob *self = (Blob*)Class_Make_Obj(BLOB);
-    return Blob_init_steal(self, buf, size);
+    return Blob_init_steal(self, bytes, size);
 }
 
 Blob*
-Blob_init_steal(Blob *self, char *buf, size_t size) {
-    self->buf      = buf;
+Blob_init_steal(Blob *self, void *bytes, size_t size) {
+    self->buf      = (char*)bytes;
     self->size     = size;
     self->owns_buf = true;
 
@@ -60,14 +60,14 @@ Blob_init_steal(Blob *self, char *buf, size_t size) {
 }
 
 Blob*
-Blob_new_wrap(const char *buf, size_t size) {
+Blob_new_wrap(const void *bytes, size_t size) {
     Blob *self = (Blob*)Class_Make_Obj(BLOB);
-    return Blob_init_wrap(self, buf, size);
+    return Blob_init_wrap(self, bytes, size);
 }
 
 Blob*
-Blob_init_wrap(Blob *self, const char *buf, size_t size) {
-    self->buf      = buf;
+Blob_init_wrap(Blob *self, const void *bytes, size_t size) {
+    self->buf      = (char*)bytes;
     self->size     = size;
     self->owns_buf = false;
 
