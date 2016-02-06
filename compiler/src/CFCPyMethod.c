@@ -124,7 +124,10 @@ S_gen_declaration(CFCVariable *var, const char *val) {
         }
     }
     else if (CFCType_is_primitive(type)) {
-        ;
+        if (val) {
+            char pattern[] = "    %s_ARG = %s;\n";
+            result = CFCUtil_sprintf(pattern, var_name, val);
+        }
     }
     else {
         CFCUtil_die("Unexpected type, can't gen declaration: %s", type_str);
