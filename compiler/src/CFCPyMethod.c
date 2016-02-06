@@ -464,7 +464,8 @@ S_gen_decrefs(CFCParamList *param_list, int first_tick) {
         const char *micro_sym = CFCVariable_get_name(var);
         const char *specifier = CFCType_get_specifier(type);
 
-        if (strcmp(specifier, "cfish_String") == 0
+        if (strcmp(specifier, "cfish_Obj") == 0
+             || strcmp(specifier, "cfish_String") == 0
              || strcmp(specifier, "cfish_Vector") == 0
              || strcmp(specifier, "cfish_Hash") == 0
             ) {

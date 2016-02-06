@@ -294,12 +294,13 @@ S_convert_obj(PyObject *py_obj, CFBindArg *arg, bool nullable) {
             return 0;
         }
     }
-    PyTypeObject *py_type = S_get_cached_py_type(arg->klass);
-    if (!PyObject_TypeCheck(py_obj, py_type)) {
+
+    bool success = S_maybe_py_to_cfish(py_obj, arg->klass, true, nullable,
+                                       NULL, arg->ptr);
+    if (!success) {
         PyErr_SetString(PyExc_TypeError, "Invalid argument type");
         return 0;
     }
-    *((PyObject**)arg->ptr) = py_obj;
     return 1;
 }
 
