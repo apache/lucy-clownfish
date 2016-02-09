@@ -76,10 +76,10 @@ public final class Clownfish::Class inherits Clownfish::Obj {
     inert void
     register_with_host(Class *klass, Class *parent);
 
-    /** Find a registered class.  May return NULL if the class is not
+    /** Find a registered class.  May return [](@null) if the class is not
      * registered.
      */
-    inert nullable Class*
+    public inert nullable Class*
     fetch_class(String *class_name);
 
     /** Given a class name, return the name of a parent class which descends
