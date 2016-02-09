@@ -315,9 +315,11 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
                               const char *alias, CFCClass *klass,
                               const char *code_sample,
                               const char *class_name, int is_constructor) {
+    const char *func_name = CFCFunction_get_name(func);
+
     // Only allow "public" subs to be exposed as part of the public API.
     if (!CFCFunction_public(func)) {
-        CFCUtil_die("%s#%s is not public", class_name, alias);
+        CFCUtil_die("%s#%s is not public", class_name, func_name);
     }
 
     char *pod = CFCUtil_sprintf("=head2 %s\n\n", alias);
@@ -336,7 +338,6 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     // Get documentation, which may be inherited.
     CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
     if (!docucomment) {
-        const char *func_name = CFCFunction_get_name(func);
         CFCClass *parent = klass;
         while (NULL != (parent = CFCClass_get_parent(parent))) {
             CFCFunction *parent_func
