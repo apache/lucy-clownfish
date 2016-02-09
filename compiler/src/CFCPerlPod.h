@@ -55,16 +55,16 @@ CFCPerlPod_add_method(CFCPerlPod *self, const char *alias, const char *method,
 /** Add pod for a constructor.
  * 
  * @param alias The name of the constructor, spelled as it will be used from
- * Perl-space.
- * @param initializer The name of the initialization routine from the
- * Clownfish class.  Defaults to "init".
+ * Perl-space.  Defaults to "new".
+ * @param pod_func The name of the function from which the constructor's
+ * documentation should be taken.  Defaults to the alias.
  * @param sample An optional Perl usage sample.
  * @param pod Optional verbatim POD, which will override all POD which would
  * otherwise have been generated.
  */
 void
 CFCPerlPod_add_constructor(CFCPerlPod *self, const char *alias,
-                           const char *initializer, const char *sample,
+                           const char *pod_func, const char *sample,
                            const char *pod);
 
 /** Generate POD for a METHODS section and possibly an ABSTRACT METHODS

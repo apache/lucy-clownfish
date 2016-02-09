@@ -846,16 +846,16 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.4.0' ) }
     }
 
     my %add_constructor_PARAMS = (
-        alias       => undef,
-        initializer => undef,
-        sample      => undef,
-        pod         => undef,
+        alias    => undef,
+        pod_func => undef,
+        sample   => undef,
+        pod      => undef,
     );
 
     sub add_constructor {
         my ( $self, %args ) = @_;
         verify_args( \%add_constructor_PARAMS, %args ) or confess $@;
-        _add_constructor( $self, @args{qw( alias initializer sample pod )} );
+        _add_constructor( $self, @args{qw( alias pod_func sample pod )} );
     }
 }
 

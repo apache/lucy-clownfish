@@ -2316,18 +2316,18 @@ PPCODE:
     CFCPerlPod_add_method(self, alias, method, sample, pod);
 
 void
-_add_constructor(self, alias_sv, init_sv, sample_sv, pod_sv)
+_add_constructor(self, alias_sv, func_sv, sample_sv, pod_sv)
     CFCPerlPod *self;
     SV *alias_sv;
-    SV *init_sv;
+    SV *func_sv;
     SV *sample_sv;
     SV *pod_sv;
 PPCODE:
     const char *alias  = SvPOK(alias_sv)  ? SvPVutf8_nolen(alias_sv)  : NULL;
-    const char *init   = SvPOK(init_sv)   ? SvPVutf8_nolen(init_sv)   : NULL;
+    const char *func   = SvPOK(func_sv)   ? SvPVutf8_nolen(func_sv)   : NULL;
     const char *sample = SvPOK(sample_sv) ? SvPVutf8_nolen(sample_sv) : NULL;
     const char *pod    = SvPOK(pod_sv)    ? SvPVutf8_nolen(pod_sv)    : NULL;
-    CFCPerlPod_add_constructor(self, alias, init, sample, pod);
+    CFCPerlPod_add_constructor(self, alias, func, sample, pod);
 
 SV*
 methods_pod(self, klass)

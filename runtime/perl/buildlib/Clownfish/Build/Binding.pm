@@ -131,7 +131,7 @@ END_SYNOPSIS
 Create a Blob containing the passed-in bytes.
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+    $pod_spec->add_constructor( pod => $constructor );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::Blob
@@ -184,12 +184,12 @@ END_DESCRIPTION
 
     my $bool = Clownfish::Boolean->singleton($truth_value);
 
-Return a Boolean singleton representing either true or false depending
-on the supplied truth value.
+Return either C<$true_singleton> or C<$false_singleton> depending on the
+supplied value.
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->set_description($description);
-    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+    $pod_spec->add_constructor( pod => $constructor );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Boolean
@@ -229,7 +229,7 @@ END_SYNOPSIS
 Create a ByteBuf containing the passed-in bytes.
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+    $pod_spec->add_constructor( pod => $constructor );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::ByteBuf
@@ -270,10 +270,10 @@ sub bind_charbuf {
     print $buf->to_string;
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-    my $buf = Clownfish::CharBuf->new( size => 256 );
+    my $buf = Clownfish::CharBuf->new( capacity => 256 );
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', sample => $constructor );
+    $pod_spec->add_constructor( sample => $constructor );
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         parcel     => "Clownfish",
@@ -298,7 +298,7 @@ END_SYNOPSIS
 Return a String containing the passed-in Perl string.
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+    $pod_spec->add_constructor( pod => $constructor );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::String
@@ -498,7 +498,7 @@ END_CONSTRUCTOR
 Store a key-value pair.
 END_POD
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', sample => $constructor );
+    $pod_spec->add_constructor( sample => $constructor );
     $pod_spec->add_method(
         method => 'Store',
         alias  => 'store',
@@ -549,14 +549,10 @@ sub bind_hashiterator {
     }
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new
-
     my $iter = Clownfish::HashIterator->new($hash);
-
-Return a HashIterator for the passed-in Hash.
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+    $pod_spec->add_constructor( sample => $constructor );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::HashIterator
@@ -593,14 +589,10 @@ sub bind_float {
     my $value = $float->get_value;
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new
-
     my $float = Clownfish::Float->new($value);
-
-Create a Float containing the passed-in value.
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+    $pod_spec->add_constructor( sample => $constructor );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Float
@@ -637,14 +629,10 @@ sub bind_integer {
     my $value = $integer->get_value;
 END_SYNOPSIS
     my $constructor = <<'END_CONSTRUCTOR';
-=head2 new
-
     my $integer = Clownfish::Integer->new($value);
-
-Create an Integer containing the passed-in value.
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', pod => $constructor );
+    $pod_spec->add_constructor( sample => $constructor );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Integer
@@ -860,7 +848,7 @@ END_CONSTRUCTOR
 Store an element at index C<tick>, possibly displacing an existing element.
 END_POD
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( alias => 'new', sample => $constructor );
+    $pod_spec->add_constructor( sample => $constructor );
     $pod_spec->add_method(
         method => 'Store',
         alias  => 'store',
@@ -922,12 +910,8 @@ sub bind_class {
     my $class = Clownfish::Class->fetch_class('Foo::Bar');
     my $subclass = Clownfish::Class->singleton('Foo::Bar::Jr', $class);
 END_SYNOPSIS
-    my $fetch_class_pod = <<'END_CONSTRUCTOR';
-=head2 fetch_class
-
+    my $fetch_class_sample = <<'END_CONSTRUCTOR';
     my $class = Clownfish::Class->fetch_class($class_name);
-
-Find a registered class.  May return undef if the class is not registered.
 END_CONSTRUCTOR
     my $singleton_sample = <<'END_CONSTRUCTOR';
     my $class = Clownfish::Class->singleton(
@@ -937,8 +921,8 @@ END_CONSTRUCTOR
 END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->add_constructor(
-        alias => 'fetch_class',
-        pod   => $fetch_class_pod,
+        alias  => 'fetch_class',
+        sample => $fetch_class_sample,
     );
     $pod_spec->add_constructor(
         alias  => 'singleton',

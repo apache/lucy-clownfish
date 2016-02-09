@@ -150,14 +150,14 @@ CFCPerlPod_add_method(CFCPerlPod *self, const char *alias, const char *method,
 
 void
 CFCPerlPod_add_constructor(CFCPerlPod *self, const char *alias,
-                           const char *initializer, const char *sample,
+                           const char *pod_func, const char *sample,
                            const char *pod) {
     self->num_constructors++;
     size_t size = self->num_constructors * sizeof(NamePod);
     self->constructors = (NamePod*)REALLOCATE(self->constructors, size);
     NamePod *slot = &self->constructors[self->num_constructors - 1];
     slot->alias  = CFCUtil_strdup(alias ? alias : "new");
-    slot->func   = CFCUtil_strdup(initializer ? initializer : "init");
+    slot->func   = pod_func ? CFCUtil_strdup(pod_func) : NULL;
     slot->sample = sample ? CFCUtil_strdup(sample) : NULL;
     slot->pod    = pod ? CFCUtil_strdup(pod) : NULL;
 }
@@ -294,16 +294,14 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
             pod = CFCUtil_cat(pod, slot.pod, "\n", NULL);
         }
         else {
-            CFCFunction *init_func = CFCClass_function(klass, slot.func);
-            if (!init_func) {
-                init_func = CFCClass_function(klass, slot.alias);
-            }
-            if (!init_func) {
+            const char *func_name = slot.func ? slot.func : slot.alias;
+            CFCFunction *pod_func = CFCClass_function(klass, func_name);
+            if (!pod_func) {
                 CFCUtil_die("Can't find constructor '%s' in class '%s'",
-                            slot.alias, CFCClass_get_name(klass));
+                            func_name, CFCClass_get_name(klass));
             }
             char *sub_pod
-                = CFCPerlPod_gen_subroutine_pod(init_func, slot.alias, klass,
+                = CFCPerlPod_gen_subroutine_pod(pod_func, slot.alias, klass,
                                                 slot.sample, class_name, true);
             pod = CFCUtil_cat(pod, sub_pod, NULL);
             FREEMEM(sub_pod);
