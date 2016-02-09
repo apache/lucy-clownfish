@@ -8183,7 +8183,16 @@ cfish_MakeFile_new(chaz_CLI *cli) {
         self->host_src_dir = "ext";
         self->autogen_src_files = go_autogen_src_files;
     }
-    else if (strcmp(chaz_CLI_strval(cli, "host"), "perl") == 0) {
+    else if (chaz_CLI_defined(cli, "enable-python")) {
+        static const char *python_autogen_src_files[] = {
+            "cfish_parcel",
+            "testcfish_parcel",
+            NULL
+        };
+        self->host_src_dir = "cfext";
+        self->autogen_src_files = python_autogen_src_files;
+    }
+    else if (chaz_CLI_defined(cli, "enable-perl")) {
         static const char *perl_autogen_src_files[] = {
             "boot",
             "callbacks",

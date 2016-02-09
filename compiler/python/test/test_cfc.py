@@ -1,5 +1,5 @@
 import unittest
-import clownfish.cfc
+import cfc
 
 class MyTest(unittest.TestCase):
 
