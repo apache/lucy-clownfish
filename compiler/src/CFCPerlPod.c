@@ -71,15 +71,15 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
                   int is_constructor);
 
 static char*
-S_gen_positional_sample(const char *invocant, const char *alias,
-                        CFCParamList *param_list, size_t start);
+S_gen_positional_sample(const char *prologue, CFCParamList *param_list,
+                        size_t start);
 
 static char*
-S_gen_labeled_sample(const char *invocant, const char *alias,
-                     CFCParamList *param_list, size_t start);
+S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
+                     size_t start);
 
 static char*
-S_perl_var_name(CFCVariable *var);
+S_perl_var_name(CFCType *type);
 
 static char*
 S_camel_to_lower(const char *camel);
@@ -392,16 +392,31 @@ CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
 static char*
 S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
                   int is_constructor) {
-    char *invocant = NULL;
+    char *prologue = CFCUtil_sprintf("");
+
+    CFCType *ret_type = CFCCallable_get_return_type(func);
+    if (!CFCType_is_void(ret_type)) {
+        if (is_constructor) {
+            char *ret_name = S_perl_var_name(ret_type);
+            prologue = CFCUtil_cat(prologue, "my $", ret_name, " = ", NULL);
+            FREEMEM(ret_name);
+        }
+        else {
+            prologue = CFCUtil_cat(prologue, "my $retval = ", NULL);
+        }
+    }
 
     if (is_constructor) {
-        invocant = CFCUtil_strdup(CFCClass_get_name(klass));
+        const char *invocant = CFCClass_get_name(klass);
+        prologue = CFCUtil_cat(prologue, invocant, NULL);
     }
     else {
         char *lower = S_camel_to_lower(CFCClass_get_struct_sym(klass));
-        invocant = CFCUtil_sprintf("$%s", lower);
+        prologue = CFCUtil_cat(prologue, "$", lower, NULL);
         FREEMEM(lower);
     }
+
+    prologue = CFCUtil_cat(prologue, "->", alias, NULL);
 
     CFCParamList *param_list = CFCCallable_get_param_list(func);
     size_t        num_vars   = CFCParamList_num_vars(param_list);
@@ -409,21 +424,22 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
     char         *sample     = NULL;
 
     if (start == num_vars) {
-        sample = CFCUtil_sprintf("    %s->%s();\n", invocant, alias);
+        sample = CFCUtil_sprintf("    %s();\n", prologue);
     }
     else if (is_constructor || num_vars - start >= 2) {
-        sample = S_gen_labeled_sample(invocant, alias, param_list, start);
+        sample = S_gen_labeled_sample(prologue, param_list, start);
     }
     else {
-        sample = S_gen_positional_sample(invocant, alias, param_list, start);
+        sample = S_gen_positional_sample(prologue, param_list, start);
     }
 
+    FREEMEM(prologue);
     return sample;
 }
 
 static char*
-S_gen_positional_sample(const char *invocant, const char *alias,
-                        CFCParamList *param_list, size_t start) {
+S_gen_positional_sample(const char *prologue, CFCParamList *param_list,
+                        size_t start) {
     size_t        num_vars = CFCParamList_num_vars(param_list);
     CFCVariable **vars     = CFCParamList_get_variables(param_list);
     const char  **inits    = CFCParamList_get_initial_values(param_list);
@@ -434,14 +450,13 @@ S_gen_positional_sample(const char *invocant, const char *alias,
     }
 
     const char *name = CFCVariable_get_name(vars[start]);
-    char *sample
-        = CFCUtil_sprintf("    %s->%s($%s);\n", invocant, alias, name);
+    char *sample = CFCUtil_sprintf("    %s($%s);\n", prologue, name);
 
     const char *init = inits[start];
     if (init) {
         if (strcmp(init, "NULL") == 0) { init = "undef"; }
-        char *def_sample = CFCUtil_sprintf("    %s->%s();  # default: %s\n",
-                                           invocant, alias, init);
+        char *def_sample = CFCUtil_sprintf("    %s();  # default: %s\n",
+                                           prologue, init);
         sample = CFCUtil_cat(sample, def_sample, NULL);
         FREEMEM(def_sample);
     }
@@ -450,8 +465,8 @@ S_gen_positional_sample(const char *invocant, const char *alias,
 }
 
 static char*
-S_gen_labeled_sample(const char *invocant, const char *alias,
-                     CFCParamList *param_list, size_t start) {
+S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
+                     size_t start) {
     size_t        num_vars = CFCParamList_num_vars(param_list);
     CFCVariable **vars     = CFCParamList_get_variables(param_list);
     const char  **inits    = CFCParamList_get_initial_values(param_list);
@@ -467,7 +482,8 @@ S_gen_labeled_sample(const char *invocant, const char *alias,
         size_t label_len = strlen(label);
         if (label_len > max_label_len) { max_label_len = label_len; }
 
-        char *perl_var = S_perl_var_name(var);
+        CFCType *type = CFCVariable_get_type(var);
+        char *perl_var = S_perl_var_name(type);
         size_t perl_var_len = strlen(perl_var);
         if (perl_var_len > max_var_len) { max_var_len = perl_var_len; }
         FREEMEM(perl_var);
@@ -478,7 +494,8 @@ S_gen_labeled_sample(const char *invocant, const char *alias,
     for (size_t i = start; i < num_vars; i++) {
         CFCVariable *var      = vars[i];
         const char  *label    = CFCVariable_get_name(var);
-        char        *perl_var = S_perl_var_name(var);
+        CFCType     *type     = CFCVariable_get_type(var);
+        char        *perl_var = S_perl_var_name(type);
         perl_var = CFCUtil_cat(perl_var, ",", NULL);
 
         char       *comment = NULL;
@@ -503,18 +520,17 @@ S_gen_labeled_sample(const char *invocant, const char *alias,
     }
 
     const char pattern[] =
-        "    %s->%s(\n"
+        "    %s(\n"
         "%s"
         "    );\n";
-    char *sample = CFCUtil_sprintf(pattern, invocant, alias, params);
+    char *sample = CFCUtil_sprintf(pattern, prologue, params);
 
     FREEMEM(params);
     return sample;
 }
 
 static char*
-S_perl_var_name(CFCVariable *var) {
-    CFCType    *type      = CFCVariable_get_type(var);
+S_perl_var_name(CFCType *type) {
     const char *specifier = CFCType_get_specifier(type);
     char       *perl_name = NULL;
 

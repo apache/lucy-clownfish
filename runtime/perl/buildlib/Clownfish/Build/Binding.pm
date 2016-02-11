@@ -269,11 +269,8 @@ sub bind_charbuf {
     $buf->cat_char(ord("\n"));
     print $buf->to_string;
 END_SYNOPSIS
-    my $constructor = <<'END_CONSTRUCTOR';
-    my $buf = Clownfish::CharBuf->new( capacity => 256 );
-END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( sample => $constructor );
+    $pod_spec->add_constructor();
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         parcel     => "Clownfish",
@@ -487,9 +484,6 @@ sub bind_hash {
     $hash->store($key, $value);
     my $value = $hash->fetch($key);
 END_SYNOPSIS
-    my $constructor = <<'END_CONSTRUCTOR';
-    my $hash = Clownfish::Hash->new( capacity => 256 );
-END_CONSTRUCTOR
     my $store_pod = <<'END_POD';
 =head2 store
 
@@ -498,7 +492,7 @@ END_CONSTRUCTOR
 Store a key-value pair.
 END_POD
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( sample => $constructor );
+    $pod_spec->add_constructor();
     $pod_spec->add_method(
         method => 'Store',
         alias  => 'store',
@@ -836,9 +830,6 @@ sub bind_vector {
     $vector->store($tick, $value);
     my $value = $vector->fetch($tick);
 END_SYNOPSIS
-    my $constructor = <<'END_CONSTRUCTOR';
-    my $vector = Clownfish::Vector->new( capacity => 256 );
-END_CONSTRUCTOR
     my $store_pod = <<'END_POD';
 =head2 store
 
@@ -847,7 +838,7 @@ END_CONSTRUCTOR
 Store an element at index C<tick>, possibly displacing an existing element.
 END_POD
     $pod_spec->set_synopsis($synopsis);
-    $pod_spec->add_constructor( sample => $constructor );
+    $pod_spec->add_constructor();
     $pod_spec->add_method(
         method => 'Store',
         alias  => 'store',
@@ -912,21 +903,12 @@ END_SYNOPSIS
     my $fetch_class_sample = <<'END_CONSTRUCTOR';
     my $class = Clownfish::Class->fetch_class($class_name);
 END_CONSTRUCTOR
-    my $singleton_sample = <<'END_CONSTRUCTOR';
-    my $class = Clownfish::Class->singleton(
-        class_name => $class_name,
-        parent     => $parent,
-    );
-END_CONSTRUCTOR
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->add_constructor(
         alias  => 'fetch_class',
         sample => $fetch_class_sample,
     );
-    $pod_spec->add_constructor(
-        alias  => 'singleton',
-        sample => $singleton_sample,
-    );
+    $pod_spec->add_constructor( alias  => 'singleton' );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Class
