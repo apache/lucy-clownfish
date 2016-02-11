@@ -88,3 +88,28 @@ CFCCallable_can_be_bound(CFCCallable *self) {
     return true;
 }
 
+CFCType*
+CFCCallable_get_return_type(CFCCallable *self) {
+    return self->return_type;
+}
+
+CFCParamList*
+CFCCallable_get_param_list(CFCCallable *self) {
+    return self->param_list;
+}
+
+CFCDocuComment*
+CFCCallable_get_docucomment(CFCCallable *self) {
+    return self->docucomment;
+}
+
+const char*
+CFCCallable_get_name(CFCCallable *self) {
+    return CFCSymbol_get_name((CFCSymbol*)self);
+}
+
+int
+CFCCallable_public(CFCCallable *self) {
+    return CFCSymbol_public((CFCSymbol*)self);
+}
+

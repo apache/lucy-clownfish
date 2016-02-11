@@ -36,6 +36,7 @@
 #include "CFCDocument.h"
 #include "CFCType.h"
 #include "CFCVariable.h"
+#include "CFCCallable.h"
 
 #ifndef true
   #define true 1
@@ -66,7 +67,7 @@ static const CFCMeta CFCPERLPOD_META = {
 };
 
 static char*
-S_gen_code_sample(CFCFunction *func, const char *alias, CFCClass *klass,
+S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
                   int is_constructor);
 
 static char*
@@ -150,14 +151,14 @@ CFCPerlPod_add_method(CFCPerlPod *self, const char *alias, const char *method,
 
 void
 CFCPerlPod_add_constructor(CFCPerlPod *self, const char *alias,
-                           const char *initializer, const char *sample,
+                           const char *pod_func, const char *sample,
                            const char *pod) {
     self->num_constructors++;
     size_t size = self->num_constructors * sizeof(NamePod);
     self->constructors = (NamePod*)REALLOCATE(self->constructors, size);
     NamePod *slot = &self->constructors[self->num_constructors - 1];
     slot->alias  = CFCUtil_strdup(alias ? alias : "new");
-    slot->func   = CFCUtil_strdup(initializer ? initializer : "init");
+    slot->func   = pod_func ? CFCUtil_strdup(pod_func) : NULL;
     slot->sample = sample ? CFCUtil_strdup(sample) : NULL;
     slot->pod    = pod ? CFCUtil_strdup(pod) : NULL;
 }
@@ -226,7 +227,7 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
             }
             else {
                 meth_pod
-                    = CFCPerlPod_gen_subroutine_pod((CFCFunction*)method,
+                    = CFCPerlPod_gen_subroutine_pod((CFCCallable*)method,
                                                     meth_spec->alias, klass,
                                                     meth_spec->sample,
                                                     class_name, false);
@@ -253,7 +254,7 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
 
             char *perl_name = CFCPerlMethod_perl_name(method);
             meth_pod
-                = CFCPerlPod_gen_subroutine_pod((CFCFunction*)method,
+                = CFCPerlPod_gen_subroutine_pod((CFCCallable*)method,
                                                 perl_name, klass, NULL,
                                                 class_name, false);
             FREEMEM(perl_name);
@@ -294,17 +295,16 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
             pod = CFCUtil_cat(pod, slot.pod, "\n", NULL);
         }
         else {
-            CFCFunction *init_func = CFCClass_function(klass, slot.func);
-            if (!init_func) {
-                init_func = CFCClass_function(klass, slot.alias);
-            }
-            if (!init_func) {
+            const char *func_name = slot.func ? slot.func : slot.alias;
+            CFCFunction *pod_func = CFCClass_function(klass, func_name);
+            if (!pod_func) {
                 CFCUtil_die("Can't find constructor '%s' in class '%s'",
-                            slot.alias, CFCClass_get_name(klass));
+                            func_name, CFCClass_get_name(klass));
             }
             char *sub_pod
-                = CFCPerlPod_gen_subroutine_pod(init_func, slot.alias, klass,
-                                                slot.sample, class_name, true);
+                = CFCPerlPod_gen_subroutine_pod((CFCCallable*)pod_func,
+                                                slot.alias, klass, slot.sample,
+                                                class_name, true);
             pod = CFCUtil_cat(pod, sub_pod, NULL);
             FREEMEM(sub_pod);
         }
@@ -313,13 +313,15 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
 }
 
 char*
-CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
+CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
                               const char *alias, CFCClass *klass,
                               const char *code_sample,
                               const char *class_name, int is_constructor) {
+    const char *func_name = CFCCallable_get_name(func);
+
     // Only allow "public" subs to be exposed as part of the public API.
-    if (!CFCFunction_public(func)) {
-        CFCUtil_die("%s#%s is not public", class_name, alias);
+    if (!CFCCallable_public(func)) {
+        CFCUtil_die("%s#%s is not public", class_name, func_name);
     }
 
     char *pod = CFCUtil_sprintf("=head2 %s\n\n", alias);
@@ -336,15 +338,14 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
     }
 
     // Get documentation, which may be inherited.
-    CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
+    CFCDocuComment *docucomment = CFCCallable_get_docucomment(func);
     if (!docucomment) {
-        const char *func_name = CFCFunction_get_name(func);
         CFCClass *parent = klass;
         while (NULL != (parent = CFCClass_get_parent(parent))) {
-            CFCFunction *parent_func
-                = (CFCFunction*)CFCClass_method(parent, func_name);
+            CFCCallable *parent_func
+                = (CFCCallable*)CFCClass_method(parent, func_name);
             if (!parent_func) { break; }
-            docucomment = CFCFunction_get_docucomment(parent_func);
+            docucomment = CFCCallable_get_docucomment(parent_func);
             if (docucomment) { break; }
         }
     }
@@ -386,7 +387,7 @@ CFCPerlPod_gen_subroutine_pod(CFCFunction *func,
 }
 
 static char*
-S_gen_code_sample(CFCFunction *func, const char *alias, CFCClass *klass,
+S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
                   int is_constructor) {
     char *invocant = NULL;
 
@@ -399,7 +400,7 @@ S_gen_code_sample(CFCFunction *func, const char *alias, CFCClass *klass,
         FREEMEM(lower);
     }
 
-    CFCParamList *param_list = CFCFunction_get_param_list(func);
+    CFCParamList *param_list = CFCCallable_get_param_list(func);
     size_t        num_vars   = CFCParamList_num_vars(param_list);
     size_t        start      = is_constructor ? 0 : 1;
     char         *sample     = NULL;
