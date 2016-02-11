@@ -22,6 +22,7 @@ use 5.008003;
 
 our $VERSION = '0.004000';
 $VERSION = eval $VERSION;
+our $MAJOR_VERSION = 0.004000;
 
 use Exporter 'import';
 BEGIN {

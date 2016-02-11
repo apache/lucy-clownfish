@@ -19,6 +19,7 @@ use warnings;
 package Clownfish::CFC;
 our $VERSION = '0.004000';
 $VERSION = eval $VERSION;
+our $MAJOR_VERSION = 0.004000;
 
 END {
     Clownfish::CFC::Model::Class->_clear_registry();

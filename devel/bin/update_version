@@ -28,13 +28,13 @@ my $version = shift(@ARGV) or die $usage;
 # standardize version strings
 my ( $x, $y, $z, $dev );
 if ( $version =~ m/^(\d+)\.(\d+)\.(\d+)$/ ) {
-    ( $x, $y, $z ) = ( $1, $2, $3 );
+    ( $x, $y, $z, $dev ) = ( $1, $2, $3, 0 );
 }
 elsif ( $version =~ m/^(\d+)\.(\d+)\.(\d+)_(\d+)$/ ) {
     ( $x, $y, $z, $dev ) = ( $1, $2, $3, $4 );
 }
 elsif ( $version =~ m/^(\d+)\.(\d\d\d)(\d\d\d)$/ ) {
-    ( $x, $y, $z ) = ( int($1), int($2), int($3) );
+    ( $x, $y, $z, $dev ) = ( int($1), int($2), int($3), 0 );
 }
 elsif ( $version =~ m/^(\d+)\.(\d\d\d)(\d\d\d)_(\d\d\d)$/ ) {
     ( $x, $y, $z, $dev ) = ( int($1), int($2), int($3), int($4) );
@@ -70,6 +70,10 @@ $buf =~ s/(our \$VERSION\ +=\ +)'.+?'/$1'$x_yyyzzz_version'/g
     or die "no match";
 $buf =~ s/XSLoader::load\( 'Clownfish::CFC', '(.+?)'/XSLoader::load\( 'Clownfish::CFC', '$x_y_z_d_version'/
     or die "no match";
+if ( $z == 0 && $dev == 0 ) {
+    $buf =~ s/(our \$MAJOR_VERSION\ +=\ +)[\d._]+/$1$x_yyyzzz_version/g
+        or die "no match";
+}
 write_file( 'compiler/perl/lib/Clownfish/CFC.pm', $buf );
 
 # Update Clownfish.pm.
@@ -80,6 +84,10 @@ $buf =~ s/(bootstrap Clownfish ')(.+?)'/$1$x_y_z_d_version'/
     or die "no match";
 $buf =~ s/^\d+\.\d+\.\d+(_\d+)?\b$/$x_y_z_d_version/m
     or die "no match";
+if ( $z == 0 && $dev == 0 ) {
+    $buf =~ s/(our \$MAJOR_VERSION\ +=\ +)[\d._]+/$1$x_yyyzzz_version/g
+        or die "no match";
+}
 write_file( 'runtime/perl/lib/Clownfish.pm', $buf );
 
 # Update Clownfish.pod.
