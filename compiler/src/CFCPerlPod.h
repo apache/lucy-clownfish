@@ -25,7 +25,7 @@ extern "C" {
  */
 
 typedef struct CFCPerlPod CFCPerlPod;
-struct CFCFunction;
+struct CFCCallable;
 struct CFCClass;
 
 CFCPerlPod*
@@ -112,7 +112,7 @@ CFCPerlPod_md_to_pod(const char *md, struct CFCClass *klass, int header_level);
  * argument handling is different for constructors.
  */
 char*
-CFCPerlPod_gen_subroutine_pod(struct CFCFunction *func,
+CFCPerlPod_gen_subroutine_pod(struct CFCCallable *func,
                               const char *alias, struct CFCClass *klass,
                               const char *code_sample,
                               const char *class_name, int is_constructor);

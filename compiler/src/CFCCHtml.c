@@ -39,6 +39,7 @@
 #include "CFCUtil.h"
 #include "CFCUri.h"
 #include "CFCVariable.h"
+#include "CFCCallable.h"
 
 #ifndef true
     #define true 1
@@ -146,11 +147,11 @@ static char*
 S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor);
 
 static char*
-S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
+S_html_create_func(CFCClass *klass, CFCCallable *func, const char *prefix,
                    const char *short_sym);
 
 static char*
-S_html_create_param_list(CFCClass *klass, CFCFunction *func);
+S_html_create_param_list(CFCClass *klass, CFCCallable *func);
 
 static char*
 S_html_create_inheritance(CFCClass *klass);
@@ -685,7 +686,8 @@ S_html_create_functions(CFCClass *klass) {
                              name, "</dt>\n", NULL);
 
         char *short_sym = CFCFunction_short_func_sym(func, klass);
-        char *func_html = S_html_create_func(klass, func, prefix, short_sym);
+        char *func_html = S_html_create_func(klass, (CFCCallable*)func, prefix,
+                                             short_sym);
         result = CFCUtil_cat(result, func_html, NULL);
         FREEMEM(func_html);
         FREEMEM(short_sym);
@@ -772,7 +774,7 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
         result = CFCUtil_cat(result, "</dt>\n", NULL);
 
         char       *short_sym = CFCMethod_short_method_sym(method, klass);
-        char *method_html = S_html_create_func(klass, (CFCFunction*)method,
+        char *method_html = S_html_create_func(klass, (CFCCallable*)method,
                                                prefix, short_sym);
         result = CFCUtil_cat(result, method_html, NULL);
         FREEMEM(method_html);
@@ -787,9 +789,9 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
 }
 
 static char*
-S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
+S_html_create_func(CFCClass *klass, CFCCallable *func, const char *prefix,
                    const char *short_sym) {
-    CFCType    *ret_type      = CFCFunction_get_return_type(func);
+    CFCType    *ret_type      = CFCCallable_get_return_type(func);
     char       *ret_html      = S_type_to_html(ret_type, "", klass);
     const char *ret_array     = CFCType_get_array(ret_type);
     const char *ret_array_str = ret_array ? ret_array : "";
@@ -811,15 +813,15 @@ S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
     FREEMEM(param_list);
 
     // Get documentation, which may be inherited.
-    CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
+    CFCDocuComment *docucomment = CFCCallable_get_docucomment(func);
     if (!docucomment) {
-        const char *name = CFCFunction_get_name(func);
+        const char *name = CFCCallable_get_name(func);
         CFCClass *parent = klass;
         while (NULL != (parent = CFCClass_get_parent(parent))) {
-            CFCFunction *parent_func
-                = (CFCFunction*)CFCClass_method(parent, name);
+            CFCCallable *parent_func
+                = (CFCCallable*)CFCClass_method(parent, name);
             if (!parent_func) { break; }
-            docucomment = CFCFunction_get_docucomment(parent_func);
+            docucomment = CFCCallable_get_docucomment(parent_func);
             if (docucomment) { break; }
         }
     }
@@ -866,8 +868,8 @@ S_html_create_func(CFCClass *klass, CFCFunction *func, const char *prefix,
 }
 
 static char*
-S_html_create_param_list(CFCClass *klass, CFCFunction *func) {
-    CFCParamList  *param_list = CFCFunction_get_param_list(func);
+S_html_create_param_list(CFCClass *klass, CFCCallable *func) {
+    CFCParamList  *param_list = CFCCallable_get_param_list(func);
     CFCVariable  **variables  = CFCParamList_get_variables(param_list);
 
     const char *cfc_class = CFCBase_get_cfc_class((CFCBase*)func);

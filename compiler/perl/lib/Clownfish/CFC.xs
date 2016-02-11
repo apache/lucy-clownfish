@@ -2394,7 +2394,7 @@ OUTPUT: RETVAL
 
 SV*
 _gen_subroutine_pod(func, alias, klass, code_sample, class_name, is_constructor)
-    CFCFunction *func;
+    CFCCallable *func;
     const char *alias;
     CFCClass *klass;
     const char *code_sample;

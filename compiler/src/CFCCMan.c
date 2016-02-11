@@ -32,6 +32,7 @@
 #include "CFCUri.h"
 #include "CFCUtil.h"
 #include "CFCVariable.h"
+#include "CFCCallable.h"
 
 #ifndef true
     #define true 1
@@ -57,10 +58,10 @@ static char*
 S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor);
 
 static char*
-S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym);
+S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym);
 
 static char*
-S_man_create_param_list(CFCClass *klass, CFCFunction *func);
+S_man_create_param_list(CFCClass *klass, CFCCallable *func);
 
 static char*
 S_man_create_inheritance(CFCClass *klass);
@@ -183,7 +184,8 @@ S_man_create_functions(CFCClass *klass) {
         result = CFCUtil_cat(result, ".TP\n.B ", name, "\n", NULL);
 
         char *full_func_sym = CFCFunction_full_func_sym(func, klass);
-        char *function_man = S_man_create_func(klass, func, full_func_sym);
+        char *function_man = S_man_create_func(klass, (CFCCallable*)func,
+                                               full_func_sym);
         result = CFCUtil_cat(result, function_man, NULL);
         FREEMEM(function_man);
         FREEMEM(full_func_sym);
@@ -257,7 +259,7 @@ S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
         result = CFCUtil_cat(result, "\n", NULL);
 
         char *full_sym = CFCMethod_full_method_sym(method, klass);
-        char *method_man = S_man_create_func(klass, (CFCFunction*)method,
+        char *method_man = S_man_create_func(klass, (CFCCallable*)method,
                                              full_sym);
         result = CFCUtil_cat(result, method_man, NULL);
         FREEMEM(method_man);
@@ -268,8 +270,8 @@ S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
 }
 
 static char*
-S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
-    CFCType    *return_type   = CFCFunction_get_return_type(func);
+S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym) {
+    CFCType    *return_type   = CFCCallable_get_return_type(func);
     const char *return_type_c = CFCType_to_c(return_type);
     const char *incremented   = "";
 
@@ -292,15 +294,15 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
     FREEMEM(param_list);
 
     // Get documentation, which may be inherited.
-    CFCDocuComment *docucomment = CFCFunction_get_docucomment(func);
+    CFCDocuComment *docucomment = CFCCallable_get_docucomment(func);
     if (!docucomment) {
-        const char *name = CFCFunction_get_name(func);
+        const char *name = CFCCallable_get_name(func);
         CFCClass *parent = klass;
         while (NULL != (parent = CFCClass_get_parent(parent))) {
-            CFCFunction *parent_func
-                = (CFCFunction*)CFCClass_method(parent, name);
+            CFCCallable *parent_func
+                = (CFCCallable*)CFCClass_method(parent, name);
             if (!parent_func) { break; }
-            docucomment = CFCFunction_get_docucomment(parent_func);
+            docucomment = CFCCallable_get_docucomment(parent_func);
             if (docucomment) { break; }
         }
     }
@@ -341,8 +343,8 @@ S_man_create_func(CFCClass *klass, CFCFunction *func, const char *full_sym) {
 }
 
 static char*
-S_man_create_param_list(CFCClass *klass, CFCFunction *func) {
-    CFCParamList  *param_list = CFCFunction_get_param_list(func);
+S_man_create_param_list(CFCClass *klass, CFCCallable *func) {
+    CFCParamList  *param_list = CFCCallable_get_param_list(func);
     CFCVariable  **variables  = CFCParamList_get_variables(param_list);
 
     if (!variables[0]) {
