@@ -90,12 +90,6 @@ if ( $z == 0 && $dev == 0 ) {
 }
 write_file( 'runtime/perl/lib/Clownfish.pm', $buf );
 
-# Update Clownfish.pod.
-$buf = read_file('runtime/perl/lib/Clownfish.pod');
-$buf =~ s/(^=head1\s+VERSION\s+)([\d._]+)/$1$x_y_z_d_version/m
-    or die "no match";
-write_file( 'runtime/perl/lib/Clownfish.pod', $buf );
-
 # Update compiler Build.PL
 $buf = read_file('compiler/perl/Build.PL');
 $buf =~ s/(dist_version\ +=>\ +)'.+?'/$1'$x_y_z_d_version'/
