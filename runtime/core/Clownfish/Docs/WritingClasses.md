@@ -132,7 +132,7 @@ This will generate:
 
 ### Class exposure
 
-TODO
+API documentation will only be generated for classes with public exposure.
 
 ### Inert classes
 
@@ -150,10 +150,8 @@ modifier. Final classes must not be inherited from.
 
 Variables are declared with a declaration of the following form:
 
-    variable-declaration = variable-exposure-specifier?
-                           variable-modifier*
+    variable-declaration = variable-modifier*
                            type variable-name ";"
-    variable-exposure-specifier = "public"
     variable-modifier = "inert"
     variable-name = identifier
 
@@ -178,10 +176,6 @@ The C source file defining the variable will typically use short names. So the
 definition will look like:
 
     int Path_max_path_length = 5000;
-
-### Inert variable exposure
-
-TODO
 
 ### Instance variables
 
@@ -246,7 +240,7 @@ Example using short names:
 
 ### Function exposure
 
-TODO
+API documentation will only be generated for functions with public exposure.
 
 ### Inert functions
 
