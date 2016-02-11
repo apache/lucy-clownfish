@@ -70,6 +70,21 @@ CFCCallable_resolve_types(CFCCallable *self);
 int
 CFCCallable_can_be_bound(CFCCallable *self);
 
+struct CFCType*
+CFCCallable_get_return_type(CFCCallable *self);
+
+struct CFCParamList*
+CFCCallable_get_param_list(CFCCallable *self);
+
+struct CFCDocuComment*
+CFCCallable_get_docucomment(CFCCallable *self);
+
+const char*
+CFCCallable_get_name(CFCCallable *self);
+
+int
+CFCCallable_public(CFCCallable *self);
+
 #ifdef __cplusplus
 }
 #endif
