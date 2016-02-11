@@ -526,3 +526,44 @@ Example:
         SUPER_DESTROY(self, PATH);
     }
 
+## Documentation
+
+The Clownfish compiler creates documentation in the host language's preferred
+format from so-called DocuComments found in the `.cfh` files. DocuComments use
+Markdown ([CommonMark](http://commonmark.org/) flavor) for formatting.
+DocuComments are multi-line C-style comments that start with `/**`. They
+immediately precede the documented class, inert function, or method.
+A left border consisting of whitespace and asterisks is stripped.
+
+The DocuComment for a class should start with a sentence (everything up until
+the first period `.`) in the format "class name - short description."
+
+DocuComments for functions and methods may end with a series of `@param` and
+`@return` directives which document the parameters and return values.
+
+Example:
+
+    /** Train - Class describing a train.
+     *
+     * The Train class describes a train.
+     */
+    public class Train inherits Vehicle {
+        /** Create a new Train object.
+         *
+         * @param max_speed The maximum speed in km/h.
+         * @param track_gauge The track gauge in mm.
+         */
+        public inert incremented Train*
+        new(double max_speed, double track_gauge);
+
+        /** Accessor for maximum speed.
+         *
+         * @return the maximum speed in km/h.
+         */
+        public double
+        Get_Max_Speed(Train *self);
+    }
+
+The Clownfish compiler also looks for standalone Markdown `.md` files in the
+source directories which will be included in the documentation.
+
