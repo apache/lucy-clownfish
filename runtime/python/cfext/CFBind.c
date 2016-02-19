@@ -855,6 +855,28 @@ static cfish_Err *current_error;
 static cfish_Err *thrown_error;
 static jmp_buf  *current_env;
 
+jmp_buf*
+CFBind_swap_env(jmp_buf *env) {
+    jmp_buf *prev_env = current_env;
+    current_env = env;
+    return prev_env;
+}
+
+int
+CFBind_migrate_cferr() {
+    if (thrown_error != NULL) {
+        cfish_Err *err = thrown_error;
+        thrown_error = NULL;
+        cfish_String *mess = CFISH_Err_Get_Mess(err);
+        char *utf8 = CFISH_Str_To_Utf8(mess);
+        PyErr_SetString(PyExc_RuntimeError, utf8);
+        CFISH_FREEMEM(utf8);
+        CFISH_DECREF(err);
+        return true;
+    }
+    return false;
+}
+
 void
 cfish_Err_init_class(void) {
     Err_initialized = true;

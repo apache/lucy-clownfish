@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+#include <setjmp.h>
 #include "cfish_platform.h"
 #include "Python.h"
 #include "Clownfish/Obj.h"
@@ -37,6 +38,17 @@ struct cfish_String;
   */
 void
 CFBind_reraise_pyerr(struct cfish_Class *err_klass, struct cfish_String *mess);
+
+/** Set the current_env, return the old value (internal use only).
+  */
+jmp_buf*
+CFBind_swap_env(jmp_buf *env);
+
+/** If a Clownfish error was thrown, propagate it to Python and return true
+ * (internal use only).
+  */
+int
+CFBind_migrate_cferr(void);
 
 /** Null-safe invocation of Obj_To_Host.
   */
