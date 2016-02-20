@@ -265,14 +265,15 @@ sub ACTION_dist {
     # the top-level $REPOS_ROOT.  Because some assets we need are outside this
     # directory, we need to copy them in.
     my %to_copy = (
-        '../../CONTRIBUTING' => 'CONTRIBUTING',
-        '../../LICENSE'      => 'LICENSE',
-        '../../NOTICE'       => 'NOTICE',
-        '../../README'       => 'README',
-        '../../lemon'        => 'lemon',
-        '../src'             => 'src',
-        '../include'         => 'include',
-        $CHARMONIZER_C       => 'charmonizer.c',
+        '../../CONTRIBUTING.md' => 'CONTRIBUTING.md',
+        '../../LICENSE'         => 'LICENSE',
+        '../../NOTICE'          => 'NOTICE',
+        '../../README.md'       => 'README.md',
+        '../../lemon'           => 'lemon',
+        '../src'                => 'src',
+        '../include'            => 'include',
+        '../modules'            => 'modules',
+        $CHARMONIZER_C          => 'charmonizer.c',
     );
     print "Copying files...\n";
     while (my ($from, $to) = each %to_copy) {
