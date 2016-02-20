@@ -22,7 +22,6 @@
 
 char*
 CFCPyTypeMap_c_to_py(CFCType *type, const char *cf_var) {
-    const char *type_str = CFCType_to_c(type);
     char *result = NULL;
 
     if (CFCType_is_object(type)) {

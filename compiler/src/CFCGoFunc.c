@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "charmony.h"
+
 #include "CFCGoFunc.h"
 #include "CFCGoTypeMap.h"
 #include "CFCBase.h"
@@ -223,7 +225,8 @@ CFCGoFunc_ctor_start(CFCParcel *parcel, const char *name,
 
 static char*
 S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
-                      CFCParamList *param_list, int targ) {
+              CFCParamList *param_list, int targ) {
+    CHY_UNUSED_VAR(parcel);
     CFCVariable **vars = CFCParamList_get_variables(param_list);
     char go_name[GO_NAME_BUF_SIZE];
     char *cfargs = CFCUtil_strdup("");
@@ -269,6 +272,7 @@ CFCGoFunc_ctor_cfargs(CFCParcel *parcel, CFCParamList *param_list) {
 char*
 CFCGoFunc_return_statement(CFCParcel *parcel, CFCType *return_type,
                            const char *cf_retval) {
+    CHY_UNUSED_VAR(cf_retval);
     const char *clownfish_dot = CFCParcel_is_cfish(parcel)
                                 ? "" : "clownfish.";
     const char *maybe_decref = CFCType_incremented(return_type)

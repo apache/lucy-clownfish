@@ -217,7 +217,7 @@ CFCGoTypeMap_go_meth_receiever(const char *struct_name,
     if (param_list != NULL) {
         CFCVariable **vars = CFCParamList_get_variables(param_list);
         size_t num_vars = CFCParamList_num_vars(param_list);
-        for (int i = 1; i < num_vars; i++) {
+        for (size_t i = 1; i < num_vars; i++) {
             const char *name = CFCVariable_get_name(vars[i]);
             if (strcmp(name, buf) == 0) {
                 // Bah, a clash.  Use the original name, even though it's

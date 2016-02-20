@@ -177,6 +177,7 @@ S_register_classes(CFCGo *self, CFCParcel *parcel) {
 
 static char*
 S_gen_cgo_comment(CFCGo *self, CFCParcel *parcel, const char *h_includes) {
+    CHY_UNUSED_VAR(self);
     const char *prefix = CFCParcel_get_prefix(parcel);
     // Bake in parcel privacy define, so that binding code can be compiled
     // without extra compiler flags.
@@ -230,6 +231,7 @@ S_gen_init_code(CFCGo *self, CFCParcel *parcel) {
 
 static char*
 S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
+    CHY_UNUSED_VAR(self);
     const char *clownfish_dot = CFCParcel_is_cfish(parcel)
                                 ? "" : "clownfish.";
     CFCGoClass **registry = CFCGoClass_registry();

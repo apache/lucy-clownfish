@@ -84,26 +84,6 @@ S_array_of_cfcbase_to_av(CFCBase **things) {
     return retval;
 }
 
-// Transform a Perl arrayref into a NULL-terminated array of CFCBase*.
-static CFCBase**
-S_av_to_array_of_cfcbase(SV *ref, const char *class_name) {
-    if (!SvROK(ref)) { croak("Not an arrayref"); }
-    SV *sv = SvRV(ref);
-    if (SvTYPE(sv) != SVt_PVAV) { croak("Not an arrayref"); }
-    AV *av = (AV*)sv;
-    size_t size = av_len(av) + 1;
-    CFCBase **retval = (CFCBase**)CALLOCATE(size + 1, sizeof(CFCBase*));
-    for (size_t i = 0; i < size; i++) {
-        SV **elem = av_fetch(av, i, 0);
-        if (!*elem || !sv_derived_from(*elem, class_name)) {
-            croak("Array element not of type %s", class_name);
-        }
-        IV objint = SvIV((SV*)SvRV(*elem));
-        retval[i] = INT2PTR(CFCBase*, objint);
-    }
-    return retval;
-}
-
 static SV*
 S_sv_eat_c_string(char *string) {
     if (string) {

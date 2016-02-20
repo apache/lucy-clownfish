@@ -168,7 +168,6 @@ CFCGoClass_go_typing(CFCGoClass *self) {
         content = CFCUtil_strdup("");
     } else {
         const char *short_struct = CFCClass_get_struct_sym(self->client);
-        const char *full_struct  = CFCClass_full_struct_sym(self->client);
 
         CFCClass *parent = CFCClass_get_parent(self->client);
         char *parent_type_str = NULL;
@@ -317,7 +316,6 @@ S_lazy_init_method_bindings(CFCGoClass *self) {
         return;
     }
     CFCUTIL_NULL_CHECK(self->client);
-    CFCClass     *parent        = CFCClass_get_parent(self->client);
     size_t        num_bound     = 0;
     CFCMethod   **fresh_methods = CFCClass_fresh_methods(self->client);
     CFCGoMethod **bound
