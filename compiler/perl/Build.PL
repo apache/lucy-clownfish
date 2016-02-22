@@ -41,6 +41,9 @@ my $builder = Clownfish::CFC::Build->new(
             repository => 'https://git-wip-us.apache.org/repos/asf/lucy-clownfish.git',
             bugtracker => 'https://issues.apache.org/jira/browse/CLOWNFISH',
         },
+        no_index => {
+            directory => [qw( buildlib )],
+        },
     },
     add_to_cleanup => [
         qw(
