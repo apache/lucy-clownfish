@@ -348,10 +348,10 @@ public final class Clownfish::String nickname Str
     /** Return a new String containing a copy of the specified substring.
      *
      * @param offset Offset from the top, in code points.
-     * @param len The desired length of the substring, in code points.
+     * @param length The desired length of the substring, in code points.
      */
     public incremented String*
-    SubString(String *self, size_t offset, size_t len);
+    SubString(String *self, size_t offset, size_t length);
 
     /** Return an iterator initialized to the start of the string.
      */

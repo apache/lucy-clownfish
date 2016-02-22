@@ -43,7 +43,7 @@ is_deeply( $transformed, \%complex_data_structure,
     "handle mixed data structure correctly" );
 
 my $string = Clownfish::String->new("string");
-eval { $string->substring(offset => 0, len => 1, foo => 1) };
+eval { $string->substring(offset => 0, length => 1, foo => 1) };
 like( $@, qr/Invalid parameter/, "Die on invalid parameter" );
 
 eval { $string->length(undef) };
