@@ -299,6 +299,10 @@ sub ACTION_clean {
 sub ACTION_dist {
     my $self = shift;
 
+    # Create POD.
+    $self->depends_on('clownfish');
+    rmtree("autogen");
+
     # We build our Perl release tarball from a subdirectory rather than from
     # the top-level $REPOS_ROOT.  Because some assets we need are outside this
     # directory, we need to copy them in.
