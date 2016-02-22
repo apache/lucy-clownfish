@@ -88,6 +88,9 @@ static char*
 S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level);
 
 static char*
+S_node_to_pod(cmark_node *node, CFCClass *klass, int header_level);
+
+static char*
 S_pod_escape(const char *content);
 
 static char*
@@ -581,14 +584,31 @@ CFCPerlPod_md_to_pod(const char *md, CFCClass *klass, int header_level) {
                   | CMARK_OPT_VALIDATE_UTF8
                   | CMARK_OPT_SAFE;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
-    char *pod = S_nodes_to_pod(doc, klass, header_level);
+    char *pod = S_node_to_pod(doc, klass, header_level);
     cmark_node_free(doc);
 
     return pod;
 }
 
+// Convert a node and its siblings.
 static char*
 S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
+    char *result = CFCUtil_strdup("");
+
+    while (node != NULL) {
+        char *pod = S_node_to_pod(node, klass, header_level);
+        result = CFCUtil_cat(result, pod, NULL);
+        FREEMEM(pod);
+
+        node = cmark_node_next(node);
+    }
+
+    return result;
+}
+
+// Convert a single node.
+static char*
+S_node_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
     char *result = CFCUtil_strdup("");
     if (node == NULL) {
         return result;

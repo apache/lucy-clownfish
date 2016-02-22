@@ -38,7 +38,7 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_DOCU_COMMENT = {
     "Clownfish::CFC::Model::DocuComment",
-    18,
+    19,
     S_run_tests
 };
 
@@ -115,6 +115,19 @@ S_test_parser(CFCTest *test) {
 
     CFCBase_decref((CFCBase*)docucomment);
     CFCBase_decref((CFCBase*)parser);
+}
+
+static void
+S_test_md_to_pod(CFCTest *test) {
+    const char *md =
+        "[Link\n"
+        "with newline](http://example.com/)\n";
+    char *pod = CFCPerlPod_md_to_pod(md, NULL, 1);
+    const char *expect =
+        "L<Link\n"
+        "with newline|http://example.com/>\n\n";
+    STR_EQ(test, pod, expect, "Markdown link with newline to POD");
+    FREEMEM(pod);
 }
 
 static void
@@ -306,6 +319,7 @@ S_test_generator(CFCTest *test) {
 static void
 S_run_tests(CFCTest *test) {
     S_test_parser(test);
+    S_test_md_to_pod(test);
     S_test_generator(test);
 }
 
