@@ -39,7 +39,7 @@ For example the String class has the nickname `Str`.
 
 ## Creating objects
 
-A Clownfish object is a pointer to an opaque struct.
+A Clownfish object is an opaque struct referenced by pointer.
 
 Most classes come with one or more constructors. On the C level, a
 constructor is simply an "inert" function of a class that returns a
@@ -54,7 +54,7 @@ Example:
 
 ## Calling methods
 
-Calling methods is straight-forward. The invocant is always passed as
+Calling methods is straightforward. The invocant is always passed as
 first argument.
 
     // Notice the use of nickname "Str" in the method prefix.

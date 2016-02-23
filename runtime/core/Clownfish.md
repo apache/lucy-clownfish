@@ -33,7 +33,7 @@ language bindings, initialization code and documentation from a set of
 Clownfish header files. The generated code is compiled with other project
 code and linked with the Clownfish runtime.
 
-Clownfish header files have a `.cfh` extensions and define classes used within
+Clownfish header files have a `.cfh` extension and define classes used within
 the Clownfish object system. The object system is implemented in C and
 supports single inheritance and virtual method dispatch. CFC creates a C
 header file from each Clownfish header containing the C interface to Clownfish

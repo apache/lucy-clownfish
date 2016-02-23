@@ -10,13 +10,13 @@ files which contain a JSON hash with the following keys:
 
 * __nickname:__ A short nickname. It must contain only letters. This nickname,
     followed by an underscore, is used to prefix generated C symbols and
-    macros. Depending on the kind of symbol, a lowercase, mixed case, or
-    uppercase prefix will be used.
+    macros. Depending on the kind of symbol, a lowercase or uppercase prefix
+    will be used.
 
 * __version:__ A version specifier of the following form (without whitespace):
 
       version-specifier = "v" version-number
-      version-number = digit | digit "." version-number
+      version-number = digit+ | digit+ "." version-number
 
 * __prerequisites:__ A hash containing the prerequisite parcels. The hash keys
     are the parcel names. The values contain the minimum required version.
@@ -180,7 +180,7 @@ definition will look like:
 ### Instance variables
 
 Non-inert variables are instance variables and added to the class's ivars
-struct. They must not have an exposure specifier.
+struct.
 
 Example:
 
@@ -338,7 +338,7 @@ implementation will look like:
         /* Implementation */
     }
 
-### Looking up function pointers
+### Looking up methods
 
 Clownfish defines a macro named `CFISH_METHOD_PTR` that looks up the pointer
 to the implementing function of a method. The first parameter of the macro is
@@ -351,11 +351,12 @@ with the same parameters.
 
 Example using short names:
 
+    // Note that the name of the method wrapper must not be shortened.
     VisGraph_Add_Node_t add_node
-        = METHOD_PTR(PFIND_VISIBILITYGRAPH, Pfind_VisGraph_Add_Node);
+        = METHOD_PTR(VISIBILITYGRAPH, Pfind_VisGraph_Add_Node);
 
     VisGraph_Add_Node_t super_add_node
-        = SUPER_METHOD_PTR(PFIND_VISIBILITYGRAPH, Pfind_VisGraph_Add_Node);
+        = SUPER_METHOD_PTR(VISIBILITYGRAPH, Pfind_VisGraph_Add_Node);
 
 ### Abstract methods
 
@@ -438,9 +439,8 @@ pointer to an object as first argument and return a pointer to the same
 object. If the parent class has an initializer, it should be called first by
 the subclass's initializer.
 
-By convention, the standard constructor is named `new`. If a class has an
-inert function named `init`, it is used as initializer to create a host
-language constructor by default.
+By convention, the standard constructor is named `new` and the standard
+initializer `init`.
 
 Example:
 
