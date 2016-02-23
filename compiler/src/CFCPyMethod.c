@@ -67,6 +67,20 @@ S_build_py_args(CFCParamList *param_list) {
     return py_args;
 }
 
+static char*
+S_gen_decs(CFCParamList *param_list, int first_tick) {
+    char *decs = CFCUtil_strdup("");
+    int num_vars = CFCParamList_num_vars(param_list);
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    for (int i = first_tick; i < num_vars; i++) {
+        CFCType *type = CFCVariable_get_type(vars[i]);
+        const char *name = CFCVariable_get_name(vars[i]);
+        decs = CFCUtil_cat(decs, "    ", CFCType_to_c(type), " ", name,
+                           "_ARG = 0;\n", NULL);
+    }
+    return decs;
+}
+
 /* Generate the code which parses arguments passed from Python and converts
  * them to Clownfish-flavored C values.
  */
@@ -286,11 +300,13 @@ S_meth_top(CFCMethod *method) {
         if (!arg_parsing) {
             return NULL;
         }
+        char *decs = S_gen_decs(param_list, 1);
         char pattern[] =
             "(PyObject *self, PyObject *args, PyObject *kwargs) {\n"
+            "%s" // decs
             "%s"
             ;
-        char *result = CFCUtil_sprintf(pattern, arg_parsing);
+        char *result = CFCUtil_sprintf(pattern, decs, arg_parsing);
         FREEMEM(arg_parsing);
         return result;
     }
