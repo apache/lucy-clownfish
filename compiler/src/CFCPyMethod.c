@@ -586,9 +586,13 @@ CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
 char*
 CFCPyMethod_constructor_wrapper(CFCFunction *init_func, CFCClass *invoker) {
     CFCParamList *param_list  = CFCFunction_get_param_list(init_func);
+    const char *self_type
+        = CFCType_to_c(CFCFunction_get_return_type(init_func));
+    char *func_sym   = CFCFunction_full_func_sym(init_func, invoker);
     char *decs       = S_gen_decs(param_list, 1);
     char *increfs    = S_gen_arg_increfs(param_list, 1);
     char *decrefs    = S_gen_decrefs(param_list, 1);
+    const char *class_var  = CFCClass_full_class_var(invoker);
     const char *struct_sym = CFCClass_full_struct_sym(invoker);
     char *error = NULL;
     char *arg_parsing = S_gen_arg_parsing(param_list, 1, &error);
@@ -600,6 +604,9 @@ CFCPyMethod_constructor_wrapper(CFCFunction *init_func, CFCClass *invoker) {
         CFCUtil_die("Unexpected arg parsing error for %s",
                     CFCClass_get_name(invoker));
     }
+    char *first_arg = CFCUtil_sprintf("(%s)CFISH_Class_Make_Obj(%s)",
+                                      self_type, class_var);
+    char *arg_list = S_gen_arg_list(param_list, first_arg);
 
     char pattern[] =
         "static PyObject*\n"
@@ -607,13 +614,22 @@ CFCPyMethod_constructor_wrapper(CFCFunction *init_func, CFCClass *invoker) {
         "%s" // decs
         "%s" // arg_parsing
         "%s" // increfs
+        "    %s self = NULL;\n"
+        "    CFBIND_TRY(self = %s(%s));\n"
         "%s" // decrefs
-        "    Py_RETURN_NONE;\n"
+        "    if (CFBind_migrate_cferr()) {\n"
+        "        return NULL;\n"
+        "    }\n"
+        "    return (PyObject*)self;\n"
         "}\n"
         ;
     char *wrapper = CFCUtil_sprintf(pattern, struct_sym, decs,
-                                    arg_parsing, increfs, decrefs);
+                                    arg_parsing, increfs, self_type,
+                                    func_sym, arg_list, decrefs);
 
+    FREEMEM(arg_list);
+    FREEMEM(first_arg);
+    FREEMEM(func_sym);
     FREEMEM(decrefs);
     FREEMEM(increfs);
     FREEMEM(decs);
