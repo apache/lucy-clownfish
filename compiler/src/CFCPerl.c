@@ -242,8 +242,10 @@ S_write_standalone_pod(CFCPerl *self) {
 
     for (size_t i = 0; i < num_pod_files; i++) {
         CFCDocument *doc = docs[i];
+        const char *path_part = CFCDocument_get_path_part(doc);
+        char *module  = CFCUtil_global_replace(path_part, CHY_DIR_SEP, "::");
         char *md      = CFCDocument_get_contents(doc);
-        char *raw_pod = CFCPerlPod_md_to_pod(md, NULL, 1);
+        char *raw_pod = CFCPerlPod_md_doc_to_pod(module, md);
 
         const char *pattern =
             "%s"
@@ -251,12 +253,10 @@ S_write_standalone_pod(CFCPerl *self) {
             "=encoding utf8\n"
             "\n"
             "%s"
-            "\n"
             "%s";
         char *pod = CFCUtil_sprintf(pattern, self->pod_header, raw_pod,
                                     self->pod_footer);
 
-        const char *path_part = CFCDocument_get_path_part(doc);
         char *pod_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.pod",
                                          self->lib_dir, path_part);
 
@@ -265,6 +265,7 @@ S_write_standalone_pod(CFCPerl *self) {
 
         FREEMEM(raw_pod);
         FREEMEM(md);
+        FREEMEM(module);
     }
 
     pod_files[num_pod_files].contents = NULL;

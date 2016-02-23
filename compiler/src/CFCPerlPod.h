@@ -98,6 +98,24 @@ CFCPerlPod_set_description(CFCPerlPod *self, const char *description);
 const char*
 CFCPerlPod_get_description(CFCPerlPod *self);
 
+/** Convert a standalone Markdown document to POD. The name section is
+ * created from the module name and the heading at the beginning of the
+ * Markdown text. The rest of the Markdown text goes into the description
+ * section.
+ *
+ * @param module The module name used in the name section.
+ * @param md The Markdown text.
+ */
+char*
+CFCPerlPod_md_doc_to_pod(const char *module, const char *md);
+
+/** Convert Markdown text to POD.
+ *
+ * @param md Markdown text.
+ * @param klass The current class, used for links. Can be NULL.
+ * @param header_level The POD header level corresponding to top-level
+ * Markdown headers.
+ */
 char*
 CFCPerlPod_md_to_pod(const char *md, struct CFCClass *klass, int header_level);
 

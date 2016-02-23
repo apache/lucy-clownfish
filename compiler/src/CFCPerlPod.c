@@ -578,6 +578,48 @@ S_camel_to_lower(const char *camel) {
 }
 
 char*
+CFCPerlPod_md_doc_to_pod(const char *module, const char *md) {
+    int options = CMARK_OPT_NORMALIZE
+                  | CMARK_OPT_SMART
+                  | CMARK_OPT_VALIDATE_UTF8
+                  | CMARK_OPT_SAFE;
+    cmark_node *doc = cmark_parse_document(md, strlen(md), options);
+    cmark_node *maybe_header = cmark_node_first_child(doc);
+    char *name;
+    char *desc;
+
+    if (maybe_header
+        && cmark_node_get_type(maybe_header) == CMARK_NODE_HEADER
+       ) {
+        cmark_node *header_child = cmark_node_first_child(maybe_header);
+        char *short_desc = S_nodes_to_pod(header_child, NULL, 1);
+        name = CFCUtil_sprintf("%s - %s", module, short_desc);
+
+        cmark_node *remaining = cmark_node_next(maybe_header);
+        desc = S_nodes_to_pod(remaining, NULL, 1);
+    }
+    else {
+        // No header found.
+        name = CFCUtil_strdup(module);
+        desc = S_node_to_pod(doc, NULL, 1);
+    }
+
+    const char *pattern =
+        "=head1 NAME\n"
+        "\n"
+        "%s\n"
+        "\n"
+        "=head1 DESCRIPTION\n"
+        "\n"
+        "%s";
+    char *retval = CFCUtil_sprintf(pattern, name, desc);
+
+    FREEMEM(name);
+    FREEMEM(desc);
+    return retval;
+}
+
+char*
 CFCPerlPod_md_to_pod(const char *md, CFCClass *klass, int header_level) {
     int options = CMARK_OPT_NORMALIZE
                   | CMARK_OPT_SMART
