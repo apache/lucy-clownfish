@@ -497,24 +497,84 @@ S_gen_arg_list(CFCParamList *param_list, const char *first_arg) {
     return arg_list;
 }
 
+static char*
+S_gen_meth_invocation(CFCMethod *method, CFCClass *invoker) {
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+    char *full_meth = CFCMethod_full_method_sym(method, invoker);
+    char *meth_type_c = CFCMethod_full_typedef(method, invoker);
+    const char *class_var = CFCClass_full_class_var(invoker);
+    char *first_arg
+        = CFCUtil_sprintf("(%s*)self", CFCClass_full_struct_sym(invoker));
+    char *arg_list = S_gen_arg_list(param_list, first_arg);
+
+    CFCType *return_type = CFCMethod_get_return_type(method);
+    char *maybe_declare;
+    const char *maybe_assign;
+    if (CFCType_is_void(return_type)) {
+        maybe_declare = CFCUtil_strdup("");
+        maybe_assign = "";
+    }
+    else {
+        maybe_declare = CFCUtil_sprintf("    %s retvalCF;\n",
+                                        CFCType_to_c(return_type));
+        maybe_assign = "retvalCF = ";
+    }
+
+    const char pattern[] =
+        "%s"
+        "    %s method = CFISH_METHOD_PTR(%s, %s);\n"
+        "    CFBIND_TRY(%smethod(%s));\n"
+        ;
+    char *content
+        = CFCUtil_sprintf(pattern, maybe_declare, meth_type_c, class_var,
+                          full_meth, maybe_assign, arg_list);
+
+    FREEMEM(arg_list);
+    FREEMEM(first_arg);
+    FREEMEM(maybe_declare);
+    FREEMEM(full_meth);
+    FREEMEM(meth_type_c);
+    return content;
+}
+
 char*
 CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
     CFCParamList *param_list  = CFCMethod_get_param_list(method);
+    CFCType      *return_type = CFCMethod_get_return_type(method);
     char *meth_sym   = CFCMethod_full_method_sym(method, invoker);
     char *meth_top   = S_meth_top(method);
     char *increfs    = S_gen_arg_increfs(param_list, 1);
     char *decrefs    = S_gen_decrefs(param_list, 1);
+    char *invocation = S_gen_meth_invocation(method, invoker);
+    char *ret;
+    if (CFCType_is_void(return_type)) {
+        ret = CFCUtil_strdup("    Py_RETURN_NONE;\n");
+    }
+    else if (CFCType_incremented(return_type)) {
+        ret = CFCUtil_strdup("    return CFBind_cfish_to_py_zeroref((cfish_Obj*)retvalCF);\n");
+    }
+    else {
+        char *conv = CFCPyTypeMap_c_to_py(return_type, "retvalCF");
+        ret = CFCUtil_sprintf("    return %s;\n", conv);
+        FREEMEM(conv);
+    }
 
     char pattern[] =
         "static PyObject*\n"
         "S_%s%s"
         "%s" // increfs
+        "%s" // invocation
         "%s" // decrefs
-        "    Py_RETURN_NONE;\n"
+        "    if (CFBind_migrate_cferr()) {\n"
+        "        return NULL;\n"
+        "    }\n"
+        "%s" // ret
         "}\n"
         ;
     char *wrapper = CFCUtil_sprintf(pattern, meth_sym, meth_top,
-                                    increfs, decrefs);
+                                    increfs, invocation, decrefs, ret);
+    FREEMEM(ret);
+    FREEMEM(invocation);
     FREEMEM(decrefs);
     FREEMEM(increfs);
     FREEMEM(meth_sym);
