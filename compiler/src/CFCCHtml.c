@@ -946,11 +946,10 @@ S_html_create_inheritance(CFCClass *klass) {
 static char*
 S_md_to_html(const char *md, CFCClass *klass, int dir_level) {
     int options = CMARK_OPT_SMART
-                  | CMARK_OPT_VALIDATE_UTF8
-                  | CMARK_OPT_SAFE;
+                  | CMARK_OPT_VALIDATE_UTF8;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
     S_transform_doc(doc, klass, dir_level);
-    char *html = cmark_render_html(doc, CMARK_OPT_DEFAULT);
+    char *html = cmark_render_html(doc, CMARK_OPT_SAFE);
     cmark_node_free(doc);
 
     return html;

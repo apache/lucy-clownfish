@@ -579,10 +579,8 @@ S_camel_to_lower(const char *camel) {
 
 char*
 CFCPerlPod_md_doc_to_pod(const char *module, const char *md) {
-    int options = CMARK_OPT_NORMALIZE
-                  | CMARK_OPT_SMART
-                  | CMARK_OPT_VALIDATE_UTF8
-                  | CMARK_OPT_SAFE;
+    int options = CMARK_OPT_SMART
+                  | CMARK_OPT_VALIDATE_UTF8;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
     cmark_node *maybe_header = cmark_node_first_child(doc);
     char *name;
@@ -621,10 +619,8 @@ CFCPerlPod_md_doc_to_pod(const char *module, const char *md) {
 
 char*
 CFCPerlPod_md_to_pod(const char *md, CFCClass *klass, int header_level) {
-    int options = CMARK_OPT_NORMALIZE
-                  | CMARK_OPT_SMART
-                  | CMARK_OPT_VALIDATE_UTF8
-                  | CMARK_OPT_SAFE;
+    int options = CMARK_OPT_SMART
+                  | CMARK_OPT_VALIDATE_UTF8;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
     char *pod = S_node_to_pod(doc, klass, header_level);
     cmark_node_free(doc);

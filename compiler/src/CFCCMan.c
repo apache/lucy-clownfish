@@ -414,8 +414,7 @@ static char*
 S_md_to_man(CFCClass *klass, const char *md, int level) {
     int options = CMARK_OPT_NORMALIZE
                   | CMARK_OPT_SMART
-                  | CMARK_OPT_VALIDATE_UTF8
-                  | CMARK_OPT_SAFE;
+                  | CMARK_OPT_VALIDATE_UTF8;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
     char *result = S_nodes_to_man(klass, doc, level);
     cmark_node_free(doc);
