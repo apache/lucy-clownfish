@@ -24,6 +24,7 @@
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCPython.h"
+#include "CFCPyMethod.h"
 #include "CFCParcel.h"
 #include "CFCClass.h"
 #include "CFCMethod.h"
@@ -108,6 +109,249 @@ S_write_hostdefs(CFCPython *self) {
     FREEMEM(content);
 }
 
+static char*
+S_gen_callbacks(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
+    char *callbacks  = CFCUtil_strdup("");
+
+    // Generate implementation files containing callback definitions.
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass)
+            || CFCClass_inert(klass)
+            //|| CFCClass_get_parcel(klass) != parcel
+           ) {
+            continue;
+        }
+
+        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
+        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
+            CFCMethod *method = fresh_methods[meth_num];
+
+            // Define callback.
+            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
+                char *cb_def = CFCPyMethod_callback_def(method, klass);
+                callbacks = CFCUtil_cat(callbacks, cb_def, "\n", NULL);
+                FREEMEM(cb_def);
+            }
+        }
+    }
+
+    static const char helpers[] =
+        "static PyObject*\n"
+        "S_pack_tuple(int num_args, ...) {\n"
+        "    PyObject *tuple = PyTuple_New(num_args);\n"
+        "    va_list args;\n"
+        "    va_start(args, num_args);\n"
+        "    for (int i = 0; i < num_args; i++) {\n"
+        "        PyObject *arg = va_arg(args, PyObject*);\n"
+        "        PyTuple_SET_ITEM(tuple, i, arg);\n"
+        "    }\n"
+        "    va_end(args);\n"
+        "    return tuple;\n"
+        "}\n"
+        "\n"
+        "static PyObject*\n"
+        "S_call_pymeth(PyObject *self, const char *meth_name, PyObject *args,\n"
+        "              const char *file, int line, const char *func) {\n"
+        "    PyObject *callable = PyObject_GetAttrString(self, meth_name);\n"
+        "    if (!PyCallable_Check(callable)) {\n"
+        "        cfish_String *mess\n"
+        "            = cfish_Err_make_mess(file, line, func, \"Attr '%s' not callable\",\n"
+        "                                  meth_name);\n"
+        "        cfish_Err_throw_mess(CFISH_ERR, mess);\n"
+        "    }\n"
+        "    PyObject *result = PyObject_CallObject(callable, args);\n"
+        "    Py_DECREF(args);\n"
+        "    if (result == NULL) {\n"
+        "        cfish_String *mess\n"
+        "            = cfish_Err_make_mess(file, line, func,\n"
+        "                                  \"Callback to '%s' failed\", meth_name);\n"
+        "        CFBind_reraise_pyerr(CFISH_ERR, mess);\n"
+        "    }\n"
+        "    return result;\n"
+        "}\n"
+        "\n"
+        "#define CALL_PYMETH_VOID(self, meth_name, args) \\\n"
+        "    S_call_pymeth_void(self, meth_name, args, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)\n"
+        "\n"
+        "static void\n"
+        "S_call_pymeth_void(PyObject *self, const char *meth_name, PyObject *args,\n"
+        "                   const char *file, int line, const char *func) {\n"
+        "    PyObject *py_result\n"
+        "        = S_call_pymeth(self, meth_name, args, file, line, func);\n"
+        "    if (py_result == NULL) {\n"
+        "        cfish_String *mess\n"
+        "            = cfish_Err_make_mess(file, line, func, \"Call to %s failed\",\n"
+        "                                  meth_name);\n"
+        "        CFBind_reraise_pyerr(CFISH_ERR, mess);\n"
+        "    }\n"
+        "    Py_DECREF(py_result);\n"
+        "}\n"
+        "\n"
+        "#define CALL_PYMETH_BOOL(self, meth_name, args) \\\n"
+        "    S_call_pymeth_bool(self, meth_name, args, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)\n"
+        "\n"
+        "static bool\n"
+        "S_call_pymeth_bool(PyObject *self, const char *meth_name, PyObject *args,\n"
+        "                   const char *file, int line, const char *func) {\n"
+        "    PyObject *py_result\n"
+        "        = S_call_pymeth(self, meth_name, args, file, line, func);\n"
+        "    int truthiness = py_result != NULL\n"
+        "                     ? PyObject_IsTrue(py_result)\n"
+        "                     : -1;\n"
+        "    if (truthiness == -1) {\n"
+        "        cfish_String *mess\n"
+        "            = cfish_Err_make_mess(file, line, func, \"Call to %s failed\",\n"
+        "                                  meth_name);\n"
+        "        CFBind_reraise_pyerr(CFISH_ERR, mess);\n"
+        "    }\n"
+        "    Py_DECREF(py_result);\n"
+        "    return !!truthiness;\n"
+        "}\n"
+        "\n"
+        "#define CALL_PYMETH_OBJ(self, meth_name, args, ret_class, nullable) \\\n"
+        "    S_call_pymeth_obj(self, meth_name, args, ret_class, nullable, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)\n"
+        "\n"
+        "static cfish_Obj*\n"
+        "S_call_pymeth_obj(PyObject *self, const char *meth_name,\n"
+        "                  PyObject *args, cfish_Class *ret_class, bool nullable,\n"
+        "                  const char *file, int line, const char *func) {\n"
+        "    PyObject *py_result\n"
+        "        = S_call_pymeth(self, meth_name, args, file, line, func);\n"
+        "    cfish_Obj *result = CFBind_py_to_cfish(py_result, ret_class);\n"
+        "    Py_DECREF(py_result);\n"
+        "    if (!nullable && result == NULL) {\n"
+        "        CFISH_THROW(CFISH_ERR, \"%s cannot return NULL\", meth_name);\n"
+        "    }\n"
+        "    else if (!cfish_Obj_is_a(result, ret_class)) {\n"
+        "        cfish_Class *result_class = cfish_Obj_get_class(result);\n"
+        "        CFISH_DECREF(result);\n"
+        "        CFISH_THROW(CFISH_ERR, \"%s returned %o instead of %o\", meth_name,\n"
+        "                    CFISH_Class_Get_Name(result_class),\n"
+        "                    CFISH_Class_Get_Name(ret_class));\n"
+        "    }\n"
+        "    return result;\n"
+        "}\n"
+        "\n"
+        "#define CALL_PYMETH_DOUBLE(self, meth_name, args) \\\n"
+        "    S_call_pymeth_f64(self, meth_name, args, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)\n"
+        "#define CALL_PYMETH_FLOAT(self, meth_name, args) \\\n"
+        "    ((float)S_call_pymeth_f64(self, meth_name, args, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "\n"
+        "static double\n"
+        "S_call_pymeth_f64(PyObject *self, const char *meth_name, PyObject *args,\n"
+        "                  const char *file, int line, const char *func) {\n"
+        "    PyObject *py_result\n"
+        "        = S_call_pymeth(self, meth_name, args, file, line, func);\n"
+        "    PyErr_Clear();\n"
+        "    double result = PyFloat_AsDouble(py_result);\n"
+        "    if (PyErr_Occurred()) {\n"
+        "        cfish_String *mess\n"
+        "            = cfish_Err_make_mess(file, line, func,\n"
+        "                                  \"Converting result of '%s' to double failed\",\n"
+        "                                  meth_name);\n"
+        "        CFBind_reraise_pyerr(CFISH_ERR, mess);\n"
+        "    }\n"
+        "    Py_DECREF(py_result);\n"
+        "    return result;\n"
+        "}\n"
+        "\n"
+        "#define CALL_PYMETH_INT64_T(self, meth_name, args) \\\n"
+        "    S_call_pymeth_i64(self, meth_name, args, INT64_MAX, INT64_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)\n"
+        "#define CALL_PYMETH_INT32_T(self, meth_name, args) \\\n"
+        "    ((int32_t)S_call_pymeth_i64(self, meth_name, args, INT32_MAX, INT32_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_INT16_T(self, meth_name, args) \\\n"
+        "    ((int16_t)S_call_pymeth_i64(self, meth_name, args, INT16_MAX, INT16_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_INT8_T(self, meth_name, args) \\\n"
+        "    ((int8_t)S_call_pymeth_i64(self, meth_name, args, INT8_MAX, INT8_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_CHAR(self, meth_name, args) \\\n"
+        "    ((char)S_call_pymeth_i64(self, meth_name, args, CHAR_MAX, CHAR_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_SHORT(self, meth_name, args) \\\n"
+        "    ((short)S_call_pymeth_i64(self, meth_name, args, SHRT_MAX, SHRT_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_INT(self, meth_name, args) \\\n"
+        "    ((int16_t)S_call_pymeth_i64(self, meth_name, args, INT_MAX, INT_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_LONG(self, meth_name, args) \\\n"
+        "    ((int16_t)S_call_pymeth_i64(self, meth_name, args, LONG_MAX, LONG_MIN, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "\n"
+        "static int64_t\n"
+        "S_call_pymeth_i64(PyObject *self, const char *meth_name, PyObject *args,\n"
+        "                  int64_t max, int64_t min,\n"
+        "                  const char *file, int line, const char *func) {\n"
+        "    PyObject *py_result\n"
+        "        = S_call_pymeth(self, meth_name, args, file, line, func);\n"
+        "    PyErr_Clear();\n"
+        "    int64_t result = PyLong_AsLongLong(py_result);\n"
+        "    if (PyErr_Occurred() || result > max || result < min) {\n"
+        "        cfish_String *mess\n"
+        "            = cfish_Err_make_mess(file, line, func,\n"
+        "                                  \"Converting result of '%s' to int64_t failed\",\n"
+        "                                  meth_name);\n"
+        "        CFBind_reraise_pyerr(CFISH_ERR, mess);\n"
+        "    }\n"
+        "    Py_DECREF(py_result);\n"
+        "    return result;\n"
+        "}\n"
+        "\n"
+        "#define CALL_PYMETH_UINT64_T(self, meth_name, args) \\\n"
+        "    S_call_pymeth_u64(self, meth_name, args, UINT64_MAX, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)\n"
+        "#define CALL_PYMETH_UINT32_T(self, meth_name, args) \\\n"
+        "    ((uint32_t)S_call_pymeth_u64(self, meth_name, args, UINT32_MAX, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_UINT16_T(self, meth_name, args) \\\n"
+        "    ((uint32_t)S_call_pymeth_u64(self, meth_name, args, UINT16_MAX, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_UINT8_T(self, meth_name, args) \\\n"
+        "    ((uint32_t)S_call_pymeth_u64(self, meth_name, args, UINT8_MAX, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO))\n"
+        "#define CALL_PYMETH_SIZE_T(self, meth_name, args) \\\n"
+        "    S_call_pymeth_u64(self, meth_name, args, SIZE_MAX, \\\n"
+        "        __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)\n"
+        "\n"
+        "static uint64_t\n"
+        "S_call_pymeth_u64(PyObject *self, const char *meth_name, PyObject *args,\n"
+        "                  uint64_t max,\n"
+        "                  const char *file, int line, const char *func) {\n"
+        "    PyObject *py_result\n"
+        "        = S_call_pymeth(self, meth_name, args, file, line, func);\n"
+        "    PyErr_Clear();\n"
+        "    uint64_t result = PyLong_AsUnsignedLongLong(py_result);\n"
+        "    if (PyErr_Occurred()) {\n"
+        "        cfish_String *mess\n"
+        "            = cfish_Err_make_mess(file, line, func,\n"
+        "                                  \"Converting result of '%s' to uint64_t failed\",\n"
+        "                                  meth_name);\n"
+        "        CFBind_reraise_pyerr(CFISH_ERR, mess);\n"
+        "    }\n"
+        "    Py_DECREF(py_result);\n"
+        "    return result;\n"
+        "}\n"
+        ;
+
+    static const char pattern[] =
+        "%s\n"
+        "\n"
+        "%s"
+        ;
+    char *content = CFCUtil_sprintf(pattern, helpers, callbacks);
+
+    FREEMEM(callbacks);
+    return content;
+}
+
 static void
 S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     const char *parcel_name = CFCParcel_get_name(parcel);
@@ -125,12 +369,29 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         helper_mod_name[i] = tolower(helper_mod_name[i]);
     }
 
+    CFCClass  **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCParcel **parcels = CFCParcel_all_parcels();
+    char *callbacks          = S_gen_callbacks(self, parcel, ordered);
+    char *pound_includes     = CFCUtil_strdup("");
+
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass)) { continue; }
+
+        const char *include_h  = CFCClass_include_h(klass);
+        pound_includes = CFCUtil_cat(pound_includes, "#include \"",
+                                     include_h, "\"\n", NULL);
+    }
+
     const char pattern[] =
         "%s\n"
         "\n"
         "#include \"Python.h\"\n"
         "#include \"cfish_parcel.h\"\n"
         "#include \"CFBind.h\"\n"
+        "%s\n"
+        "\n"
+        "%s\n" // callbacks
         "\n"
         "static PyModuleDef module_def = {\n"
         "    PyModuleDef_HEAD_INIT,\n"
@@ -150,7 +411,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "\n";
 
     char *content
-        = CFCUtil_sprintf(pattern, self->header,
+        = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
                           helper_mod_name, last_component, self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
@@ -161,6 +422,9 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(content);
     FREEMEM(helper_mod_name);
     FREEMEM(pymod_name);
+    FREEMEM(pound_includes);
+    FREEMEM(callbacks);
+    FREEMEM(ordered);
 }
 
 void
