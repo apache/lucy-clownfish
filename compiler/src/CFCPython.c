@@ -39,7 +39,7 @@ struct CFCPython {
     char *footer;
 };
 
-void
+static void
 S_destroy(CFCPython *self);
 
 static const CFCMeta CFCPYTHON_META = {
@@ -58,7 +58,7 @@ CFCPython_new(CFCHierarchy *hierarchy) {
     return self;
 }
 
-void
+static void
 S_destroy(CFCPython *self) {
     CFCBase_decref((CFCBase*)self->hierarchy);
     FREEMEM(self->header);
