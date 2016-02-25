@@ -53,6 +53,12 @@ final class Clownfish::Method inherits Clownfish::Obj {
 
     public void
     Destroy(Method *self);
+
+    /** Return either a specified host alias or a lower-snake-case version of
+      * the method name.
+      */
+    inert incremented String*
+    lower_snake_alias(Method *method);
 }
 
 

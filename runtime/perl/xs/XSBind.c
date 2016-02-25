@@ -710,29 +710,7 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
 
 cfish_String*
 CFISH_Method_Host_Name_IMP(cfish_Method *self) {
-    cfish_String *host_alias = CFISH_Method_Get_Host_Alias(self);
-    if (host_alias) {
-        return (cfish_String*)CFISH_INCREF(host_alias);
-    }
-
-    // Convert to lowercase.
-    cfish_String *name = CFISH_Method_Get_Name(self);
-    cfish_CharBuf *buf = cfish_CB_new(CFISH_Str_Get_Size(name));
-    cfish_StringIterator *iter = CFISH_Str_Top(name);
-    int32_t code_point;
-    while (CFISH_STR_OOB != (code_point = CFISH_StrIter_Next(iter))) {
-        if (code_point > 127) {
-            THROW(CFISH_ERR, "Can't lowercase '%o'", name);
-        }
-        else {
-            CFISH_CB_Cat_Char(buf, tolower(code_point));
-        }
-    }
-    cfish_String *retval = CFISH_CB_Yield_String(buf);
-    CFISH_DECREF(iter);
-    CFISH_DECREF(buf);
-
-    return retval;
+    return cfish_Method_lower_snake_alias(self);
 }
 
 /***************************** Clownfish::Err *******************************/

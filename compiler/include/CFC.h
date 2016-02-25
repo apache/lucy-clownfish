@@ -58,6 +58,8 @@
 #include "CFCPerlTypeMap.h"
 
 #include "CFCPython.h"
+#include "CFCPyClass.h"
+#include "CFCPyMethod.h"
 
 #include "CFCRuby.h"
 

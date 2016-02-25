@@ -36,6 +36,7 @@
 #include "Clownfish/Num.h"
 #include "Clownfish/String.h"
 #include "Clownfish/TestHarness/TestUtils.h"
+#include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 #include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Vector.h"
@@ -49,10 +50,8 @@ S_get_cached_py_type(cfish_Class *klass);
 
 static bool
 S_py_obj_is_a(PyObject *py_obj, cfish_Class *klass) {
-    CFISH_UNUSED_VAR(py_obj);
-    CFISH_UNUSED_VAR(klass);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(bool);
+    PyTypeObject *py_type = S_get_cached_py_type(klass);
+    return !!PyObject_TypeCheck(py_obj, py_type);
 }
 
 void
@@ -767,6 +766,68 @@ CFBind_maybe_convert_bool(PyObject *py_obj, bool *ptr) {
     return S_convert_bool(py_obj, ptr, true);
 }
 
+typedef struct ClassMapElem {
+    cfish_Class **klass_handle;
+    PyTypeObject *py_type;
+} ClassMapElem;
+
+typedef struct ClassMap {
+    int32_t size;
+    ClassMapElem *elems;
+} ClassMap;
+
+/* Before we can invoke methods on any Clownfish object safely, we must know
+ * about its corresponding Python type object.  This association must be made
+ * early in the bootstrapping process, which is tricky.  We can't use any
+ * of Clownfish's convenient data structures yet!
+ */
+static ClassMap *klass_map = NULL;
+
+static ClassMap*
+S_revise_class_map(ClassMap *current, cfish_Class ***klass_handles,
+                   PyTypeObject **py_types, int32_t num_items) {
+    int32_t num_current = current ? current->size : 0;
+    int32_t total = num_current + num_items;
+    ClassMap *revised = (ClassMap*)malloc(sizeof(ClassMap));
+    revised->elems = (ClassMapElem*)malloc(total * sizeof(ClassMapElem));
+    if (current) {
+        size_t size = num_current * sizeof(ClassMapElem);
+        memcpy(revised->elems, current->elems, size);
+    }
+    for (int32_t i = 0; i < num_items; i++) {
+        revised->elems[i + num_current].klass_handle = klass_handles[i];
+        revised->elems[i + num_current].py_type      = py_types[i];
+    }
+    revised->size = total;
+    return revised;
+}
+
+void
+CFBind_assoc_py_types(cfish_Class ***klass_handles, PyTypeObject **py_types,
+                      int32_t num_items) {
+    while (1) {
+        ClassMap *current = klass_map;
+        ClassMap *revised = S_revise_class_map(current, klass_handles,
+                                               py_types, num_items);
+        if (cfish_Atomic_cas_ptr((void*volatile*)&klass_map, current, revised)) {
+            if (current) {
+                // TODO: Use read locking.  For now we have to leak this
+                // memory to avoid memory errors in case another thread isn't
+                // done reading it yet.
+
+                //free(current->elems);
+                //free(current);
+            }
+            break;
+        }
+        else {
+            // Another thread beat us to it.  Try again.
+            free(revised->elems);
+            free(revised);
+        }
+    }
+}
+
 /**** refcounting **********************************************************/
 
 uint32_t
@@ -796,56 +857,132 @@ CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
 
 /**** Class ****************************************************************/
 
+/* Tell Python about the size of Clownfish objects, by copying
+ * `cfclass->obj_alloc_size` into `pytype->tp_basicsize`.
+ * **THIS MUST BE RUN BEFORE Class_Make_Obj IS CALLED** because under the
+ * Python bindings, Clownfish uses Python object allocation internally.
+ * Furthermore, `tp_basicsize` is supposed to be set before `PyType_Ready()`
+ * is called.
+ *
+ * Ideally we would set `tp_basicsize` from within `Class_register_with_host`,
+ * but it doesn't get called until too late.
+ */
+void
+CFBind_class_bootstrap_hook1(cfish_Class *self) {
+    PyTypeObject *py_type = S_get_cached_py_type(self);
+    if (PyType_HasFeature(py_type, Py_TPFLAGS_READY)) {
+        if (py_type->tp_basicsize != (Py_ssize_t)self->obj_alloc_size) {
+            fprintf(stderr, "PyType for %s readied with wrong alloc size\n",
+                    py_type->tp_name),
+            exit(1);
+        }
+    }
+    else {
+        if (self->parent) {
+            py_type->tp_base = S_get_cached_py_type(self->parent);
+        }
+        py_type->tp_basicsize = self->obj_alloc_size;
+        if (PyType_Ready(py_type) < 0) {
+            fprintf(stderr, "PyType_Ready failed for %s\n",
+                    py_type->tp_name),
+            exit(1);
+        }
+    }
+}
+
+/* Check the Class object for its associated PyTypeObject, which is stored in
+ * `klass->host_type`.  If it is not there yet, search the class mapping and
+ * cache it in the object.  Return the PyTypeObject.
+ */
 static PyTypeObject*
 S_get_cached_py_type(cfish_Class *self) {
-    // FIXME: dummy implementation
-    CFISH_UNUSED_VAR(self);
-    return NULL;
+    PyTypeObject *py_type = (PyTypeObject*)self->host_type;
+    if (py_type == NULL) {
+        ClassMap *current = klass_map;
+        for (int32_t i = 0; i < current->size; i++) {
+            cfish_Class **handle = current->elems[i].klass_handle;
+            if (handle == NULL || *handle != self) {
+                continue;
+            }
+            py_type = current->elems[i].py_type;
+            Py_INCREF(py_type);
+            if (!cfish_Atomic_cas_ptr((void*volatile*)&self->host_type, py_type, NULL)) {
+                // Lost the race to another thread, so get rid of the refcount.
+                Py_DECREF(py_type);
+            }
+            break;
+        }
+    }
+    if (py_type == NULL) {
+        if (Err_initialized) {
+            CFISH_THROW(CFISH_ERR,
+                        "Can't find a Python type object corresponding to %o",
+                        CFISH_Class_Get_Name(self));
+        }
+        else {
+            fprintf(stderr, "Can't find a Python type corresponding to a "
+                            "Clownfish class\n");
+            exit(1);
+        }
+    }
+    return py_type;
 }
 
 cfish_Obj*
 CFISH_Class_Make_Obj_IMP(cfish_Class *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+    PyTypeObject *py_type = S_get_cached_py_type(self);
+    cfish_Obj *obj = (cfish_Obj*)py_type->tp_alloc(py_type, 0);
+    obj->klass = self;
+    return obj;
 }
 
 cfish_Obj*
 CFISH_Class_Init_Obj_IMP(cfish_Class *self, void *allocation) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_UNUSED_VAR(allocation);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Obj*);
+    PyTypeObject *py_type = S_get_cached_py_type(self);
+    // It would be nice if we could call PyObject_Init() here and feel
+    // confident that we have performed all Python-specific initialization
+    // under all possible configurations, but that's not possible.  In
+    // addition to setting ob_refcnt and ob_type, PyObject_Init() performs
+    // tracking for heap allocated objects under special builds -- but
+    // Class_Init_Obj() may be called on non-heap memory, such as
+    // stack-allocated Clownfish Strings.  Therefore, we must perform a subset
+    // of tasks selected from PyObject_Init() manually.
+    cfish_Obj *obj = (cfish_Obj*)allocation;
+    obj->ob_base.ob_refcnt = 1;
+    obj->ob_base.ob_type = py_type;
+    obj->klass = self;
+    return obj;
 }
 
 void
 cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
+    // FIXME
     CFISH_UNUSED_VAR(singleton);
     CFISH_UNUSED_VAR(parent);
-    CFISH_THROW(CFISH_ERR, "TODO");
 }
 
 cfish_Vector*
 cfish_Class_fresh_host_methods(cfish_String *class_name) {
+    // FIXME Scan Python class for host methods which override.  Until this is
+    // implemented, it will be impossible to override Clownfish methods from
+    // Python.
     CFISH_UNUSED_VAR(class_name);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_Vector*);
+    return cfish_Vec_new(0);
 }
 
 cfish_String*
 cfish_Class_find_parent_class(cfish_String *class_name) {
+    // FIXME Until this is implemented, subclassing from Python will be
+    // impossible.
     CFISH_UNUSED_VAR(class_name);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_String*);
+    return NULL;
 }
 
 /**** Method ***************************************************************/
 
 cfish_String*
 CFISH_Method_Host_Name_IMP(cfish_Method *self) {
-    CFISH_UNUSED_VAR(self);
-    CFISH_THROW(CFISH_ERR, "TODO");
-    CFISH_UNREACHABLE_RETURN(cfish_String*);
+    return cfish_Method_lower_snake_alias(self);
 }
 
 /**** Err ******************************************************************/
