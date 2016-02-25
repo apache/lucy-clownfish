@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <ctype.h>
+
 #define C_CFISH_METHOD
 #define CFISH_USE_SHORT_NAMES
 
