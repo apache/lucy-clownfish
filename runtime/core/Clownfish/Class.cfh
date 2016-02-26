@@ -18,9 +18,8 @@ parcel Clownfish;
 
 /** Class.
  *
- * Classes, which are the first element in any Clownfish object, are actually
- * objects themselves.  (Their first element is a Class which describes the
- * behavior of Classes.)
+ * Classes are first-class objects in Clownfish.  Class objects are instances
+ * of Clownfish::Class.
  */
 
 public final class Clownfish::Class inherits Clownfish::Obj {
@@ -130,7 +129,7 @@ public final class Clownfish::Class inherits Clownfish::Obj {
     public nullable Class*
     Get_Parent(Class *self);
 
-    /** Return the number of bytes needed to hold an object the class.
+    /** Return the number of bytes needed to hold an instance of the class.
      */
     public uint32_t
     Get_Obj_Alloc_Size(Class *self);
