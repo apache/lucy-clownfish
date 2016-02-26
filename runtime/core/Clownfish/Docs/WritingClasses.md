@@ -535,17 +535,19 @@ DocuComments are multi-line C-style comments that start with `/**`. They
 immediately precede the documented class, inert function, or method.
 A left border consisting of whitespace and asterisks is stripped.
 
-The DocuComment for a class should start with a sentence (everything up until
-the first period `.`) in the format "class name - short description."
+The DocuComment for a class should start with a short description (everything
+up until the first period `.`) which may appear in the name section of a
+man page, for example.
 
 DocuComments for functions and methods may end with a series of `@param` and
 `@return` directives which document the parameters and return values.
 
 Example:
 
-    /** Train - Class describing a train.
+    /** Class describing a train.
      *
-     * The Train class describes a train.
+     * The Train class describes a train. It extends the Vehicle class and
+     * adds some useful properties specific to trains.
      */
     public class Train inherits Vehicle {
         /** Create a new Train object.
