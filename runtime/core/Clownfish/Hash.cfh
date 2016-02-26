@@ -75,7 +75,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
 
     /** Fetch the value associated with `key`.
      *
-     * @return the value, or NULL if `key` is not present.
+     * @return the value, or [](@null) if `key` is not present.
      */
     public nullable Obj*
     Fetch(Hash *self, String *key);
@@ -84,7 +84,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
      *
      * @param utf8 Pointer to UTF-8 character data of the key.
      * @param size Size of UTF-8 character data in bytes.
-     * @return the value, or NULL if `key` is not present.
+     * @return the value, or [](@null) if `key` is not present.
      */
     public nullable Obj*
     Fetch_Utf8(Hash *self, const char *utf8, size_t size);
@@ -92,7 +92,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     /** Attempt to delete a key-value pair from the hash.
      *
      * @return the value if `key` exists and thus deletion
-     * succeeds; otherwise NULL.
+     * succeeds; otherwise [](@null).
      */
     public incremented nullable Obj*
     Delete(Hash *self, String *key);
@@ -102,7 +102,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
      * @param utf8 Pointer to UTF-8 character data of the key.
      * @param size Size of UTF-8 character data in bytes.
      * @return the value if `key` exists and thus deletion
-     * succeeds; otherwise NULL.
+     * succeeds; otherwise [](@null).
      */
     public incremented nullable Obj*
     Delete_Utf8(Hash *self, const char *utf8, size_t size);
@@ -112,12 +112,12 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     public bool
     Has_Key(Hash *self, String *key);
 
-    /** Return a Vector of pointers to the hash's keys.
+    /** Return the Hash's keys.
      */
     public incremented Vector*
     Keys(Hash *self);
 
-    /** Return a Vector of pointers to the hash's values.
+    /** Return the Hash's values.
      */
     public incremented Vector*
     Values(Hash *self);

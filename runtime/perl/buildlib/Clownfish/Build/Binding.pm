@@ -724,8 +724,7 @@ recommended above isn't compatible with ithreads.
 =item *
 
 Overridden methods must not return undef unless the API specifies that
-returning undef is permissible.  (Failure to adhere to this rule currently
-results in a segfault rather than an exception.)
+returning undef is permissible.
 
 =back
 

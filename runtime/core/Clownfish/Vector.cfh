@@ -89,7 +89,7 @@ public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     public void
     Store(Vector *self, size_t tick, decremented Obj *elem = NULL);
 
-    /** Replace an element in the Vector with NULL and return it.
+    /** Replace an element in the Vector with [](@null) and return it.
      *
      * @return the element stored at `tick` or [](@null) if `tick` is out of
      * bounds.
@@ -97,7 +97,7 @@ public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     public incremented nullable Obj*
     Delete(Vector *self, size_t tick);
 
-    /** Remove `length` elements from the vector, starting at `offset`.
+    /** Remove `length` elements from the Vector, starting at `offset`.
      * Move elements over to fill in the gap.
      */
     public void
@@ -138,8 +138,8 @@ public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     size_t
     Get_Capacity(Vector *self);
 
-    /** Return a new vector consisting of elements from a contiguous slice.  If
-     * the specified range is out of bounds, return an vector with fewer
+    /** Return a new Vector consisting of elements from a contiguous slice.  If
+     * the specified range is out of bounds, return a Vector with fewer
      * elements -- potentially none.
      *
      * @param offset The index of the element to start at.

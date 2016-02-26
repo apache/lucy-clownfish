@@ -132,13 +132,13 @@ This will generate:
 
 ### Class exposure
 
-API documentation will only be generated for classes with public exposure.
+API documentation will only be generated for classes with `public` exposure.
 
 ### Inert classes
 
 Inert classes must contain only inert variables or inert functions, that is,
 neither instance variables nor methods. They must not inherit from another
-class or be inherited from. They're essentially nothing more than a
+class nor be inherited from. They're essentially nothing more than a
 namespace for functions and global variables.
 
 ### Final classes
@@ -240,7 +240,7 @@ Example using short names:
 
 ### Function exposure
 
-API documentation will only be generated for functions with public exposure.
+API documentation will only be generated for functions with `public` exposure.
 
 ### Inert functions
 
@@ -405,7 +405,7 @@ This is typically used in container classes like Vector:
 
 Default parameter values can be given as integer, float, or string literals.
 The values `true`, `false`, and `NULL` are also supported. The default
-values are only used by the host language bindings. They're not supported
+values are only used by certain host language bindings. They're not supported
 when calling a function from C.
 
 ## C blocks
