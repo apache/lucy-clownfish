@@ -471,35 +471,21 @@ S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
     CFCVariable **vars     = CFCParamList_get_variables(param_list);
     const char  **inits    = CFCParamList_get_initial_values(param_list);
 
-    size_t max_label_len = 0;
-    size_t max_var_len   = 0;
+    size_t max_name_len = 0;
 
-    // Find maximum length of label and Perl variable.
+    // Find maximum length of parameter name.
     for (size_t i = start; i < num_vars; i++) {
-        CFCVariable *var = vars[i];
-
-        const char *label = CFCVariable_get_name(var);
-        size_t label_len = strlen(label);
-        if (label_len > max_label_len) { max_label_len = label_len; }
-
-        CFCType *type = CFCVariable_get_type(var);
-        char *perl_var = S_perl_var_name(type);
-        size_t perl_var_len = strlen(perl_var);
-        if (perl_var_len > max_var_len) { max_var_len = perl_var_len; }
-        FREEMEM(perl_var);
+        const char *name = CFCVariable_get_name(vars[i]);
+        size_t name_len = strlen(name);
+        if (name_len > max_name_len) { max_name_len = name_len; }
     }
 
     char *params = CFCUtil_strdup("");
 
     for (size_t i = start; i < num_vars; i++) {
-        CFCVariable *var      = vars[i];
-        const char  *label    = CFCVariable_get_name(var);
-        CFCType     *type     = CFCVariable_get_type(var);
-        char        *perl_var = S_perl_var_name(type);
-        perl_var = CFCUtil_cat(perl_var, ",", NULL);
-
-        char       *comment = NULL;
+        const char *name    = CFCVariable_get_name(vars[i]);
         const char *init    = inits[i];
+        char       *comment = NULL;
 
         if (init) {
             if (strcmp(init, "NULL") == 0) { init = "undef"; }
@@ -510,13 +496,12 @@ S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
         }
 
         char *line = CFCUtil_sprintf("        %-*s => $%-*s  # %s\n",
-                                     max_label_len, label,
-                                     max_var_len + 1, perl_var,
+                                     (int)max_name_len, name,
+                                     (int)max_name_len, name,
                                      comment);
         params = CFCUtil_cat(params, line, NULL);
         FREEMEM(line);
         FREEMEM(comment);
-        FREEMEM(perl_var);
     }
 
     const char pattern[] =
