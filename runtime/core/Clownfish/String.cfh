@@ -312,21 +312,21 @@ public final class Clownfish::String nickname Str
     public incremented String*
     To_String(String *self);
 
-    /** Return a a copy of the String with Unicode whitespace characters
+    /** Return a copy of the String with Unicode whitespace characters
      * removed from both top and tail.  Whitespace is any character that has
      * the Unicode property `White_Space`.
      */
     public incremented String*
     Trim(String *self);
 
-    /** Return a a copy of the String with leading Unicode whitespace
+    /** Return a copy of the String with leading Unicode whitespace
      * removed. Whitespace is any character that has the Unicode property
      * `White_Space`.
      */
     public incremented String*
     Trim_Top(String *self);
 
-    /** Return a a copy of the String with trailing Unicode whitespace
+    /** Return a copy of the String with trailing Unicode whitespace
      * removed. Whitespace is any character that has the Unicode property
      * `White_Space`.
      */
