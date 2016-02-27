@@ -79,7 +79,7 @@ S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
                      size_t start);
 
 static char*
-S_perl_var_name(CFCType *type);
+S_perl_var_name(CFCType *type, int is_ctor_retval);
 
 static char*
 S_camel_to_lower(const char *camel);
@@ -397,7 +397,7 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
     CFCType *ret_type = CFCCallable_get_return_type(func);
     if (!CFCType_is_void(ret_type)) {
         if (is_constructor) {
-            char *ret_name = S_perl_var_name(ret_type);
+            char *ret_name = S_perl_var_name(ret_type, is_constructor);
             prologue = CFCUtil_cat(prologue, "my $", ret_name, " = ", NULL);
             FREEMEM(ret_name);
         }
@@ -515,22 +515,30 @@ S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
 }
 
 static char*
-S_perl_var_name(CFCType *type) {
+S_perl_var_name(CFCType *type, int is_ctor_retval) {
     const char *specifier = CFCType_get_specifier(type);
     char       *perl_name = NULL;
 
     if (CFCType_is_object(type)) {
-        // Skip parcel prefix.
-        if (islower(*specifier)) {
-            for (specifier++; *specifier; specifier++) {
-                if (*specifier == '_') {
-                    specifier++;
-                    break;
+        if (!is_ctor_retval && strcmp(specifier, "cfish_Vector") == 0) {
+            perl_name = CFCUtil_strdup("arrayref");
+        }
+        else if (!is_ctor_retval && strcmp(specifier, "cfish_Hash") == 0) {
+            perl_name = CFCUtil_strdup("hashref");
+        }
+        else {
+            // Skip parcel prefix.
+            if (islower(*specifier)) {
+                for (specifier++; *specifier; specifier++) {
+                    if (*specifier == '_') {
+                        specifier++;
+                        break;
+                    }
                 }
             }
-        }
 
-        perl_name = S_camel_to_lower(specifier);
+            perl_name = S_camel_to_lower(specifier);
+        }
     }
     else if (CFCType_is_integer(type)) {
         if (strcmp(specifier, "bool") == 0) {
