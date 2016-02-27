@@ -392,18 +392,24 @@ CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
 static char*
 S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
                   int is_constructor) {
-    char *prologue = CFCUtil_sprintf("");
+    char *prologue       = CFCUtil_sprintf("");
+    char *class_var_name = S_camel_to_lower(CFCClass_get_struct_sym(klass));
 
     CFCType *ret_type = CFCCallable_get_return_type(func);
     if (!CFCType_is_void(ret_type)) {
-        if (is_constructor) {
-            char *ret_name = S_perl_var_name(ret_type, is_constructor);
-            prologue = CFCUtil_cat(prologue, "my $", ret_name, " = ", NULL);
-            FREEMEM(ret_name);
+        char *ret_name = S_perl_var_name(ret_type, is_constructor);
+
+        if (!is_constructor && strcmp(ret_name, class_var_name) == 0) {
+            // Return type equals `klass`. Use a generic variable name
+            // to avoid confusing code samples like
+            // `my $string = $string->trim`.
+            prologue = CFCUtil_cat(prologue, "my $result = ", NULL);
         }
         else {
-            prologue = CFCUtil_cat(prologue, "my $retval = ", NULL);
+            prologue = CFCUtil_cat(prologue, "my $", ret_name, " = ", NULL);
         }
+
+        FREEMEM(ret_name);
     }
 
     if (is_constructor) {
@@ -411,9 +417,7 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
         prologue = CFCUtil_cat(prologue, invocant, NULL);
     }
     else {
-        char *lower = S_camel_to_lower(CFCClass_get_struct_sym(klass));
-        prologue = CFCUtil_cat(prologue, "$", lower, NULL);
-        FREEMEM(lower);
+        prologue = CFCUtil_cat(prologue, "$", class_var_name, NULL);
     }
 
     prologue = CFCUtil_cat(prologue, "->", alias, NULL);
@@ -433,6 +437,7 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
         sample = S_gen_positional_sample(prologue, param_list, start);
     }
 
+    FREEMEM(class_var_name);
     FREEMEM(prologue);
     return sample;
 }
