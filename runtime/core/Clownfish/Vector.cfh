@@ -138,9 +138,9 @@ public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     size_t
     Get_Capacity(Vector *self);
 
-    /** Return a new Vector consisting of elements from a contiguous slice.  If
-     * the specified range is out of bounds, return a Vector with fewer
-     * elements -- potentially none.
+    /** Return a slice of the Vector consisting of elements from a contiguous
+     * range.  If the specified range is out of bounds, return a slice with
+     * fewer elements -- potentially none.
      *
      * @param offset The index of the element to start at.
      * @param length The maximum number of elements to slice.

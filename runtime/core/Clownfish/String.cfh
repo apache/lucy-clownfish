@@ -345,7 +345,7 @@ public final class Clownfish::String nickname Str
     public int32_t
     Code_Point_From(String *self, size_t tick);
 
-    /** Return a new String containing a copy of the specified substring.
+    /** Return a new substring containing a copy of the specified range.
      *
      * @param offset Offset from the top, in code points.
      * @param length The desired length of the substring, in code points.
