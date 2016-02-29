@@ -17,6 +17,7 @@
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCDocuComment.h"
+#include "CFCDocument.h"
 #include "CFCCHtml.h"
 #include "CFCCMan.h"
 #include "CFCClass.h"
@@ -313,6 +314,7 @@ S_test_generator(CFCTest *test) {
     CFCBase_decref((CFCBase*)parcel);
     CFCBase_decref((CFCBase*)hierarchy);
 
+    CFCDocument_clear_registry();
     CFCParcel_reap_singletons();
 }
 

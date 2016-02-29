@@ -318,12 +318,14 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
         char *html_doc = html_docs[i];
         CFCUtil_write_if_changed(path, html_doc, strlen(html_doc));
         FREEMEM(html_doc);
+        FREEMEM(dir);
         FREEMEM(path);
         FREEMEM(filename);
     }
 
     FREEMEM(html_docs);
     FREEMEM(filenames);
+    FREEMEM(md_docs);
     FREEMEM(ordered);
 }
 
@@ -475,7 +477,7 @@ S_create_standalone_doc(CFCCHtml *self, CFCDocument *doc) {
     char *title  = CFCUtil_global_replace(path, CHY_DIR_SEP, "::");
     char *header = CFCUtil_global_replace(self->header, "{title}", title);
 
-    const char *md = CFCDocument_get_contents(doc);
+    char *md = CFCDocument_get_contents(doc);
     int dir_level = 0;
     for (size_t i = 0; path[i]; i++) {
         if (path[i] == CHY_DIR_SEP_CHAR) { ++dir_level; }
@@ -485,6 +487,7 @@ S_create_standalone_doc(CFCCHtml *self, CFCDocument *doc) {
     char *html_doc = CFCUtil_sprintf("%s%s%s", header, body, self->footer);
 
     FREEMEM(body);
+    FREEMEM(md);
     FREEMEM(header);
     FREEMEM(title);
     return html_doc;

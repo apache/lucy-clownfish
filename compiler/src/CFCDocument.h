@@ -42,6 +42,9 @@ CFCDocument_get_registry(void);
 CFCDocument*
 CFCDocument_fetch(const char *name);
 
+void
+CFCDocument_clear_registry(void);
+
 char*
 CFCDocument_get_contents(CFCDocument *self);
 

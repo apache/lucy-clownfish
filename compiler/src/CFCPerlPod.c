@@ -606,6 +606,7 @@ CFCPerlPod_md_doc_to_pod(const char *module, const char *md) {
         cmark_node *header_child = cmark_node_first_child(maybe_header);
         char *short_desc = S_nodes_to_pod(header_child, NULL, 1);
         name = CFCUtil_sprintf("%s - %s", module, short_desc);
+        FREEMEM(short_desc);
 
         cmark_node *remaining = cmark_node_next(maybe_header);
         desc = S_nodes_to_pod(remaining, NULL, 1);
@@ -628,6 +629,7 @@ CFCPerlPod_md_doc_to_pod(const char *module, const char *md) {
 
     FREEMEM(name);
     FREEMEM(desc);
+    cmark_node_free(doc);
     return retval;
 }
 

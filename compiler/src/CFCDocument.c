@@ -81,6 +81,7 @@ CFCDocument_destroy(CFCDocument *self) {
     FREEMEM(self->path);
     FREEMEM(self->path_part);
     FREEMEM(self->name);
+    CFCBase_destroy((CFCBase*)self);
 }
 
 static void
@@ -121,6 +122,17 @@ CFCDocument_fetch(const char *name) {
     }
 
     return NULL;
+}
+
+void
+CFCDocument_clear_registry(void) {
+    for (size_t i = 0; i < registry_size; i++) {
+        CFCBase_decref((CFCBase*)registry[i]);
+    }
+    FREEMEM(registry);
+    registry_size = 0;
+    registry_cap  = 0;
+    registry      = NULL;
 }
 
 char*

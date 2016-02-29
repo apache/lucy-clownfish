@@ -18,6 +18,7 @@
 #include "CFCBindCore.h"
 #include "CFCC.h"
 #include "CFCClass.h"
+#include "CFCDocument.h"
 #include "CFCHierarchy.h"
 #include "CFCParcel.h"
 #include "CFCUtil.h"
@@ -255,6 +256,7 @@ main(int argc, char **argv) {
     FREEMEM(footer);
 
     CFCClass_clear_registry();
+    CFCDocument_clear_registry();
     CFCParcel_reap_singletons();
 
     S_free_arguments(&args);
