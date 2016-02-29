@@ -458,7 +458,7 @@ S_test_exception(TestBatchRunner *runner, Err_Attempt_t func,
 static void
 test_exceptions(TestBatchRunner *runner) {
     if (getenv("LUCY_VALGRIND")) {
-        SKIP(runner, 4, "memory leak");
+        SKIP(runner, 5, "memory leak");
         return;
     }
     S_test_exception(runner, S_overflow_Push,
