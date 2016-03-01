@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+struct CFCFunction;
 struct CFCMethod;
 struct CFCClass;
 
@@ -30,6 +31,20 @@ struct CFCClass;
  */
 char*
 CFCPyMethod_callback_def(struct CFCMethod *method, struct CFCClass *invoker);
+
+/** Generate a PyMethodDef entry for an instance method.
+  */
+char*
+CFCPyMethod_pymethoddef(struct CFCMethod *method, struct CFCClass *invoker);
+
+char*
+CFCPyMethod_wrapper(struct CFCMethod *method, struct CFCClass *invoker);
+
+/** Generate glue code for a constructor.
+  */
+char*
+CFCPyMethod_constructor_wrapper(struct CFCFunction *init_func,
+                                struct CFCClass *invoker);
 
 #ifdef __cplusplus
 }

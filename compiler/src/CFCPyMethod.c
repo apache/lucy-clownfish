@@ -68,6 +68,189 @@ S_build_py_args(CFCParamList *param_list) {
 }
 
 static char*
+S_gen_decs(CFCParamList *param_list, int first_tick) {
+    char *decs = CFCUtil_strdup("");
+    int num_vars = CFCParamList_num_vars(param_list);
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    for (int i = first_tick; i < num_vars; i++) {
+        CFCType *type = CFCVariable_get_type(vars[i]);
+        const char *name = CFCVariable_get_name(vars[i]);
+        decs = CFCUtil_cat(decs, "    ", CFCType_to_c(type), " ", name,
+                           "_ARG = 0;\n", NULL);
+    }
+    return decs;
+}
+
+/* Some of the ParseTuple conversion routines provided by the Python-flavored
+ * CFBind module accept a CFBindArg instead of just a pointer to the value
+ * itself.  This routine generates the declarations for those CFBindArg
+ * variables, as well as handling some default values.
+ */
+static char*
+S_gen_declaration(CFCVariable *var, const char *val) {
+    CFCType *type = CFCVariable_get_type(var);
+    const char *var_name = CFCVariable_get_name(var);
+    const char *type_str = CFCType_to_c(type);
+    char *result = NULL;
+
+    if (CFCType_is_object(type)) {
+        const char *specifier = CFCType_get_specifier(type);
+        if (strcmp(specifier, "cfish_String") == 0) {
+            if (val && strcmp(val, "NULL") != 0) {
+                const char pattern[] =
+                    "    const char arg_%s_DEFAULT[] = %s;\n"
+                    "    %s_ARG = CFISH_SSTR_WRAP_UTF8(\n"
+                    "        arg_%s_DEFAULT, sizeof(arg_%s_DEFAULT) - 1);\n"
+                    ;
+                result = CFCUtil_sprintf(pattern, var_name, val, var_name,
+                                         var_name, var_name);
+            }
+        }
+        else {
+            if (val && strcmp(val, "NULL") != 0) {
+                CFCUtil_die("Can't assign a default of '%s' to a %s",
+                            val, type_str);
+            }
+            if (strcmp(specifier, "cfish_Hash") != 0
+                && strcmp(specifier, "cfish_Vector") != 0
+                ) {
+                const char *class_var = CFCType_get_class_var(type);
+                char pattern[] =
+                    "    CFBindArg wrap_arg_%s = {%s, &%s_ARG};\n"
+                    ;
+                result = CFCUtil_sprintf(pattern, var_name, class_var,
+                                         var_name);
+            }
+        }
+    }
+    else if (CFCType_is_primitive(type)) {
+        if (val) {
+            char pattern[] = "    %s_ARG = %s;\n";
+            result = CFCUtil_sprintf(pattern, var_name, val);
+        }
+    }
+    else {
+        CFCUtil_die("Unexpected type, can't gen declaration: %s", type_str);
+    }
+
+    return result;
+}
+
+static char*
+S_gen_target(CFCVariable *var, const char *value) {
+    CFCType *type = CFCVariable_get_type(var);
+    const char *specifier = CFCType_get_specifier(type);
+    const char *micro_sym = CFCVariable_get_name(var);
+    const char *maybe_maybe = "";
+    const char *dest_name;
+    char *var_name = NULL;
+    if (CFCType_is_primitive(type)) {
+        dest_name = CFCType_get_specifier(type);
+        if (value != NULL) {
+            maybe_maybe = "maybe_";
+        }
+        var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+    }
+    else if (CFCType_is_object(type)) {
+        if (CFCType_nullable(type) ||
+            (value && strcmp(value, "NULL") == 0)
+           ) {
+            maybe_maybe = "maybe_";
+        }
+        if (strcmp(specifier, "cfish_String") == 0) {
+            dest_name = "string";
+            var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+        }
+        else if (strcmp(specifier, "cfish_Hash") == 0) {
+            dest_name = "hash";
+            var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+        }
+        else if (strcmp(specifier, "cfish_Vector") == 0) {
+            dest_name = "vec";
+            var_name = CFCUtil_sprintf("%s_ARG", CFCVariable_get_name(var));
+        }
+        else {
+            dest_name = "obj";
+            var_name = CFCUtil_sprintf("wrap_arg_%s", micro_sym);
+        }
+    }
+    else {
+        dest_name = "INVALID";
+    }
+    char *content = CFCUtil_sprintf(", CFBind_%sconvert_%s, &%s",
+                                    maybe_maybe, dest_name, var_name);
+    FREEMEM(var_name);
+    return content;
+}
+
+/* Generate the code which parses arguments passed from Python and converts
+ * them to Clownfish-flavored C values.
+ */
+static char*
+S_gen_arg_parsing(CFCParamList *param_list, int first_tick, char **error) {
+    char *content = NULL;
+
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    const char **vals = CFCParamList_get_initial_values(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+
+    char *declarations = CFCUtil_strdup("");
+    char *keywords     = CFCUtil_strdup("");
+    char *format_str   = CFCUtil_strdup("");
+    char *targets      = CFCUtil_strdup("");
+    int optional_started = 0;
+
+    for (int i = first_tick; i < num_vars; i++) {
+        CFCVariable *var  = vars[i];
+        const char  *val  = vals[i];
+
+        const char *var_name = CFCVariable_get_name(var);
+        keywords = CFCUtil_cat(keywords, "\"", var_name, "\", ", NULL);
+
+        // Build up ParseTuple format string.
+        if (val == NULL) {
+            if (optional_started) { // problem!
+                *error = "Required after optional param";
+                goto CLEAN_UP_AND_RETURN;
+            }
+        }
+        else {
+            if (!optional_started) {
+                optional_started = 1;
+                format_str = CFCUtil_cat(format_str, "|", NULL);
+            }
+        }
+        format_str = CFCUtil_cat(format_str, "O&", NULL);
+
+        char *declaration = S_gen_declaration(var, val);
+        declarations = CFCUtil_cat(declarations, declaration, NULL);
+        FREEMEM(declaration);
+
+        char *target = S_gen_target(var, val);
+        targets = CFCUtil_cat(targets, target, NULL);
+        FREEMEM(target);
+    }
+
+    char parse_pattern[] =
+        "%s"
+        "    char *keywords[] = {%sNULL};\n"
+        "    char *fmt = \"%s\";\n"
+        "    int ok = PyArg_ParseTupleAndKeywords(args, kwargs, fmt,\n"
+        "        keywords%s);\n"
+        "    if (!ok) { return NULL; }\n"
+        ;
+    content = CFCUtil_sprintf(parse_pattern, declarations, keywords,
+                              format_str, targets);
+
+CLEAN_UP_AND_RETURN:
+    FREEMEM(declarations);
+    FREEMEM(keywords);
+    FREEMEM(format_str);
+    FREEMEM(targets);
+    return content;
+}
+
+static char*
 S_build_pymeth_invocation(CFCMethod *method) {
     CFCType *return_type = CFCMethod_get_return_type(method);
     const char *micro_sym = CFCSymbol_get_name((CFCSymbol*)method);
@@ -213,5 +396,265 @@ S_maybe_unreachable(CFCType *return_type) {
         return_statement = CFCUtil_sprintf(pattern, ret_type_str);
     }
     return return_statement;
+}
+
+static char*
+S_meth_top(CFCMethod *method) {
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+
+    if (CFCParamList_num_vars(param_list) == 1) {
+        char pattern[] =
+            "(PyObject *self, PyObject *unused) {\n"
+            "    CFISH_UNUSED_VAR(unused);\n"
+            ;
+        return CFCUtil_sprintf(pattern);
+    }
+    else {
+        char *error = NULL;
+        char *arg_parsing = S_gen_arg_parsing(param_list, 1, &error);
+        if (error) {
+            CFCUtil_die("%s in %s", error, CFCMethod_get_name(method));
+        }
+        if (!arg_parsing) {
+            return NULL;
+        }
+        char *decs = S_gen_decs(param_list, 1);
+        char pattern[] =
+            "(PyObject *self, PyObject *args, PyObject *kwargs) {\n"
+            "%s" // decs
+            "%s"
+            ;
+        char *result = CFCUtil_sprintf(pattern, decs, arg_parsing);
+        FREEMEM(arg_parsing);
+        return result;
+    }
+}
+
+static char*
+S_gen_arg_increfs(CFCParamList *param_list, int first_tick) {
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+    char *content = CFCUtil_strdup("");
+    for (int i = first_tick;i < num_vars; i++) {
+        CFCType *type = CFCVariable_get_type(vars[i]);
+        if (CFCType_decremented(type)) {
+            const char *name = CFCVariable_get_name(vars[i]);
+            const char *specifier = CFCType_get_specifier(type);
+            char pattern[] =
+                "    %s_ARG = (%s*)CFISH_INCREF(%s_ARG);\n";
+            char *incref = CFCUtil_sprintf(pattern, name, specifier, name);
+            content = CFCUtil_cat(content, incref, NULL);
+            FREEMEM(incref);
+        }
+    }
+    return content;
+}
+
+// Prep refcount decrement calls to follow the Clownfish subroutine
+// invocation.
+static char*
+S_gen_decrefs(CFCParamList *param_list, int first_tick) {
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+    char *decrefs = CFCUtil_strdup("");
+
+    for (int i = first_tick; i < num_vars; i++) {
+        CFCVariable *var = vars[i];
+        CFCType *type = CFCVariable_get_type(var);
+        const char *micro_sym = CFCVariable_get_name(var);
+        const char *specifier = CFCType_get_specifier(type);
+
+        if (strcmp(specifier, "cfish_Obj") == 0
+             || strcmp(specifier, "cfish_String") == 0
+             || strcmp(specifier, "cfish_Vector") == 0
+             || strcmp(specifier, "cfish_Hash") == 0
+            ) {
+            decrefs = CFCUtil_cat(decrefs, "    CFISH_DECREF(", micro_sym,
+                                  "_ARG);\n", NULL);
+        }
+    }
+
+    return decrefs;
+}
+
+static char*
+S_gen_arg_list(CFCParamList *param_list, const char *first_arg) {
+    CFCVariable **vars = CFCParamList_get_variables(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
+    char *arg_list = CFCUtil_strdup("");
+    for (int i = 0; i < num_vars; i++) {
+        if (i > 0) {
+            arg_list = CFCUtil_cat(arg_list, ", ", NULL);
+        }
+        if (i == 0 && first_arg != NULL) {
+            arg_list = CFCUtil_cat(arg_list, first_arg, NULL);
+        }
+        else {
+            arg_list = CFCUtil_cat(arg_list, CFCVariable_get_name(vars[i]),
+                                   "_ARG", NULL);
+        }
+    }
+    return arg_list;
+}
+
+static char*
+S_gen_meth_invocation(CFCMethod *method, CFCClass *invoker) {
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+    char *full_meth = CFCMethod_full_method_sym(method, invoker);
+    char *meth_type_c = CFCMethod_full_typedef(method, invoker);
+    const char *class_var = CFCClass_full_class_var(invoker);
+    char *first_arg
+        = CFCUtil_sprintf("(%s*)self", CFCClass_full_struct_sym(invoker));
+    char *arg_list = S_gen_arg_list(param_list, first_arg);
+
+    CFCType *return_type = CFCMethod_get_return_type(method);
+    char *maybe_declare;
+    const char *maybe_assign;
+    if (CFCType_is_void(return_type)) {
+        maybe_declare = CFCUtil_strdup("");
+        maybe_assign = "";
+    }
+    else {
+        maybe_declare = CFCUtil_sprintf("    %s retvalCF;\n",
+                                        CFCType_to_c(return_type));
+        maybe_assign = "retvalCF = ";
+    }
+
+    const char pattern[] =
+        "%s"
+        "    %s method = CFISH_METHOD_PTR(%s, %s);\n"
+        "    CFBIND_TRY(%smethod(%s));\n"
+        ;
+    char *content
+        = CFCUtil_sprintf(pattern, maybe_declare, meth_type_c, class_var,
+                          full_meth, maybe_assign, arg_list);
+
+    FREEMEM(arg_list);
+    FREEMEM(first_arg);
+    FREEMEM(maybe_declare);
+    FREEMEM(full_meth);
+    FREEMEM(meth_type_c);
+    return content;
+}
+
+char*
+CFCPyMethod_wrapper(CFCMethod *method, CFCClass *invoker) {
+    CFCParamList *param_list  = CFCMethod_get_param_list(method);
+    CFCType      *return_type = CFCMethod_get_return_type(method);
+    char *meth_sym   = CFCMethod_full_method_sym(method, invoker);
+    char *meth_top   = S_meth_top(method);
+    char *increfs    = S_gen_arg_increfs(param_list, 1);
+    char *decrefs    = S_gen_decrefs(param_list, 1);
+    char *invocation = S_gen_meth_invocation(method, invoker);
+    char *ret;
+    if (CFCType_is_void(return_type)) {
+        ret = CFCUtil_strdup("    Py_RETURN_NONE;\n");
+    }
+    else if (CFCType_incremented(return_type)) {
+        ret = CFCUtil_strdup("    return CFBind_cfish_to_py_zeroref((cfish_Obj*)retvalCF);\n");
+    }
+    else {
+        char *conv = CFCPyTypeMap_c_to_py(return_type, "retvalCF");
+        ret = CFCUtil_sprintf("    return %s;\n", conv);
+        FREEMEM(conv);
+    }
+
+    char pattern[] =
+        "static PyObject*\n"
+        "S_%s%s"
+        "%s" // increfs
+        "%s" // invocation
+        "%s" // decrefs
+        "    if (CFBind_migrate_cferr()) {\n"
+        "        return NULL;\n"
+        "    }\n"
+        "%s" // ret
+        "}\n"
+        ;
+    char *wrapper = CFCUtil_sprintf(pattern, meth_sym, meth_top,
+                                    increfs, invocation, decrefs, ret);
+    FREEMEM(ret);
+    FREEMEM(invocation);
+    FREEMEM(decrefs);
+    FREEMEM(increfs);
+    FREEMEM(meth_sym);
+    FREEMEM(meth_top);
+
+    return wrapper;
+}
+
+char*
+CFCPyMethod_constructor_wrapper(CFCFunction *init_func, CFCClass *invoker) {
+    CFCParamList *param_list  = CFCFunction_get_param_list(init_func);
+    const char *self_type
+        = CFCType_to_c(CFCFunction_get_return_type(init_func));
+    char *func_sym   = CFCFunction_full_func_sym(init_func, invoker);
+    char *decs       = S_gen_decs(param_list, 1);
+    char *increfs    = S_gen_arg_increfs(param_list, 1);
+    char *decrefs    = S_gen_decrefs(param_list, 1);
+    const char *class_var  = CFCClass_full_class_var(invoker);
+    const char *struct_sym = CFCClass_full_struct_sym(invoker);
+    char *error = NULL;
+    char *arg_parsing = S_gen_arg_parsing(param_list, 1, &error);
+    if (error) {
+        CFCUtil_die("%s in constructor for %s", error,
+                    CFCClass_get_name(invoker));
+    }
+    if (!arg_parsing) {
+        CFCUtil_die("Unexpected arg parsing error for %s",
+                    CFCClass_get_name(invoker));
+    }
+    char *first_arg = CFCUtil_sprintf("(%s)CFISH_Class_Make_Obj(%s)",
+                                      self_type, class_var);
+    char *arg_list = S_gen_arg_list(param_list, first_arg);
+
+    char pattern[] =
+        "static PyObject*\n"
+        "S_%s_PY_NEW(PyTypeObject *type, PyObject *args, PyObject *kwargs) {\n"
+        "%s" // decs
+        "%s" // arg_parsing
+        "%s" // increfs
+        "    %s self = NULL;\n"
+        "    CFBIND_TRY(self = %s(%s));\n"
+        "%s" // decrefs
+        "    if (CFBind_migrate_cferr()) {\n"
+        "        return NULL;\n"
+        "    }\n"
+        "    return (PyObject*)self;\n"
+        "}\n"
+        ;
+    char *wrapper = CFCUtil_sprintf(pattern, struct_sym, decs,
+                                    arg_parsing, increfs, self_type,
+                                    func_sym, arg_list, decrefs);
+
+    FREEMEM(arg_list);
+    FREEMEM(first_arg);
+    FREEMEM(func_sym);
+    FREEMEM(decrefs);
+    FREEMEM(increfs);
+    FREEMEM(decs);
+    FREEMEM(arg_parsing);
+    return wrapper;
+}
+
+char*
+CFCPyMethod_pymethoddef(CFCMethod *method, CFCClass *invoker) {
+    CFCParamList *param_list = CFCMethod_get_param_list(method);
+    const char *flags = CFCParamList_num_vars(param_list) == 1
+                        ? "METH_NOARGS"
+                        : "METH_KEYWORDS|METH_VARARGS";
+    char *meth_sym = CFCMethod_full_method_sym(method, invoker);
+    char *micro_sym = CFCUtil_strdup(CFCSymbol_get_name((CFCSymbol*)method));
+    for (int i = 0; micro_sym[i] != 0; i++) {
+        micro_sym[i] = tolower(micro_sym[i]);
+    }
+
+    char pattern[] =
+        "{\"%s\", (PyCFunction)S_%s, %s, NULL},";
+    char *py_meth_def = CFCUtil_sprintf(pattern, micro_sym, meth_sym, flags);
+
+    FREEMEM(meth_sym);
+    FREEMEM(micro_sym);
+    return py_meth_def;
 }
 

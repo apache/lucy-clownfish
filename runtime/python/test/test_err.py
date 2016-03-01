@@ -14,17 +14,17 @@
 # limitations under the License.
 
 import unittest
-import inspect
 import clownfish
+import sys
 
-class MyTest(unittest.TestCase):
+class TestErr(unittest.TestCase):
 
-    def testTrue(self):
-        self.assertTrue(True, "True should be true")
-
-    def testClassesPresent(self):
-        self.assertIsInstance(clownfish.Hash, type)
-        self.assertTrue(inspect.ismethoddescriptor(clownfish.Hash.store))
+    def testErrorHandling(self):
+        vec = clownfish.Vector()
+        try:
+            vec.grow(sys.maxsize)
+        except RuntimeError as e:
+            self.assertTrue(str(e).find("overflow") != -1)
 
 if __name__ == '__main__':
     unittest.main()
