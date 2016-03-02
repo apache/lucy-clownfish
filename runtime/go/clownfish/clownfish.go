@@ -368,13 +368,13 @@ func goToInteger(value interface{}, nullable bool) unsafe.Pointer {
 	case int:
 		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
 	case uint:
-		if v > math.MaxInt64 {
+		if uint64(v) > math.MaxInt64 {
 			mess := fmt.Sprintf("uint value too large: %v", v)
 			panic(NewErr(mess))
 		}
 		return unsafe.Pointer(C.cfish_Int_new(C.int64_t(v)))
 	case uintptr:
-		if v > math.MaxInt64 {
+		if uint64(v) > math.MaxInt64 {
 			mess := fmt.Sprintf("uintptr value too large: %v", v)
 			panic(NewErr(mess))
 		}
