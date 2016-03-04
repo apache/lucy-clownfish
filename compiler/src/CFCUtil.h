@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>
 #include <stddef.h>
 
 /** Create an inner Perl object with a refcount of 1.  For use in actual
@@ -57,6 +58,9 @@ CFCUtil_strndup(const char *string, size_t len);
  */
 char*
 CFCUtil_sprintf(const char *fmt, ...);
+
+char*
+CFCUtil_vsprintf(const char *fmt, va_list args);
 
 /** Concatenate a NULL-terminated list of strings onto the first, reallocating
  * with each argument.

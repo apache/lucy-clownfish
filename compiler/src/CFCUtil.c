@@ -59,50 +59,40 @@ CFCUtil_strndup(const char *string, size_t len) {
     return copy;
 }
 
-#if defined(CHY_HAS_C99_SNPRINTF) || defined(CHY_HAS__SCPRINTF)
-
 char*
 CFCUtil_sprintf(const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
-#if defined(CHY_HAS_C99_SNPRINTF)
-    int size = vsnprintf(NULL, 0, fmt, args);
-    if (size < 0) { CFCUtil_die("snprintf failed"); }
-#else
-    int size = _vscprintf(fmt, args);
-    if (size < 0) { CFCUtil_die("_scprintf failed"); }
-#endif
-    va_end(args);
-
-    char *string = (char*)MALLOCATE((size_t)size + 1);
-    va_start(args, fmt);
-    vsprintf(string, fmt, args);
+    char *string = CFCUtil_vsprintf(fmt, args);
     va_end(args);
 
     return string;
 }
 
-#elif defined(CHY_HAS__SNPRINTF)
-
-char*
-CFCUtil_sprintf(const char *fmt, ...) {
-    for (size_t size = 32; size * 2 > size; size *= 2) {
-        char *string = (char*)MALLOCATE(size);
-        va_list args;
-        va_start(args, fmt);
-        int result = _vsnprintf(string, size, fmt, args);
-        va_end(args);
-        if (result >= 0 && (size_t)result < size) { return string; }
-        FREEMEM(string);
-    }
-    CFCUtil_die("_snprintf failed");
-    return NULL;
-}
-
-#else
+#if !defined(CHY_HAS_C99_SNPRINTF) && !defined(CHY_HAS__SCPRINTF)
   #error "snprintf or replacement not available."
 #endif
+
+char*
+CFCUtil_vsprintf(const char *fmt, va_list args) {
+    va_list args_copy;
+
+    va_copy(args_copy, args);
+#if defined(CHY_HAS_C99_SNPRINTF)
+    int size = vsnprintf(NULL, 0, fmt, args_copy);
+    if (size < 0) { CFCUtil_die("snprintf failed"); }
+#else
+    int size = _vscprintf(fmt, args_copy);
+    if (size < 0) { CFCUtil_die("_scprintf failed"); }
+#endif
+    va_end(args_copy);
+
+    char *string = (char*)MALLOCATE((size_t)size + 1);
+    vsprintf(string, fmt, args);
+
+    return string;
+}
 
 char*
 CFCUtil_cat(char *string, ...) {
