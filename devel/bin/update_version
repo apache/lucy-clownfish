@@ -64,6 +64,15 @@ for my $path ('runtime/common/charmonizer.c', 'runtime/common/charmonizer.main')
     write_file($path, $buf);
 }
 
+for my $path ('compiler/common/charmonizer.c', 'compiler/common/charmonizer.main') {
+    $buf = read_file($path);
+    $buf =~ s/(cfc_version\[\]\s+=\s+)"[\d.]+"/$1"$x_y_z_version"/
+        or die "no match";
+    $buf =~ s/(cfc_major_version\[\]\s+=\s+)"[\d.]+"/$1"$x.$y"/
+        or die "no match";
+    write_file($path, $buf);
+}
+
 # Update CFC.pm.
 $buf = read_file('compiler/perl/lib/Clownfish/CFC.pm');
 $buf =~ s/(our \$VERSION\ +=\ +)'.+?'/$1'$x_yyyzzz_version'/g
@@ -112,11 +121,19 @@ $buf =~ s/\bmajor_version=[\d.]+/major_version=$x.$y/
     or die "no match";
 write_file( 'runtime/c/install.sh', $buf );
 
-# Update compiler/python/setup.py
-$buf = read_file('compiler/python/setup.py');
-$buf =~ s/(\bversion\s+=\s+)'[\d.]+'/$1'$x_y_z_version'/
+# Update runtime/c/install.bat
+$buf = read_file('runtime/c/install.bat');
+$buf =~ s/\bmajor_version=[\d.]+/major_version=$x.$y/
     or die "no match";
-write_file( 'compiler/python/setup.py', $buf );
+write_file( 'runtime/c/install.bat', $buf );
+
+# Update compiler/python/setup.py
+for my $path (qw( compiler/python/setup.py runtime/python/setup.py )) {
+    $buf = read_file($path);
+    $buf =~ s/(\bversion\s+=\s+)'[\d.]+'/$1'$x_y_z_version'/
+        or die "no match";
+    write_file( $path, $buf );
+}
 
 # Update POD in compiler/perl/lib/Clownfish/CFC/Perl/Build.pm
 $buf = read_file('compiler/perl/lib/Clownfish/CFC/Perl/Build.pm');
@@ -137,6 +154,12 @@ $buf =~ s/("version":\s+)"v\d+\.\d+\.\d+"/$1"v$x_y_z_version"/
 $buf =~ s/("Clownfish":\s+)"v\d+\.\d+\.\d+"/$1"v$x_y_z_version"/
     or die "no match";
 write_file( 'runtime/core/TestClownfish.cfp', $buf );
+
+# Update runtime/core/Clownfish/Docs/WritingClasses.md
+$buf = read_file('runtime/core/Clownfish/Docs/WritingClasses.md');
+$buf =~ s/("Clownfish":\s*)"v\d+\.\d+\.\d+"/$1"v$x_y_z_version"/g
+    or die "no match";
+write_file( 'runtime/core/Clownfish/Docs/WritingClasses.md', $buf );
 
 # Update all other Perl modules.
 find(\&update_pm_file, 'compiler/perl');
