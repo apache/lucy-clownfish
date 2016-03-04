@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCClass.h"
@@ -35,9 +37,23 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_VARIABLE = {
     "Clownfish::CFC::Model::Variable",
-    29,
+    33,
     S_run_tests
 };
+
+static char*
+S_try_new_variable(const char *name, CFCType *type) {
+    CFCVariable *var = NULL;
+    char        *error;
+
+    CFCUTIL_TRY {
+        var = CFCVariable_new(NULL, name, type, 0);
+    }
+    CFCUTIL_CATCH(error);
+
+    CFCBase_decref((CFCBase*)var);
+    return error;
+}
 
 static void
 S_run_tests(CFCTest *test) {
@@ -45,6 +61,20 @@ S_run_tests(CFCTest *test) {
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
     CFCClass *foo_class = CFCTest_parse_class(test, parser, "class Foo {}");
+
+    {
+        char *error = S_try_new_variable("foo", NULL);
+        OK(test, error && strstr(error, "type"), "type is required");
+        FREEMEM(error);
+    }
+
+    {
+        CFCType *type = CFCTest_parse_type(test, parser, "int32_t");
+        char *error = S_try_new_variable(NULL, type);
+        OK(test, error && strstr(error, "name"), "name is required");
+        FREEMEM(error);
+        CFCBase_decref((CFCBase*)type);
+    }
 
     {
         CFCType *type = CFCTest_parse_type(test, parser, "float*");

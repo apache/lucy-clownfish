@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #include "charmony.h"
 
 #define CFC_USE_TEST_MACROS
@@ -37,18 +39,22 @@ static void
 S_run_prereq_tests(CFCTest *test);
 
 static void
-S_run_parcel_tests(CFCTest *test);
+S_run_basic_tests(CFCTest *test);
+
+static void
+S_run_extended_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    29,
+    36,
     S_run_tests
 };
 
 static void
 S_run_tests(CFCTest *test) {
     S_run_prereq_tests(test);
-    S_run_parcel_tests(test);
+    S_run_basic_tests(test);
+    S_run_extended_tests(test);
 }
 
 static void
@@ -77,22 +83,77 @@ S_run_prereq_tests(CFCTest *test) {
 }
 
 static void
-S_run_parcel_tests(CFCTest *test) {
+S_run_basic_tests(CFCTest *test) {
+    CFCParcel *foo = CFCParcel_new("Foo", NULL, NULL, NULL);
+    OK(test, foo != NULL, "new");
+    OK(test, !CFCParcel_included(foo), "not included");
+    CFCParcel_register(foo);
+
     {
-        CFCParcel *parcel = CFCParcel_new("Foo", NULL, NULL, NULL);
-        OK(test, parcel != NULL, "new");
-        OK(test, !CFCParcel_included(parcel), "not included");
-        CFCBase_decref((CFCBase*)parcel);
+        CFCParcel *same_name = CFCParcel_new("Foo", NULL, NULL, NULL);
+        char      *error;
+
+        CFCUTIL_TRY {
+            CFCParcel_register(same_name);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "already registered"),
+           "can't register two parcels with the same name");
+
+        FREEMEM(error);
+        CFCBase_decref((CFCBase*)same_name);
     }
 
     {
-        CFCFileSpec *file_spec = CFCFileSpec_new(".", "Parcel", true);
-        CFCParcel *parcel = CFCParcel_new("Foo", NULL, NULL, file_spec);
-        OK(test, CFCParcel_included(parcel), "included");
-        CFCBase_decref((CFCBase*)parcel);
-        CFCBase_decref((CFCBase*)file_spec);
+        CFCParcel *same_nick
+            = CFCParcel_new("OtherFoo", "Foo", NULL, NULL);
+        char *error;
+
+        CFCUTIL_TRY {
+            CFCParcel_register(same_nick);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "already registered"),
+           "can't register two parcels with the same nickname");
+
+        FREEMEM(error);
+        CFCBase_decref((CFCBase*)same_nick);
     }
 
+    CFCFileSpec *file_spec = CFCFileSpec_new(".", "Parcel", true);
+    CFCParcel *included_foo
+        = CFCParcel_new("IncludedFoo", NULL, NULL, file_spec);
+    OK(test, CFCParcel_included(included_foo), "included");
+    CFCParcel_register(included_foo);
+
+    {
+        CFCParcel **all_parcels = CFCParcel_all_parcels();
+        OK(test, all_parcels[0] && all_parcels[1] && !all_parcels[2],
+           "all_parcels returns two parcels");
+        STR_EQ(test, CFCParcel_get_name(all_parcels[0]), "Foo",
+               "all_parcels returns parcel Foo");
+        STR_EQ(test, CFCParcel_get_name(all_parcels[1]), "IncludedFoo",
+               "all_parcels returns parcel IncludedFoo");
+    }
+
+    {
+        CFCParcel_add_inherited_parcel(foo, included_foo);
+        CFCParcel **inh_parcels = CFCParcel_inherited_parcels(foo);
+        OK(test, inh_parcels[0] && !inh_parcels[1],
+           "inherited_parcels returns one parcel");
+        STR_EQ(test, CFCParcel_get_name(inh_parcels[0]), "IncludedFoo",
+               "inh_parcels returns parcel IncludedFoo");
+        FREEMEM(inh_parcels);
+    }
+
+    CFCBase_decref((CFCBase*)included_foo);
+    CFCBase_decref((CFCBase*)file_spec);
+    CFCBase_decref((CFCBase*)foo);
+    CFCParcel_reap_singletons();
+}
+
+static void
+S_run_extended_tests(CFCTest *test) {
     {
         const char *json =
             "        {\n"

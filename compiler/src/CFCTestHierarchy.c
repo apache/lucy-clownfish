@@ -17,6 +17,7 @@
 #include "charmony.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* For rmdir */
@@ -41,6 +42,10 @@
 #define T_CFDEST          "t" CHY_DIR_SEP "cfdest"
 #define T_CFDEST_INCLUDE  T_CFDEST CHY_DIR_SEP "include"
 #define T_CFDEST_SOURCE   T_CFDEST CHY_DIR_SEP "source"
+#define T_CFCLASH_CLASS   "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "class"
+#define T_CFCLASH_FILE    "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "file"
+#define T_CFCLASH_FOO     "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "foo"
+#define T_CFCLASH_BAR     "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "bar"
 
 static void
 S_run_tests(CFCTest *test);
@@ -51,9 +56,12 @@ S_run_basic_tests(CFCTest *test);
 static void
 S_run_include_tests(CFCTest *test);
 
+static void
+S_run_clash_tests(CFCTest *test);
+
 const CFCTestBatch CFCTEST_BATCH_HIERARCHY = {
     "Clownfish::CFC::Model::Hierarchy",
-    44,
+    48,
     S_run_tests
 };
 
@@ -61,6 +69,7 @@ static void
 S_run_tests(CFCTest *test) {
     S_run_basic_tests(test);
     S_run_include_tests(test);
+    S_run_clash_tests(test);
 }
 
 static void
@@ -253,6 +262,94 @@ S_run_include_tests(CFCTest *test) {
         INT_EQ(test, num_classes, 5, "class count");
 
         FREEMEM(classes);
+        CFCBase_decref((CFCBase*)hierarchy);
+        CFCClass_clear_registry();
+        CFCParcel_reap_singletons();
+    }
+
+    rmdir(T_CFDEST_INCLUDE);
+    rmdir(T_CFDEST_SOURCE);
+    rmdir(T_CFDEST);
+}
+
+static void
+S_run_clash_tests(CFCTest *test) {
+    if (getenv("LUCY_VALGRIND")) {
+        SKIP(test, 1, "Exceptions leak");
+    }
+    else {
+        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
+        CFCHierarchy_add_source_dir(hierarchy, T_CFBASE);
+        CFCHierarchy_add_source_dir(hierarchy, T_CFCLASH_FILE);
+        char *error;
+
+        CFCUTIL_TRY {
+            CFCHierarchy_build(hierarchy);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "found twice"),
+           "source/source filename clash");
+
+        CFCBase_decref((CFCBase*)hierarchy);
+        CFCClass_clear_registry();
+        CFCParcel_reap_singletons();
+    }
+
+    if (getenv("LUCY_VALGRIND")) {
+        SKIP(test, 1, "Exceptions leak");
+    }
+    else {
+        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
+        CFCHierarchy_add_source_dir(hierarchy, T_CFCLASH_CLASS);
+        CFCHierarchy_add_include_dir(hierarchy, T_CFBASE);
+        char *error;
+
+        CFCUTIL_TRY {
+            CFCHierarchy_build(hierarchy);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "Two classes with name"),
+           "source/include class name clash");
+
+        CFCBase_decref((CFCBase*)hierarchy);
+        CFCClass_clear_registry();
+        CFCParcel_reap_singletons();
+    }
+
+    {
+        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
+        CFCHierarchy_add_source_dir(hierarchy, T_CFBASE);
+        CFCHierarchy_add_include_dir(hierarchy, T_CFCLASH_FILE);
+
+        CFCHierarchy_build(hierarchy);
+        CFCClass **ordered = CFCHierarchy_ordered_classes(hierarchy);
+        int count = 0;
+        while (ordered[count]) { count++; }
+        INT_EQ(test, count, 4, "source/include filename clash");
+
+        FREEMEM(ordered);
+        CFCBase_decref((CFCBase*)hierarchy);
+        CFCClass_clear_registry();
+        CFCParcel_reap_singletons();
+    }
+
+    if (getenv("LUCY_VALGRIND")) {
+        SKIP(test, 1, "Exceptions leak");
+    }
+    else {
+        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
+        CFCHierarchy_add_source_dir(hierarchy, T_CFCLASH_BAR);
+        CFCHierarchy_add_include_dir(hierarchy, T_CFCLASH_FOO);
+        CFCHierarchy_add_include_dir(hierarchy, T_CFBASE);
+        char *error;
+
+        CFCUTIL_TRY {
+            CFCHierarchy_build(hierarchy);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "from source dir found"),
+           "source class with included parcel");
+
         CFCBase_decref((CFCBase*)hierarchy);
         CFCClass_clear_registry();
         CFCParcel_reap_singletons();

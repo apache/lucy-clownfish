@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCCBlock.h"
 #include "CFCParser.h"
 #include "CFCTest.h"
+#include "CFCUtil.h"
 
 static void
 S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_C_BLOCK = {
     "Clownfish::CFC::Model::CBlock",
-    4,
+    5,
     S_run_tests
 };
 
@@ -37,6 +40,20 @@ S_run_tests(CFCTest *test) {
         CFCCBlock *block = CFCCBlock_new("int foo;");
         STR_EQ(test, CFCCBlock_get_contents(block), "int foo;",
                "get_contents");
+        CFCBase_decref((CFCBase*)block);
+    }
+
+    {
+        CFCCBlock *block = NULL;
+        char      *error;
+
+        CFCUTIL_TRY {
+            block = CFCCBlock_new(NULL);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "contents"), "content required");
+
+        FREEMEM(error);
         CFCBase_decref((CFCBase*)block);
     }
 
