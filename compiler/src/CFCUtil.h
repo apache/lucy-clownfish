@@ -29,6 +29,18 @@ extern "C" {
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <setjmp.h>
+
+#define CFCUTIL_TRY                                   \
+    do {                                              \
+        jmp_buf env;                                  \
+        jmp_buf *prev_env = CFCUtil_try_start(&env);  \
+        if (!setjmp(env))
+
+#define CFCUTIL_CATCH(error)                          \
+        error = CFCUtil_try_end(prev_env);            \
+    } while (0)
+
 
 /** Create an inner Perl object with a refcount of 1.  For use in actual
  * Perl-space, it is necessary to wrap this inner object in an RV.
@@ -223,10 +235,21 @@ CFCUtil_free_string_array(char **strings);
 void
 CFCUtil_die(const char *format, ...);
 
+/* Rethrow an error.
+ */
+void
+CFCUtil_rethrow(char *error);
+
 /* Print an error message to stderr.
  */
 void
 CFCUtil_warn(const char *format, ...);
+
+jmp_buf*
+CFCUtil_try_start(jmp_buf *env);
+
+char*
+CFCUtil_try_end(jmp_buf *prev_env);
 
 #ifdef __cplusplus
 }

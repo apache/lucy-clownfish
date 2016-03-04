@@ -23,6 +23,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <setjmp.h>
 
 // For mkdir.
 #ifdef CHY_HAS_DIRECT_H
@@ -35,6 +36,9 @@
 #endif
 
 #include "CFCUtil.h"
+
+static char    *thrown_error;
+static jmp_buf *current_env;
 
 void
 CFCUtil_null_check(const void *arg, const char *name, const char *file,
@@ -594,6 +598,21 @@ CFCUtil_closedir(void *dirhandle, const char *dir) {
 
 /***************************************************************************/
 
+jmp_buf*
+CFCUtil_try_start(jmp_buf *env) {
+    jmp_buf *prev_env = current_env;
+    current_env = env;
+    return prev_env;
+}
+
+char*
+CFCUtil_try_end(jmp_buf *prev_env) {
+    current_env = prev_env;
+    char *error = thrown_error;
+    thrown_error = NULL;
+    return error;
+}
+
 #ifdef CFCPERL
 
 #include "EXTERN.h"
@@ -605,8 +624,27 @@ void
 CFCUtil_die(const char* format, ...) {
     va_list args;
     va_start(args, format);
-    vcroak(format, &args);
-    va_end(args);
+
+    if (current_env) {
+        thrown_error = CFCUtil_vsprintf(format, args);
+        va_end(args);
+        longjmp(*current_env, 1);
+    }
+    else {
+        vcroak(format, &args);
+        va_end(args);
+    }
+}
+
+void
+CFCUtil_rethrow(char *error) {
+    if (current_env) {
+        thrown_error = error;
+        longjmp(*current_env, 1);
+    }
+    else {
+        croak("%s", error);
+    }
 }
 
 void
@@ -623,10 +661,31 @@ void
 CFCUtil_die(const char* format, ...) {
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-    fprintf(stderr, "\n");
-    exit(1);
+
+    if (current_env) {
+        thrown_error = CFCUtil_vsprintf(format, args);
+        va_end(args);
+        longjmp(*current_env, 1);
+    }
+    else {
+        vfprintf(stderr, format, args);
+        va_end(args);
+        fprintf(stderr, "\n");
+        abort();
+    }
+}
+
+void
+CFCUtil_rethrow(char *error) {
+    if (current_env) {
+        thrown_error = error;
+        longjmp(*current_env, 1);
+    }
+    else {
+        fprintf(stderr, "%s\n", error);
+        FREEMEM(error);
+        abort();
+    }
 }
 
 void
