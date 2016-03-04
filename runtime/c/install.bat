@@ -15,7 +15,7 @@ rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 rem See the License for the specific language governing permissions and
 rem limitations under the License.
 
-set major_version=0.4
+set major_version=0.5
 
 if "%1" == "--prefix" goto opt_prefix
 echo Usage: install.bat --prefix path

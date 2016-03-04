@@ -200,7 +200,7 @@ clownfish_extension = Extension('clownfish._clownfish',
                                  sources = c_filepaths)
 
 setup(name = 'clownfish',
-      version = '0.4.0',
+      version = '0.5.0',
       description = 'Clownfish runtime',
       author = 'Apache Lucy Project',
       author_email = 'dev at lucy dot apache dot org',
