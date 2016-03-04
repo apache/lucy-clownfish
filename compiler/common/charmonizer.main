@@ -260,7 +260,8 @@ S_write_makefile(struct chaz_CLI *cli) {
     }
     chaz_CFlags_destroy(link_flags);
 
-    rule = chaz_MakeFile_add_rule(makefile, "test", test_cfc_exe);
+    rule = chaz_MakeFile_add_rule(makefile, "test", "all");
+    chaz_MakeRule_add_prereq(rule, test_cfc_exe);
     chaz_MakeRule_add_command(rule, test_cfc_exe);
 
     if (chaz_CLI_defined(cli, "enable-coverage")) {
