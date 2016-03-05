@@ -59,7 +59,10 @@ CFCVariable*
 CFCVariable_init(CFCVariable *self, const char *exposure, const char *name,
                  struct CFCType *type, int inert) {
     // Validate params.
-    CFCUTIL_NULL_CHECK(type);
+    if (!type) {
+        CFCBase_decref((CFCBase*)self);
+        CFCUtil_die("type cannot be NULL");
+    }
 
     // Default exposure to "local".
     const char *real_exposure = exposure ? exposure : "local";
