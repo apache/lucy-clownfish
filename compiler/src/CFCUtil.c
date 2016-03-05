@@ -30,6 +30,17 @@
   #include <direct.h>
 #endif
 
+#if !defined(CHY_HAS_C99_SNPRINTF) && !defined(CHY_HAS__SCPRINTF)
+  #error "snprintf or replacement not available."
+#endif
+
+/* va_copy is not part of C89. Assume that simple assignment works if it
+ * isn't defined.
+ */
+#ifndef va_copy
+  #define va_copy(dst, src) ((dst) = (src))
+#endif
+
 #ifndef true
     #define true 1
     #define false 0
@@ -73,10 +84,6 @@ CFCUtil_sprintf(const char *fmt, ...) {
 
     return string;
 }
-
-#if !defined(CHY_HAS_C99_SNPRINTF) && !defined(CHY_HAS__SCPRINTF)
-  #error "snprintf or replacement not available."
-#endif
 
 char*
 CFCUtil_vsprintf(const char *fmt, va_list args) {
