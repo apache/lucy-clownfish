@@ -37,15 +37,9 @@
 #include "CFCTest.h"
 #include "CFCUtil.h"
 
-#define T_CFBASE          "t" CHY_DIR_SEP "cfbase"
-#define T_CFEXT           "t" CHY_DIR_SEP "cfext"
-#define T_CFDEST          "t" CHY_DIR_SEP "cfdest"
-#define T_CFDEST_INCLUDE  T_CFDEST CHY_DIR_SEP "include"
-#define T_CFDEST_SOURCE   T_CFDEST CHY_DIR_SEP "source"
-#define T_CFCLASH_CLASS   "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "class"
-#define T_CFCLASH_FILE    "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "file"
-#define T_CFCLASH_FOO     "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "foo"
-#define T_CFCLASH_BAR     "t" CHY_DIR_SEP "cfclash" CHY_DIR_SEP "bar"
+#define AUTOGEN          "autogen"
+#define AUTOGEN_INCLUDE  AUTOGEN CHY_DIR_SEP "include"
+#define AUTOGEN_SOURCE   AUTOGEN CHY_DIR_SEP "source"
 
 static void
 S_run_tests(CFCTest *test);
@@ -74,16 +68,18 @@ S_run_tests(CFCTest *test) {
 
 static void
 S_run_basic_tests(CFCTest *test) {
-    CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-    STR_EQ(test, CFCHierarchy_get_dest(hierarchy), T_CFDEST, "get_dest");
-    STR_EQ(test, CFCHierarchy_get_include_dest(hierarchy), T_CFDEST_INCLUDE,
+    char *cfbase_path = CFCTest_path("cfbase");
+
+    CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+    STR_EQ(test, CFCHierarchy_get_dest(hierarchy), AUTOGEN, "get_dest");
+    STR_EQ(test, CFCHierarchy_get_include_dest(hierarchy), AUTOGEN_INCLUDE,
            "get_include_dest");
-    STR_EQ(test, CFCHierarchy_get_source_dest(hierarchy), T_CFDEST_SOURCE,
+    STR_EQ(test, CFCHierarchy_get_source_dest(hierarchy), AUTOGEN_SOURCE,
            "get_source_dest");
 
-    CFCHierarchy_add_source_dir(hierarchy, T_CFBASE);
+    CFCHierarchy_add_source_dir(hierarchy, cfbase_path);
     const char **source_dirs = CFCHierarchy_get_source_dirs(hierarchy);
-    STR_EQ(test, source_dirs[0], T_CFBASE, "source_dirs[0]");
+    STR_EQ(test, source_dirs[0], cfbase_path, "source_dirs[0]");
     OK(test, source_dirs[1] == NULL, "source_dirs[1]");
 
     CFCHierarchy_build(hierarchy);
@@ -132,11 +128,11 @@ S_run_basic_tests(CFCTest *test) {
     time_t now       = time(NULL);
     time_t past_time = now - 2;
     static const char *const h_paths[] = {
-        T_CFDEST_INCLUDE CHY_DIR_SEP "Animal.h",
-        T_CFDEST_INCLUDE CHY_DIR_SEP "Animal" CHY_DIR_SEP "Dog.h",
-        T_CFDEST_INCLUDE CHY_DIR_SEP "Animal" CHY_DIR_SEP "Util.h"
+        AUTOGEN_INCLUDE CHY_DIR_SEP "Animal.h",
+        AUTOGEN_INCLUDE CHY_DIR_SEP "Animal" CHY_DIR_SEP "Dog.h",
+        AUTOGEN_INCLUDE CHY_DIR_SEP "Animal" CHY_DIR_SEP "Util.h"
     };
-    OK(test, CFCUtil_make_path(T_CFDEST_INCLUDE CHY_DIR_SEP "Animal"),
+    OK(test, CFCUtil_make_path(AUTOGEN_INCLUDE CHY_DIR_SEP "Animal"),
        "make_path");
     for (int i = 0; i < 3; ++i) {
         const char *h_path  = h_paths[i];
@@ -145,7 +141,7 @@ S_run_basic_tests(CFCTest *test) {
         CFCTest_set_file_times(h_path, past_time);
     }
 
-    char *cfh_path = CFCFile_cfh_path(animal, T_CFBASE);
+    char *cfh_path = CFCFile_cfh_path(animal, cfbase_path);
     CFCTest_set_file_times(cfh_path, now);
     FREEMEM(cfh_path);
 
@@ -160,24 +156,28 @@ S_run_basic_tests(CFCTest *test) {
     for (int i = 0; i < 3; ++i) {
         remove(h_paths[i]);
     }
-    rmdir(T_CFDEST_INCLUDE CHY_DIR_SEP "Animal");
-    rmdir(T_CFDEST_INCLUDE);
-    rmdir(T_CFDEST_SOURCE);
-    rmdir(T_CFDEST);
+    rmdir(AUTOGEN_INCLUDE CHY_DIR_SEP "Animal");
+    rmdir(AUTOGEN_INCLUDE);
+    rmdir(AUTOGEN_SOURCE);
+    rmdir(AUTOGEN);
 
     CFCBase_decref((CFCBase*)hierarchy);
+    FREEMEM(cfbase_path);
     CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 
 static void
 S_run_include_tests(CFCTest *test) {
+    char *cfbase_path = CFCTest_path("cfbase");
+    char *cfext_path  = CFCTest_path("cfext");
+
     {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFEXT);
-        CFCHierarchy_add_include_dir(hierarchy, T_CFBASE);
+        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+        CFCHierarchy_add_source_dir(hierarchy, cfext_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
         const char **include_dirs = CFCHierarchy_get_include_dirs(hierarchy);
-        STR_EQ(test, include_dirs[0], T_CFBASE, "include_dirs[0]");
+        STR_EQ(test, include_dirs[0], cfbase_path, "include_dirs[0]");
         OK(test, include_dirs[1] == NULL, "include_dirs[1]");
 
         CFCHierarchy_build(hierarchy);
@@ -210,9 +210,9 @@ S_run_include_tests(CFCTest *test) {
     }
 
     {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFBASE);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFEXT);
+        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+        CFCHierarchy_add_source_dir(hierarchy, cfbase_path);
+        CFCHierarchy_add_source_dir(hierarchy, cfext_path);
 
         CFCHierarchy_build(hierarchy);
 
@@ -239,9 +239,9 @@ S_run_include_tests(CFCTest *test) {
     }
 
     {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-        CFCHierarchy_add_include_dir(hierarchy, T_CFBASE);
-        CFCHierarchy_add_include_dir(hierarchy, T_CFEXT);
+        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfext_path);
         CFCHierarchy_add_prereq(hierarchy, "AnimalExtension");
 
         CFCHierarchy_build(hierarchy);
@@ -267,20 +267,29 @@ S_run_include_tests(CFCTest *test) {
         CFCParcel_reap_singletons();
     }
 
-    rmdir(T_CFDEST_INCLUDE);
-    rmdir(T_CFDEST_SOURCE);
-    rmdir(T_CFDEST);
+    rmdir(AUTOGEN_INCLUDE);
+    rmdir(AUTOGEN_SOURCE);
+    rmdir(AUTOGEN);
+
+    FREEMEM(cfbase_path);
+    FREEMEM(cfext_path);
 }
 
 static void
 S_run_clash_tests(CFCTest *test) {
+    char *cfbase_path        = CFCTest_path("cfbase");
+    char *cfclash_file_path  = CFCTest_path("cfclash" CHY_DIR_SEP "file");
+    char *cfclash_class_path = CFCTest_path("cfclash" CHY_DIR_SEP "class");
+    char *cfclash_foo_path   = CFCTest_path("cfclash" CHY_DIR_SEP "foo");
+    char *cfclash_bar_path   = CFCTest_path("cfclash" CHY_DIR_SEP "bar");
+
     if (getenv("LUCY_VALGRIND")) {
         SKIP(test, 1, "Exceptions leak");
     }
     else {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFBASE);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFCLASH_FILE);
+        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+        CFCHierarchy_add_source_dir(hierarchy, cfbase_path);
+        CFCHierarchy_add_source_dir(hierarchy, cfclash_file_path);
         char *error;
 
         CFCUTIL_TRY {
@@ -299,9 +308,9 @@ S_run_clash_tests(CFCTest *test) {
         SKIP(test, 1, "Exceptions leak");
     }
     else {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFCLASH_CLASS);
-        CFCHierarchy_add_include_dir(hierarchy, T_CFBASE);
+        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+        CFCHierarchy_add_source_dir(hierarchy, cfclash_class_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
         char *error;
 
         CFCUTIL_TRY {
@@ -317,9 +326,9 @@ S_run_clash_tests(CFCTest *test) {
     }
 
     {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFBASE);
-        CFCHierarchy_add_include_dir(hierarchy, T_CFCLASH_FILE);
+        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+        CFCHierarchy_add_source_dir(hierarchy, cfbase_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfclash_file_path);
 
         CFCHierarchy_build(hierarchy);
         CFCClass **ordered = CFCHierarchy_ordered_classes(hierarchy);
@@ -337,10 +346,10 @@ S_run_clash_tests(CFCTest *test) {
         SKIP(test, 1, "Exceptions leak");
     }
     else {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(T_CFDEST);
-        CFCHierarchy_add_source_dir(hierarchy, T_CFCLASH_BAR);
-        CFCHierarchy_add_include_dir(hierarchy, T_CFCLASH_FOO);
-        CFCHierarchy_add_include_dir(hierarchy, T_CFBASE);
+        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
+        CFCHierarchy_add_source_dir(hierarchy, cfclash_bar_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfclash_foo_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
         char *error;
 
         CFCUTIL_TRY {
@@ -355,8 +364,14 @@ S_run_clash_tests(CFCTest *test) {
         CFCParcel_reap_singletons();
     }
 
-    rmdir(T_CFDEST_INCLUDE);
-    rmdir(T_CFDEST_SOURCE);
-    rmdir(T_CFDEST);
+    rmdir(AUTOGEN_INCLUDE);
+    rmdir(AUTOGEN_SOURCE);
+    rmdir(AUTOGEN);
+
+    FREEMEM(cfbase_path);
+    FREEMEM(cfclash_file_path);
+    FREEMEM(cfclash_class_path);
+    FREEMEM(cfclash_foo_path);
+    FREEMEM(cfclash_bar_path);
 }
 

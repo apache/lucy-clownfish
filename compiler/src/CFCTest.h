@@ -70,7 +70,7 @@ CFCTest_destroy(CFCTest *self);
  * @return true if all tests were successful.
  */
 int
-CFCTest_run_all(CFCTest *self);
+CFCTest_run_all(CFCTest *self, const char *test_files_dir);
 
 /** Run a test batch by name.
  *
@@ -78,7 +78,12 @@ CFCTest_run_all(CFCTest *self);
  * @return true if all tests in the batch were successful.
  */
 int
-CFCTest_run_batch(CFCTest *self, const char *name);
+CFCTest_run_batch(CFCTest *self, const char *name, const char *test_files_dir);
+
+/** Return the full path for a test file or directory.
+ */
+char*
+CFCTest_path(const char *path);
 
 /* Collect result of a test.
  *

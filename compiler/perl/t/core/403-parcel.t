@@ -17,9 +17,13 @@ use strict;
 use warnings;
 
 use Clownfish::CFC::Test;
+use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
 
 my $test   = Clownfish::CFC::Test->new;
-my $passed = $test->run_batch('Clownfish::CFC::Model::Parcel');
+my $passed = $test->run_batch(
+    'Clownfish::CFC::Model::Parcel',
+    test_files_dir(),
+);
 
 exit($passed ? 0 : 1);
 

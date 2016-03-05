@@ -104,6 +104,8 @@ static const CFCMeta CFCTEST_META = {
     (CFCBase_destroy_t)CFCTest_destroy
 };
 
+static const char *S_test_files_dir;
+
 static const CFCTestFormatter S_formatter_cfish = {
     S_format_cfish_batch_prologue,
     S_format_cfish_vtest_result,
@@ -176,8 +178,10 @@ CFCTest_destroy(CFCTest *self) {
 }
 
 int
-CFCTest_run_all(CFCTest *self) {
+CFCTest_run_all(CFCTest *self, const char *test_files_dir) {
     int failed = 0;
+
+    S_test_files_dir = test_files_dir;
 
     for (int i = 0; S_batches[i]; ++i) {
         if (!S_do_run_batch(self, S_batches[i])) { failed = 1; }
@@ -187,7 +191,10 @@ CFCTest_run_all(CFCTest *self) {
 }
 
 int
-CFCTest_run_batch(CFCTest *self, const char *name) {
+CFCTest_run_batch(CFCTest *self, const char *name,
+                  const char *test_files_dir) {
+    S_test_files_dir = test_files_dir;
+
     for (int i = 0; S_batches[i]; ++i) {
         const CFCTestBatch *batch = S_batches[i];
         if (strcmp(batch->name, name) == 0) {
@@ -228,6 +235,15 @@ S_do_run_batch(CFCTest *self, const CFCTestBatch *batch) {
     self->num_failed_in_batch = 0;
 
     return !failed;
+}
+
+char*
+CFCTest_path(const char *path) {
+    const char *dir = S_test_files_dir
+                      ? S_test_files_dir
+                      : ".." CHY_DIR_SEP "common" CHY_DIR_SEP "test";
+
+    return CFCUtil_sprintf("%s" CHY_DIR_SEP "%s", dir, path);
 }
 
 void

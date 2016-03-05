@@ -16,6 +16,7 @@
 use strict;
 use warnings;
 
+use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
 use Test::More tests => 35;
 use File::Spec::Functions qw( catfile );
 
@@ -87,7 +88,7 @@ isa_ok(
 
 isa_ok(
     Clownfish::CFC::Model::Parcel->new_from_file(
-        path => catfile(qw( t cfbase Animal.cfp )),
+        path => catfile( test_files_dir(), qw( cfbase Animal.cfp ) ),
     ),
     "Clownfish::CFC::Model::Parcel",
     "new_from_file"

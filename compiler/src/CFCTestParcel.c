@@ -167,10 +167,11 @@ S_run_extended_tests(CFCTest *test) {
     }
 
     {
-        const char *path = "t" CHY_DIR_SEP "cfbase" CHY_DIR_SEP "Animal.cfp";
+        char *path = CFCTest_path("cfbase" CHY_DIR_SEP "Animal.cfp");
         CFCParcel *parcel = CFCParcel_new_from_file(path, NULL);
         OK(test, parcel != NULL, "new_from_file");
         CFCBase_decref((CFCBase*)parcel);
+        FREEMEM(path);
     }
 
     {
