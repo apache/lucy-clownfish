@@ -474,6 +474,9 @@ CFCClass_add_child(CFCClass *self, CFCClass *child) {
     if (self->tree_grown) {
         CFCUtil_die("Can't call add_child after grow_tree");
     }
+    if (self->is_final) {
+        CFCUtil_die("Can't inherit from final class %s", self->name);
+    }
     if (self->is_inert) {
         CFCUtil_die("Can't inherit from inert class %s", self->name);
     }

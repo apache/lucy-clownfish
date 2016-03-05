@@ -44,7 +44,7 @@ S_has_symbol(CFCSymbol **symbols, const char *name);
 
 const CFCTestBatch CFCTEST_BATCH_CLASS = {
     "Clownfish::CFC::Model::Class",
-    96,
+    97,
     S_run_tests
 };
 
@@ -211,6 +211,25 @@ S_run_tests(CFCTest *test) {
 
     CFCClass_add_child(foo, foo_jr);
     CFCClass_add_child(foo_jr, final_foo);
+
+    {
+        CFCClass *bar
+            = CFCClass_create(neato, NULL, "Foo::FooJr::FinalFoo::Bar", NULL,
+                              NULL, NULL, "Foo::FooJr::FinalFoo", false, false,
+                              false);
+        char *error;
+
+        CFCUTIL_TRY {
+            CFCClass_add_child(final_foo, bar);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "final class"),
+           "Can't add_child to final class");
+
+        FREEMEM(error);
+        CFCBase_decref((CFCBase*)bar);
+    }
+
     CFCClass_grow_tree(foo);
 
     {
