@@ -29,6 +29,7 @@
   #define OK      CFCTest_test_true
   #define STR_EQ  CFCTest_test_string_equals
   #define INT_EQ  CFCTest_test_int_equals
+  #define SKIP    CFCTest_skip
 #endif
 
 typedef struct CFCTest CFCTest;
@@ -112,7 +113,7 @@ CFCTest_test_int_equals(CFCTest *self, uint64_t result, uint64_t expected,
  * @param num Number of tests to skip.
  */
 void
-CFCTest_skip(CFCTest *self, int num);
+CFCTest_skip(CFCTest *self, int num, const char *fmt, ...);
 
 /* Finish testing.
  *

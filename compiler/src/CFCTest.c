@@ -37,6 +37,7 @@ typedef struct CFCTestFormatter {
                          va_list args);
     void (*test_comment)(const char *fmt, ...);
     void (*batch_comment)(const char *fmt, ...);
+    void (*skip)(int test_num, int num_skipped, const char *fmt, va_list args);
     void (*summary)(const CFCTest *test);
 } CFCTestFormatter;
 
@@ -71,6 +72,10 @@ static void
 S_format_cfish_batch_comment(const char *fmt, ...);
 
 static void
+S_format_cfish_skip(int test_num, int num_skipped, const char *fmt,
+                    va_list args);
+
+static void
 S_format_cfish_summary(const CFCTest *test);
 
 static void
@@ -87,6 +92,10 @@ static void
 S_format_tap_batch_comment(const char *fmt, ...);
 
 static void
+S_format_tap_skip(int test_num, int num_skipped, const char *fmt,
+                  va_list args);
+
+static void
 S_format_tap_summary(const CFCTest *test);
 
 static const CFCMeta CFCTEST_META = {
@@ -100,6 +109,7 @@ static const CFCTestFormatter S_formatter_cfish = {
     S_format_cfish_vtest_result,
     S_format_cfish_test_comment,
     S_format_cfish_batch_comment,
+    S_format_cfish_skip,
     S_format_cfish_summary
 };
 
@@ -108,6 +118,7 @@ static const CFCTestFormatter S_formatter_tap = {
     S_format_tap_vtest_result,
     S_format_tap_test_comment,
     S_format_tap_batch_comment,
+    S_format_tap_skip,
     S_format_tap_summary
 };
 
@@ -261,7 +272,12 @@ CFCTest_test_int_equals(CFCTest *self, uint64_t result, uint64_t expected,
 }
 
 void
-CFCTest_skip(CFCTest *self, int num) {
+CFCTest_skip(CFCTest *self, int num, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    self->formatter->skip(self->num_tests + 1, num, fmt, args);
+    va_end(args);
+
     self->num_tests          += num;
     self->num_tests_in_batch += num;
 }
@@ -327,6 +343,15 @@ S_format_cfish_batch_comment(const char *fmt, ...) {
 }
 
 static void
+S_format_cfish_skip(int test_num, int num_skipped, const char *fmt,
+                    va_list args) {
+    CHY_UNUSED_VAR(test_num);
+    CHY_UNUSED_VAR(num_skipped);
+    CHY_UNUSED_VAR(fmt);
+    CHY_UNUSED_VAR(args);
+}
+
+static void
 S_format_cfish_summary(const CFCTest *test) {
     if (test->num_batches == 0) {
         printf("No tests planned or run.\n");
@@ -376,6 +401,16 @@ S_format_tap_batch_comment(const char *fmt, ...) {
     va_start(args, fmt);
     vprintf(fmt, args);
     va_end(args);
+}
+
+static void
+S_format_tap_skip(int test_num, int num_skipped, const char *fmt,
+                  va_list args) {
+    for (int i = 0; i < num_skipped; ++i) {
+        printf("ok %d # SKIP ", test_num + i);
+        vprintf(fmt, args);
+        printf("\n");
+    }
 }
 
 static void
