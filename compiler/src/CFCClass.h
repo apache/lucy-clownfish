@@ -63,11 +63,10 @@ CFCClass_validate_class_name_component(const char *name);
  * to this class.
  * @param file_spec - Clownfish::CFC::Model::FileSpec of the file in which
  * this class was declared
- * @param docucomment A Clownfish::CFC::Model::DocuComment describing this
- * Class.
+ * @param parent_class_name The name of the parent class.
+ * @param is_final Should be true if the class is final.
  * @param is_inert Should be true if the class is inert, i.e. cannot be
  * instantiated.
- * @param is_final Should be true if the class is final.
  * @param is_abstract Should be true if the class is abstract.
  */
 CFCClass*
