@@ -14,6 +14,7 @@
 # limitations under the License.
 
 language: perl
+sudo: false
 # Override Travis' default Perl installation script.
 install: 'true'
 script: devel/bin/travis-test.sh
