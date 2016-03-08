@@ -30,6 +30,7 @@
 #include "Clownfish/HashIterator.h"
 #include "Clownfish/Method.h"
 #include "Clownfish/Num.h"
+#include "Clownfish/PtrHash.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/StringHelper.h"
@@ -38,19 +39,29 @@
 #define XSBIND_REFCOUNT_FLAG   1
 #define XSBIND_REFCOUNT_SHIFT  1
 
+// Used to remember converted objects in array and hash conversion to
+// handle circular references. The root object and SV are stored separately
+// to allow lazy creation of the seen PtrHash.
+typedef struct {
+    cfish_Obj     *root_obj;
+    SV            *root_sv;
+    cfish_PtrHash *seen;
+} cfish_ConversionCache;
+
 static bool
 S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
-                      void *allocation, cfish_Obj **obj_ptr);
+                      void *allocation, cfish_ConversionCache *cache,
+                      cfish_Obj **obj_ptr);
 
 // Convert a Perl hash into a Clownfish Hash.  Caller takes responsibility for
 // a refcount.
 static cfish_Hash*
-S_perl_hash_to_cfish_hash(pTHX_ HV *phash);
+S_perl_hash_to_cfish_hash(pTHX_ HV *phash, cfish_ConversionCache *cache);
 
 // Convert a Perl array into a Clownfish Vector.  Caller takes responsibility
 // for a refcount.
 static cfish_Vector*
-S_perl_array_to_cfish_array(pTHX_ AV *parray);
+S_perl_array_to_cfish_array(pTHX_ AV *parray, cfish_ConversionCache *cache);
 
 cfish_Obj*
 XSBind_new_blank_obj(pTHX_ SV *either_sv) {
@@ -103,7 +114,7 @@ XSBind_sv_true(pTHX_ SV *sv) {
 cfish_Obj*
 XSBind_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass) {
     cfish_Obj *retval = NULL;
-    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, true, NULL, &retval)) {
+    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, true, NULL, NULL, &retval)) {
         THROW(CFISH_ERR, "Can't convert to %o", CFISH_Class_Get_Name(klass));
     }
     else if (!retval) {
@@ -115,7 +126,7 @@ XSBind_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass) {
 cfish_Obj*
 XSBind_perl_to_cfish_nullable(pTHX_ SV *sv, cfish_Class *klass) {
     cfish_Obj *retval = NULL;
-    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, true, NULL, &retval)) {
+    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, true, NULL, NULL, &retval)) {
         THROW(CFISH_ERR, "Can't convert to %o", CFISH_Class_Get_Name(klass));
     }
     return retval;
@@ -124,7 +135,9 @@ XSBind_perl_to_cfish_nullable(pTHX_ SV *sv, cfish_Class *klass) {
 cfish_Obj*
 XSBind_perl_to_cfish_noinc(pTHX_ SV *sv, cfish_Class *klass, void *allocation) {
     cfish_Obj *retval = NULL;
-    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, false, allocation, &retval)) {
+    if (!S_maybe_perl_to_cfish(aTHX_ sv, klass, false, allocation, NULL,
+                               &retval)
+       ) {
         THROW(CFISH_ERR, "Can't convert to %o", CFISH_Class_Get_Name(klass));
     }
     else if (!retval) {
@@ -135,7 +148,8 @@ XSBind_perl_to_cfish_noinc(pTHX_ SV *sv, cfish_Class *klass, void *allocation) {
 
 static bool
 S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
-                      void *allocation, cfish_Obj **obj_ptr) {
+                      void *allocation, cfish_ConversionCache *cache,
+                      cfish_Obj **obj_ptr) {
     if (sv_isobject(sv)) {
         cfish_String *class_name = CFISH_Class_Get_Name(klass);
         // Assume that the class name is always NULL-terminated. Somewhat
@@ -161,13 +175,13 @@ S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
         if (inner_type == SVt_PVAV) {
             if (klass == CFISH_VECTOR || klass == CFISH_OBJ) {
                 obj = (cfish_Obj*)
-                         S_perl_array_to_cfish_array(aTHX_ (AV*)inner);
+                         S_perl_array_to_cfish_array(aTHX_ (AV*)inner, cache);
             }
         }
         else if (inner_type == SVt_PVHV) {
             if (klass == CFISH_HASH || klass == CFISH_OBJ) {
                 obj = (cfish_Obj*)
-                         S_perl_hash_to_cfish_hash(aTHX_ (HV*)inner);
+                         S_perl_hash_to_cfish_hash(aTHX_ (HV*)inner, cache);
             }
         }
         else if (inner_type < SVt_PVAV && !SvOK(inner)) {
@@ -250,9 +264,39 @@ XSBind_hash_key_to_utf8(pTHX_ HE *entry, STRLEN *size_ptr) {
 }
 
 static cfish_Hash*
-S_perl_hash_to_cfish_hash(pTHX_ HV *phash) {
+S_perl_hash_to_cfish_hash(pTHX_ HV *phash, cfish_ConversionCache *cache) {
+    cfish_ConversionCache new_cache;
+
+    if (cache) {
+        // Lookup perl hash in conversion cache.
+        if ((SV*)phash == cache->root_sv) {
+            return (cfish_Hash*)CFISH_INCREF(cache->root_obj);
+        }
+        if (cache->seen) {
+            void *cached_hash = CFISH_PtrHash_Fetch(cache->seen, phash);
+            if (cached_hash) {
+                return (cfish_Hash*)CFISH_INCREF(cached_hash);
+            }
+        }
+    }
+
     uint32_t    num_keys = hv_iterinit(phash);
     cfish_Hash *retval   = cfish_Hash_new(num_keys);
+
+    if (!cache) {
+        // Set up conversion cache.
+        cache = &new_cache;
+        cache->root_obj = (cfish_Obj*)retval;
+        cache->root_sv  = (SV*)phash;
+        cache->seen     = NULL;
+    }
+    else {
+        if (!cache->seen) {
+            // Create PtrHash lazily.
+            cache->seen = cfish_PtrHash_new(0);
+        }
+        CFISH_PtrHash_Store(cache->seen, phash, retval);
+    }
 
     while (num_keys--) {
         HE         *entry    = hv_iternext(phash);
@@ -261,30 +305,76 @@ S_perl_hash_to_cfish_hash(pTHX_ HV *phash) {
         SV         *value_sv = HeVAL(entry);
 
         // Recurse.
-        cfish_Obj *value
-            = XSBind_perl_to_cfish_nullable(aTHX_ value_sv, CFISH_OBJ);
+        cfish_Obj *value;
+        bool success = S_maybe_perl_to_cfish(aTHX_ value_sv, CFISH_OBJ,
+                                             true, NULL, cache, &value);
+        if (!success) {
+            THROW(CFISH_ERR, "Can't convert to Clownfish::Obj");
+        }
 
         CFISH_Hash_Store_Utf8(retval, key_str, key_len, value);
+    }
+
+    if (cache == &new_cache && cache->seen) {
+        CFISH_PtrHash_Destroy(cache->seen);
     }
 
     return retval;
 }
 
 static cfish_Vector*
-S_perl_array_to_cfish_array(pTHX_ AV *parray) {
+S_perl_array_to_cfish_array(pTHX_ AV *parray, cfish_ConversionCache *cache) {
+    cfish_ConversionCache new_cache;
+
+    if (cache) {
+        // Lookup perl array in conversion cache.
+        if ((SV*)parray == cache->root_sv) {
+            return (cfish_Vector*)CFISH_INCREF(cache->root_obj);
+        }
+        if (cache->seen) {
+            void *cached_vector = CFISH_PtrHash_Fetch(cache->seen, parray);
+            if (cached_vector) {
+                return (cfish_Vector*)CFISH_INCREF(cached_vector);
+            }
+        }
+    }
+
     const uint32_t  size   = av_len(parray) + 1;
     cfish_Vector   *retval = cfish_Vec_new(size);
+
+    if (!cache) {
+        // Set up conversion cache.
+        cache = &new_cache;
+        cache->root_obj = (cfish_Obj*)retval;
+        cache->root_sv  = (SV*)parray;
+        cache->seen     = NULL;
+    }
+    else {
+        if (!cache->seen) {
+            // Create PtrHash lazily.
+            cache->seen = cfish_PtrHash_new(0);
+        }
+        CFISH_PtrHash_Store(cache->seen, parray, retval);
+    }
 
     // Iterate over array elems.
     for (uint32_t i = 0; i < size; i++) {
         SV **elem_sv = av_fetch(parray, i, false);
         if (elem_sv) {
-            cfish_Obj *elem
-                = XSBind_perl_to_cfish_nullable(aTHX_ *elem_sv, CFISH_OBJ);
+            cfish_Obj *elem;
+            bool success = S_maybe_perl_to_cfish(aTHX_ *elem_sv, CFISH_OBJ,
+                                                 true, NULL, cache, &elem);
+            if (!success) {
+                THROW(CFISH_ERR, "Can't convert to Clownfish::Obj");
+            }
             if (elem) { CFISH_Vec_Store(retval, i, elem); }
         }
     }
     CFISH_Vec_Resize(retval, size); // needed if last elem is NULL
+
+    if (cache == &new_cache && cache->seen) {
+        CFISH_PtrHash_Destroy(cache->seen);
+    }
 
     return retval;
 }
@@ -391,7 +481,9 @@ XSBind_arg_to_cfish(pTHX_ SV *value, const char *label, cfish_Class *klass,
                     void *allocation) {
     cfish_Obj *obj = NULL;
 
-    if (!S_maybe_perl_to_cfish(aTHX_ value, klass, false, allocation, &obj)) {
+    if (!S_maybe_perl_to_cfish(aTHX_ value, klass, false, allocation, NULL,
+                               &obj)
+       ) {
         THROW(CFISH_ERR, "Invalid value for '%s' - not a %o", label,
               CFISH_Class_Get_Name(klass));
         CFISH_UNREACHABLE_RETURN(cfish_Obj*);
@@ -409,7 +501,9 @@ XSBind_arg_to_cfish_nullable(pTHX_ SV *value, const char *label,
                              cfish_Class *klass, void *allocation) {
     cfish_Obj *obj = NULL;
 
-    if (!S_maybe_perl_to_cfish(aTHX_ value, klass, false, allocation, &obj)) {
+    if (!S_maybe_perl_to_cfish(aTHX_ value, klass, false, allocation, NULL,
+                               &obj)
+       ) {
         THROW(CFISH_ERR, "Invalid value for '%s' - not a %o", label,
               CFISH_Class_Get_Name(klass));
         CFISH_UNREACHABLE_RETURN(cfish_Obj*);

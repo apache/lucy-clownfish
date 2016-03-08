@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 10;
+use Test::More tests => 12;
 use Clownfish qw( to_clownfish );
 
 my $hash = Clownfish::Hash->new( capacity => 10 );
@@ -44,4 +44,16 @@ my %hash_with_utf8_keys = ( "\x{263a}" => "foo" );
 my $round_tripped = to_clownfish( \%hash_with_utf8_keys )->to_perl;
 is_deeply( $round_tripped, \%hash_with_utf8_keys,
     "Round trip conversion of hash with UTF-8 keys" );
+
+my $hashref = {};
+$hashref->{foo} = $hashref;
+$hashref->{bar} = [ $hashref ];
+
+$hash = to_clownfish($hashref);
+is( $$hash, ${ $hash->fetch_raw('foo') },
+    'to_clownfish($hashref) handles circular references' );
+
+$hash = to_clownfish({ key => $hashref })->fetch_raw('key');
+is( $$hash, ${ $hash->fetch_raw('bar')->fetch_raw(0) },
+    'to_clownfish($hashref) handles deep circular references' );
 
