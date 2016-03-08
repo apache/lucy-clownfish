@@ -719,7 +719,8 @@ XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
 }
 
 void*
-CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
+CFISH_Obj_To_Host_IMP(cfish_Obj *self, void *vcache) {
+    CFISH_UNUSED_VAR(vcache);
     dTHX;
     return XSBind_cfish_obj_to_sv_inc(aTHX_ self);
 }
@@ -752,8 +753,8 @@ cfish_Class_register_with_host(cfish_Class *singleton, cfish_Class *parent) {
     SAVETMPS;
     EXTEND(SP, 2);
     PUSHMARK(SP);
-    mPUSHs((SV*)CFISH_Class_To_Host(singleton));
-    mPUSHs((SV*)CFISH_Class_To_Host(parent));
+    mPUSHs((SV*)CFISH_Class_To_Host(singleton, NULL));
+    mPUSHs((SV*)CFISH_Class_To_Host(parent, NULL));
     PUTBACK;
     call_pv("Clownfish::Class::_register", G_VOID | G_DISCARD);
     FREETMPS;
@@ -768,7 +769,7 @@ cfish_Class_fresh_host_methods(cfish_String *class_name) {
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs((SV*)CFISH_Str_To_Host(class_name));
+    mPUSHs((SV*)CFISH_Str_To_Host(class_name, NULL));
     PUTBACK;
     call_pv("Clownfish::Class::_fresh_host_methods", G_SCALAR);
     SPAGAIN;
@@ -788,7 +789,7 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     SAVETMPS;
     EXTEND(SP, 1);
     PUSHMARK(SP);
-    mPUSHs((SV*)CFISH_Str_To_Host(class_name));
+    mPUSHs((SV*)CFISH_Str_To_Host(class_name, NULL));
     PUTBACK;
     call_pv("Clownfish::Class::_find_parent_class", G_SCALAR);
     SPAGAIN;
@@ -863,7 +864,7 @@ cfish_Err_set_error(cfish_Err *error) {
     PUSHMARK(SP);
     PUSHmortal;
     if (error) {
-        mPUSHs((SV*)CFISH_Err_To_Host(error));
+        mPUSHs((SV*)CFISH_Err_To_Host(error, NULL));
     }
     else {
         PUSHmortal;
@@ -878,7 +879,7 @@ void
 cfish_Err_do_throw(cfish_Err *err) {
     dTHX;
     dSP;
-    SV *error_sv = (SV*)CFISH_Err_To_Host(err);
+    SV *error_sv = (SV*)CFISH_Err_To_Host(err, NULL);
     CFISH_DECREF(err);
     ENTER;
     SAVETMPS;
@@ -900,7 +901,7 @@ cfish_Err_throw_mess(cfish_Class *klass, cfish_String *message) {
 void
 cfish_Err_warn_mess(cfish_String *message) {
     dTHX;
-    SV *error_sv = (SV*)CFISH_Str_To_Host(message);
+    SV *error_sv = (SV*)CFISH_Str_To_Host(message, NULL);
     CFISH_DECREF(message);
     warn("%s", SvPV_nolen(error_sv));
     SvREFCNT_dec(error_sv);
@@ -955,7 +956,8 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
 /**************************** Clownfish::String *****************************/
 
 void*
-CFISH_Str_To_Host_IMP(cfish_String *self) {
+CFISH_Str_To_Host_IMP(cfish_String *self, void *vcache) {
+    CFISH_UNUSED_VAR(vcache);
     dTHX;
     SV *sv = newSVpvn(CFISH_Str_Get_Ptr8(self), CFISH_Str_Get_Size(self));
     SvUTF8_on(sv);
@@ -965,7 +967,8 @@ CFISH_Str_To_Host_IMP(cfish_String *self) {
 /***************************** Clownfish::Blob ******************************/
 
 void*
-CFISH_Blob_To_Host_IMP(cfish_Blob *self) {
+CFISH_Blob_To_Host_IMP(cfish_Blob *self, void *vcache) {
+    CFISH_UNUSED_VAR(vcache);
     dTHX;
     return newSVpvn(CFISH_Blob_Get_Buf(self), CFISH_Blob_Get_Size(self));
 }
@@ -973,7 +976,8 @@ CFISH_Blob_To_Host_IMP(cfish_Blob *self) {
 /**************************** Clownfish::ByteBuf ****************************/
 
 void*
-CFISH_BB_To_Host_IMP(cfish_ByteBuf *self) {
+CFISH_BB_To_Host_IMP(cfish_ByteBuf *self, void *vcache) {
+    CFISH_UNUSED_VAR(vcache);
     dTHX;
     return newSVpvn(CFISH_BB_Get_Buf(self), CFISH_BB_Get_Size(self));
 }
@@ -981,7 +985,7 @@ CFISH_BB_To_Host_IMP(cfish_ByteBuf *self) {
 /**************************** Clownfish::Vector *****************************/
 
 void*
-CFISH_Vec_To_Host_IMP(cfish_Vector *self) {
+CFISH_Vec_To_Host_IMP(cfish_Vector *self, void *vcache) {
     dTHX;
     AV *perl_array = newAV();
     uint32_t num_elems = CFISH_Vec_Get_Size(self);
@@ -996,7 +1000,7 @@ CFISH_Vec_To_Host_IMP(cfish_Vector *self) {
             }
             else {
                 // Recurse for each value.
-                SV *const val_sv = (SV*)CFISH_Obj_To_Host(val);
+                SV *const val_sv = (SV*)CFISH_Obj_To_Host(val, vcache);
                 av_store(perl_array, i, val_sv);
             }
         }
@@ -1008,7 +1012,7 @@ CFISH_Vec_To_Host_IMP(cfish_Vector *self) {
 /***************************** Clownfish::Hash ******************************/
 
 void*
-CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
+CFISH_Hash_To_Host_IMP(cfish_Hash *self, void *vcache) {
     dTHX;
     HV *perl_hash = newHV();
     cfish_HashIterator *iter = cfish_HashIter_new(self);
@@ -1021,7 +1025,9 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
 
         // Recurse for each value.
         cfish_Obj *val    = CFISH_HashIter_Get_Value(iter);
-        SV        *val_sv = XSBind_cfish_to_perl(aTHX_ val);
+        SV        *val_sv = val
+                            ? (SV*)CFISH_Obj_To_Host(val, vcache)
+                            : newSV(0);
 
         // Using a negative `klen` argument to signal UTF-8 is undocumented
         // in older Perl versions but works since 5.8.0.
@@ -1035,13 +1041,15 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self) {
 /****************************** Clownfish::Num ******************************/
 
 void*
-CFISH_Float_To_Host_IMP(cfish_Float *self) {
+CFISH_Float_To_Host_IMP(cfish_Float *self, void *vcache) {
+    CFISH_UNUSED_VAR(vcache);
     dTHX;
     return newSVnv(self->value);
 }
 
 void*
-CFISH_Int_To_Host_IMP(cfish_Integer *self) {
+CFISH_Int_To_Host_IMP(cfish_Integer *self, void *vcache) {
+    CFISH_UNUSED_VAR(vcache);
     dTHX;
     SV *sv = NULL;
 
@@ -1056,7 +1064,8 @@ CFISH_Int_To_Host_IMP(cfish_Integer *self) {
 }
 
 void*
-CFISH_Bool_To_Host_IMP(cfish_Boolean *self) {
+CFISH_Bool_To_Host_IMP(cfish_Boolean *self, void *vcache) {
+    CFISH_UNUSED_VAR(vcache);
     dTHX;
     return newSViv((IV)self->value);
 }

@@ -750,7 +750,6 @@ END_POD
     $pod_spec->set_synopsis($synopsis);
     $pod_spec->set_description($description);
     $pod_spec->add_method(
-        method => 'To_Host',
         alias  => 'to_perl',
         pod    => $to_perl_pod,
     );
@@ -768,7 +767,7 @@ get_class(self)
     cfish_Obj *self
 CODE:
     cfish_Class *klass = cfish_Obj_get_class(self);
-    RETVAL = (SV*)CFISH_Class_To_Host(klass);
+    RETVAL = (SV*)CFISH_Class_To_Host(klass, NULL);
 OUTPUT: RETVAL
 
 SV*
@@ -776,7 +775,7 @@ get_class_name(self)
     cfish_Obj *self
 CODE:
     cfish_String *class_name = cfish_Obj_get_class_name(self);
-    RETVAL = (SV*)CFISH_Str_To_Host(class_name);
+    RETVAL = (SV*)CFISH_Str_To_Host(class_name, NULL);
 OUTPUT: RETVAL
 
 bool
@@ -801,7 +800,7 @@ SV*
 to_perl(self)
     cfish_Obj *self;
 CODE:
-    RETVAL = (SV*)CFISH_Obj_To_Host(self);
+    RETVAL = (SV*)CFISH_Obj_To_Host(self, NULL);
 OUTPUT: RETVAL
 END_XS_CODE
 
@@ -921,7 +920,7 @@ CODE:
 {
     cfish_Class *klass = cfish_Class_fetch_class(class_name);
     CFISH_UNUSED_VAR(unused_sv);
-    RETVAL = klass ? (SV*)CFISH_Class_To_Host(klass) : &PL_sv_undef;
+    RETVAL = klass ? (SV*)CFISH_Class_To_Host(klass, NULL) : &PL_sv_undef;
 }
 OUTPUT: RETVAL
 
@@ -948,7 +947,7 @@ CODE:
                 aTHX_ ST(locations[1]), "parent", CFISH_CLASS, NULL);
     }
     singleton = cfish_Class_singleton(class_name, parent);
-    RETVAL = (SV*)CFISH_Class_To_Host(singleton);
+    RETVAL = (SV*)CFISH_Class_To_Host(singleton, NULL);
 }
 OUTPUT: RETVAL
 END_XS_CODE

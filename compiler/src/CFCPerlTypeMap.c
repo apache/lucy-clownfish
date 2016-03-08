@@ -278,7 +278,7 @@ CFCPerlTypeMap_write_xs_typemap(CFCHierarchy *hierarchy) {
                             class_var, ", ", allocation, ");\n\n", NULL);
 
         output = CFCUtil_cat(output, class_var, "_\n"
-                             "    $arg = (SV*)CFISH_Obj_To_Host((cfish_Obj*)$var);\n"
+                             "    $arg = (SV*)CFISH_Obj_To_Host((cfish_Obj*)$var, NULL);\n"
                              "    CFISH_DECREF($var);\n"
                              "\n", NULL);
     }

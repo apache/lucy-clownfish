@@ -37,7 +37,7 @@ cfish_dec_refcount(void *vself) {
 }
 
 void*
-CFISH_Obj_To_Host_IMP(cfish_Obj *self) {
+CFISH_Obj_To_Host_IMP(cfish_Obj *self, void *vcache) {
     THROW(CFISH_ERR, "TODO");
     UNREACHABLE_RETURN(void*);
 }

@@ -76,7 +76,7 @@ public final class Clownfish::ByteBuf nickname BB inherits Clownfish::Obj {
                      size_t capacity);
 
     void*
-    To_Host(ByteBuf *self);
+    To_Host(ByteBuf *self, void *vcache);
 
     /** Resize the ByteBuf to `size`.  If greater than the object's capacity,
      * throws an error.
