@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 14;
 use Clownfish qw( to_clownfish );
 
 my $hash = Clownfish::Hash->new( capacity => 10 );
@@ -53,7 +53,16 @@ $hash = to_clownfish($hashref);
 is( $$hash, ${ $hash->fetch_raw('foo') },
     'to_clownfish($hashref) handles circular references' );
 
-$hash = to_clownfish({ key => $hashref })->fetch_raw('key');
-is( $$hash, ${ $hash->fetch_raw('bar')->fetch_raw(0) },
+my $roundtripped = $hash->to_perl;
+is_deeply( $roundtripped, $hashref, 'to_perl handles circular references' );
+
+$hashref = { key => $hashref };
+$hash = to_clownfish($hashref);
+my $val = $hash->fetch_raw('key');
+is( $$val, ${ $val->fetch_raw('bar')->fetch_raw(0) },
     'to_clownfish($hashref) handles deep circular references' );
+
+$roundtripped = $hash->to_perl;
+is_deeply( $roundtripped, $hashref,
+           'to_perl handles deep circular references' );
 

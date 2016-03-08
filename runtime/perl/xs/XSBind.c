@@ -987,23 +987,62 @@ CFISH_BB_To_Host_IMP(cfish_ByteBuf *self, void *vcache) {
 void*
 CFISH_Vec_To_Host_IMP(cfish_Vector *self, void *vcache) {
     dTHX;
+    cfish_ConversionCache *cache = (cfish_ConversionCache*)vcache;
+    cfish_ConversionCache  new_cache;
+
+    if (cache) {
+        // Lookup Vector in conversion cache.
+        if ((cfish_Obj*)self == cache->root_obj) {
+            return newRV_inc(cache->root_sv);
+        }
+        if (cache->seen) {
+            void *cached_av = CFISH_PtrHash_Fetch(cache->seen, self);
+            if (cached_av) {
+                return newRV_inc((SV*)cached_av);
+            }
+        }
+    }
+
     AV *perl_array = newAV();
-    uint32_t num_elems = CFISH_Vec_Get_Size(self);
+
+    if (!cache) {
+        // Set up conversion cache.
+        cache = &new_cache;
+        cache->root_obj = (cfish_Obj*)self;
+        cache->root_sv  = (SV*)perl_array;
+        cache->seen     = NULL;
+    }
+    else {
+        if (!cache->seen) {
+            // Create PtrHash lazily.
+            cache->seen = cfish_PtrHash_new(0);
+        }
+        CFISH_PtrHash_Store(cache->seen, self, perl_array);
+    }
+
+    size_t num_elems = CFISH_Vec_Get_Size(self);
 
     // Iterate over array elems.
     if (num_elems) {
+        if (num_elems > I32_MAX) {
+            THROW(CFISH_ERR, "Vector too large for Perl AV");
+        }
         av_fill(perl_array, num_elems - 1);
-        for (uint32_t i = 0; i < num_elems; i++) {
+        for (size_t i = 0; i < num_elems; i++) {
             cfish_Obj *val = CFISH_Vec_Fetch(self, i);
             if (val == NULL) {
                 continue;
             }
             else {
                 // Recurse for each value.
-                SV *const val_sv = (SV*)CFISH_Obj_To_Host(val, vcache);
+                SV *const val_sv = (SV*)CFISH_Obj_To_Host(val, cache);
                 av_store(perl_array, i, val_sv);
             }
         }
+    }
+
+    if (cache == &new_cache && cache->seen) {
+        CFISH_PtrHash_Destroy(cache->seen);
     }
 
     return newRV_noinc((SV*)perl_array);
@@ -1014,7 +1053,39 @@ CFISH_Vec_To_Host_IMP(cfish_Vector *self, void *vcache) {
 void*
 CFISH_Hash_To_Host_IMP(cfish_Hash *self, void *vcache) {
     dTHX;
+    cfish_ConversionCache *cache = (cfish_ConversionCache*)vcache;
+    cfish_ConversionCache  new_cache;
+
+    if (cache) {
+        // Lookup Hash in conversion cache.
+        if ((cfish_Obj*)self == cache->root_obj) {
+            return newRV_inc(cache->root_sv);
+        }
+        if (cache->seen) {
+            void *cached_hv = CFISH_PtrHash_Fetch(cache->seen, self);
+            if (cached_hv) {
+                return newRV_inc((SV*)cached_hv);
+            }
+        }
+    }
+
     HV *perl_hash = newHV();
+
+    if (!cache) {
+        // Set up conversion cache.
+        cache = &new_cache;
+        cache->root_obj = (cfish_Obj*)self;
+        cache->root_sv  = (SV*)perl_hash;
+        cache->seen     = NULL;
+    }
+    else {
+        if (!cache->seen) {
+            // Create PtrHash lazily.
+            cache->seen = cfish_PtrHash_new(0);
+        }
+        CFISH_PtrHash_Store(cache->seen, self, perl_hash);
+    }
+
     cfish_HashIterator *iter = cfish_HashIter_new(self);
 
     // Iterate over key-value pairs.
@@ -1026,12 +1097,16 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self, void *vcache) {
         // Recurse for each value.
         cfish_Obj *val    = CFISH_HashIter_Get_Value(iter);
         SV        *val_sv = val
-                            ? (SV*)CFISH_Obj_To_Host(val, vcache)
+                            ? (SV*)CFISH_Obj_To_Host(val, cache)
                             : newSV(0);
 
         // Using a negative `klen` argument to signal UTF-8 is undocumented
         // in older Perl versions but works since 5.8.0.
         hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
+    }
+
+    if (cache == &new_cache && cache->seen) {
+        CFISH_PtrHash_Destroy(cache->seen);
     }
 
     CFISH_DECREF(iter);

@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Clownfish qw( to_clownfish );
 
 my ( $vector, $twin );
@@ -56,4 +56,7 @@ is(
     },
     'to_clownfish($arrayref) handles deep circular references'
 );
+
+my $roundtripped = $vector->to_perl;
+is_deeply( $roundtripped, $arrayref, 'to_perl handles circular references');
 
