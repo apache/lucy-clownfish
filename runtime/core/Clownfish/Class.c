@@ -50,9 +50,6 @@ S_set_name(Class *self, const char *utf8, size_t size);
 static Method*
 S_find_method(Class *self, const char *meth_name);
 
-static int32_t
-S_claim_parcel_id(void);
-
 static LockFreeRegistry *Class_registry;
 cfish_Class_bootstrap_hook1_t cfish_Class_bootstrap_hook1;
 
@@ -63,8 +60,6 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
     const OverriddenMethSpec *overridden_specs = parcel_spec->overridden_specs;
     const InheritedMethSpec  *inherited_specs  = parcel_spec->inherited_specs;
     uint32_t num_classes = parcel_spec->num_classes;
-
-    int32_t parcel_id = S_claim_parcel_id();
 
     /* Pass 1:
      * - Allocate memory.
@@ -107,7 +102,7 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
      * - Initialize IVARS_OFFSET.
      * - Initialize 'klass' ivar and refcount by calling Init_Obj.
      * - Initialize parent, flags, obj_alloc_size, class_alloc_size.
-     * - Assign parcel_id.
+     * - Assign parcel_spec.
      * - Initialize method pointers and offsets.
      */
     uint32_t num_novel      = 0;
@@ -122,7 +117,7 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
         if (spec->ivars_offset_ptr != NULL) {
             if (parent) {
                 Class *ancestor = parent;
-                while (ancestor && ancestor->parcel_id == parcel_id) {
+                while (ancestor && ancestor->parcel_spec == parcel_spec) {
                     ancestor = ancestor->parent;
                 }
                 ivars_offset = ancestor ? ancestor->obj_alloc_size : 0;
@@ -137,8 +132,8 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
         // values set in the previous pass or by another thread.
         Class_Init_Obj_IMP(CLASS, klass);
 
-        klass->parent    = parent;
-        klass->parcel_id = parcel_id;
+        klass->parent      = parent;
+        klass->parcel_spec = parcel_spec;
 
         // CLASS->obj_alloc_size must stay at 0.
         if (klass != CLASS) {
@@ -316,7 +311,6 @@ S_simple_subclass(Class *parent, String *name) {
 
     subclass->parent           = parent;
     subclass->flags            = parent->flags;
-    subclass->parcel_id        = parent->parcel_id;
     subclass->obj_alloc_size   = parent->obj_alloc_size;
     subclass->class_alloc_size = parent->class_alloc_size;
     subclass->methods          = (Method**)CALLOCATE(1, sizeof(Method*));
@@ -481,24 +475,5 @@ S_find_method(Class *self, const char *name) {
     }
 
     return NULL;
-}
-
-static size_t parcel_count;
-
-static int32_t
-S_claim_parcel_id(void) {
-    // TODO: use ordinary cas rather than cas_ptr.
-    union { size_t num; void *ptr; } old_value;
-    union { size_t num; void *ptr; } new_value;
-
-    bool succeeded = false;
-    do {
-        old_value.num = parcel_count;
-        new_value.num = old_value.num + 1;
-        succeeded = Atomic_cas_ptr((void*volatile*)&parcel_count,
-                                   old_value.ptr, new_value.ptr);
-    } while (!succeeded);
-
-    return (int32_t)new_value.num;
 }
 
