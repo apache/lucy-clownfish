@@ -224,7 +224,16 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
 
 void
 Class_Destroy_IMP(Class *self) {
-    THROW(ERR, "Insane attempt to destroy Class for class '%o'", self->name);
+    for (size_t i = 0; self->methods[i]; i++) {
+        // Call Destroy directly instead of going through DECREF.
+        Method_Destroy(self->methods[i]);
+    }
+    FREEMEM(self->methods);
+
+    DECREF(self->name);
+    DECREF(self->name_internal);
+
+    SUPER_DESTROY(self, CLASS);
 }
 
 void
