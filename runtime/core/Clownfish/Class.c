@@ -57,17 +57,20 @@ static LockFreeRegistry *Class_registry;
 cfish_Class_bootstrap_hook1_t cfish_Class_bootstrap_hook1;
 
 void
-Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
-                const cfish_NovelMethSpec *novel_specs,
-                const cfish_OverriddenMethSpec *overridden_specs,
-                const cfish_InheritedMethSpec *inherited_specs) {
+Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
+    const ClassSpec          *specs            = parcel_spec->class_specs;
+    const NovelMethSpec      *novel_specs      = parcel_spec->novel_specs;
+    const OverriddenMethSpec *overridden_specs = parcel_spec->overridden_specs;
+    const InheritedMethSpec  *inherited_specs  = parcel_spec->inherited_specs;
+    uint32_t num_classes = parcel_spec->num_classes;
+
     int32_t parcel_id = S_claim_parcel_id();
 
     /* Pass 1:
      * - Allocate memory.
      * - Initialize global Class pointers.
      */
-    for (size_t i = 0; i < num_specs; ++i) {
+    for (uint32_t i = 0; i < num_classes; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *parent = NULL;
 
@@ -110,7 +113,7 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
     uint32_t num_novel      = 0;
     uint32_t num_overridden = 0;
     uint32_t num_inherited  = 0;
-    for (size_t i = 0; i < num_specs; ++i) {
+    for (uint32_t i = 0; i < num_classes; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass  = *spec->klass;
         Class *parent = spec->parent ? *spec->parent : NULL;
@@ -197,7 +200,7 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
     num_novel      = 0;
     num_overridden = 0;
     num_inherited  = 0;
-    for (size_t i = 0; i < num_specs; ++i) {
+    for (uint32_t i = 0; i < num_classes; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass = *spec->klass;
 
