@@ -78,7 +78,7 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
                                     + spec->num_novel_meths
                                       * sizeof(cfish_method_t);
 
-        Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
+        Class *klass = (Class*)CALLOCATE(class_alloc_size, 1);
 
         // Needed to calculate size of subclasses.
         klass->class_alloc_size = class_alloc_size;
@@ -92,7 +92,10 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         }
 
         // Initialize the global pointer to the Class.
-        *spec->klass = klass;
+        if (!Atomic_cas_ptr((void**)spec->klass, NULL, klass)) {
+            // Another thread beat us to it.
+            FREEMEM(klass);
+        }
     }
 
     /* Pass 2:
@@ -203,9 +206,24 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         const ClassSpec *spec = &specs[i];
         Class *klass = *spec->klass;
 
-        S_set_name(klass, spec->name, strlen(spec->name));
-        klass->methods = (Method**)MALLOCATE((spec->num_novel_meths + 1)
-                                             * sizeof(Method*));
+        String *name_internal
+            = Str_new_from_trusted_utf8(spec->name, strlen(spec->name));
+        if (!Atomic_cas_ptr((void**)&klass->name_internal, NULL,
+                            name_internal)
+           ) {
+            DECREF(name_internal);
+            name_internal = klass->name_internal;
+        }
+
+        String *name = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(name_internal),
+                                                 Str_Get_Size(name_internal));
+        if (!Atomic_cas_ptr((void**)&klass->name, NULL, name)) {
+            DECREF(name);
+            name = klass->name;
+        }
+
+        Method **methods = (Method**)MALLOCATE((spec->num_novel_meths + 1)
+                                               * sizeof(Method*));
 
         // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
@@ -213,10 +231,18 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
             String *name = SSTR_WRAP_C(mspec->name);
             Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
-            klass->methods[i] = method;
+            methods[i] = method;
         }
 
-        klass->methods[spec->num_novel_meths] = NULL;
+        methods[spec->num_novel_meths] = NULL;
+
+        if (!Atomic_cas_ptr((void**)&klass->methods, NULL, methods)) {
+            // Another thread beat us to it.
+            for (size_t i = 0; i < spec->num_novel_meths; ++i) {
+                Method_Destroy(methods[i]);
+            }
+            FREEMEM(methods);
+        }
 
         Class_add_to_registry(klass);
     }
