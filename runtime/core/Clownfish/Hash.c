@@ -26,6 +26,7 @@
 #include "Clownfish/String.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Vector.h"
+#include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 
 // TOMBSTONE is shared across threads, so it must never be incref'd or
@@ -50,7 +51,10 @@ SI_rebuild_hash(Hash *self);
 
 void
 Hash_init_class() {
-    TOMBSTONE = Str_newf("[HASHTOMBSTONE]");
+    String *tombstone = Str_newf("[HASHTOMBSTONE]");
+    if (!Atomic_cas_ptr((void**)&TOMBSTONE, NULL, tombstone)) {
+        DECREF(tombstone);
+    }
 }
 
 Hash*

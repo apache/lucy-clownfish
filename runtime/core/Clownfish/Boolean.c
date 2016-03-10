@@ -22,18 +22,26 @@
 
 #include "Clownfish/Class.h"
 #include "Clownfish/String.h"
+#include "Clownfish/Util/Atomic.h"
 
 Boolean *Bool_true_singleton;
 Boolean *Bool_false_singleton;
 
 void
 Bool_init_class() {
-    Bool_true_singleton          = (Boolean*)Class_Make_Obj(BOOLEAN);
-    Bool_true_singleton->value   = true;
-    Bool_true_singleton->string  = Str_newf("true");
-    Bool_false_singleton         = (Boolean*)Class_Make_Obj(BOOLEAN);
-    Bool_false_singleton->value  = false;
-    Bool_false_singleton->string = Str_newf("false");
+    Boolean *true_obj = (Boolean*)Class_Make_Obj(BOOLEAN);
+    true_obj->value   = true;
+    true_obj->string  = Str_newf("true");
+    if (!Atomic_cas_ptr((void**)&Bool_true_singleton, NULL, true_obj)) {
+        Bool_Destroy(true_obj);
+    }
+
+    Boolean *false_obj = (Boolean*)Class_Make_Obj(BOOLEAN);
+    false_obj->value   = false;
+    false_obj->string  = Str_newf("false");
+    if (!Atomic_cas_ptr((void**)&Bool_false_singleton, NULL, false_obj)) {
+        Bool_Destroy(false_obj);
+    }
 }
 
 Boolean*
@@ -44,6 +52,7 @@ Bool_singleton(bool value) {
 void
 Bool_Destroy_IMP(Boolean *self) {
     if (self && self != CFISH_TRUE && self != CFISH_FALSE) {
+        DECREF(self->string);
         SUPER_DESTROY(self, BOOLEAN);
     }
 }
