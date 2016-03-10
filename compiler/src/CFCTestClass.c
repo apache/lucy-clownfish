@@ -44,9 +44,24 @@ S_has_symbol(CFCSymbol **symbols, const char *name);
 
 const CFCTestBatch CFCTEST_BATCH_CLASS = {
     "Clownfish::CFC::Model::Class",
-    86,
+    96,
     S_run_tests
 };
+
+static char*
+S_try_create(CFCParcel *parcel, const char *name, const char *nickname) {
+    CFCClass *klass = NULL;
+    char     *error;
+
+    CFCUTIL_TRY {
+        klass = CFCClass_create(parcel, NULL, name, nickname, NULL, NULL, NULL,
+                                false, false, false);
+    }
+    CFCUTIL_CATCH(error);
+
+    CFCBase_decref((CFCBase*)klass);
+    return error;
+}
 
 static void
 S_run_tests(CFCTest *test) {
@@ -94,6 +109,27 @@ S_run_tests(CFCTest *test) {
         OK(test, should_be_foo == foo, "fetch_singleton");
     }
 
+    {
+        char *error = S_try_create(neato, "Foo", NULL);
+        OK(test, error && strstr(error, "Two classes with name"),
+           "Can't call create for the same class more than once");
+        FREEMEM(error);
+    }
+
+    {
+        char *error = S_try_create(neato, "Other::Foo", NULL);
+        OK(test, error && strstr(error, "Class name conflict"),
+           "Can't create classes wth the same final component");
+        FREEMEM(error);
+    }
+
+    {
+        char *error = S_try_create(neato, "Bar", "Foo");
+        OK(test, error && strstr(error, "Class nickname conflict"),
+           "Can't create classes wth the same nickname");
+        FREEMEM(error);
+    }
+
     CFCClass *foo_jr
         = CFCClass_create(neato, NULL, "Foo::FooJr", NULL, NULL, NULL, "Foo",
                           false, false, false);
@@ -125,6 +161,50 @@ S_run_tests(CFCTest *test) {
         = CFCTest_parse_method(test, parser, "void Do_Stuff(Foo *self);");
     CFCClass_add_method(foo, do_stuff);
 
+    CFCClass *inert_foo
+        = CFCClass_create(neato, NULL, "InertFoo", NULL, NULL, NULL, NULL,
+                          false, true, false);
+
+    {
+        CFCParser_set_class_name(parser, "InertFoo");
+        CFCMethod *inert_do_stuff
+            = CFCTest_parse_method(test, parser,
+                                   "void Do_Stuff(InertFoo *self);");
+        char *error;
+
+        CFCUTIL_TRY {
+            CFCClass_add_method(inert_foo, inert_do_stuff);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "inert class"),
+           "Error out on conflict between inert attribute and object method");
+
+        FREEMEM(error);
+        CFCBase_decref((CFCBase*)inert_do_stuff);
+    }
+
+    {
+        char *error;
+        CFCUTIL_TRY {
+            CFCClass_add_child(foo, inert_foo);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "Inert class"),
+           "inert class can't inherit");
+        FREEMEM(error);
+    }
+
+    {
+        char *error;
+        CFCUTIL_TRY {
+            CFCClass_add_child(inert_foo, foo);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "from inert class"),
+           "can't inherit from inert class");
+        FREEMEM(error);
+    }
+
     CFCClass_resolve_types(foo);
     CFCClass_resolve_types(foo_jr);
     CFCClass_resolve_types(final_foo);
@@ -132,6 +212,28 @@ S_run_tests(CFCTest *test) {
     CFCClass_add_child(foo, foo_jr);
     CFCClass_add_child(foo_jr, final_foo);
     CFCClass_grow_tree(foo);
+
+    {
+        char *error;
+        CFCUTIL_TRY {
+            CFCClass_grow_tree(foo);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "grow_tree"),
+           "call grow_tree only once.");
+        FREEMEM(error);
+    }
+
+    {
+        char *error;
+        CFCUTIL_TRY {
+            CFCClass_add_method(foo_jr, do_stuff);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "grow_tree"),
+           "Forbid add_method after grow_tree.");
+        FREEMEM(error);
+    }
 
     OK(test, CFCClass_get_parent(foo_jr) == foo, "grow_tree, one level" );
     OK(test, CFCClass_get_parent(final_foo) == foo_jr,
@@ -334,6 +436,7 @@ S_run_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)foo);
     CFCBase_decref((CFCBase*)foo_jr);
     CFCBase_decref((CFCBase*)final_foo);
+    CFCBase_decref((CFCBase*)inert_foo);
     CFCBase_decref((CFCBase*)do_stuff);
 
     CFCClass_clear_registry();

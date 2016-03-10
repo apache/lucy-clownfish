@@ -2484,10 +2484,11 @@ CODE:
 OUTPUT: RETVAL
 
 int
-run_batch(self, klass)
+run_batch(self, klass, test_files_dir = NULL)
     CFCTest *self;
     const char *klass;
+    const char *test_files_dir;
 CODE:
-    RETVAL = CFCTest_run_batch(self, klass);
+    RETVAL = CFCTest_run_batch(self, klass, test_files_dir);
 OUTPUT: RETVAL
 

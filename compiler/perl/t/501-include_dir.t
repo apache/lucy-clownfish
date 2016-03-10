@@ -19,12 +19,13 @@ use warnings;
 use Test::More tests => 24;
 
 use Clownfish::CFC::Model::Hierarchy;
+use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
 use File::Spec::Functions qw( catdir catfile splitpath );
 use File::Path qw( rmtree );
 
-my $base_dir = catdir(qw( t cfbase ));
-my $ext_dir  = catdir(qw( t cfext ));
-my $dest_dir = catdir(qw( t cfdest ));
+my $base_dir = catdir( test_files_dir(), 'cfbase' );
+my $ext_dir  = catdir( test_files_dir(), 'cfext' );
+my $dest_dir = 'autogen';
 
 # One source, one include
 

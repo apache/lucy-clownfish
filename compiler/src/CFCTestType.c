@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCClass.h"
@@ -60,7 +62,7 @@ S_run_composite_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_TYPE = {
     "Clownfish::CFC::Model::Type",
-    360,
+    369,
     S_run_tests
 };
 
@@ -260,6 +262,20 @@ S_run_void_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)parser);
 }
 
+static char*
+S_try_new_object(CFCParcel *parcel, const char *specifier, int indirection) {
+    CFCType *type = NULL;
+    char    *error;
+
+    CFCUTIL_TRY {
+        type = CFCType_new_object(0, parcel, specifier, indirection);
+    }
+    CFCUTIL_CATCH(error);
+
+    CFCBase_decref((CFCBase*)type);
+    return error;
+}
+
 static void
 S_run_object_tests(CFCTest *test) {
     static const char *modifiers[4] = {
@@ -334,6 +350,33 @@ S_run_object_tests(CFCTest *test) {
                           false, false, false);
     CFCType *foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
     CFCType_resolve(foo);
+
+    {
+        static const char *bad_specifiers[5] = {
+            "foo", "Foo_Bar", "FOOBAR", "1Foo", "1FOO"
+        };
+        for (int i = 0; i < 5; i++) {
+            char *error = S_try_new_object(neato_parcel, bad_specifiers[i], 1);
+            OK(test, error && strstr(error, "specifier"),
+               "constructor rejects bad specifier");
+            FREEMEM(error);
+        }
+    }
+
+    {
+        char *error = S_try_new_object(neato_parcel, NULL, 1);
+        OK(test, error && strstr(error, "specifier"), "specifier required");
+        FREEMEM(error);
+    }
+
+    {
+        for (int indirection = 0; indirection <= 2; indirection += 2) {
+            char *error = S_try_new_object(neato_parcel, "Foo", indirection);
+            OK(test, error && strstr(error, "indirection"),
+               "invalid indirection of %d", indirection);
+            FREEMEM(error);
+        }
+    }
 
     {
         CFCType *another_foo = CFCType_new_object(0, neato_parcel, "Foo", 1);
@@ -491,6 +534,20 @@ S_run_composite_tests(CFCTest *test) {
                type_string);
             CFCBase_decref((CFCBase*)type);
         }
+    }
+
+    {
+        CFCType *type = NULL;
+        char    *error;
+
+        CFCUTIL_TRY {
+            type = CFCType_new_composite(0, NULL, 0, NULL);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "child"), "child required");
+
+        FREEMEM(error);
+        CFCBase_decref((CFCBase*)type);
     }
 
     {

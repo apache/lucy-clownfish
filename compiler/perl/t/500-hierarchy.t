@@ -20,14 +20,13 @@ use Test::More tests => 21;
 
 use Clownfish::CFC::Model::Hierarchy;
 use Clownfish::CFC::Util qw( a_isa_b );
+use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
 use File::Spec::Functions qw( catdir catfile splitpath );
 use Fcntl;
 use File::Path qw( rmtree mkpath );
 
-my $base_dir = catdir(qw( t cfbase ));
-my %args = (
-    dest => catdir(qw( t cfdest )),
-);
+my $base_dir = catdir( test_files_dir(), 'cfbase' );
+my %args = ( dest => 'autogen' );
 
 # Clean up.
 rmtree( $args{dest} );

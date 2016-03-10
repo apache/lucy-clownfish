@@ -23,10 +23,22 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <setjmp.h>
 
 // For mkdir.
 #ifdef CHY_HAS_DIRECT_H
   #include <direct.h>
+#endif
+
+#if !defined(CHY_HAS_C99_SNPRINTF) && !defined(CHY_HAS__SCPRINTF)
+  #error "snprintf or replacement not available."
+#endif
+
+/* va_copy is not part of C89. Assume that simple assignment works if it
+ * isn't defined.
+ */
+#ifndef va_copy
+  #define va_copy(dst, src) ((dst) = (src))
 #endif
 
 #ifndef true
@@ -35,6 +47,9 @@
 #endif
 
 #include "CFCUtil.h"
+
+static char    *thrown_error;
+static jmp_buf *current_env;
 
 void
 CFCUtil_null_check(const void *arg, const char *name, const char *file,
@@ -59,50 +74,36 @@ CFCUtil_strndup(const char *string, size_t len) {
     return copy;
 }
 
-#if defined(CHY_HAS_C99_SNPRINTF) || defined(CHY_HAS__SCPRINTF)
-
 char*
 CFCUtil_sprintf(const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
-#if defined(CHY_HAS_C99_SNPRINTF)
-    int size = vsnprintf(NULL, 0, fmt, args);
-    if (size < 0) { CFCUtil_die("snprintf failed"); }
-#else
-    int size = _vscprintf(fmt, args);
-    if (size < 0) { CFCUtil_die("_scprintf failed"); }
-#endif
-    va_end(args);
-
-    char *string = (char*)MALLOCATE((size_t)size + 1);
-    va_start(args, fmt);
-    vsprintf(string, fmt, args);
+    char *string = CFCUtil_vsprintf(fmt, args);
     va_end(args);
 
     return string;
 }
 
-#elif defined(CHY_HAS__SNPRINTF)
-
 char*
-CFCUtil_sprintf(const char *fmt, ...) {
-    for (size_t size = 32; size * 2 > size; size *= 2) {
-        char *string = (char*)MALLOCATE(size);
-        va_list args;
-        va_start(args, fmt);
-        int result = _vsnprintf(string, size, fmt, args);
-        va_end(args);
-        if (result >= 0 && (size_t)result < size) { return string; }
-        FREEMEM(string);
-    }
-    CFCUtil_die("_snprintf failed");
-    return NULL;
-}
+CFCUtil_vsprintf(const char *fmt, va_list args) {
+    va_list args_copy;
 
+    va_copy(args_copy, args);
+#if defined(CHY_HAS_C99_SNPRINTF)
+    int size = vsnprintf(NULL, 0, fmt, args_copy);
+    if (size < 0) { CFCUtil_die("snprintf failed"); }
 #else
-  #error "snprintf or replacement not available."
+    int size = _vscprintf(fmt, args_copy);
+    if (size < 0) { CFCUtil_die("_scprintf failed"); }
 #endif
+    va_end(args_copy);
+
+    char *string = (char*)MALLOCATE((size_t)size + 1);
+    vsprintf(string, fmt, args);
+
+    return string;
+}
 
 char*
 CFCUtil_cat(char *string, ...) {
@@ -604,6 +605,21 @@ CFCUtil_closedir(void *dirhandle, const char *dir) {
 
 /***************************************************************************/
 
+jmp_buf*
+CFCUtil_try_start(jmp_buf *env) {
+    jmp_buf *prev_env = current_env;
+    current_env = env;
+    return prev_env;
+}
+
+char*
+CFCUtil_try_end(jmp_buf *prev_env) {
+    current_env = prev_env;
+    char *error = thrown_error;
+    thrown_error = NULL;
+    return error;
+}
+
 #ifdef CFCPERL
 
 #include "EXTERN.h"
@@ -615,8 +631,27 @@ void
 CFCUtil_die(const char* format, ...) {
     va_list args;
     va_start(args, format);
-    vcroak(format, &args);
-    va_end(args);
+
+    if (current_env) {
+        thrown_error = CFCUtil_vsprintf(format, args);
+        va_end(args);
+        longjmp(*current_env, 1);
+    }
+    else {
+        vcroak(format, &args);
+        va_end(args);
+    }
+}
+
+void
+CFCUtil_rethrow(char *error) {
+    if (current_env) {
+        thrown_error = error;
+        longjmp(*current_env, 1);
+    }
+    else {
+        croak("%s", error);
+    }
 }
 
 void
@@ -633,10 +668,31 @@ void
 CFCUtil_die(const char* format, ...) {
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-    fprintf(stderr, "\n");
-    exit(1);
+
+    if (current_env) {
+        thrown_error = CFCUtil_vsprintf(format, args);
+        va_end(args);
+        longjmp(*current_env, 1);
+    }
+    else {
+        vfprintf(stderr, format, args);
+        va_end(args);
+        fprintf(stderr, "\n");
+        abort();
+    }
+}
+
+void
+CFCUtil_rethrow(char *error) {
+    if (current_env) {
+        thrown_error = error;
+        longjmp(*current_env, 1);
+    }
+    else {
+        fprintf(stderr, "%s\n", error);
+        FREEMEM(error);
+        abort();
+    }
 }
 
 void

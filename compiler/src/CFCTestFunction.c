@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCFunction.h"
@@ -22,13 +24,14 @@
 #include "CFCParser.h"
 #include "CFCTest.h"
 #include "CFCType.h"
+#include "CFCUtil.h"
 
 static void
 S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_FUNCTION = {
     "Clownfish::CFC::Model::Function",
-    11,
+    12,
     S_run_tests
 };
 
@@ -37,17 +40,30 @@ S_run_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
+    CFCType *return_type = CFCTest_parse_type(test, parser, "Obj*");
+    CFCParamList *param_list
+        = CFCTest_parse_param_list(test, parser, "(int32_t some_num)");
 
     {
-        CFCType *return_type = CFCTest_parse_type(test, parser, "Obj*");
-        CFCParamList *param_list
-            = CFCTest_parse_param_list(test, parser, "(int32_t some_num)");
         CFCFunction *func = CFCFunction_new(NULL, "return_an_obj", return_type,
                                             param_list, NULL, 0);
         OK(test, func != NULL, "new");
+        CFCBase_decref((CFCBase*)func);
+    }
 
-        CFCBase_decref((CFCBase*)return_type);
-        CFCBase_decref((CFCBase*)param_list);
+    {
+        CFCFunction *func = NULL;
+        char        *error;
+
+        CFCUTIL_TRY {
+            func = CFCFunction_new(NULL, "Uh_Oh", return_type, param_list,
+                                   NULL, 0);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "Uh_Oh"),
+           "invalid name kills constructor");
+
+        FREEMEM(error);
         CFCBase_decref((CFCBase*)func);
     }
 
@@ -65,6 +81,8 @@ S_run_tests(CFCTest *test) {
         }
     }
 
+    CFCBase_decref((CFCBase*)return_type);
+    CFCBase_decref((CFCBase*)param_list);
     CFCBase_decref((CFCBase*)neato_parcel);
     CFCBase_decref((CFCBase*)parser);
 

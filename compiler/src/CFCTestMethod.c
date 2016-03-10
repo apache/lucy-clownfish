@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCClass.h"
@@ -24,6 +26,7 @@
 #include "CFCSymbol.h"
 #include "CFCTest.h"
 #include "CFCType.h"
+#include "CFCUtil.h"
 
 static void
 S_run_tests(CFCTest *test);
@@ -42,7 +45,7 @@ S_run_final_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_METHOD = {
     "Clownfish::CFC::Model::Method",
-    74,
+    84,
     S_run_tests
 };
 
@@ -52,6 +55,22 @@ S_run_tests(CFCTest *test) {
     S_run_parser_tests(test);
     S_run_overridden_tests(test);
     S_run_final_tests(test);
+}
+
+static char*
+S_try_new_method(const char *name, CFCType *return_type,
+                 CFCParamList *param_list, const char *class_name) {
+    CFCMethod *method = NULL;
+    char      *error;
+
+    CFCUTIL_TRY {
+        method = CFCMethod_new(NULL, name, return_type, param_list, NULL,
+                               class_name, 0, 0);
+    }
+    CFCUTIL_CATCH(error);
+
+    CFCBase_decref((CFCBase*)method);
+    return error;
 }
 
 static void
@@ -70,6 +89,39 @@ S_run_basic_tests(CFCTest *test) {
     OK(test, method != NULL, "new");
     OK(test, CFCSymbol_parcel((CFCSymbol*)method),
        "parcel exposure by default");
+
+    {
+        char *error = S_try_new_method("return_an_obj", return_type,
+                                       param_list, "Neato::Foo");
+        OK(test, error && strstr(error, "name"),
+           "invalid name kills constructor");
+        FREEMEM(error);
+    }
+
+    {
+        static const char *bad_class_names[4] = {
+            "foo", "1Foo", "Foo_Bar", "1FOOBAR"
+        };
+        for (int i = 0; i < 4; i++) {
+            const char *bad_class_name = bad_class_names[i];
+            char *error;
+
+            error = S_try_new_method("Return_An_Obj", return_type,
+                                     param_list, bad_class_name);
+            OK(test, error && strstr(error, "class_name"),
+               "Reject invalid class name %s", bad_class_name);
+            FREEMEM(error);
+
+            char *bogus_middle
+                = CFCUtil_sprintf("Foo::%s::Bar", bad_class_name);
+            error = S_try_new_method("Return_An_Obj", return_type,
+                                     param_list, bogus_middle);
+            OK(test, error && strstr(error, "class_name"),
+               "Reject invalid class name %s", bogus_middle);
+            FREEMEM(error);
+            FREEMEM(bogus_middle);
+        }
+    }
 
     {
         CFCMethod *dupe
@@ -259,6 +311,19 @@ S_run_final_tests(CFCTest *test) {
        "finalize clones properly");
     OK(test, !CFCMethod_final(not_final), "not final by default");
     OK(test, CFCMethod_final(final), "finalize");
+
+    {
+        char *error;
+
+        CFCUTIL_TRY {
+            CFCMethod_override(not_final, final);
+        }
+        CFCUTIL_CATCH(error);
+        OK(test, error && strstr(error, "final"),
+           "Can't override final method");
+
+        FREEMEM(error);
+    }
 
     CFCBase_decref((CFCBase*)parser);
     CFCBase_decref((CFCBase*)neato_parcel);

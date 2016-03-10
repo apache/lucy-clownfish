@@ -22,7 +22,7 @@
 int
 main() {
     CFCTest *test = CFCTest_new("clownfish");
-    CFCTest_run_all(test);
+    CFCTest_run_all(test, NULL);
     int pass = CFCTest_finish(test);
     CFCBase_decref((CFCBase*)test);
 

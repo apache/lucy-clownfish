@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
 #include "CFCClass.h"
@@ -32,9 +34,23 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_SYMBOL = {
     "Clownfish::CFC::Model::Symbol",
-    20,
+    24,
     S_run_tests
 };
+
+static char*
+S_try_new_symbol(const char *name) {
+    CFCSymbol *symbol = NULL;
+    char      *error;
+
+    CFCUTIL_TRY {
+        symbol = CFCSymbol_new("parcel", name);
+    }
+    CFCUTIL_CATCH(error);
+
+    CFCBase_decref((CFCBase*)symbol);
+    return error;
+}
 
 static void
 S_run_tests(CFCTest *test) {
@@ -73,6 +89,17 @@ S_run_tests(CFCTest *test) {
         OK(test, !equal, "different exposure spoils equals");
         CFCBase_decref((CFCBase*)public_exposure);
         CFCBase_decref((CFCBase*)parcel_exposure);
+    }
+
+    {
+        static const char *names[4] = {
+            "1foo", "*", "0", "\xE2\x98\xBA"
+        };
+        for (int i = 0; i < 4; i++) {
+            char *error = S_try_new_symbol(names[i]);
+            OK(test, error && strstr(error, "name"), "reject bad name");
+            FREEMEM(error);
+        }
     }
 
     {

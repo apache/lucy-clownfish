@@ -16,14 +16,29 @@
 use strict;
 use warnings;
 
-use Clownfish::CFC::Test;
-use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
+package Clownfish::CFC::Test::TestUtils;
 
-my $test   = Clownfish::CFC::Test->new;
-my $passed = $test->run_batch(
-    'Clownfish::CFC::Model::Hierarchy',
-    test_files_dir(),
-);
+our $VERSION = '0.005000';
+$VERSION = eval $VERSION;
 
-exit($passed ? 0 : 1);
+use Exporter 'import';
+our @EXPORT_OK = qw( test_files_dir );
+
+use File::Spec::Functions qw( catdir updir );
+
+sub test_files_dir {
+    my @dirs = (
+        't',
+        catdir( updir(), 'common', 'test' ),
+    );
+
+    for my $dir (@dirs) {
+        my $cfbase = catdir( $dir, 'cfbase' );
+        return $dir if -d $cfbase;
+    }
+
+    die("test files dir not found");
+}
+
+1;
 

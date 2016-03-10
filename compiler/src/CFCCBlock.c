@@ -38,7 +38,10 @@ CFCCBlock_new(const char *contents) {
 
 CFCCBlock*
 CFCCBlock_init(CFCCBlock *self, const char *contents) {
-    CFCUTIL_NULL_CHECK(contents);
+    if (!contents) {
+        CFCBase_decref((CFCBase*)self);
+        CFCUtil_die("contents cannot be NULL");
+    }
     self->contents = CFCUtil_strdup(contents);
     return self;
 }

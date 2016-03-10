@@ -310,8 +310,18 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
         || !parcel_source_dir
         || strcmp(class_source_dir, parcel_source_dir) == 0
     ) {
-        // Store in registry.
-        S_register(self);
+        char *error;
+
+        CFCUTIL_TRY {
+            // Store in registry.
+            S_register(self);
+        }
+        CFCUTIL_CATCH(error);
+
+        if (error) {
+            CFCBase_decref((CFCBase*)self);
+            CFCUtil_rethrow(error);
+        }
 
         CFCParcel_add_struct_sym(parcel, self->struct_sym);
     }

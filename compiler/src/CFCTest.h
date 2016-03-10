@@ -29,6 +29,7 @@
   #define OK      CFCTest_test_true
   #define STR_EQ  CFCTest_test_string_equals
   #define INT_EQ  CFCTest_test_int_equals
+  #define SKIP    CFCTest_skip
 #endif
 
 typedef struct CFCTest CFCTest;
@@ -69,7 +70,7 @@ CFCTest_destroy(CFCTest *self);
  * @return true if all tests were successful.
  */
 int
-CFCTest_run_all(CFCTest *self);
+CFCTest_run_all(CFCTest *self, const char *test_files_dir);
 
 /** Run a test batch by name.
  *
@@ -77,7 +78,12 @@ CFCTest_run_all(CFCTest *self);
  * @return true if all tests in the batch were successful.
  */
 int
-CFCTest_run_batch(CFCTest *self, const char *name);
+CFCTest_run_batch(CFCTest *self, const char *name, const char *test_files_dir);
+
+/** Return the full path for a test file or directory.
+ */
+char*
+CFCTest_path(const char *path);
 
 /* Collect result of a test.
  *
@@ -112,7 +118,7 @@ CFCTest_test_int_equals(CFCTest *self, uint64_t result, uint64_t expected,
  * @param num Number of tests to skip.
  */
 void
-CFCTest_skip(CFCTest *self, int num);
+CFCTest_skip(CFCTest *self, int num, const char *fmt, ...);
 
 /* Finish testing.
  *
