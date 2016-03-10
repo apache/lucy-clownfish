@@ -69,7 +69,17 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
      */
     for (size_t i = 0; i < num_specs; ++i) {
         const ClassSpec *spec = &specs[i];
-        Class *parent = spec->parent ? *spec->parent : NULL;
+        Class *parent = NULL;
+
+        if (spec->parent) {
+            parent = *spec->parent;
+            if (!parent) {
+                // Wrong order of class specs or inheritance cycle.
+                fprintf(stderr, "Parent class of '%s' not initialized\n",
+                        spec->name);
+                abort();
+            }
+        }
 
         uint32_t novel_offset = parent
                                 ? parent->class_alloc_size

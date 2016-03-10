@@ -362,13 +362,13 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s" // Extra definitions.
         "%sVISIBLE void\n"
-        "%sbootstrap_inheritance();\n"
+        "%sbootstrap_internal(void);\n"
         "\n"
         "%sVISIBLE void\n"
-        "%sbootstrap_parcel();\n"
+        "%sbootstrap_parcel(void);\n"
         "\n"
         "void\n"
-        "%sinit_parcel();\n"
+        "%sinit_parcel(void);\n"
         "\n"
         "#ifdef __cplusplus\n"
         "}\n"
@@ -439,30 +439,12 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     char *spec_init_func = CFCBindSpecs_init_func_def(specs);
     FREEMEM(ordered);
 
-    // Bootstrapping code for prerequisite parcels.
-    //
-    // bootstrap_inheritance() first calls bootstrap_inheritance() for all
-    // parcels from which classes are inherited. Then the Classes of the parcel
-    // are initialized. It aborts on recursive invocation.
-    //
-    // bootstrap_parcel() first calls bootstrap_inheritance() of its own
-    // parcel. Then it calls bootstrap_parcel() for all prerequisite parcels.
-    // Finally, it calls init_parcel(). Recursive invocation is allowed.
-
-    char *inh_bootstrap    = CFCUtil_strdup("");
     char *prereq_bootstrap = CFCUtil_strdup("");
-    CFCParcel **inh_parcels = CFCParcel_inherited_parcels(parcel);
-    for (size_t i = 0; inh_parcels[i]; ++i) {
-        const char *inh_prefix = CFCParcel_get_prefix(inh_parcels[i]);
-        inh_bootstrap = CFCUtil_cat(inh_bootstrap, "    ", inh_prefix,
-                                    "bootstrap_inheritance();\n", NULL);
-    }
-    FREEMEM(inh_parcels);
     CFCParcel **prereq_parcels = CFCParcel_prereq_parcels(parcel);
     for (size_t i = 0; prereq_parcels[i]; ++i) {
         const char *prereq_prefix = CFCParcel_get_prefix(prereq_parcels[i]);
         prereq_bootstrap = CFCUtil_cat(prereq_bootstrap, "    ", prereq_prefix,
-                                       "bootstrap_parcel();\n", NULL);
+                                       "bootstrap_internal();\n", NULL);
     }
     FREEMEM(prereq_parcels);
 
@@ -490,37 +472,26 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s" // spec_init_func
         "\n"
-        "static int bootstrap_state = 0;\n"
-        "\n"
         "void\n"
-        "%sbootstrap_inheritance() {\n"
-        "    if (bootstrap_state == 1) {\n"
-        "        fprintf(stderr, \"Cycle in class inheritance between\"\n"
-        "                        \" parcels detected.\\n\");\n"
-        "        abort();\n"
-        "    }\n"
-        "    if (bootstrap_state >= 2) { return; }\n"
-        "    bootstrap_state = 1;\n"
-        "%s" // Bootstrap inherited parcels.
+        "%sbootstrap_internal() {\n"
+        "    static int bootstrapped = 0;\n"
+        "    if (bootstrapped) { return; }\n"
         "    S_bootstrap_specs();\n"
-        "    bootstrap_state = 2;\n"
+        "    %sinit_parcel();\n"
+        "    bootstrapped = 1;\n"
         "}\n"
         "\n"
         "void\n"
         "%sbootstrap_parcel() {\n"
-        "    if (bootstrap_state >= 3) { return; }\n"
-        "    %sbootstrap_inheritance();\n"
-        "    bootstrap_state = 3;\n"
-        "%s" // Finish bootstrapping of all prerequisite parcels.
-        "    %sinit_parcel();\n"
+        "%s" // Bootstrap prerequisite parcels.
+        "    %sbootstrap_internal();\n"
         "}\n"
         "\n"
         "%s\n";
     char *file_content
         = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, includes,
-                          c_data, spec_defs, spec_init_func, prefix,
-                          inh_bootstrap, prefix, prefix, prereq_bootstrap,
-                          prefix, self->c_footer);
+                          c_data, spec_defs, spec_init_func, prefix, prefix,
+                          prefix, prereq_bootstrap, prefix, self->c_footer);
 
     // Unlink then open file.
     const char *src_dest = CFCHierarchy_get_source_dest(hierarchy);
@@ -536,7 +507,6 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     FREEMEM(c_data);
     FREEMEM(spec_defs);
     FREEMEM(spec_init_func);
-    FREEMEM(inh_bootstrap);
     FREEMEM(prereq_bootstrap);
     FREEMEM(file_content);
 }
