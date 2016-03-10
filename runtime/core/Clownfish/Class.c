@@ -93,14 +93,6 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         // Needed to calculate size of subclasses.
         klass->class_alloc_size = class_alloc_size;
 
-        if (spec->klass == &CLASS) {
-            // `obj_alloc_size` is used by Init_Obj to zero the object. In the
-            // next pass, this method is called to initialize the Class
-            // objects. The Class struct is zeroed already, so this isn't
-            // crucial, but let's set the correct value here.
-            klass->obj_alloc_size = offsetof(Class, vtable);
-        }
-
         // Initialize the global pointer to the Class.
         if (!Atomic_cas_ptr((void**)spec->klass, NULL, klass)) {
             // Another thread beat us to it.
@@ -138,26 +130,15 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
             }
         }
 
-        // Init_Obj clears all klass ivars, so `class_alloc_size` must be
-        // recalculated.
+        // CLASS->obj_alloc_size is always 0, so Init_Obj doesn't clear any
+        // values set in the previous pass or by another thread.
         Class_Init_Obj_IMP(CLASS, klass);
 
-        uint32_t novel_offset = parent
-                                ? parent->class_alloc_size
-                                : offsetof(Class, vtable);
-        uint32_t class_alloc_size = novel_offset
-                                    + spec->num_novel_meths
-                                      * sizeof(cfish_method_t);
+        klass->parent    = parent;
+        klass->parcel_id = parcel_id;
 
-        klass->parent           = parent;
-        klass->parcel_id        = parcel_id;
-        klass->class_alloc_size = class_alloc_size;
-
-        if (klass == CLASS) {
-            // Don't account for vtable array.
-            klass->obj_alloc_size = offsetof(Class, vtable);
-        }
-        else {
+        // CLASS->obj_alloc_size must stay at 0.
+        if (klass != CLASS) {
             klass->obj_alloc_size = ivars_offset + spec->ivars_size;
         }
         if (cfish_Class_bootstrap_hook1 != NULL) {
@@ -194,6 +175,10 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
             *mspec->offset = *mspec->parent_offset;
             Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
+
+        uint32_t novel_offset = parent
+                                ? parent->class_alloc_size
+                                : offsetof(Class, vtable);
 
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &novel_specs[num_novel++];
