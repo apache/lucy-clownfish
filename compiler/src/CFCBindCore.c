@@ -362,7 +362,7 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "\n"
         "%s" // Extra definitions.
         "%sVISIBLE void\n"
-        "%sbootstrap_internal(void);\n"
+        "%sbootstrap_internal(int force);\n"
         "\n"
         "%sVISIBLE void\n"
         "%sbootstrap_parcel(void);\n"
@@ -444,7 +444,7 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     for (size_t i = 0; prereq_parcels[i]; ++i) {
         const char *prereq_prefix = CFCParcel_get_prefix(prereq_parcels[i]);
         prereq_bootstrap = CFCUtil_cat(prereq_bootstrap, "    ", prereq_prefix,
-                                       "bootstrap_internal();\n", NULL);
+                                       "bootstrap_internal(0);\n", NULL);
     }
     FREEMEM(prereq_parcels);
 
@@ -473,9 +473,9 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "%s" // spec_init_func
         "\n"
         "void\n"
-        "%sbootstrap_internal() {\n"
+        "%sbootstrap_internal(int force) {\n"
         "    static int bootstrapped = 0;\n"
-        "    if (bootstrapped) { return; }\n"
+        "    if (bootstrapped && !force) { return; }\n"
         "    S_bootstrap_specs();\n"
         "    %sinit_parcel();\n"
         "    bootstrapped = 1;\n"
@@ -484,7 +484,7 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
         "void\n"
         "%sbootstrap_parcel() {\n"
         "%s" // Bootstrap prerequisite parcels.
-        "    %sbootstrap_internal();\n"
+        "    %sbootstrap_internal(0);\n"
         "}\n"
         "\n"
         "%s\n";
