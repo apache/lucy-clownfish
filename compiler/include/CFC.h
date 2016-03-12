@@ -24,6 +24,7 @@
 #include "CFCFileSpec.h"
 #include "CFCFunction.h"
 #include "CFCHierarchy.h"
+#include "CFCJson.h"
 #include "CFCMethod.h"
 #include "CFCMemPool.h"
 #include "CFCParamList.h"
