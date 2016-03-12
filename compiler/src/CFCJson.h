@@ -24,6 +24,7 @@ extern "C" {
 #define CFCJSON_STRING 1
 #define CFCJSON_HASH   2
 #define CFCJSON_NULL   3
+#define CFCJSON_BOOL   4
 
 typedef struct CFCJson CFCJson;
 
@@ -38,6 +39,9 @@ CFCJson_get_type(CFCJson *self);
 
 const char*
 CFCJson_get_string(CFCJson *self);
+
+int
+CFCJson_get_bool(CFCJson *self);
 
 size_t
 CFCJson_get_num_children(CFCJson *self);

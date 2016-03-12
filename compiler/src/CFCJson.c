@@ -23,6 +23,7 @@
 struct CFCJson {
     int type;
     char *string;
+    int bool_val;
     struct CFCJson **kids;
     size_t num_kids;
 };
@@ -35,6 +36,9 @@ S_parse_json_string(const char **json);
 
 static CFCJson*
 S_parse_json_null(const char **json);
+
+static CFCJson*
+S_parse_json_bool(const char **json);
 
 static void
 S_skip_whitespace(const char **json);
@@ -115,6 +119,9 @@ S_parse_json_hash(const char **json) {
         else if (*text == 'n') {
             value = S_parse_json_null(&text);
         }
+        else if (*text == 't' || *text == 'f') {
+            value = S_parse_json_bool(&text);
+        }
         if (!value) {
             CFCJson_destroy(node);
             return NULL;
@@ -186,6 +193,33 @@ S_parse_json_null(const char **json) {
     return node;
 }
 
+// Parse a JSON Boolean.
+static CFCJson*
+S_parse_json_bool(const char **json) {
+    static const char true_str[]  = "true";
+    static const char false_str[] = "false";
+
+    int val;
+
+    if (strncmp(*json, true_str, sizeof(true_str) - 1) == 0) {
+        val = 1;
+        *json += sizeof(true_str) - 1;
+    }
+    else if (strncmp(*json, false_str, sizeof(false_str) - 1) == 0) {
+        val = 0;
+        *json += sizeof(false_str) - 1;
+    }
+    else {
+        return NULL;
+    }
+
+    CFCJson *node = (CFCJson*)CALLOCATE(1, sizeof(CFCJson));
+    node->type     = CFCJSON_BOOL;
+    node->bool_val = val;
+
+    return node;
+}
+
 static void
 S_skip_whitespace(const char **json) {
     while (CFCUtil_isspace(json[0][0])) { *json = *json + 1; }
@@ -217,6 +251,14 @@ CFCJson_get_string(CFCJson *self) {
         CFCUtil_die("Not a JSON string");
     }
     return self->string;
+}
+
+int
+CFCJson_get_bool(CFCJson *self) {
+    if (self->type != CFCJSON_BOOL) {
+        CFCUtil_die("Not a JSON Boolean");
+    }
+    return self->bool_val;
 }
 
 size_t
