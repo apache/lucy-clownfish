@@ -7998,7 +7998,8 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
         }
 
         chaz_CFlags_append(extra_cflags,
-            "-pedantic -Wall -Wextra -Wno-variadic-macros");
+            "-pedantic -Wall -Wextra -Wno-variadic-macros"
+            " -Wno-overlength-strings");
         if (strcmp(chaz_CLI_strval(cli, "host"), "perl") == 0) {
             chaz_CFlags_append(extra_cflags, "-DPERL_GCC_PEDANTIC");
         }

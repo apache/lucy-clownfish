@@ -112,6 +112,8 @@ S_write_hostdefs(CFCPython *self) {
 
 static char*
 S_gen_callbacks(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
+    CHY_UNUSED_VAR(self);
+    CHY_UNUSED_VAR(parcel);
     char *callbacks  = CFCUtil_strdup("");
 
     // Generate implementation files containing callback definitions.
@@ -364,6 +366,8 @@ S_gen_callbacks(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
 
 static char*
 S_gen_type_linkups(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
+    CHY_UNUSED_VAR(self);
+    CHY_UNUSED_VAR(parcel);
     char *handles  = CFCUtil_strdup("");
     char *py_types = CFCUtil_strdup("");
     int num_items = 0;
@@ -413,6 +417,9 @@ S_gen_type_linkups(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
 static char*
 S_gen_class_bindings(CFCPython *self, CFCParcel *parcel,
                      const char *pymod_name, CFCClass **ordered) {
+    CHY_UNUSED_VAR(self);
+    CHY_UNUSED_VAR(parcel);
+    CHY_UNUSED_VAR(pymod_name);
     char *bindings = CFCUtil_strdup("");
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
