@@ -18,4 +18,7 @@ typedef char bool;
   #define HAVE_C99_SNPRINTF
 #endif
 
-#define inline CHY_INLINE
+#if defined(_MSC_VER) && !defined(__cplusplus)
+  #define inline __inline
+#endif
+

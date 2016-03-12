@@ -31,12 +31,6 @@
 #include "CFCDocuComment.h"
 #include "CFCUtil.h"
 
-static const CFCMeta CFCCALLABLE_META = {
-    "Clownfish::CFC::Model::Callable",
-    sizeof(CFCCallable),
-    (CFCBase_destroy_t)CFCCallable_destroy
-};
-
 CFCCallable*
 CFCCallable_init(CFCCallable *self, const char *exposure, const char *name,
                  CFCType *return_type, CFCParamList *param_list,
