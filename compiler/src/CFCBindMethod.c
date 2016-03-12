@@ -228,3 +228,37 @@ CFCBindMeth_imp_declaration(CFCMethod *method, CFCClass *klass) {
     return buf;
 }
 
+char*
+CFCBindMeth_host_data_json(CFCMethod *method) {
+    if (!CFCMethod_novel(method)) { return CFCUtil_strdup(""); }
+
+    int         excluded = CFCMethod_excluded_from_host(method);
+    const char *alias    = CFCMethod_get_host_alias(method);
+    char       *pair     = NULL;
+    char       *json     = NULL;
+
+    if (excluded) {
+        pair = CFCUtil_strdup("\"excluded\": true");
+    }
+    else if (alias) {
+        pair = CFCUtil_sprintf("\"alias\": \"%s\"", alias);
+    }
+
+    if (pair) {
+        const char *method_name = CFCMethod_get_name(method);
+
+        const char *pattern =
+            "                \"%s\": {\n"
+            "                    %s\n"
+            "                }";
+        json = CFCUtil_sprintf(pattern, method_name, pair);
+
+        FREEMEM(pair);
+    }
+    else {
+        json = CFCUtil_strdup("");
+    }
+
+    return json;
+}
+

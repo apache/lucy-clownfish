@@ -66,6 +66,12 @@ CFCBindCore_write_all_modified(CFCBindCore *self, int modified);
 void
 CFCBindCore_copy_headers(CFCBindCore *self, const char *dest_dir);
 
+/* Write host-specific data to a JSON file for each source parcel.
+ */
+void
+CFCBindCore_write_host_data_json(CFCBindCore *self, const char *dest_dir,
+                                 const char *host_lang);
+
 #ifdef __cplusplus
 }
 #endif

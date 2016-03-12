@@ -1884,6 +1884,13 @@ copy_headers(self, dest_dir)
 PPCODE:
     CFCBindCore_copy_headers(self, dest_dir);
 
+void
+write_host_data_json(self, dest_dir)
+    CFCBindCore *self;
+    const char *dest_dir;
+PPCODE:
+    CFCBindCore_write_host_data_json(self, dest_dir, "perl");
+
 
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Binding::Core::Function
 

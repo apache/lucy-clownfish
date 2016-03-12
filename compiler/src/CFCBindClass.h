@@ -54,6 +54,11 @@ CFCBindClass_to_c_header(CFCBindClass *self);
 char*
 CFCBindClass_to_c_data(CFCBindClass *self);
 
+/** Return host-specific data for the class as JSON fragment.
+ */
+char*
+CFCBindClass_host_data_json(CFCBindClass *self);
+
 #ifdef __cplusplus
 }
 #endif

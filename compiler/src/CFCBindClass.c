@@ -642,3 +642,41 @@ S_short_names(CFCBindClass *self) {
     return short_names;
 }
 
+char*
+CFCBindClass_host_data_json(CFCBindClass *self) {
+    if (CFCClass_final(self->client)) { return CFCUtil_strdup(""); }
+
+    CFCMethod **fresh_methods = CFCClass_fresh_methods(self->client);
+    char *methods_json = CFCUtil_strdup("");
+
+    for (int i = 0; fresh_methods[i] != NULL; i++) {
+        CFCMethod *method = fresh_methods[i];
+        char *method_json = CFCBindMeth_host_data_json(method);
+        if (method_json[0] != '\0') {
+            const char *sep = methods_json[0] == '\0' ? "" : ",\n";
+            methods_json = CFCUtil_cat(methods_json, sep, method_json, NULL);
+        }
+        FREEMEM(method_json);
+    }
+
+    char *json;
+
+    if (methods_json[0] == '\0') {
+        json = CFCUtil_strdup("");
+    }
+    else {
+        const char *class_name = CFCClass_get_name(self->client);
+
+        const char *pattern =
+            "        \"%s\": {\n"
+            "            \"methods\": {\n"
+            "%s\n"
+            "            }\n"
+            "        }";
+        json = CFCUtil_sprintf(pattern, class_name, methods_json);
+    }
+
+    FREEMEM(methods_json);
+    return json;
+}
+

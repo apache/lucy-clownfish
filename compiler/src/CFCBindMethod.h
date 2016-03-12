@@ -57,6 +57,12 @@ CFCBindMeth_abstract_method_def(struct CFCMethod *method,
 char*
 CFCBindMeth_imp_declaration(struct CFCMethod *method, struct CFCClass *klass);
 
+/** Return a JSON fragment for method data specified by the host bindings
+ * (alias or excluded).
+ */
+char*
+CFCBindMeth_host_data_json(struct CFCMethod *method);
+
 #ifdef __cplusplus
 }
 #endif
