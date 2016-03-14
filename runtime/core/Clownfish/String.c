@@ -263,24 +263,13 @@ Str_BaseX_To_I64_IMP(String *self, uint32_t base) {
     return retval;
 }
 
-static double
-S_safe_to_f64(String *self) {
+double
+Str_To_F64_IMP(String *self) {
     size_t amount = self->size < 511 ? self->size : 511;
     char buf[512];
     memcpy(buf, self->ptr, amount);
     buf[amount] = 0; // NULL-terminate.
     return strtod(buf, NULL);
-}
-
-double
-Str_To_F64_IMP(String *self) {
-    char   *end;
-    double  value    = strtod(self->ptr, &end);
-    size_t  consumed = end - self->ptr;
-    if (consumed > self->size) { // strtod overran
-        value = S_safe_to_f64(self);
-    }
-    return value;
 }
 
 char*
