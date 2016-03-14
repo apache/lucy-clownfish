@@ -29,6 +29,7 @@ Revision history for Apache Clownfish
     * [CLOWNFISH-62] - Crash when passing Perl variable as decremented arg
     * [CLOWNFISH-63] - Don't export private methods via Go
     * [CLOWNFISH-69] - Clownfish::CFC missing from CPAN prereqs
+    * [CLOWNFISH-84] - Guarantee nul-terminated arg to strtod in Str_To_F64
 
   Improvements:
 
