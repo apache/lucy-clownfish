@@ -91,12 +91,6 @@ S_to_Hierarchy(PyObject *wrapper) {
         "Clownfish::CFC::Model::Hierarchy");
 }
 
-static CFCParcel*
-S_to_Parcel(PyObject *wrapper) {
-    return (CFCParcel*)S_to_cfc_something(wrapper,
-        "Clownfish::CFC::Model::Parcel");
-}
-
 static CFCBindCore*
 S_to_BindCore(PyObject *wrapper) {
     return (CFCBindCore*)S_to_cfc_something(wrapper,
