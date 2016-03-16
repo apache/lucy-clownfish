@@ -258,13 +258,18 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
         retval_decl = CFCUtil_sprintf("    %s retval;\n", return_type_c);
     }
 
+    const char *locations_sv = "";
+    if (num_vars > 1) {
+        locations_sv = "    SV *sv;\n";
+    }
+
     char pattern[] =
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
         "%s"        // param_specs
         "    int32_t locations[%d];\n"
-        "    SV *sv;\n"
+        "%s" // locations_sv
         "%s"        // arg_decls
         "    %s method;\n"
         "%s"
@@ -286,8 +291,9 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
         "}\n";
     char *xsub_def
         = CFCUtil_sprintf(pattern, c_name, c_name, param_specs, num_vars - 1,
-                          arg_decls, meth_type_c, retval_decl, self_name,
-                          num_vars - 1, self_assign, arg_assigns, body);
+                          locations_sv, arg_decls, meth_type_c, retval_decl,
+                          self_name, num_vars - 1, self_assign, arg_assigns,
+                          body);
 
     FREEMEM(param_specs);
     FREEMEM(arg_decls);
@@ -342,6 +348,10 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
                                        NULL);
         }
     }
+    const char *working_sv = "";
+    if (num_vars > 1) {
+        working_sv = "    SV *sv;\n";
+    }
 
     char *retval_decl;
     if (CFCType_is_void(return_type)) {
@@ -356,7 +366,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "XS(%s);\n"
         "XS(%s) {\n"
         "    dXSARGS;\n"
-        "    SV *sv;\n"
+        "%s" // working_sv
         "%s" // arg_decls
         "    %s method;\n"
         "%s"
@@ -376,8 +386,9 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
         "}\n";
     char *xsub
         = CFCUtil_sprintf(pattern, self->sub.c_name, self->sub.c_name,
-                          arg_decls, meth_type_c, retval_decl, num_args_cond,
-                          xs_name_list, self_assign, arg_assigns, body);
+                          working_sv, arg_decls, meth_type_c, retval_decl,
+                          num_args_cond, xs_name_list, self_assign,
+                          arg_assigns, body);
 
     FREEMEM(arg_assigns);
     FREEMEM(arg_decls);
