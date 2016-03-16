@@ -515,7 +515,7 @@ S_gen_meth_invocation(CFCMethod *method, CFCClass *invoker) {
         maybe_assign = "";
     }
     else {
-        maybe_declare = CFCUtil_sprintf("    %s retvalCF;\n",
+        maybe_declare = CFCUtil_sprintf("    %s retvalCF = 0;\n",
                                         CFCType_to_c(return_type));
         maybe_assign = "retvalCF = ";
     }
