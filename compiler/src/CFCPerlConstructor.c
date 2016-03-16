@@ -118,7 +118,8 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         unsigned num_params = num_vars - 1;
         items_check = "items < 1";
         param_specs = CFCPerlSub_build_param_specs((CFCPerlSub*)self, 1);
-        locs_decl   = CFCUtil_sprintf("    int32_t locations[%u];\n",
+        locs_decl   = CFCUtil_sprintf("    int32_t locations[%u];\n"
+                                      "    SV *sv;\n",
                                       num_params);
 
         const char *pattern =
@@ -146,7 +147,6 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         "    dXSARGS;\n"
         "%s" // param_specs
         "%s" // locs_decl
-        "    SV *sv;\n"
         "%s" // arg_decls
         "    %s retval;\n"
         "\n"

@@ -200,6 +200,7 @@ singleton(either_sv, value)
     bool     value;
 CODE:
 {
+    CFISH_UNUSED_VAR(either_sv);
     RETVAL = CFISH_OBJ_TO_SV_INC(cfish_Bool_singleton(value));
 }
 OUTPUT: RETVAL
