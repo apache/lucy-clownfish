@@ -39,7 +39,7 @@ def ext_build_dir(base):
 # CFLAGS.  Add the Python headers include dir to CFLAGS.
 compiler = distutils.ccompiler.new_compiler()
 cflags = sysconfig.get_config_var('CFLAGS')
-cflags = cflags + " -I" + sysconfig.get_path('include')
+cflags = cflags + " -I" + distutils.sysconfig.get_python_inc()
 compiler_type = distutils.ccompiler.get_default_compiler()
 
 # There's no public way to get a string representing the compiler executable
