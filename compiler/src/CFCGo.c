@@ -46,7 +46,7 @@ struct mapping {
     char *package;
 };
 
-static int num_parcel_mappings;
+static size_t num_parcel_mappings;
 static struct mapping *parcel_mappings;
 
 struct CFCGo {
@@ -198,9 +198,9 @@ S_gen_prereq_imports(CFCParcel *parcel) {
     for (int i = 0; prereqs[i] != NULL; i++) {
         const char *dep_parcel = CFCParcel_get_name(prereqs[i]);
         const char *dep_package = NULL;
-        for (int j = 0; j < num_parcel_mappings; j++) {
-            if (strcmp(dep_parcel, parcel_mappings[i].parcel) == 0) {
-                dep_package = parcel_mappings[i].package;
+        for (size_t j = 0; j < num_parcel_mappings; j++) {
+            if (strcmp(dep_parcel, parcel_mappings[j].parcel) == 0) {
+                dep_package = parcel_mappings[j].package;
             }
         }
         if (dep_package == NULL) {
