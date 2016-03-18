@@ -107,7 +107,7 @@ CFCDocuComment_parse(const char *raw_text) {
             && ((ptr == limit - 1) || isspace(*(ptr + 1)))
            ) {
             ptr++;
-            size_t brief_len = ptr - text;
+            size_t brief_len = (size_t)(ptr - text);
             self->brief = CFCUtil_strdup(text);
             self->brief[brief_len] = '\0';
             break;
@@ -136,7 +136,7 @@ CFCDocuComment_parse(const char *raw_text) {
         while (isspace(*ptr) && ptr < text_limit) { ptr++; }
         char *param_name = ptr;
         while ((isalnum(*ptr) || *ptr == '_') && ptr < text_limit) { ptr++; }
-        size_t param_name_len = ptr - param_name;
+        size_t param_name_len = (size_t)(ptr - param_name);
         if (!param_name_len) {
             CFCUtil_die("Malformed @param directive in '%s'", raw_text);
         }
@@ -151,7 +151,7 @@ CFCDocuComment_parse(const char *raw_text) {
               ) {
             ptr++;
         }
-        size_t param_doc_len = ptr - param_doc;
+        size_t param_doc_len = (size_t)(ptr - param_doc);
 
         num_params++;
         size_t size = (num_params + 1) * sizeof(char*);

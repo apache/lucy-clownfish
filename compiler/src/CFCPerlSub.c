@@ -51,9 +51,9 @@ CFCPerlSub_init(CFCPerlSub *self, CFCParamList *param_list,
 
     size_t c_name_len = strlen(self->perl_name) + sizeof("XS_") + 1;
     self->c_name = (char*)MALLOCATE(c_name_len);
-    int j = 3;
+    size_t j = 3;
     memcpy(self->c_name, "XS_", j);
-    for (int i = 0, max = (int)strlen(self->perl_name); i < max; i++) {
+    for (size_t i = 0, max = strlen(self->perl_name); i < max; i++) {
         char c = self->perl_name[i];
         if (c == ':') {
             while (self->perl_name[i + 1] == ':') { i++; }

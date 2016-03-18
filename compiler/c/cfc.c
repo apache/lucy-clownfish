@@ -75,6 +75,7 @@ S_parse_string_array_argument(const char *arg, const char *name,
     size_t   arg_len  = strlen(arg);
     size_t   name_len = strlen(name);
     int      new_num_results;
+    size_t   amount;
     char   **new_results;
 
     if (arg_len < name_len
@@ -85,8 +86,8 @@ S_parse_string_array_argument(const char *arg, const char *name,
     }
 
     new_num_results = *num_results + 1;
-    new_results     = (char **)REALLOCATE(*results,
-                              (new_num_results + 1) * sizeof(char *));
+    amount = (((size_t)new_num_results + 1) * sizeof(char *));
+    new_results = (char **)REALLOCATE(*results, amount);
     new_results[new_num_results-1] = CFCUtil_strdup(arg + name_len + 1);
     new_results[new_num_results]   = NULL;
     *num_results = new_num_results;

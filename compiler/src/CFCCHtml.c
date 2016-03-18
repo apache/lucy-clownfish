@@ -16,6 +16,7 @@
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 
 #include <cmark.h>
@@ -1091,8 +1092,8 @@ S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class) {
             CFCUtil_die("Unprefixed object specifier '%s'", specifier);
         }
 
-        size_t      offset     = underscore + 1 - specifier;
-        char       *prefix     = CFCUtil_strndup(specifier, offset);
+        ptrdiff_t   offset     = underscore + 1 - specifier;
+        char       *prefix     = CFCUtil_strndup(specifier, (size_t)offset);
         const char *struct_sym = specifier + offset;
 
         if (!klass) {
@@ -1117,7 +1118,7 @@ S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class) {
     const char *const_str = CFCType_const(type) ? "const " : "";
 
     int indirection = CFCType_get_indirection(type);
-    size_t asterisk_offset = indirection < 10 ? 10 - indirection : 0;
+    ptrdiff_t asterisk_offset = indirection < 10 ? 10 - indirection : 0;
     const char *asterisks = "**********";
     const char *ind_str   = asterisks + asterisk_offset;
 
@@ -1203,7 +1204,7 @@ S_relative_url(const char *url, CFCClass *base, int dir_level) {
     }
 
     // Create path back to root
-    size_t bytes = dir_level * 3;
+    size_t bytes = (size_t)(dir_level * 3);
     char *prefix = (char*)MALLOCATE(bytes + 1);
     for (size_t i = 0; i < bytes; i += 3) {
         memcpy(prefix + i, "../", 3);

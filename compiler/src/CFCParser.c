@@ -99,7 +99,7 @@ CFCParser_parse(CFCParser *self, const char *string) {
     // Zero out, then parse.
     self->errors = false;
     self->lineno = 0;
-    YY_BUFFER_STATE buffer = yy_scan_bytes(string, (int)strlen(string));
+    YY_BUFFER_STATE buffer = yy_scan_bytes(string, (yy_size_t)strlen(string));
     yylex();
     yy_delete_buffer(buffer);
 

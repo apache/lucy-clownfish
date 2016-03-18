@@ -133,7 +133,7 @@ CFCPerlMethod_perl_name(CFCMethod *method) {
     const char *name      = CFCMethod_get_name(method);
     char       *perl_name = CFCUtil_strdup(name);
     for (size_t i = 0; perl_name[i] != '\0'; i++) {
-        perl_name[i] = tolower(perl_name[i]);
+        perl_name[i] = (char)tolower(perl_name[i]);
     }
 
     return perl_name;

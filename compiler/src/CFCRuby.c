@@ -135,7 +135,7 @@ S_write_boot_h(CFCRuby *self) {
     S_replace_double_colons(guard, '_');
     for (char *ptr = guard; *ptr != '\0'; ptr++) {
         if (isalpha(*ptr)) {
-            *ptr = toupper(*ptr);
+            *ptr = (char)toupper(*ptr);
         }
     }
 

@@ -384,7 +384,7 @@ CFCType_get_class_var(CFCType *self) {
     if (!self->class_var) {
         self->class_var = CFCUtil_strdup(self->specifier);
         for (int i = 0; self->class_var[i] != 0; i++) {
-            self->class_var[i] = toupper(self->class_var[i]);
+            self->class_var[i] = (char)toupper(self->class_var[i]);
         }
     }
     return self->class_var;
@@ -410,7 +410,7 @@ CFCType_to_c(CFCType *self) {
         // NOTE: Array postfixes are NOT included.
         const char *child_c_string = CFCType_to_c(self->child);
         size_t      child_c_len    = strlen(child_c_string);
-        size_t      amount         = child_c_len + self->indirection;
+        size_t      amount         = child_c_len + (size_t)self->indirection;
         c_string = (char*)MALLOCATE(amount + 1);
         strcpy(c_string, child_c_string);
         for (int i = 0; i < self->indirection; i++) {

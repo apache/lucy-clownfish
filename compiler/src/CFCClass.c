@@ -274,7 +274,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     char *short_class_var = (char*)MALLOCATE(struct_sym_len + 1);
     size_t i;
     for (i = 0; i < struct_sym_len; i++) {
-        short_class_var[i] = toupper(struct_sym[i]);
+        short_class_var[i] = (char)toupper(struct_sym[i]);
     }
     short_class_var[struct_sym_len] = '\0';
     self->short_class_var = short_class_var;

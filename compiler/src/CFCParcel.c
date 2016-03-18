@@ -209,8 +209,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
         self->Prefix[nickname_len] = '\0';
     }
     for (size_t i = 0; i < amount; i++) {
-        self->prefix[i] = tolower(self->Prefix[i]);
-        self->PREFIX[i] = toupper(self->Prefix[i]);
+        self->prefix[i] = (char)tolower(self->Prefix[i]);
+        self->PREFIX[i] = (char)toupper(self->Prefix[i]);
     }
     self->prefix[prefix_len] = '\0';
     self->Prefix[prefix_len] = '\0';
@@ -221,7 +221,7 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     self->privacy_sym = (char*)MALLOCATE(privacy_sym_len + 1);
     memcpy(self->privacy_sym, "CFP_", 4);
     for (size_t i = 0; i < nickname_len; i++) {
-        self->privacy_sym[i+4] = toupper(self->nickname[i]);
+        self->privacy_sym[i+4] = (char)toupper(self->nickname[i]);
     }
     self->privacy_sym[privacy_sym_len] = '\0';
 
@@ -776,7 +776,7 @@ S_parse_json_string(const char **json) {
     }
     JSONNode *node = (JSONNode*)calloc(1, sizeof(JSONNode));
     node->type = JSON_STRING;
-    node->string = CFCUtil_strndup(start, text - start);
+    node->string = CFCUtil_strndup(start, (size_t)(text - start));
 
     // Move pointer.
     text++;

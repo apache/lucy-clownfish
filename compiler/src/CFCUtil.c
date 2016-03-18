@@ -16,6 +16,7 @@
 
 #include "charmony.h"
 
+#include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -155,32 +156,32 @@ CFCUtil_global_replace(const char *string, const char *match,
     int   len_diff        = replacement_len - match_len;
 
     // Allocate space.
-    unsigned count = 0;
+    int count = 0;
     while (NULL != (found = strstr(found, match))) {
         count++;
         found += match_len;
     }
     int size = string_len + count * len_diff + 1;
-    char *modified = (char*)MALLOCATE(size);
+    char *modified = (char*)MALLOCATE((size_t)size);
     modified[size - 1] = 0; // NULL-terminate.
 
     // Iterate through all matches.
     found = (char*)string;
     char *target = modified;
-    size_t last_end = 0;
+    ptrdiff_t last_end = 0;
     if (count) {
         while (NULL != (found = strstr(found, match))) {
-            size_t pos = found - string;
-            size_t unchanged_len = pos - last_end;
+            ptrdiff_t pos = found - string;
+            ptrdiff_t unchanged_len = pos - last_end;
             found += match_len;
-            memcpy(target, string + last_end, unchanged_len);
+            memcpy(target, string + last_end, (size_t)unchanged_len);
             target += unchanged_len;
             last_end = pos + match_len;
-            memcpy(target, replacement, replacement_len);
+            memcpy(target, replacement, (size_t)replacement_len);
             target += replacement_len;
         }
     }
-    size_t remaining = string_len - last_end;
+    size_t remaining = (size_t)(string_len - last_end);
     memcpy(target, string + string_len - remaining, remaining);
 
     return modified;
@@ -205,7 +206,7 @@ CFCUtil_enclose_lines(const char *text, const char *line_prefix,
     while (line_start < text_end) {
         const char *line_end = strchr(line_start, '\n');
         const char *next_start;
-        size_t      line_len;
+        ptrdiff_t   line_len;
 
         if (line_end == NULL) {
             line_len   = text_end - line_start;
@@ -216,8 +217,8 @@ CFCUtil_enclose_lines(const char *text, const char *line_prefix,
             next_start = line_end + 1;
         }
 
-        char *line = (char*)MALLOCATE(line_len + 1);
-        memcpy(line, line_start, line_len);
+        char *line = (char*)MALLOCATE((size_t)line_len + 1);
+        memcpy(line, line_start, (size_t)line_len);
         line[line_len] = '\0';
         result = CFCUtil_cat(result, line_prefix, line, line_postfix, "\n",
                              NULL);
@@ -353,7 +354,7 @@ CFCUtil_slurp_text(const char *file_path, size_t *len_ptr) {
     }
 
     /* Find length; return NULL if the file has a zero-length. */
-    binary_len = CFCUtil_flength(file);
+    binary_len = (size_t)CFCUtil_flength(file);
     if (binary_len == 0) {
         *len_ptr = 0;
         return NULL;
