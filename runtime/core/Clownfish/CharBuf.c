@@ -20,6 +20,7 @@
 
 #include "charmony.h"
 
+#include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,8 +144,8 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
         // Consume all characters leading up to a '%'.
         while (slice_end < pattern_end && *slice_end != '%') { slice_end++; }
         if (pattern != slice_end) {
-            size_t size = slice_end - pattern;
-            S_cat_utf8(self, pattern, size);
+            ptrdiff_t size = slice_end - pattern;
+            S_cat_utf8(self, pattern, (size_t)size);
             pattern = slice_end;
         }
 
@@ -173,7 +174,6 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                     break;
                 case 'i': {
                         int64_t val = 0;
-                        size_t size;
                         if (pattern[1] == '8') {
                             val = va_arg(args, int32_t);
                             pattern++;
@@ -189,13 +189,12 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                         else {
                             S_die_invalid_pattern(pattern_start);
                         }
-                        size = sprintf(buf, "%" PRId64, val);
-                        S_cat_utf8(self, buf, size);
+                        int size = sprintf(buf, "%" PRId64, val);
+                        S_cat_utf8(self, buf, (size_t)size);
                     }
                     break;
                 case 'u': {
                         uint64_t val = 0;
-                        size_t size;
                         if (pattern[1] == '8') {
                             val = va_arg(args, uint32_t);
                             pattern += 1;
@@ -211,16 +210,16 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                         else {
                             S_die_invalid_pattern(pattern_start);
                         }
-                        size = sprintf(buf, "%" PRIu64, val);
-                        S_cat_utf8(self, buf, size);
+                        int size = sprintf(buf, "%" PRIu64, val);
+                        S_cat_utf8(self, buf, (size_t)size);
                     }
                     break;
                 case 'f': {
                         if (pattern[1] == '6' && pattern[2] == '4') {
                             double num  = va_arg(args, double);
                             char bigbuf[512];
-                            size_t size = sprintf(bigbuf, "%g", num);
-                            S_cat_utf8(self, bigbuf, size);
+                            int size = sprintf(bigbuf, "%g", num);
+                            S_cat_utf8(self, bigbuf, (size_t)size);
                             pattern += 2;
                         }
                         else {
@@ -231,8 +230,8 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                 case 'x': {
                         if (pattern[1] == '3' && pattern[2] == '2') {
                             unsigned long val = va_arg(args, uint32_t);
-                            size_t size = sprintf(buf, "%.8lx", val);
-                            S_cat_utf8(self, buf, size);
+                            int size = sprintf(buf, "%.8lx", val);
+                            S_cat_utf8(self, buf, (size_t)size);
                             pattern += 2;
                         }
                         else {
@@ -362,7 +361,7 @@ S_grow_and_oversize(CharBuf *self, size_t min_size) {
     // Oversize by 25%, but at least eight bytes.
     size_t extra = min_size / 4;
     // Round up to next multiple of eight.
-    extra = (extra + 7) & ~7;
+    extra = (extra + 7) & ((size_t)(~7));
 
     size_t capacity = min_size + extra;
     if (capacity < min_size) {

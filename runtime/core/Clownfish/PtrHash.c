@@ -169,7 +169,7 @@ PtrHash_Fetch(PtrHash *self, void *key) {
 
 static void
 S_resize(PtrHash *self) {
-    size_t old_size = self->end - self->entries;
+    size_t old_size = (size_t)(self->end - self->entries);
     if (old_size > SIZE_MAX / 2 || self->shift == 0) {
         THROW(ERR, "PtrHash size overflow");
     }

@@ -84,7 +84,7 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
                                 : offsetof(Class, vtable);
         uint32_t class_alloc_size = novel_offset
                                     + spec->num_novel_meths
-                                      * sizeof(cfish_method_t);
+                                      * (uint32_t)sizeof(cfish_method_t);
 
         Class *klass = (Class*)CALLOCATE(class_alloc_size, 1);
 
@@ -158,7 +158,7 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
         if (parent) {
             // Copy parent vtable.
             uint32_t parent_vt_size = parent->class_alloc_size
-                                      - offsetof(Class, vtable);
+                                      - (uint32_t)offsetof(Class, vtable);
             memcpy(klass->vtable, parent->vtable, parent_vt_size);
         }
 
@@ -181,7 +181,7 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &novel_specs[num_novel++];
             *mspec->offset = novel_offset;
-            novel_offset += sizeof(cfish_method_t);
+            novel_offset += (uint32_t)sizeof(cfish_method_t);
             Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
     }

@@ -83,7 +83,7 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     TEST_INT_EQ(runner, Hash_Get_Capacity(hash), starting_cap,
                 "Initial capacity sufficient (no rebuilds)");
 
-    for (int32_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         String *key  = (String*)Vec_Fetch(expected, i);
         Obj    *elem = Hash_Fetch(hash, key);
         Vec_Push(got, (Obj*)INCREF(elem));
@@ -182,10 +182,10 @@ test_stress(TestBatchRunner *runner) {
     Vector   *values;
 
     for (uint32_t i = 0; i < 1000; i++) {
-        String *str = TestUtils_random_string(rand() % 1200);
+        String *str = TestUtils_random_string((size_t)(rand() % 1200));
         while (Hash_Fetch(hash, str)) {
             DECREF(str);
-            str = TestUtils_random_string(rand() % 1200);
+            str = TestUtils_random_string((size_t)(rand() % 1200));
         }
         Hash_Store(hash, str, (Obj*)str);
         Vec_Push(expected, INCREF(str));

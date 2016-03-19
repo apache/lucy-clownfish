@@ -16,6 +16,7 @@
 
 #define C_CFISH_STRINGHELPER
 #include <string.h>
+#include <stddef.h>
 
 #define CFISH_USE_SHORT_NAMES
 
@@ -70,7 +71,7 @@ StrHelp_to_base36(uint64_t num, void *buffer) {
         num /= 36;
     } while (num > 0);
 
-    size_t size = end - buf;
+    size_t size = (size_t)(end - buf);
     memcpy(buffer, buf, size + 1);
     return size;
 }
