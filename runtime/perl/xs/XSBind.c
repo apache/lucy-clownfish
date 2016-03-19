@@ -833,7 +833,10 @@ void
 cfish_Err_init_class(void) {
     dTHX;
     char *file = (char*)__FILE__;
-    attempt_xsub = (SV*)newXS(NULL, cfish_Err_attempt_via_xs, file);
+    SV *xsub = (SV*)newXS(NULL, cfish_Err_attempt_via_xs, file);
+    if (!cfish_Atomic_cas_ptr((void**)&attempt_xsub, NULL, xsub)) {
+        SvREFCNT_dec(xsub);
+    }
 }
 
 cfish_Err*

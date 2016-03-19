@@ -26,6 +26,7 @@
 #include "Clownfish/Test/TestByteBuf.h"
 #include "Clownfish/Test/TestString.h"
 #include "Clownfish/Test/TestCharBuf.h"
+#include "Clownfish/Test/TestClass.h"
 #include "Clownfish/Test/TestErr.h"
 #include "Clownfish/Test/TestHash.h"
 #include "Clownfish/Test/TestHashIterator.h"
@@ -42,6 +43,7 @@ TestSuite*
 Test_create_test_suite() {
     TestSuite *suite = TestSuite_new();
 
+    TestSuite_Add_Batch(suite, (TestBatch*)TestClass_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestVector_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestHash_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestHashIterator_new());

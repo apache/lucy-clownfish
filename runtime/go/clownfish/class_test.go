@@ -36,8 +36,8 @@ func TestClassGetParent(t *testing.T) {
 
 func TestClassGetObjAllocSize(t *testing.T) {
 	intClass := FetchClass("Clownfish::Integer")
-	classClass := FetchClass("Clownfish::Class")
-	if intClass.GetObjAllocSize() >= classClass.GetObjAllocSize() {
+	objClass := FetchClass("Clownfish::Obj")
+	if intClass.GetObjAllocSize() <= objClass.GetObjAllocSize() {
 		t.Error("Unexpected result for getObjAllocSize")
 	}
 }

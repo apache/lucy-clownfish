@@ -49,10 +49,15 @@ static DWORD err_context_tls_index;
 
 void
 Tls_init() {
-    err_context_tls_index = TlsAlloc();
-    if (err_context_tls_index == TLS_OUT_OF_INDEXES) {
+    DWORD tls_index = TlsAlloc();
+    if (tls_index == TLS_OUT_OF_INDEXES) {
         fprintf(stderr, "TlsAlloc failed (TLS_OUT_OF_INDEXES)\n");
         abort();
+    }
+    LONG old_index = InterlockedCompareExchange((LONG*)&err_context_tls_index,
+                                                tls_index, 0);
+    if (old_index != 0) {
+        TlsFree(tls_index);
     }
 }
 

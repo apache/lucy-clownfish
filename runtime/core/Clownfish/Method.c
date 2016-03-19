@@ -54,7 +54,12 @@ Method_init(Method *self, String *name, cfish_method_t callback_func,
 
 void
 Method_Destroy_IMP(Method *self) {
-    THROW(ERR, "Insane attempt to destroy Method '%o'", self->name);
+    DECREF(self->name);
+    DECREF(self->name_internal);
+    DECREF(self->host_alias);
+    DECREF(self->host_alias_internal);
+
+    SUPER_DESTROY(self, METHOD);
 }
 
 String*

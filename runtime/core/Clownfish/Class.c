@@ -50,26 +50,34 @@ S_set_name(Class *self, const char *utf8, size_t size);
 static Method*
 S_find_method(Class *self, const char *meth_name);
 
-static int32_t
-S_claim_parcel_id(void);
-
 static LockFreeRegistry *Class_registry;
 cfish_Class_bootstrap_hook1_t cfish_Class_bootstrap_hook1;
 
 void
-Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
-                const cfish_NovelMethSpec *novel_specs,
-                const cfish_OverriddenMethSpec *overridden_specs,
-                const cfish_InheritedMethSpec *inherited_specs) {
-    int32_t parcel_id = S_claim_parcel_id();
+Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
+    const ClassSpec          *specs            = parcel_spec->class_specs;
+    const NovelMethSpec      *novel_specs      = parcel_spec->novel_specs;
+    const OverriddenMethSpec *overridden_specs = parcel_spec->overridden_specs;
+    const InheritedMethSpec  *inherited_specs  = parcel_spec->inherited_specs;
+    uint32_t num_classes = parcel_spec->num_classes;
 
     /* Pass 1:
      * - Allocate memory.
      * - Initialize global Class pointers.
      */
-    for (size_t i = 0; i < num_specs; ++i) {
+    for (uint32_t i = 0; i < num_classes; ++i) {
         const ClassSpec *spec = &specs[i];
-        Class *parent = spec->parent ? *spec->parent : NULL;
+        Class *parent = NULL;
+
+        if (spec->parent) {
+            parent = *spec->parent;
+            if (!parent) {
+                // Wrong order of class specs or inheritance cycle.
+                fprintf(stderr, "Parent class of '%s' not initialized\n",
+                        spec->name);
+                abort();
+            }
+        }
 
         uint32_t novel_offset = parent
                                 ? parent->class_alloc_size
@@ -78,34 +86,29 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
                                     + spec->num_novel_meths
                                       * sizeof(cfish_method_t);
 
-        Class *klass = (Class*)Memory_wrapped_calloc(class_alloc_size, 1);
+        Class *klass = (Class*)CALLOCATE(class_alloc_size, 1);
 
         // Needed to calculate size of subclasses.
         klass->class_alloc_size = class_alloc_size;
 
-        if (spec->klass == &CLASS) {
-            // `obj_alloc_size` is used by Init_Obj to zero the object. In the
-            // next pass, this method is called to initialize the Class
-            // objects. The Class struct is zeroed already, so this isn't
-            // crucial, but let's set the correct value here.
-            klass->obj_alloc_size = offsetof(Class, vtable);
-        }
-
         // Initialize the global pointer to the Class.
-        *spec->klass = klass;
+        if (!Atomic_cas_ptr((void**)spec->klass, NULL, klass)) {
+            // Another thread beat us to it.
+            FREEMEM(klass);
+        }
     }
 
     /* Pass 2:
      * - Initialize IVARS_OFFSET.
      * - Initialize 'klass' ivar and refcount by calling Init_Obj.
      * - Initialize parent, flags, obj_alloc_size, class_alloc_size.
-     * - Assign parcel_id.
+     * - Assign parcel_spec.
      * - Initialize method pointers and offsets.
      */
     uint32_t num_novel      = 0;
     uint32_t num_overridden = 0;
     uint32_t num_inherited  = 0;
-    for (size_t i = 0; i < num_specs; ++i) {
+    for (uint32_t i = 0; i < num_classes; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass  = *spec->klass;
         Class *parent = spec->parent ? *spec->parent : NULL;
@@ -114,7 +117,7 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
         if (spec->ivars_offset_ptr != NULL) {
             if (parent) {
                 Class *ancestor = parent;
-                while (ancestor && ancestor->parcel_id == parcel_id) {
+                while (ancestor && ancestor->parcel_spec == parcel_spec) {
                     ancestor = ancestor->parent;
                 }
                 ivars_offset = ancestor ? ancestor->obj_alloc_size : 0;
@@ -125,26 +128,15 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
             }
         }
 
-        // Init_Obj clears all klass ivars, so `class_alloc_size` must be
-        // recalculated.
+        // CLASS->obj_alloc_size is always 0, so Init_Obj doesn't clear any
+        // values set in the previous pass or by another thread.
         Class_Init_Obj_IMP(CLASS, klass);
 
-        uint32_t novel_offset = parent
-                                ? parent->class_alloc_size
-                                : offsetof(Class, vtable);
-        uint32_t class_alloc_size = novel_offset
-                                    + spec->num_novel_meths
-                                      * sizeof(cfish_method_t);
+        klass->parent      = parent;
+        klass->parcel_spec = parcel_spec;
 
-        klass->parent           = parent;
-        klass->parcel_id        = parcel_id;
-        klass->class_alloc_size = class_alloc_size;
-
-        if (klass == CLASS) {
-            // Don't account for vtable array.
-            klass->obj_alloc_size = offsetof(Class, vtable);
-        }
-        else {
+        // CLASS->obj_alloc_size must stay at 0.
+        if (klass != CLASS) {
             klass->obj_alloc_size = ivars_offset + spec->ivars_size;
         }
         if (cfish_Class_bootstrap_hook1 != NULL) {
@@ -182,6 +174,10 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
             Class_Override_IMP(klass, mspec->func, *mspec->offset);
         }
 
+        uint32_t novel_offset = parent
+                                ? parent->class_alloc_size
+                                : offsetof(Class, vtable);
+
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
             const NovelMethSpec *mspec = &novel_specs[num_novel++];
             *mspec->offset = novel_offset;
@@ -199,13 +195,28 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
     num_novel      = 0;
     num_overridden = 0;
     num_inherited  = 0;
-    for (size_t i = 0; i < num_specs; ++i) {
+    for (uint32_t i = 0; i < num_classes; ++i) {
         const ClassSpec *spec = &specs[i];
         Class *klass = *spec->klass;
 
-        S_set_name(klass, spec->name, strlen(spec->name));
-        klass->methods = (Method**)MALLOCATE((spec->num_novel_meths + 1)
-                                             * sizeof(Method*));
+        String *name_internal
+            = Str_new_from_trusted_utf8(spec->name, strlen(spec->name));
+        if (!Atomic_cas_ptr((void**)&klass->name_internal, NULL,
+                            name_internal)
+           ) {
+            DECREF(name_internal);
+            name_internal = klass->name_internal;
+        }
+
+        String *name = Str_new_wrap_trusted_utf8(Str_Get_Ptr8(name_internal),
+                                                 Str_Get_Size(name_internal));
+        if (!Atomic_cas_ptr((void**)&klass->name, NULL, name)) {
+            DECREF(name);
+            name = klass->name;
+        }
+
+        Method **methods = (Method**)MALLOCATE((spec->num_novel_meths + 1)
+                                               * sizeof(Method*));
 
         // Only store novel methods for now.
         for (size_t i = 0; i < spec->num_novel_meths; ++i) {
@@ -213,10 +224,18 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
             String *name = SSTR_WRAP_C(mspec->name);
             Method *method = Method_new(name, mspec->callback_func,
                                         *mspec->offset);
-            klass->methods[i] = method;
+            methods[i] = method;
         }
 
-        klass->methods[spec->num_novel_meths] = NULL;
+        methods[spec->num_novel_meths] = NULL;
+
+        if (!Atomic_cas_ptr((void**)&klass->methods, NULL, methods)) {
+            // Another thread beat us to it.
+            for (size_t i = 0; i < spec->num_novel_meths; ++i) {
+                Method_Destroy(methods[i]);
+            }
+            FREEMEM(methods);
+        }
 
         Class_add_to_registry(klass);
     }
@@ -224,7 +243,16 @@ Class_bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
 
 void
 Class_Destroy_IMP(Class *self) {
-    THROW(ERR, "Insane attempt to destroy Class for class '%o'", self->name);
+    for (size_t i = 0; self->methods[i]; i++) {
+        // Call Destroy directly instead of going through DECREF.
+        Method_Destroy(self->methods[i]);
+    }
+    FREEMEM(self->methods);
+
+    DECREF(self->name);
+    DECREF(self->name_internal);
+
+    SUPER_DESTROY(self, CLASS);
 }
 
 void
@@ -283,7 +311,6 @@ S_simple_subclass(Class *parent, String *name) {
 
     subclass->parent           = parent;
     subclass->flags            = parent->flags;
-    subclass->parcel_id        = parent->parcel_id;
     subclass->obj_alloc_size   = parent->obj_alloc_size;
     subclass->class_alloc_size = parent->class_alloc_size;
     subclass->methods          = (Method**)CALLOCATE(1, sizeof(Method*));
@@ -448,24 +475,5 @@ S_find_method(Class *self, const char *name) {
     }
 
     return NULL;
-}
-
-static size_t parcel_count;
-
-static int32_t
-S_claim_parcel_id(void) {
-    // TODO: use ordinary cas rather than cas_ptr.
-    union { size_t num; void *ptr; } old_value;
-    union { size_t num; void *ptr; } new_value;
-
-    bool succeeded = false;
-    do {
-        old_value.num = parcel_count;
-        new_value.num = old_value.num + 1;
-        succeeded = Atomic_cas_ptr((void*volatile*)&parcel_count,
-                                   old_value.ptr, new_value.ptr);
-    } while (!succeeded);
-
-    return (int32_t)new_value.num;
 }
 

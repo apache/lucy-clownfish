@@ -131,6 +131,14 @@ CFCBindSpecs_get_typedefs() {
         "    uint32_t      num_inherited_meths;\n"
         "    uint32_t      flags;\n"
         "} cfish_ClassSpec;\n"
+        "\n"
+        "typedef struct cfish_ParcelSpec {\n"
+        "    const cfish_ClassSpec          *class_specs;\n"
+        "    const cfish_NovelMethSpec      *novel_specs;\n"
+        "    const cfish_OverriddenMethSpec *overridden_specs;\n"
+        "    const cfish_InheritedMethSpec  *inherited_specs;\n"
+        "    uint32_t num_classes;\n"
+        "} cfish_ParcelSpec;\n"
         "\n";
 }
 
@@ -267,9 +275,18 @@ CFCBindSpecs_defs(CFCBindSpecs *self) {
         "%s"
         "static cfish_ClassSpec class_specs[] = {\n"
         "%s\n"
+        "};\n"
+        "\n"
+        "static const cfish_ParcelSpec parcel_spec = {\n"
+        "    class_specs,\n"
+        "    novel_specs,\n"
+        "    overridden_specs,\n"
+        "    inherited_specs,\n"
+        "    %d\n" // num_classes
         "};\n";
     char *defs = CFCUtil_sprintf(pattern, novel_specs, overridden_specs,
-                                 inherited_specs, self->class_specs);
+                                 inherited_specs, self->class_specs,
+                                 self->num_specs);
 
     FREEMEM(inherited_specs);
     FREEMEM(overridden_specs);
@@ -284,10 +301,9 @@ CFCBindSpecs_init_func_def(CFCBindSpecs *self) {
         "S_bootstrap_specs() {\n"
         "%s"
         "\n"
-        "    cfish_Class_bootstrap(class_specs, %d, novel_specs,\n"
-        "                          overridden_specs, inherited_specs);\n"
+        "    cfish_Class_bootstrap(&parcel_spec);\n"
         "}\n";
-    return CFCUtil_sprintf(pattern, self->init_code, self->num_specs);
+    return CFCUtil_sprintf(pattern, self->init_code);
 }
 
 static char*

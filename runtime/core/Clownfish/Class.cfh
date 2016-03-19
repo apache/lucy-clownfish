@@ -24,24 +24,21 @@ parcel Clownfish;
 
 public final class Clownfish::Class inherits Clownfish::Obj {
 
-    Class              *parent;
-    String             *name;
-    String             *name_internal;
-    uint32_t            flags;
-    int32_t             parcel_id;
-    uint32_t            obj_alloc_size;
-    uint32_t            class_alloc_size;
-    void               *host_type;
-    Method            **methods;
-    cfish_method_t[1]   vtable; /* flexible array */
+    Class                   *parent;
+    String                  *name;
+    String                  *name_internal;
+    uint32_t                 flags;
+    const cfish_ParcelSpec  *parcel_spec;
+    uint32_t                 obj_alloc_size;
+    uint32_t                 class_alloc_size;
+    void                    *host_type;
+    Method                 **methods;
+    cfish_method_t[1]        vtable; /* flexible array */
 
     inert uint32_t offset_of_parent;
 
     inert void
-    bootstrap(const cfish_ClassSpec *specs, size_t num_specs,
-              const cfish_NovelMethSpec *novel_specs,
-              const cfish_OverriddenMethSpec *overridden_specs,
-              const cfish_InheritedMethSpec *inherited_specs);
+    bootstrap(const cfish_ParcelSpec *parcel_spec);
 
     /** Return a singleton.  If a Class can be found in the registry based on
      * the supplied class name, it will be returned.  Otherwise, a new Class
