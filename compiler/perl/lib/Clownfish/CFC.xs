@@ -764,6 +764,12 @@ build(self)
 PPCODE:
     CFCHierarchy_build(self);
 
+void
+read_host_data_json(self)
+    CFCHierarchy *self;
+PPCODE:
+    CFCHierarchy_read_host_data_json(self, "perl");
+
 int
 propagate_modified(self, ...)
     CFCHierarchy *self;

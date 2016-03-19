@@ -29,6 +29,7 @@
 #include "CFCVersion.h"
 #include "CFCUtil.h"
 #include "CFCJson.h"
+#include "CFCClass.h"
 
 struct CFCParcel {
     CFCBase base;
@@ -517,6 +518,36 @@ CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel) {
     }
 
     return false;
+}
+
+void
+CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang) {
+    const char *source_dir = CFCParcel_get_source_dir(self);
+    char *path = CFCUtil_sprintf("%s" CHY_DIR_SEP "parcel_%s.json", source_dir,
+                                 host_lang);
+
+    size_t len;
+    char *json = CFCUtil_slurp_text(path, &len);
+    CFCJson *extra_data = CFCJson_parse(json);
+    if (!extra_data) {
+        CFCUtil_die("Invalid JSON in file '%s'", path);
+    }
+    CFCJson *class_hash = CFCJson_find_hash_elem(extra_data, "classes");
+    if (!class_hash) { return; }
+
+    CFCJson **children = CFCJson_get_children(class_hash);
+    for (int i = 0; children[i]; i += 2) {
+        const char *class_name = CFCJson_get_string(children[i]);
+        CFCClass *klass = CFCClass_fetch_singleton(class_name);
+        if (!klass) {
+            CFCUtil_die("Class '%s' in '%s' not found", class_name, path);
+        }
+        CFCClass_read_host_data_json(klass, children[i+1], path);
+    }
+
+    CFCJson_destroy(extra_data);
+    FREEMEM(json);
+    FREEMEM(path);
 }
 
 void

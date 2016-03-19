@@ -164,6 +164,11 @@ CFCParcel_prereq_parcels(CFCParcel *self);
 int
 CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel);
 
+/** Read host-specific data for an included parcel from a JSON file.
+ */
+void
+CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang);
+
 void
 CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym);
 

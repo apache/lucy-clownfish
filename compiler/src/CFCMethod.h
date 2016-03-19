@@ -37,6 +37,7 @@ struct CFCType;
 struct CFCClass;
 struct CFCParamList;
 struct CFCDocuComment;
+struct CFCJson;
 
 /**
  * @param exposure See Clownfish::CFC::Model::Symbol.  Defaults to "parcel"
@@ -105,6 +106,12 @@ CFCMethod_finalize(CFCMethod *self);
   */
 int
 CFCMethod_can_be_bound(CFCMethod *method);
+
+/** Read host-specific data for the method from a JSON hash.
+ */
+void
+CFCMethod_read_host_data_json(CFCMethod *self, struct CFCJson *hash,
+                              const char *path);
 
 /**
  * Find the first declaration of the method in the class hierarchy.

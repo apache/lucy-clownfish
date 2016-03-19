@@ -223,6 +223,7 @@ sub _compile_clownfish {
         $hierarchy->add_include_dir($include_dir);
     }
     $hierarchy->build;
+    $hierarchy->read_host_data_json;
 
     # Process all Binding classes in buildlib.
     my $pm_filepaths = $self->rscan_dir( $BUILDLIB_DIR, qr/\.pm$/ );
