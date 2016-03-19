@@ -68,7 +68,7 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
                ...);
 
     inert bool
-    test_int_equals(TestBatchRunner *self, uint64_t got, uint64_t expected,
+    test_int_equals(TestBatchRunner *self, int64_t got, int64_t expected,
                     const char *pattern, ...);
 
     inert bool
@@ -97,7 +97,7 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
                 va_list args);
 
     bool
-    VTest_Int_Equals(TestBatchRunner *self, uint64_t got, uint64_t expected,
+    VTest_Int_Equals(TestBatchRunner *self, int64_t got, int64_t expected,
                      const char *pattern, va_list args);
 
     bool
