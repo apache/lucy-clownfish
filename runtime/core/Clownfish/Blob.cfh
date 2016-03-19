@@ -77,7 +77,7 @@ public final class Clownfish::Blob inherits Clownfish::Obj {
     init_wrap(Blob *self, const void *bytes, size_t size);
 
     void*
-    To_Host(Blob *self);
+    To_Host(Blob *self, void *vcache);
 
     /** Return the number of bytes held by the Blob.
      */

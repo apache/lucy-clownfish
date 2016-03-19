@@ -51,7 +51,7 @@ public final class Clownfish::Hash inherits Clownfish::Obj {
     get_tombstone();
 
     void*
-    To_Host(Hash *self);
+    To_Host(Hash *self, void *vcache);
 
     /** Empty the hash of all key-value pairs.
      */

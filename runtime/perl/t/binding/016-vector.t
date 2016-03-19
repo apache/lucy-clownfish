@@ -16,8 +16,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 1;
-use Clownfish;
+use Test::More tests => 4;
+use Clownfish qw( to_clownfish );
 
 my ( $vector, $twin );
 
@@ -31,4 +31,32 @@ $vector->insert(
 );
 $twin = $vector->clone_raw;
 is_deeply( $twin->to_perl, $vector->to_perl, "clone" );
+
+use Data::Dumper;
+
+my $hashref  = { foo => 'Foo', bar => 'Bar' };
+$hashref->{baz} = [ { circular => [ undef, $hashref ], one => 'One' } ];
+
+my $arrayref = [];
+push( @$arrayref, [] ) for 1..5000;
+push( @$arrayref, $arrayref, { key => $arrayref }, 42, $hashref, 'string' );
+
+$vector = to_clownfish($arrayref);
+is( $$vector, ${ $vector->fetch_raw(5000) },
+    'to_clownfish($arrayref) handles circular references' );
+
+my $hash = $vector->fetch_raw(5003);
+is(
+    $$hash,
+    ${
+        $hash->fetch_raw('baz')
+             ->fetch_raw(0)
+             ->fetch_raw('circular')
+             ->fetch_raw(1)
+    },
+    'to_clownfish($arrayref) handles deep circular references'
+);
+
+my $roundtripped = $vector->to_perl;
+is_deeply( $roundtripped, $arrayref, 'to_perl handles circular references');
 

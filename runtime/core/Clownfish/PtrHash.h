@@ -14,32 +14,40 @@
  * limitations under the License.
  */
 
-#define C_CFISH_OBJ
+#ifndef H_CLOWNFISH_PTRHASH
+#define H_CLOWNFISH_PTRHASH 1
 
-#include "CFBind.h"
+#include <stddef.h>
 
-uint32_t
-cfish_get_refcount(void *vself) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(uint32_t);
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-cfish_Obj*
-cfish_inc_refcount(void *vself) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(cfish_Obj*);
-}
+typedef struct cfish_PtrHash cfish_PtrHash;
 
-uint32_t
-cfish_dec_refcount(void *vself) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(uint32_t);
-}
+cfish_PtrHash*
+cfish_PtrHash_new(size_t min_cap);
+
+void
+CFISH_PtrHash_Destroy(cfish_PtrHash *self);
+
+void
+CFISH_PtrHash_Store(cfish_PtrHash *self, void *key, void *value);
 
 void*
-CFISH_Obj_To_Host_IMP(cfish_Obj *self, void *vcache) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(void*);
-}
+CFISH_PtrHash_Fetch(cfish_PtrHash *self, void *key);
 
+#ifdef CFISH_USE_SHORT_NAMES
+  #define PtrHash           cfish_PtrHash
+  #define PtrHash_new       cfish_PtrHash_new
+  #define PtrHash_Destroy   CFISH_PtrHash_Destroy
+  #define PtrHash_Store     CFISH_PtrHash_Store
+  #define PtrHash_Fetch     CFISH_PtrHash_Fetch
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* H_CLOWNFISH_PTRHASH */
 

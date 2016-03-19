@@ -41,7 +41,7 @@ public final class Clownfish::Vector nickname Vec inherits Clownfish::Obj {
     init(Vector *self, size_t capacity = 0);
 
     void*
-    To_Host(Vector *self);
+    To_Host(Vector *self, void *vcache);
 
     /** Push an item onto the end of a Vector.
      */

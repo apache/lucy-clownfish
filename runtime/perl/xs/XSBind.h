@@ -104,7 +104,7 @@ cfish_XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj);
  */
 static CFISH_INLINE SV*
 cfish_XSBind_cfish_to_perl(pTHX_ cfish_Obj *obj) {
-    return obj ? (SV*)CFISH_Obj_To_Host(obj) : newSV(0);
+    return obj ? (SV*)CFISH_Obj_To_Host(obj, NULL) : newSV(0);
 }
 
 /** Convert a Perl SV to a Clownfish object of class `klass`.

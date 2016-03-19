@@ -55,7 +55,7 @@ CFBind_migrate_cferr(void);
 static CFISH_INLINE PyObject*
 CFBind_cfish_to_py(struct cfish_Obj *obj) {
     if (obj != NULL) {
-        return (PyObject*)CFISH_Obj_To_Host(obj);
+        return (PyObject*)CFISH_Obj_To_Host(obj, NULL);
     }
     else {
         Py_RETURN_NONE;
@@ -69,7 +69,7 @@ CFBind_cfish_to_py(struct cfish_Obj *obj) {
 static CFISH_INLINE PyObject*
 CFBind_cfish_to_py_zeroref(struct cfish_Obj *obj) {
     if (obj != NULL) {
-        PyObject *result = (PyObject*)CFISH_Obj_To_Host(obj);
+        PyObject *result = (PyObject*)CFISH_Obj_To_Host(obj, NULL);
         CFISH_DECREF(obj);
         return result;
     }

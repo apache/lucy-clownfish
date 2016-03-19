@@ -14,32 +14,16 @@
  * limitations under the License.
  */
 
-#define C_CFISH_OBJ
+parcel TestClownfish;
 
-#include "CFBind.h"
+class Clownfish::Test::TestPtrHash
+    inherits Clownfish::TestHarness::TestBatch {
 
-uint32_t
-cfish_get_refcount(void *vself) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(uint32_t);
-}
+    inert incremented TestPtrHash*
+    new();
 
-cfish_Obj*
-cfish_inc_refcount(void *vself) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(cfish_Obj*);
-}
-
-uint32_t
-cfish_dec_refcount(void *vself) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(uint32_t);
-}
-
-void*
-CFISH_Obj_To_Host_IMP(cfish_Obj *self, void *vcache) {
-    THROW(CFISH_ERR, "TODO");
-    UNREACHABLE_RETURN(void*);
+    void
+    Run(TestPtrHash *self, TestBatchRunner *runner);
 }
 
 

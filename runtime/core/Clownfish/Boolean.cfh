@@ -39,7 +39,7 @@ public final class Clownfish::Boolean nickname Bool {
     singleton(bool value);
 
     void*
-    To_Host(Boolean *self);
+    To_Host(Boolean *self, void *vcache);
 
     /** Return the value of the Boolean.
      */

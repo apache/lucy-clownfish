@@ -142,7 +142,7 @@ public final class Clownfish::String nickname Str
     newf(const char *pattern, ...);
 
     void*
-    To_Host(String *self);
+    To_Host(String *self, void *vcache);
 
     /** Return the concatenation of the String and `other`.
      */
