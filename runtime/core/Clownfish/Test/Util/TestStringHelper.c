@@ -130,17 +130,17 @@ static void
 test_overlap(TestBatchRunner *runner) {
     size_t result;
     result = StrHelp_overlap("", "", 0, 0);
-    TEST_INT_EQ(runner, result, 0, "two empty strings");
+    TEST_UINT_EQ(runner, result, 0, "two empty strings");
     result = StrHelp_overlap("", "foo", 0, 3);
-    TEST_INT_EQ(runner, result, 0, "first string is empty");
+    TEST_UINT_EQ(runner, result, 0, "first string is empty");
     result = StrHelp_overlap("foo", "", 3, 0);
-    TEST_INT_EQ(runner, result, 0, "second string is empty");
+    TEST_UINT_EQ(runner, result, 0, "second string is empty");
     result = StrHelp_overlap("foo", "foo", 3, 3);
-    TEST_INT_EQ(runner, result, 3, "equal strings");
+    TEST_UINT_EQ(runner, result, 3, "equal strings");
     result = StrHelp_overlap("foo bar", "foo", 7, 3);
-    TEST_INT_EQ(runner, result, 3, "first string is longer");
+    TEST_UINT_EQ(runner, result, 3, "first string is longer");
     result = StrHelp_overlap("foo", "foo bar", 3, 7);
-    TEST_INT_EQ(runner, result, 3, "second string is longer");
+    TEST_UINT_EQ(runner, result, 3, "second string is longer");
 }
 
 

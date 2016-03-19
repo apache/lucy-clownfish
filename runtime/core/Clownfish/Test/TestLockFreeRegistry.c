@@ -123,7 +123,7 @@ test_threads(TestBatchRunner *runner) {
 
         // Fisher-Yates shuffle.
         for (uint32_t j = num_objs - 1; j > 0; j--) {
-            uint32_t r = TestUtils_random_u64() % (j + 1);
+            uint32_t r = (uint32_t)TestUtils_random_u64() % (j + 1);
             uint32_t tmp = nums[j];
             nums[j] = nums[r];
             nums[r] = tmp;

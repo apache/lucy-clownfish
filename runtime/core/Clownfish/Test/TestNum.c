@@ -178,7 +178,7 @@ test_Equals_and_Compare_To(TestBatchRunner *runner) {
     // NOTICE: When running these tests on x86/x64, it's best to compile
     // with -ffloat-store to avoid excess FPU precision which can hide
     // implementation bugs.
-    S_test_compare_float_int(runner, INT64_MAX * 2.0, INT64_MAX, 1);
+    S_test_compare_float_int(runner, (double)INT64_MAX * 2.0, INT64_MAX, 1);
     S_test_compare_float_int(runner, pow(2.0, 60.0), INT64_C(1) << 60, 0);
     S_test_compare_float_int(runner, pow(2.0, 60.0), (INT64_C(1) << 60) - 1,
                              1);

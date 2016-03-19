@@ -68,38 +68,38 @@ test_oversize__growth_rate(TestBatchRunner *runner) {
                   average_growth_rate);
     }
 
-    for (int minimum = 1; minimum < 8; minimum++) {
+    for (size_t minimum = 1; minimum < 8; minimum++) {
         uint64_t next_size = Memory_oversize(minimum, sizeof(void*));
         double growth_rate = CHY_U64_TO_DOUBLE(next_size) / (double)minimum;
         TEST_TRUE(runner, growth_rate > 1.2,
-                  "Growth rate is higher for smaller arrays (%d, %.3f)", minimum,
-                  growth_rate);
+                  "Growth rate is higher for smaller arrays (%u, %.3f)",
+                  (unsigned)minimum, growth_rate);
     }
 }
 
 static void
 test_oversize__ceiling(TestBatchRunner *runner) {
-    for (int width = 0; width < 10; width++) {
+    for (unsigned width = 0; width < 10; width++) {
         size_t size = Memory_oversize(SIZE_MAX, width);
         TEST_TRUE(runner, size == SIZE_MAX,
-                  "Memory_oversize hits ceiling at SIZE_MAX (width %d)", width);
+                  "Memory_oversize hits ceiling at SIZE_MAX (width %u)", width);
         size = Memory_oversize(SIZE_MAX - 1, width);
         TEST_TRUE(runner, size == SIZE_MAX,
-                  "Memory_oversize hits ceiling at SIZE_MAX (width %d)", width);
+                  "Memory_oversize hits ceiling at SIZE_MAX (width %u)", width);
     }
 }
 
 static void
 test_oversize__rounding(TestBatchRunner *runner) {
-    int widths[] = { 1, 2, 4, 0 };
+    unsigned widths[] = { 1, 2, 4, 0 };
 
     for (int width_tick = 0; widths[width_tick] != 0; width_tick++) {
-        int width = widths[width_tick];
-        for (int i = 0; i < 25; i++) {
+        unsigned width = widths[width_tick];
+        for (unsigned i = 0; i < 25; i++) {
             size_t size = Memory_oversize(i, width);
             size_t bytes = size * width;
             if (bytes % sizeof(void*) != 0) {
-                FAIL(runner, "Rounding failure for %d, width %d",
+                FAIL(runner, "Rounding failure for %u, width %u",
                      i, width);
                 return;
             }

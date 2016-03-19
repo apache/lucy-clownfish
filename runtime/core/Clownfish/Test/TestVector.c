@@ -117,7 +117,7 @@ test_Store_Fetch(TestBatchRunner *runner) {
 
     Vec_Store(array, 2, (Obj*)Str_newf("foo"));
     elem = (String*)CERTIFY(Vec_Fetch(array, 2), STRING);
-    TEST_INT_EQ(runner, 3, Vec_Get_Size(array), "Store updates size");
+    TEST_UINT_EQ(runner, 3, Vec_Get_Size(array), "Store updates size");
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Store");
 
     elem = (String*)INCREF(elem);
@@ -135,7 +135,7 @@ test_Store_Fetch(TestBatchRunner *runner) {
     array = S_array_with_garbage();
     Vec_Store(array, 40, (Obj*)CFISH_TRUE);
     bool all_null = true;
-    for (int i = 10; i < 40; i++) {
+    for (size_t i = 10; i < 40; i++) {
         if (Vec_Fetch(array, i) != NULL) { all_null = false; }
     }
     TEST_TRUE(runner, all_null, "Out-of-bounds Store clears excised elements");
@@ -147,7 +147,7 @@ test_Push_Pop_Insert(TestBatchRunner *runner) {
     Vector *array = Vec_new(0);
     String *elem;
 
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 0, "size starts at 0");
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 0, "size starts at 0");
     TEST_TRUE(runner, Vec_Pop(array) == NULL,
               "Pop from empty array returns NULL");
 
@@ -155,34 +155,34 @@ test_Push_Pop_Insert(TestBatchRunner *runner) {
     Vec_Push(array, (Obj*)Str_newf("b"));
     Vec_Push(array, (Obj*)Str_newf("c"));
 
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 3, "size after Push");
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 3, "size after Push");
     TEST_TRUE(runner, NULL != CERTIFY(Vec_Fetch(array, 2), STRING), "Push");
 
     elem = (String*)CERTIFY(Vec_Pop(array), STRING);
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "c", 1), "Pop");
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 2, "size after Pop");
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 2, "size after Pop");
     DECREF(elem);
 
     Vec_Insert(array, 0, (Obj*)Str_newf("foo"));
     elem = (String*)CERTIFY(Vec_Fetch(array, 0), STRING);
     TEST_TRUE(runner, Str_Equals_Utf8(elem, "foo", 3), "Insert");
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 3, "size after Insert");
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 3, "size after Insert");
 
     for (int i = 0; i < 256; ++i) {
         Vec_Push(array, (Obj*)Str_newf("flotsam"));
     }
-    for (int i = 0; i < 512; ++i) {
+    for (size_t i = 0; i < 512; ++i) {
         Vec_Insert(array, i, (Obj*)Str_newf("jetsam"));
     }
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 3 + 256 + 512,
-                "size after exercising Push and Insert");
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 3 + 256 + 512,
+                 "size after exercising Push and Insert");
 
     DECREF(array);
 }
 
 static void
 test_Insert_All(TestBatchRunner *runner) {
-    size_t i;
+    int64_t i;
 
     {
         Vector *dst    = Vec_new(20);
@@ -211,7 +211,7 @@ test_Insert_All(TestBatchRunner *runner) {
         for (i = 0; i < 10; i++) { Vec_Push(src, (Obj*)Int_new(i + 20)); }
         for (i = 0; i < 10; i++) { Vec_Push(wanted, (Obj*)Int_new(i)); }
         for (i = 0; i < 10; i++) {
-            Vec_Store(wanted, i + 20, (Obj*)Int_new(i + 20));
+            Vec_Store(wanted, (size_t)i + 20, (Obj*)Int_new(i + 20));
         }
 
         Vec_Insert_All(dst, 20, src);
@@ -250,26 +250,26 @@ test_Resize(TestBatchRunner *runner) {
     uint32_t i;
 
     for (i = 0; i < 2; i++) { Vec_Push(array, (Obj*)Str_newf("%u32", i)); }
-    TEST_INT_EQ(runner, Vec_Get_Capacity(array), 3, "Start with capacity 3");
+    TEST_UINT_EQ(runner, Vec_Get_Capacity(array), 3, "Start with capacity 3");
 
     Vec_Resize(array, 4);
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 4, "Resize up");
-    TEST_INT_EQ(runner, Vec_Get_Capacity(array), 4,
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 4, "Resize up");
+    TEST_UINT_EQ(runner, Vec_Get_Capacity(array), 4,
                 "Resize changes capacity");
 
     Vec_Resize(array, 2);
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 2, "Resize down");
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 2, "Resize down");
     TEST_TRUE(runner, Vec_Fetch(array, 2) == NULL, "Resize down zaps elem");
 
     Vec_Resize(array, 2);
-    TEST_INT_EQ(runner, Vec_Get_Size(array), 2, "Resize to same size");
+    TEST_UINT_EQ(runner, Vec_Get_Size(array), 2, "Resize to same size");
 
     DECREF(array);
 
     array = S_array_with_garbage();
     Vec_Resize(array, 40);
     bool all_null = true;
-    for (int i = 10; i < 40; i++) {
+    for (size_t i = 10; i < 40; i++) {
         if (Vec_Fetch(array, i) != NULL) { all_null = false; }
     }
     TEST_TRUE(runner, all_null, "Resize clears excised elements");
