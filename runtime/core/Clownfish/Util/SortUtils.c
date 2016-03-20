@@ -161,11 +161,11 @@ SI_merge(void *left_vptr,  size_t left_size,
         }
     }
 
-    const size_t left_remaining = left_limit - left_ptr;
-    memcpy(dest, left_ptr, left_remaining);
+    const ptrdiff_t left_remaining = left_limit - left_ptr;
+    memcpy(dest, left_ptr, (size_t)left_remaining);
     dest += left_remaining;
-    const size_t right_remaining = right_limit - right_ptr;
-    memcpy(dest, right_ptr, right_remaining);
+    const ptrdiff_t right_remaining = right_limit - right_ptr;
+    memcpy(dest, right_ptr, (size_t)right_remaining);
 }
 
 

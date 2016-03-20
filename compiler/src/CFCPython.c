@@ -447,7 +447,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *pymod_name = CFCUtil_strdup(parcel_name);
     // TODO: Stop lowercasing when parcels are restricted to lowercase.
     for (int i = 0; pymod_name[i] != '\0'; i++) {
-        pymod_name[i] = tolower(pymod_name[i]);
+        pymod_name[i] = (char)tolower(pymod_name[i]);
     }
     const char *last_dot = strrchr(pymod_name, '.');
     const char *last_component = last_dot != NULL
@@ -455,7 +455,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
                                  : pymod_name;
     char *helper_mod_name = CFCUtil_sprintf("%s._%s", pymod_name, last_component);
     for (int i = 0; helper_mod_name[i] != '\0'; i++) {
-        helper_mod_name[i] = tolower(helper_mod_name[i]);
+        helper_mod_name[i] = (char)tolower(helper_mod_name[i]);
     }
 
     CFCClass  **ordered = CFCHierarchy_ordered_classes(self->hierarchy);

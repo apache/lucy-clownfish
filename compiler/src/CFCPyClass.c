@@ -204,7 +204,7 @@ S_pytype_struct_def(CFCPyClass *self) {
     char *pymod_name = CFCUtil_strdup(parcel_name);
     // TODO: Stop lowercasing when parcels are restricted to lowercase.
     for (int i = 0; pymod_name[i] != '\0'; i++) {
-        pymod_name[i] = tolower(pymod_name[i]);
+        pymod_name[i] = (char)tolower(pymod_name[i]);
     }
 
     const char *struct_sym = CFCClass_get_struct_sym(klass);

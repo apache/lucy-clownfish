@@ -577,14 +577,14 @@ S_camel_to_lower(const char *camel) {
     }
     char *lower = (char*)MALLOCATE(alloc + 1);
 
-    lower[0] = tolower(camel[0]);
+    lower[0] = (char)tolower(camel[0]);
     size_t j = 1;
     for (size_t i = 1; camel[i]; i++) {
         // Only insert underscore if next char is lowercase.
         if (isupper(camel[i]) && islower(camel[i+1])) {
             lower[j++] = '_';
         }
-        lower[j++] = tolower(camel[i]);
+        lower[j++] = (char)tolower(camel[i]);
     }
     lower[j] = '\0';
 
@@ -948,7 +948,7 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
 
             char *perl_name = CFCUtil_strdup(name);
             for (size_t i = 0; perl_name[i] != '\0'; ++i) {
-                perl_name[i] = tolower(perl_name[i]);
+                perl_name[i] = (char)tolower(perl_name[i]);
             }
 
             // The Perl POD only contains sections for novel methods. Link

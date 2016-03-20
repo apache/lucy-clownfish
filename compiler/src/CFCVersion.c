@@ -60,7 +60,8 @@ CFCVersion_init(CFCVersion *self, const char *vstring) {
     self->numbers = (uint32_t*)CALLOCATE(1, sizeof(uint32_t));
     while (1) {
         if (isdigit(*vstring)) {
-            num = num * 10 + *vstring - '0';
+            int digit = *vstring - '0';
+            num = num * 10 + (uint32_t)digit;
         }
         else {
             if (*vstring != 0 && *vstring != '.') {

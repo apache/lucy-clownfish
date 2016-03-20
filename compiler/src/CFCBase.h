@@ -33,7 +33,7 @@ typedef void (*CFCBase_destroy_t)(CFCBase *self);
 #ifdef CFC_NEED_BASE_STRUCT_DEF
 struct CFCBase {
     const CFCMeta *meta;
-    int refcount;
+    unsigned refcount;
 };
 #endif
 struct CFCMeta {

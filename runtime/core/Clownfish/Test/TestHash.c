@@ -80,10 +80,10 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     }
     TEST_TRUE(runner, Hash_Equals(hash, (Obj*)dupe), "Equals");
 
-    TEST_INT_EQ(runner, Hash_Get_Capacity(hash), starting_cap,
-                "Initial capacity sufficient (no rebuilds)");
+    TEST_UINT_EQ(runner, Hash_Get_Capacity(hash), starting_cap,
+                 "Initial capacity sufficient (no rebuilds)");
 
-    for (int32_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         String *key  = (String*)Vec_Fetch(expected, i);
         Obj    *elem = Hash_Fetch(hash, key);
         Vec_Push(got, (Obj*)INCREF(elem));
@@ -91,8 +91,8 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
 
     TEST_TRUE(runner, Vec_Equals(got, (Obj*)expected),
               "basic Store and Fetch");
-    TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
-                "size incremented properly by Hash_Store");
+    TEST_UINT_EQ(runner, Hash_Get_Size(hash), 100,
+                 "size incremented properly by Hash_Store");
 
     TEST_TRUE(runner, Hash_Fetch(hash, foo) == NULL,
               "Fetch against non-existent key returns NULL");
@@ -103,18 +103,18 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
               "Hash_Store replaces existing value");
     TEST_FALSE(runner, Hash_Equals(hash, (Obj*)dupe),
                "replacement value spoils equals");
-    TEST_INT_EQ(runner, Hash_Get_Size(hash), 100,
-                "size unaffected after value replaced");
+    TEST_UINT_EQ(runner, Hash_Get_Size(hash), 100,
+                 "size unaffected after value replaced");
 
     TEST_TRUE(runner, Hash_Delete(hash, forty) == stored_foo,
               "Delete returns value");
     DECREF(stored_foo);
-    TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
-                "size decremented by successful Delete");
+    TEST_UINT_EQ(runner, Hash_Get_Size(hash), 99,
+                 "size decremented by successful Delete");
     TEST_TRUE(runner, Hash_Delete(hash, forty) == NULL,
               "Delete returns NULL when key not found");
-    TEST_INT_EQ(runner, Hash_Get_Size(hash), 99,
-                "size not decremented by unsuccessful Delete");
+    TEST_UINT_EQ(runner, Hash_Get_Size(hash), 99,
+                 "size not decremented by unsuccessful Delete");
     DECREF(Hash_Delete(dupe, forty));
     TEST_TRUE(runner, Vec_Equals(got, (Obj*)expected), "Equals after Delete");
 
@@ -182,10 +182,10 @@ test_stress(TestBatchRunner *runner) {
     Vector   *values;
 
     for (uint32_t i = 0; i < 1000; i++) {
-        String *str = TestUtils_random_string(rand() % 1200);
+        String *str = TestUtils_random_string((size_t)(rand() % 1200));
         while (Hash_Fetch(hash, str)) {
             DECREF(str);
-            str = TestUtils_random_string(rand() % 1200);
+            str = TestUtils_random_string((size_t)(rand() % 1200));
         }
         Hash_Store(hash, str, (Obj*)str);
         Vec_Push(expected, INCREF(str));
@@ -236,7 +236,7 @@ test_store_skips_tombstone(TestBatchRunner *runner) {
     Hash_Delete(hash, one);
     Hash_Store(hash, two, (Obj*)CFISH_TRUE);
 
-    TEST_INT_EQ(runner, Hash_Get_Size(hash), 1, "Store skips tombstone");
+    TEST_UINT_EQ(runner, Hash_Get_Size(hash), 1, "Store skips tombstone");
 
     DECREF(one);
     DECREF(two);

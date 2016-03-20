@@ -150,12 +150,23 @@ TestBatchRunner_test_false(TestBatchRunner *self, bool condition,
 }
 
 bool
-TestBatchRunner_test_int_equals(TestBatchRunner *self, uint64_t got,
-                                uint64_t expected, const char *pattern, ...) {
+TestBatchRunner_test_int_equals(TestBatchRunner *self, int64_t got,
+                                int64_t expected, const char *pattern, ...) {
     va_list args;
     va_start(args, pattern);
     bool result = TestBatchRunner_VTest_Int_Equals(self, got, expected,
                                                    pattern, args);
+    va_end(args);
+    return result;
+}
+
+bool
+TestBatchRunner_test_uint_equals(TestBatchRunner *self, uint64_t got,
+                                 uint64_t expected, const char *pattern, ...) {
+    va_list args;
+    va_start(args, pattern);
+    bool result = TestBatchRunner_VTest_UInt_Equals(self, got, expected,
+                                                    pattern, args);
     va_end(args);
     return result;
 }
@@ -223,9 +234,23 @@ TestBatchRunner_VTest_False_IMP(TestBatchRunner *self, bool condition,
 }
 
 bool
-TestBatchRunner_VTest_Int_Equals_IMP(TestBatchRunner *self, uint64_t got,
-                                     uint64_t expected, const char *pattern,
+TestBatchRunner_VTest_Int_Equals_IMP(TestBatchRunner *self, int64_t got,
+                                     int64_t expected, const char *pattern,
                                      va_list args) {
+    bool pass = (got == expected);
+    S_vtest_true(self, pass, pattern, args);
+    if (!pass) {
+        TestFormatter_test_comment(self->formatter,
+                                   "Expected '%"PRId64"', got '%"PRId64"'.\n",
+                                   expected, got);
+    }
+    return pass;
+}
+
+bool
+TestBatchRunner_VTest_UInt_Equals_IMP(TestBatchRunner *self, uint64_t got,
+                                      uint64_t expected, const char *pattern,
+                                      va_list args) {
     bool pass = (got == expected);
     S_vtest_true(self, pass, pattern, args);
     if (!pass) {

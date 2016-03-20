@@ -49,8 +49,8 @@ test_Equals(TestBatchRunner *runner) {
 
     {
         Blob *other = Blob_new("bar", 4);
-        TEST_INT_EQ(runner, Blob_Get_Size(blob), Blob_Get_Size(other),
-                    "same length");
+        TEST_UINT_EQ(runner, Blob_Get_Size(blob), Blob_Get_Size(other),
+                     "same length");
         TEST_FALSE(runner, Blob_Equals(blob, (Obj*)other),
                    "Different content spoils Equals");
         DECREF(other);

@@ -81,7 +81,7 @@ CFCFile_init(CFCFile *self, CFCParcel *parcel, CFCFileSpec *spec) {
             self->guard_name[j++] = '_';
         }
         else if (isalnum(c)) {
-            self->guard_name[j++] = toupper(c);
+            self->guard_name[j++] = (char)toupper(c);
         }
     }
     self->guard_name[j] = '\0';

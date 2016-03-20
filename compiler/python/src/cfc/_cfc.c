@@ -91,12 +91,6 @@ S_to_Hierarchy(PyObject *wrapper) {
         "Clownfish::CFC::Model::Hierarchy");
 }
 
-static CFCParcel*
-S_to_Parcel(PyObject *wrapper) {
-    return (CFCParcel*)S_to_cfc_something(wrapper,
-        "Clownfish::CFC::Model::Parcel");
-}
-
 static CFCBindCore*
 S_to_BindCore(PyObject *wrapper) {
     return (CFCBindCore*)S_to_cfc_something(wrapper,
@@ -183,7 +177,7 @@ static PyObject*
 S_CFCHierarchy_get_dest(PyObject *wrapper, PyObject *unused) {
     CHY_UNUSED_VAR(unused);
     const char *dest = CFCHierarchy_get_dest(S_to_Hierarchy(wrapper));
-    return PyUnicode_DecodeASCII(dest, strlen(dest), NULL);
+    return PyUnicode_DecodeASCII(dest, (Py_ssize_t)strlen(dest), NULL);
 }
 
 static PyObject*

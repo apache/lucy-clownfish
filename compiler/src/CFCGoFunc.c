@@ -49,9 +49,9 @@ char*
 CFCGoFunc_go_meth_name(const char *orig, int is_public) {
     char *go_name = CFCUtil_strdup(orig);
     if (!is_public) {
-        go_name[0] = tolower(go_name[0]);
+        go_name[0] = (char)tolower(go_name[0]);
     }
-    for (int i = 1, j = 1, max = strlen(go_name) + 1; i < max; i++) {
+    for (size_t i = 1, j = 1, max = strlen(go_name) + 1; i < max; i++) {
         if (go_name[i] != '_') {
             go_name[j++] = go_name[i];
         }
@@ -81,8 +81,8 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
 
     char *params = CFCUtil_strdup("");
     char *converted = CFCUtil_strdup("");
-    int start = targ == IS_METHOD ? 1 : 0;
-    for (int i = start; param_vars[i] != NULL; i++) {
+    size_t start = targ == IS_METHOD ? 1 : 0;
+    for (size_t i = start; param_vars[i] != NULL; i++) {
         CFCVariable *var = param_vars[i];
         CFCType *type = CFCVariable_get_type(var);
         char *go_type_name = CFCGoTypeMap_go_type_name(type, parcel);
@@ -96,7 +96,7 @@ S_prep_start(CFCParcel *parcel, const char *name, CFCClass *invoker,
 
     // Convert certain types and defer their destruction until after the
     // Clownfish call returns.
-    for (int i = 0; param_vars[i] != NULL; i++) {
+    for (size_t i = 0; param_vars[i] != NULL; i++) {
         CFCVariable *var = param_vars[i];
         CFCType *type = CFCVariable_get_type(var);
         if (!CFCType_is_object(type)) {
@@ -231,7 +231,7 @@ S_prep_cfargs(CFCParcel *parcel, CFCClass *invoker,
     char go_name[GO_NAME_BUF_SIZE];
     char *cfargs = CFCUtil_strdup("");
 
-    for (int i = 0; vars[i] != NULL; i++) {
+    for (size_t i = 0; vars[i] != NULL; i++) {
         CFCVariable *var = vars[i];
         CFCType *type = CFCVariable_get_type(var);
         if (targ == IS_METHOD && i == 0) {

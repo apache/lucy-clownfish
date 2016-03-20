@@ -44,7 +44,7 @@ TestUtils_random_i64s(int64_t *buf, size_t count, int64_t min,
     uint64_t  range = min < limit ? (uint64_t)limit - (uint64_t)min : 0;
     int64_t *ints = buf ? buf : (int64_t*)CALLOCATE(count, sizeof(int64_t));
     for (size_t i = 0; i < count; i++) {
-        ints[i] = min + TestUtils_random_u64() % range;
+        ints[i] = min + (int64_t)(TestUtils_random_u64() % range);
     }
     return ints;
 }
@@ -65,7 +65,7 @@ TestUtils_random_f64s(double *buf, size_t count) {
     double *f64s = buf ? buf : (double*)CALLOCATE(count, sizeof(double));
     for (size_t i = 0; i < count; i++) {
         uint64_t num = TestUtils_random_u64();
-        f64s[i] = CHY_U64_TO_DOUBLE(num) / UINT64_MAX;
+        f64s[i] = CHY_U64_TO_DOUBLE(num) / (double)UINT64_MAX;
     }
     return f64s;
 }
@@ -74,7 +74,7 @@ static int32_t
 S_random_code_point(void) {
     int32_t code_point = 0;
     while (1) {
-        uint8_t chance = (rand() % 9) + 1;
+        uint8_t chance = (uint8_t)((rand() % 9) + 1);
         switch (chance) {
             case 1: case 2: case 3:
                 code_point = rand() % 0x80;
@@ -87,7 +87,7 @@ S_random_code_point(void) {
                 break;
             case 9: {
                     uint64_t num = TestUtils_random_u64();
-                    code_point = (num % (0x10FFFF - 0x10000)) + 0x10000;
+                    code_point = (int32_t)(num % (0x10FFFF - 0x10000)) + 0x10000;
                 }
         }
         if (code_point > 0x10FFFF) {
@@ -148,7 +148,7 @@ TestUtils_time() {
     struct timeval t;
     gettimeofday(&t, NULL);
 
-    return (uint64_t)t.tv_sec * 1000000 + t.tv_usec;
+    return (uint64_t)(t.tv_sec * 1000000 + t.tv_usec);
 }
 
 #else
@@ -172,10 +172,10 @@ TestUtils_usleep(uint64_t microseconds) {
 
 void
 TestUtils_usleep(uint64_t microseconds) {
-    uint32_t seconds = microseconds / 1000000;
+    uint64_t seconds = microseconds / 1000000;
     microseconds %= 1000000;
-    sleep(seconds);
-    usleep(microseconds);
+    sleep((unsigned)seconds);
+    usleep((useconds_t)microseconds);
 }
 
 #else

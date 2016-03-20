@@ -54,7 +54,7 @@ BB_new(size_t capacity) {
 ByteBuf*
 BB_init(ByteBuf *self, size_t min_cap) {
     // Round up to next multiple of eight.
-    size_t capacity = (min_cap + 7) & ~7;
+    size_t capacity = (min_cap + 7) & ((size_t)~7);
     // Check for overflow.
     if (capacity < min_cap) { capacity = SIZE_MAX; }
 
@@ -73,7 +73,7 @@ BB_new_bytes(const void *bytes, size_t size) {
 ByteBuf*
 BB_init_bytes(ByteBuf *self, const void *bytes, size_t size) {
     // Round up to next multiple of eight.
-    size_t capacity = (size + 7) & ~7;
+    size_t capacity = (size + 7) & ((size_t)~7);
     // Check for overflow.
     if (capacity < size) { capacity = SIZE_MAX; }
 
@@ -174,7 +174,7 @@ char*
 BB_Grow_IMP(ByteBuf *self, size_t min_cap) {
     if (min_cap > self->cap) {
         // Round up to next multiple of eight.
-        size_t capacity = (min_cap + 7) & ~7;
+        size_t capacity = (min_cap + 7) & ((size_t)~7);
         // Check for overflow.
         if (capacity < min_cap) { capacity = SIZE_MAX; }
 
@@ -236,7 +236,7 @@ S_grow_and_oversize(ByteBuf *self, size_t min_size) {
     // Oversize by 25%, but at least eight bytes.
     size_t extra = min_size / 4;
     // Round up to next multiple of eight.
-    extra = (extra + 7) & ~7;
+    extra = (extra + 7) & ((size_t)~7);
 
     size_t capacity = min_size + extra;
     // Check for overflow.

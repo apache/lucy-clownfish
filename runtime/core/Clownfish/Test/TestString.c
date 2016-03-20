@@ -35,7 +35,7 @@
 #define SMILEY "\xE2\x98\xBA"
 static char smiley[] = { (char)0xE2, (char)0x98, (char)0xBA, 0 };
 static uint32_t smiley_len = 3;
-static uint32_t smiley_cp  = 0x263A;
+static int32_t smiley_cp  = 0x263A;
 
 TestString*
 TestStr_new() {
@@ -49,19 +49,19 @@ S_get_str(const char *string) {
 
 // Surround a smiley with lots of whitespace.
 static String*
-S_smiley_with_whitespace(int *num_spaces_ptr) {
+S_smiley_with_whitespace(size_t *num_spaces_ptr) {
     int32_t spaces[] = {
         ' ',    '\t',   '\r',   '\n',   0x000B, 0x000C, 0x000D, 0x0085,
         0x00A0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005,
         0x2006, 0x2007, 0x2008, 0x2009, 0x200A, 0x2028, 0x2029, 0x202F,
         0x205F, 0x3000
     };
-    int num_spaces = sizeof(spaces) / sizeof(uint32_t);
+    size_t num_spaces = sizeof(spaces) / sizeof(uint32_t);
 
     CharBuf *buf = CB_new(0);
-    for (int i = 0; i < num_spaces; i++) { CB_Cat_Char(buf, spaces[i]); }
+    for (size_t i = 0; i < num_spaces; i++) { CB_Cat_Char(buf, spaces[i]); }
     CB_Cat_Char(buf, smiley_cp);
-    for (int i = 0; i < num_spaces; i++) { CB_Cat_Char(buf, spaces[i]); }
+    for (size_t i = 0; i < num_spaces; i++) { CB_Cat_Char(buf, spaces[i]); }
 
     String *retval = CB_To_String(buf);
     if (num_spaces_ptr) { *num_spaces_ptr = num_spaces; }
@@ -386,7 +386,7 @@ test_To_ByteBuf(TestBatchRunner *runner) {
 static void
 test_Length(TestBatchRunner *runner) {
     String *string = Str_newf("a%s%sb%sc", smiley, smiley, smiley);
-    TEST_INT_EQ(runner, Str_Length(string), 6, "Length");
+    TEST_UINT_EQ(runner, Str_Length(string), 6, "Length");
     DECREF(string);
 }
 
@@ -465,7 +465,7 @@ test_Get_Ptr8(TestBatchRunner *runner) {
     TEST_TRUE(runner, strcmp(ptr8, "Banana") == 0, "Get_Ptr8");
 
     size_t size = Str_Get_Size(string);
-    TEST_INT_EQ(runner, size, 6, "Get_Size");
+    TEST_UINT_EQ(runner, size, 6, "Get_Size");
 
     DECREF(string);
 }
@@ -580,21 +580,21 @@ test_iterator(TestBatchRunner *runner) {
         StringIterator *iter = Str_Top(string);
 
         StrIter_Next(iter);
-        TEST_INT_EQ(runner, StrIter_Advance(iter, 2), 2,
-                    "Advance returns number of code points");
+        TEST_UINT_EQ(runner, StrIter_Advance(iter, 2), 2,
+                     "Advance returns number of code points");
         TEST_INT_EQ(runner, StrIter_Next(iter), code_points[3],
                     "Advance works");
-        TEST_INT_EQ(runner,
-                    StrIter_Advance(iter, 1000000), num_code_points - 4,
-                    "Advance past end of string");
+        TEST_UINT_EQ(runner,
+                     StrIter_Advance(iter, 1000000), num_code_points - 4,
+                     "Advance past end of string");
 
         StrIter_Prev(iter);
-        TEST_INT_EQ(runner, StrIter_Recede(iter, 2), 2,
-                    "Recede returns number of code points");
+        TEST_UINT_EQ(runner, StrIter_Recede(iter, 2), 2,
+                     "Recede returns number of code points");
         TEST_INT_EQ(runner, StrIter_Prev(iter), code_points[num_code_points-4],
                     "Recede works");
-        TEST_INT_EQ(runner, StrIter_Recede(iter, 1000000), num_code_points - 4,
-                    "Recede past start of string");
+        TEST_UINT_EQ(runner, StrIter_Recede(iter, 1000000), num_code_points - 4,
+                     "Recede past start of string");
 
         DECREF(iter);
     }
@@ -605,24 +605,24 @@ test_iterator(TestBatchRunner *runner) {
 
 static void
 test_iterator_whitespace(TestBatchRunner *runner) {
-    int num_spaces;
+    size_t num_spaces;
     String *ws_smiley = S_smiley_with_whitespace(&num_spaces);
 
     {
         StringIterator *iter = Str_Top(ws_smiley);
-        TEST_INT_EQ(runner, StrIter_Skip_Whitespace(iter), num_spaces,
-                    "Skip_Whitespace");
-        TEST_INT_EQ(runner, StrIter_Skip_Whitespace(iter), 0,
-                    "Skip_Whitespace without whitespace");
+        TEST_UINT_EQ(runner, StrIter_Skip_Whitespace(iter), num_spaces,
+                     "Skip_Whitespace");
+        TEST_UINT_EQ(runner, StrIter_Skip_Whitespace(iter), 0,
+                     "Skip_Whitespace without whitespace");
         DECREF(iter);
     }
 
     {
         StringIterator *iter = Str_Tail(ws_smiley);
-        TEST_INT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), num_spaces,
-                    "Skip_Whitespace_Back");
-        TEST_INT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), 0,
-                    "Skip_Whitespace_Back without whitespace");
+        TEST_UINT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), num_spaces,
+                     "Skip_Whitespace_Back");
+        TEST_UINT_EQ(runner, StrIter_Skip_Whitespace_Back(iter), 0,
+                     "Skip_Whitespace_Back without whitespace");
         DECREF(iter);
     }
 

@@ -59,8 +59,8 @@ test_Equals(TestBatchRunner *runner) {
 
     {
         ByteBuf *other = BB_new_bytes("bar", 4);
-        TEST_INT_EQ(runner, BB_Get_Size(bb), BB_Get_Size(other),
-                    "same length");
+        TEST_UINT_EQ(runner, BB_Get_Size(bb), BB_Get_Size(other),
+                     "same length");
         TEST_FALSE(runner, BB_Equals(bb, (Obj*)other),
                    "Different content spoils Equals");
         DECREF(other);
@@ -72,10 +72,10 @@ test_Equals(TestBatchRunner *runner) {
 static void
 test_Grow(TestBatchRunner *runner) {
     ByteBuf *bb = BB_new(1);
-    TEST_INT_EQ(runner, BB_Get_Capacity(bb), 8,
+    TEST_UINT_EQ(runner, BB_Get_Capacity(bb), 8,
                 "Allocate in 8-byte increments");
     BB_Grow(bb, 9);
-    TEST_INT_EQ(runner, BB_Get_Capacity(bb), 16,
+    TEST_UINT_EQ(runner, BB_Get_Capacity(bb), 16,
                 "Grow in 8-byte increments");
     DECREF(bb);
 }
