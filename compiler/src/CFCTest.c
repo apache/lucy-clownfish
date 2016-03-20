@@ -271,7 +271,7 @@ CFCTest_test_string_equals(CFCTest *self, const char *result,
 }
 
 void
-CFCTest_test_int_equals(CFCTest *self, uint64_t result, uint64_t expected,
+CFCTest_test_int_equals(CFCTest *self, int64_t result, int64_t expected,
                         const char *fmt, ...) {
     int cond = (result == expected);
 
@@ -281,8 +281,8 @@ CFCTest_test_int_equals(CFCTest *self, uint64_t result, uint64_t expected,
     va_end(args);
 
     if (!cond) {
-        self->formatter->test_comment("Expected '%"PRIu64"',"
-                                      " got '%"PRIu64"'.\n",
+        self->formatter->test_comment("Expected '%"PRId64"',"
+                                      " got '%"PRId64"'.\n",
                                       expected, result);
     }
 }

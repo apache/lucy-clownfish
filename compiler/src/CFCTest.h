@@ -110,7 +110,7 @@ CFCTest_test_string_equals(CFCTest *self, const char *result,
  * @param fmt printf-like format string describing the test.
  */
 void
-CFCTest_test_int_equals(CFCTest *self, uint64_t result, uint64_t expected,
+CFCTest_test_int_equals(CFCTest *self, int64_t result, int64_t expected,
                         const char *fmt, ...);
 
 /* Skip tests.
