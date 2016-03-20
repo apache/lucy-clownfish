@@ -76,7 +76,7 @@ S_run_file_tests(CFCTest *test) {
         OK(test, file != NULL, "can open file");
         char buf[10];
         size_t chars_read = fread(buf, 1, 10, file);
-        INT_EQ(test, chars_read, 3, "read correct number of chars");
+        UINT_EQ(test, chars_read, 3, "read correct number of chars");
         OK(test, memcmp(buf, "foo", 3) == 0, "read correct string");
 
         long file_length = CFCUtil_flength(file);
@@ -88,7 +88,7 @@ S_run_file_tests(CFCTest *test) {
     {
         size_t content_len;
         char *content = CFCUtil_slurp_text(foo_txt, &content_len);
-        INT_EQ(test, content_len, 3, "slurp_text len");
+        UINT_EQ(test, content_len, 3, "slurp_text len");
         OK(test, memcmp(content, "foo", 3) == 0, "slurp_text content");
         FREEMEM(content);
     }

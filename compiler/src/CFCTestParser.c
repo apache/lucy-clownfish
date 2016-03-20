@@ -228,12 +228,12 @@ S_run_tests(CFCTest *test) {
             "(int foo)",
             "(Obj *foo, Foo **foo_ptr)"
         };
-        for (int i = 0; i < 3; ++i) {
+        for (size_t i = 0; i < 3; ++i) {
             const char *param_list_string = param_list_strings[i];
             CFCParamList *param_list
                 = CFCTest_parse_param_list(test, parser, param_list_string);
-            INT_EQ(test, CFCParamList_num_vars(param_list), i,
-                   "param list num_vars: %d", i);
+            UINT_EQ(test, CFCParamList_num_vars(param_list), i,
+                    "param list num_vars: %u", (unsigned)i);
             CFCBase_decref((CFCBase*)param_list);
         }
     }
