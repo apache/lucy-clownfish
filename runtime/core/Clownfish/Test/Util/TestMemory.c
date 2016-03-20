@@ -98,7 +98,7 @@ test_oversize__rounding(TestBatchRunner *runner) {
         for (unsigned i = 0; i < 25; i++) {
             size_t size = Memory_oversize(i, width);
             size_t bytes = size * width;
-            if (bytes % sizeof(void*) != 0) {
+            if (bytes % sizeof(size_t) != 0) {
                 FAIL(runner, "Rounding failure for %u, width %u",
                      i, width);
                 return;
