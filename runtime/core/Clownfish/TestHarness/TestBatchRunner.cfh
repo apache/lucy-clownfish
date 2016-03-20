@@ -72,6 +72,10 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
                     const char *pattern, ...);
 
     inert bool
+    test_uint_equals(TestBatchRunner *self, uint64_t got, uint64_t expected,
+                     const char *pattern, ...);
+
+    inert bool
     test_float_equals(TestBatchRunner *self, double got, double expected,
                       const char *pattern, ...);
 
@@ -101,6 +105,10 @@ class Clownfish::TestHarness::TestBatchRunner inherits Clownfish::Obj {
                      const char *pattern, va_list args);
 
     bool
+    VTest_UInt_Equals(TestBatchRunner *self, uint64_t got, uint64_t expected,
+                     const char *pattern, va_list args);
+
+    bool
     VTest_Float_Equals(TestBatchRunner *self, double got, double expected,
                        const char *pattern, va_list args);
 
@@ -125,6 +133,7 @@ __C__
   #define TEST_TRUE            cfish_TestBatchRunner_test_true
   #define TEST_FALSE           cfish_TestBatchRunner_test_false
   #define TEST_INT_EQ          cfish_TestBatchRunner_test_int_equals
+  #define TEST_UINT_EQ         cfish_TestBatchRunner_test_uint_equals
   #define TEST_FLOAT_EQ        cfish_TestBatchRunner_test_float_equals
   #define TEST_STR_EQ          cfish_TestBatchRunner_test_string_equals
   #define PASS                 cfish_TestBatchRunner_pass
