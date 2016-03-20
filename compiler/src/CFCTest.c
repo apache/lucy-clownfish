@@ -288,6 +288,23 @@ CFCTest_test_int_equals(CFCTest *self, int64_t result, int64_t expected,
 }
 
 void
+CFCTest_test_uint_equals(CFCTest *self, uint64_t result, uint64_t expected,
+                        const char *fmt, ...) {
+    int cond = (result == expected);
+
+    va_list args;
+    va_start(args, fmt);
+    S_vtest_true(self, cond, fmt, args);
+    va_end(args);
+
+    if (!cond) {
+        self->formatter->test_comment("Expected '%"PRIu64"',"
+                                      " got '%"PRIu64"'.\n",
+                                      expected, result);
+    }
+}
+
+void
 CFCTest_skip(CFCTest *self, int num, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);

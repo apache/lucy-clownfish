@@ -29,6 +29,7 @@
   #define OK      CFCTest_test_true
   #define STR_EQ  CFCTest_test_string_equals
   #define INT_EQ  CFCTest_test_int_equals
+  #define UINT_EQ CFCTest_test_uint_equals
   #define SKIP    CFCTest_skip
 #endif
 
@@ -112,6 +113,16 @@ CFCTest_test_string_equals(CFCTest *self, const char *result,
 void
 CFCTest_test_int_equals(CFCTest *self, int64_t result, int64_t expected,
                         const char *fmt, ...);
+
+/* Test unsigned integers for equality and collect result.
+ *
+ * @param result Result integer to be tested.
+ * @param expected Expected result integer.
+ * @param fmt printf-like format string describing the test.
+ */
+void
+CFCTest_test_uint_equals(CFCTest *self, uint64_t result, uint64_t expected,
+                         const char *fmt, ...);
 
 /* Skip tests.
  *
