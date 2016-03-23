@@ -1105,7 +1105,7 @@ CFISH_Hash_To_Host_IMP(cfish_Hash *self, void *vcache) {
 
         // Using a negative `klen` argument to signal UTF-8 is undocumented
         // in older Perl versions but works since 5.8.0.
-        hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
+        (void)hv_store(perl_hash, key_ptr, -key_size, val_sv, 0);
     }
 
     if (cache == &new_cache && cache->seen) {
@@ -1195,11 +1195,13 @@ cfish_TestUtils_clone_host_runtime() {
 
 void
 cfish_TestUtils_set_host_runtime(void *runtime) {
+    CFISH_UNUSED_VAR(runtime);
     CFISH_THROW(CFISH_ERR, "No thread support");
 }
 
 void
 cfish_TestUtils_destroy_host_runtime(void *runtime) {
+    CFISH_UNUSED_VAR(runtime);
     CFISH_THROW(CFISH_ERR, "No thread support");
 }
 
