@@ -31,7 +31,9 @@ test_c() {
 }
 
 test_perl() {
+    source ~/perl5/perlbrew/etc/bashrc
     perlbrew switch $PERL_VERSION
+    perlbrew list
     cd compiler/perl
     cpanm --quiet --installdeps --notest .
     perl Build.PL
