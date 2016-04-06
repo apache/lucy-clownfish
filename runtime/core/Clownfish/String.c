@@ -243,7 +243,7 @@ Str_BaseX_To_I64_IMP(String *self, uint32_t base) {
 
     // Accumulate.
     while (code_point != STR_OOB) {
-        if (isalnum(code_point)) {
+        if (code_point <= 127 && isalnum(code_point)) {
             int32_t addend = isdigit(code_point)
                              ? code_point - '0'
                              : tolower(code_point) - 'a' + 10;
