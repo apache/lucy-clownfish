@@ -308,6 +308,55 @@ CFCUtil_wrapped_free(void *ptr) {
     free(ptr);
 }
 
+// Avoid -Wtype-limits warning.
+#if CHAR_MAX <= 127
+  #define IS_ASCII(c) ((c) >= 0)
+#else
+  #define IS_ASCII(c) ((c) >= 0 && (c) <= 127)
+#endif
+
+int
+CFCUtil_isalnum(char c) {
+    return IS_ASCII(c) && isalnum(c);
+}
+
+int
+CFCUtil_isalpha(char c) {
+    return IS_ASCII(c) && isalpha(c);
+}
+
+int
+CFCUtil_isdigit(char c) {
+    return IS_ASCII(c) && isdigit(c);
+}
+
+int
+CFCUtil_islower(char c) {
+    return IS_ASCII(c) && islower(c);
+}
+
+int
+CFCUtil_isspace(char c) {
+    return IS_ASCII(c) && isspace(c);
+}
+
+int
+CFCUtil_isupper(char c) {
+    return IS_ASCII(c) && isupper(c);
+}
+
+char
+CFCUtil_tolower(char c) {
+    if (!IS_ASCII(c)) { return c; }
+    return (char)tolower(c);
+}
+
+char
+CFCUtil_toupper(char c) {
+    if (!IS_ASCII(c)) { return c; }
+    return (char)toupper(c);
+}
+
 int
 CFCUtil_current(const char *orig, const char *dest) {
     // If the destination file doesn't exist, we're not current.

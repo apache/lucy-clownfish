@@ -153,6 +153,33 @@ CFCUtil_wrapped_free(void *ptr);
 #define FREEMEM(_ptr) \
     CFCUtil_wrapped_free(_ptr)
 
+/** Safe wrappers for ctype.h functions.
+ */
+
+int
+CFCUtil_isalnum(char c);
+
+int
+CFCUtil_isalpha(char c);
+
+int
+CFCUtil_isdigit(char c);
+
+int
+CFCUtil_islower(char c);
+
+int
+CFCUtil_isspace(char c);
+
+int
+CFCUtil_isupper(char c);
+
+char
+CFCUtil_tolower(char c);
+
+char
+CFCUtil_toupper(char c);
+
 /** Given two filepaths, return true if the second exists and has a
  * modification time which more recent than that of the first.
  */
