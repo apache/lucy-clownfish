@@ -140,6 +140,9 @@ sub ACTION_clownfish {
     $self->depends_on('cfc');
 
     $self->SUPER::ACTION_clownfish;
+
+    # Make sure to remove empty directory.
+    $self->add_to_cleanup( catdir( $LIB_DIR, 'Clownfish', 'Docs' ) );
 }
 
 sub ACTION_compile_custom_xs {
