@@ -268,7 +268,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
 
             my $class_name = $class->get_name;
             my $rt_class = Clownfish::Class->fetch_class($class_name)
-                or die("Class $class_name not found");
+                or next;
 
             for my $rt_method (@{ $rt_class->get_methods }) {
                 if ($rt_method->is_excluded_from_host) {
