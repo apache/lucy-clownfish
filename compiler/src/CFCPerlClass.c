@@ -15,9 +15,9 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCPerlClass.h"

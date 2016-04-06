@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 #ifndef true
   #define true 1
@@ -139,22 +138,22 @@ CFCClass_validate_class_name(const char *class_name) {
     for (;;substring++) {
         if (*substring == 0)          { return false; }
         else if (*substring == ':')   { return false; }
-        else if (islower(*substring)) { break; }
+        else if (CFCUtil_islower(*substring)) { break; }
     }
 
     // Must be UpperCamelCase, separated by "::".
     const char *ptr = class_name;
-    if (!isupper(*ptr)) { return false; }
+    if (!CFCUtil_isupper(*ptr)) { return false; }
     while (*ptr != 0) {
         if (*ptr == 0) { break; }
         else if (*ptr == ':') {
             ptr++;
             if (*ptr != ':') { return false; }
             ptr++;
-            if (!isupper(*ptr)) { return false; }
+            if (!CFCUtil_isupper(*ptr)) { return false; }
             ptr++;
         }
-        else if (!isalnum(*ptr)) { return false; }
+        else if (!CFCUtil_isalnum(*ptr)) { return false; }
         else { ptr++; }
     }
 
@@ -178,7 +177,7 @@ S_validate_nickname(const char *nickname) {
             if (strlen(nickname)) { return true; }
             else { break; }
         }
-        else if (!isupper(*ptr)) { break; }
+        else if (!CFCUtil_isupper(*ptr)) { break; }
     }
 
     // Same as one component of a class name.
@@ -274,7 +273,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     char *short_class_var = (char*)MALLOCATE(struct_sym_len + 1);
     size_t i;
     for (i = 0; i < struct_sym_len; i++) {
-        short_class_var[i] = (char)toupper(struct_sym[i]);
+        short_class_var[i] = CFCUtil_toupper(struct_sym[i]);
     }
     short_class_var[struct_sym_len] = '\0';
     self->short_class_var = short_class_var;

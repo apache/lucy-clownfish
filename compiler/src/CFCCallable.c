@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 
 #ifndef true
     #define true 1

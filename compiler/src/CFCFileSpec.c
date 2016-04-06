@@ -18,7 +18,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #ifndef true
     #define true 1

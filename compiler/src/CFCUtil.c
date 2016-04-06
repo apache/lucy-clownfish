@@ -130,13 +130,13 @@ CFCUtil_trim_whitespace(char *text) {
 
     // Find start.
     char *ptr = text;
-    while (*ptr != '\0' && isspace(*ptr)) { ptr++; }
+    while (*ptr != '\0' && CFCUtil_isspace(*ptr)) { ptr++; }
 
     // Find end.
     size_t orig_len = strlen(text);
     char *limit = text + orig_len;
     for (; limit > text; limit--) {
-        if (!isspace(*(limit - 1))) { break; }
+        if (!CFCUtil_isspace(*(limit - 1))) { break; }
     }
 
     // Modify string in place and NULL-terminate.

@@ -16,7 +16,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #include "charmony.h"
 
@@ -221,12 +220,12 @@ CFCType_new_object(int flags, CFCParcel *parcel, const char *specifier,
     S_check_flags(flags, acceptable_flags, "Object");
 
     // Validate specifier.
-    if (!isalpha(*specifier)) {
+    if (!CFCUtil_isalpha(*specifier)) {
         CFCUtil_die("Invalid specifier: '%s'", specifier);
     }
     const char *small_specifier = specifier;
-    while (!isupper(*small_specifier)) {
-        if (!isalnum(*small_specifier) && *small_specifier != '_') {
+    while (!CFCUtil_isupper(*small_specifier)) {
+        if (!CFCUtil_isalnum(*small_specifier) && *small_specifier != '_') {
             CFCUtil_die("Invalid specifier: '%s'", specifier);
         }
         small_specifier++;
@@ -276,7 +275,7 @@ CFCType*
 CFCType_new_arbitrary(CFCParcel *parcel, const char *specifier) {
     // Validate specifier.
     for (size_t i = 0, max = strlen(specifier); i < max; i++) {
-        if (!isalnum(specifier[i]) && specifier[i] != '_') {
+        if (!CFCUtil_isalnum(specifier[i]) && specifier[i] != '_') {
             CFCUtil_die("Illegal specifier: '%s'", specifier);
         }
     }
@@ -295,7 +294,7 @@ CFCType_resolve(CFCType *self) {
     }
 
     char *specifier = self->specifier;
-    if (isupper(specifier[0])) {
+    if (CFCUtil_isupper(specifier[0])) {
         CFCParcel *parcel
             = CFCParcel_lookup_struct_sym(self->parcel, specifier);
         if (!parcel) {
@@ -384,7 +383,7 @@ CFCType_get_class_var(CFCType *self) {
     if (!self->class_var) {
         self->class_var = CFCUtil_strdup(self->specifier);
         for (int i = 0; self->class_var[i] != 0; i++) {
-            self->class_var[i] = (char)toupper(self->class_var[i]);
+            self->class_var[i] = CFCUtil_toupper(self->class_var[i]);
         }
     }
     return self->class_var;

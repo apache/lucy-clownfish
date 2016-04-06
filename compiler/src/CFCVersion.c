@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 
 #ifndef true
     #define true 1
@@ -49,7 +48,7 @@ CFCVersion_new(const char *vstring) {
 CFCVersion*
 CFCVersion_init(CFCVersion *self, const char *vstring) {
     CFCUTIL_NULL_CHECK(vstring);
-    if (*vstring != 'v' || !isdigit(vstring[1])) {
+    if (*vstring != 'v' || !CFCUtil_isdigit(vstring[1])) {
         CFCBase_decref((CFCBase*)self);
         CFCUtil_die("Bad version string: '%s'", vstring);
     }
@@ -59,7 +58,7 @@ CFCVersion_init(CFCVersion *self, const char *vstring) {
     self->num_numbers = 0;
     self->numbers = (uint32_t*)CALLOCATE(1, sizeof(uint32_t));
     while (1) {
-        if (isdigit(*vstring)) {
+        if (CFCUtil_isdigit(*vstring)) {
             int digit = *vstring - '0';
             num = num * 10 + (uint32_t)digit;
         }

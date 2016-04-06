@@ -16,7 +16,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
 
 #include "CFCGoTypeMap.h"
@@ -113,7 +112,7 @@ CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
         const char *specifier  = CFCType_get_specifier(type);
         size_t      prefix_len = 0;
         for (size_t max = strlen(specifier); prefix_len < max; prefix_len++) {
-            if (isupper(specifier[prefix_len])) {
+            if (CFCUtil_isupper(specifier[prefix_len])) {
                 break;
             }
         }
@@ -153,7 +152,7 @@ CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
         }
         char *result = CFCUtil_sprintf("%s.%s", package_name, struct_sym);
         for (int i = 0; result[i] != '.'; i++) {
-            result[i] = (char)tolower(result[i]);
+            result[i] = CFCUtil_tolower(result[i]);
         }
         return result;
     }
@@ -184,7 +183,7 @@ CFCGoTypeMap_go_short_package(CFCParcel *parcel) {
     // parcel names.
     char *go_short_package = CFCUtil_strdup(parcel_frag);
     for (int i = 0; go_short_package[i] != '\0'; i++) {
-        go_short_package[i] = (char)tolower(go_short_package[i]);
+        go_short_package[i] = CFCUtil_tolower(go_short_package[i]);
     }
     return go_short_package;
 }
@@ -206,8 +205,8 @@ CFCGoTypeMap_go_meth_receiever(const char *struct_name,
 
     // Find the first letter of the type and lowercase it.
     for (size_t i = 0, max = strlen(struct_name); i < max; i++) {
-        if (isupper(struct_name[i])) {
-            buf[0] = (char)tolower(struct_name[i]);
+        if (CFCUtil_isupper(struct_name[i])) {
+            buf[0] = CFCUtil_tolower(struct_name[i]);
             buf[1] = '\0';
             break;
         }
@@ -265,7 +264,7 @@ CFCGoTypeMap_go_arg_name(CFCParamList *param_list, size_t tick, char *buf,
             continue;
         }
         else if (last_was_underscore) {
-            buf[dest_tick] = (char)toupper(orig[i]);
+            buf[dest_tick] = CFCUtil_toupper(orig[i]);
         }
         else {
             buf[dest_tick] = orig[i];

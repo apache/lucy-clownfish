@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 
 #ifndef true
   #define true 1
@@ -56,9 +55,9 @@ S_validate_exposure(const char *exposure) {
 static int
 S_validate_identifier(const char *identifier) {
     const char *ptr = identifier;
-    if (!isalpha(*ptr) && *ptr != '_') { return false; }
+    if (!CFCUtil_isalpha(*ptr) && *ptr != '_') { return false; }
     for (; *ptr != 0; ptr++) {
-        if (!isalnum(*ptr) && *ptr != '_') { return false; }
+        if (!CFCUtil_isalnum(*ptr) && *ptr != '_') { return false; }
     }
     return true;
 }

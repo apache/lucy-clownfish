@@ -17,7 +17,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #include "charmony.h"
 
@@ -49,7 +48,7 @@ char*
 CFCGoFunc_go_meth_name(const char *orig, int is_public) {
     char *go_name = CFCUtil_strdup(orig);
     if (!is_public) {
-        go_name[0] = (char)tolower(go_name[0]);
+        go_name[0] = CFCUtil_tolower(go_name[0]);
     }
     for (size_t i = 1, j = 1, max = strlen(go_name) + 1; i < max; i++) {
         if (go_name[i] != '_') {

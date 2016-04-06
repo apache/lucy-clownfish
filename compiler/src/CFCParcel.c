@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -143,7 +142,7 @@ static int
 S_validate_name_or_nickname(const char *orig) {
     const char *ptr = orig;
     for (; *ptr != 0; ptr++) {
-        if (!isalpha(*ptr)) { return false; }
+        if (!CFCUtil_isalpha(*ptr)) { return false; }
     }
     return true;
 }
@@ -209,8 +208,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
         self->Prefix[nickname_len] = '\0';
     }
     for (size_t i = 0; i < amount; i++) {
-        self->prefix[i] = (char)tolower(self->Prefix[i]);
-        self->PREFIX[i] = (char)toupper(self->Prefix[i]);
+        self->prefix[i] = CFCUtil_tolower(self->Prefix[i]);
+        self->PREFIX[i] = CFCUtil_toupper(self->Prefix[i]);
     }
     self->prefix[prefix_len] = '\0';
     self->Prefix[prefix_len] = '\0';
@@ -221,7 +220,7 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     self->privacy_sym = (char*)MALLOCATE(privacy_sym_len + 1);
     memcpy(self->privacy_sym, "CFP_", 4);
     for (size_t i = 0; i < nickname_len; i++) {
-        self->privacy_sym[i+4] = (char)toupper(self->nickname[i]);
+        self->privacy_sym[i+4] = CFCUtil_toupper(self->nickname[i]);
     }
     self->privacy_sym[privacy_sym_len] = '\0';
 
@@ -805,7 +804,7 @@ S_parse_json_null(const char **json) {
 
 static void
 S_skip_whitespace(const char **json) {
-    while (isspace(json[0][0])) { *json = *json + 1; }
+    while (CFCUtil_isspace(json[0][0])) { *json = *json + 1; }
 }
 
 static void

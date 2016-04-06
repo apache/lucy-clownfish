@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 
 #ifndef true
     #define true 1
@@ -58,7 +57,9 @@ S_validate_function_name(const char *name) {
     if (!len) { return false; }
     for (size_t i = 0; i < len; i++) {
         char c = name[i];
-        if (!islower(c) && !isdigit(c) && c != '_') { return false; }
+        if (!CFCUtil_islower(c) && !CFCUtil_isdigit(c) && c != '_') {
+            return false;
+        }
     }
     return true;
 }

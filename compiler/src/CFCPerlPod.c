@@ -17,7 +17,6 @@
 #include "charmony.h"
 
 #include <string.h>
-#include <ctype.h>
 
 #include <cmark.h>
 
@@ -533,7 +532,7 @@ S_perl_var_name(CFCType *type, int is_ctor_retval) {
         }
         else {
             // Skip parcel prefix.
-            if (islower(*specifier)) {
+            if (CFCUtil_islower(*specifier)) {
                 for (specifier++; *specifier; specifier++) {
                     if (*specifier == '_') {
                         specifier++;
@@ -570,21 +569,21 @@ S_camel_to_lower(const char *camel) {
 
     size_t alloc = 1;
     for (size_t i = 1; camel[i]; i++) {
-        if (isupper(camel[i]) && islower(camel[i+1])) {
+        if (CFCUtil_isupper(camel[i]) && CFCUtil_islower(camel[i+1])) {
             alloc += 1;
         }
         alloc += 1;
     }
     char *lower = (char*)MALLOCATE(alloc + 1);
 
-    lower[0] = (char)tolower(camel[0]);
+    lower[0] = CFCUtil_tolower(camel[0]);
     size_t j = 1;
     for (size_t i = 1; camel[i]; i++) {
         // Only insert underscore if next char is lowercase.
-        if (isupper(camel[i]) && islower(camel[i+1])) {
+        if (CFCUtil_isupper(camel[i]) && CFCUtil_islower(camel[i+1])) {
             lower[j++] = '_';
         }
-        lower[j++] = (char)tolower(camel[i]);
+        lower[j++] = CFCUtil_tolower(camel[i]);
     }
     lower[j] = '\0';
 
@@ -948,7 +947,7 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
 
             char *perl_name = CFCUtil_strdup(name);
             for (size_t i = 0; perl_name[i] != '\0'; ++i) {
-                perl_name[i] = (char)tolower(perl_name[i]);
+                perl_name[i] = CFCUtil_tolower(perl_name[i]);
             }
 
             // The Perl POD only contains sections for novel methods. Link

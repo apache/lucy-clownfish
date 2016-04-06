@@ -18,7 +18,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #ifndef true
     #define true 1
@@ -80,8 +79,8 @@ CFCFile_init(CFCFile *self, CFCParcel *parcel, CFCFileSpec *spec) {
         if (c == CHY_DIR_SEP_CHAR) {
             self->guard_name[j++] = '_';
         }
-        else if (isalnum(c)) {
-            self->guard_name[j++] = (char)toupper(c);
+        else if (CFCUtil_isalnum(c)) {
+            self->guard_name[j++] = CFCUtil_toupper(c);
         }
     }
     self->guard_name[j] = '\0';
