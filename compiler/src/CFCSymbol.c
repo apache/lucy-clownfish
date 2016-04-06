@@ -56,9 +56,9 @@ S_validate_exposure(const char *exposure) {
 static int
 S_validate_identifier(const char *identifier) {
     const char *ptr = identifier;
-    if (!isalpha(*ptr) && *ptr != '_') { return false; }
+    if (!isalpha((unsigned char)*ptr) && *ptr != '_') { return false; }
     for (; *ptr != 0; ptr++) {
-        if (!isalnum(*ptr) && *ptr != '_') { return false; }
+        if (!isalnum((unsigned char)*ptr) && *ptr != '_') { return false; }
     }
     return true;
 }
