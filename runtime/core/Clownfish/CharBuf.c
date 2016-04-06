@@ -274,11 +274,18 @@ CB_To_String_IMP(CharBuf *self) {
 
 String*
 CB_Yield_String_IMP(CharBuf *self) {
-    String *retval
-        = Str_new_steal_trusted_utf8(self->ptr, self->size);
+    // Null-terminate buffer.
+    size_t size = self->size;
+    SI_add_grow_and_oversize(self, size, 1);
+    self->ptr[size] = '\0';
+
+    String *retval = Str_new_steal_trusted_utf8(self->ptr, size);
+
+    // Clear CharBuf.
     self->ptr  = NULL;
     self->size = 0;
     self->cap  = 0;
+
     return retval;
 }
 
