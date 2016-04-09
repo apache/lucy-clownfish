@@ -39,14 +39,14 @@ ok( !current( $foo_txt, "nonexistent_file" ),
     "not current when dest file mising"
 );
 
-my $one_second_ago = time() - 1;
-utime( $one_second_ago, $one_second_ago, $foo_txt )
+my $ten_seconds_ago = time() - 10;
+utime( $ten_seconds_ago, $ten_seconds_ago, $foo_txt )
     or die "utime failed";
 write_if_changed( $foo_txt, "foo" );
-is( stat($foo_txt)->mtime, $one_second_ago,
+is( stat($foo_txt)->mtime, $ten_seconds_ago,
     "write_if_changed does nothing if contents not changed" );
 write_if_changed( $foo_txt, "foofoo" );
-ok( stat($foo_txt)->mtime != $one_second_ago,
+ok( stat($foo_txt)->mtime != $ten_seconds_ago,
     "write_if_changed writes if contents changed"
 );
 
