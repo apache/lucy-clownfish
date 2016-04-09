@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"

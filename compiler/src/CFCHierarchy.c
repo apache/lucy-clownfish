@@ -21,7 +21,6 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <ctype.h>
 
 #ifndef true
     #define true 1

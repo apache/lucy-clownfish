@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 #include <stdio.h>
 
 #define CFC_NEED_CALLABLE_STRUCT_DEF
@@ -66,15 +65,15 @@ S_validate_meth_name(const char *meth_name) {
     int need_upper  = true;
     int need_letter = true;
     for (;; meth_name++) {
-        if (need_upper  && !isupper(*meth_name)) { return false; }
-        if (need_letter && !isalpha(*meth_name)) { return false; }
+        if (need_upper  && !CFCUtil_isupper(*meth_name)) { return false; }
+        if (need_letter && !CFCUtil_isalpha(*meth_name)) { return false; }
         need_upper  = false;
         need_letter = false;
 
         // We've reached NULL-termination without problems, so succeed.
         if (!*meth_name) { return true; }
 
-        if (!isalnum(*meth_name)) {
+        if (!CFCUtil_isalnum(*meth_name)) {
             if (*meth_name != '_') { return false; }
             need_upper  = true;
         }

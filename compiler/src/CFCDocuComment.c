@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <ctype.h>
 #include <string.h>
 #include <cmark.h>
 
@@ -50,7 +49,7 @@ S_strip(char *comment) {
     // Capture text minus beginning "/**", ending "*/", and left border.
     size_t i = 3;
     size_t max = len - 2;
-    while ((isspace(comment[i]) || comment[i] == '*') && i < max) {
+    while ((CFCUtil_isspace(comment[i]) || comment[i] == '*') && i < max) {
         i++;
     }
     size_t j = 0;
@@ -58,7 +57,10 @@ S_strip(char *comment) {
         while (comment[i] == '\n' && i < max) {
             scratch[j++] = comment[i];
             i++;
-            while (isspace(comment[i]) && comment[i] != '\n' && i < max) {
+            while (CFCUtil_isspace(comment[i])
+                   && comment[i] != '\n'
+                   && i < max
+                  ) {
                 i++;
             }
             if (comment[i] == '*') { i++; }
@@ -104,7 +106,7 @@ CFCDocuComment_parse(const char *raw_text) {
     }
     while (ptr < limit) {
         if (*ptr == '.'
-            && ((ptr == limit - 1) || isspace(*(ptr + 1)))
+            && ((ptr == limit - 1) || CFCUtil_isspace(*(ptr + 1)))
            ) {
             ptr++;
             size_t brief_len = (size_t)(ptr - text);
@@ -130,19 +132,21 @@ CFCDocuComment_parse(const char *raw_text) {
     while (candidate) {
         // Extract param name.
         char *ptr = candidate + sizeof("@param") - 1;
-        if (!isspace(*ptr) || ptr > text_limit) {
+        if (!CFCUtil_isspace(*ptr) || ptr > text_limit) {
             CFCUtil_die("Malformed @param directive in '%s'", raw_text);
         }
-        while (isspace(*ptr) && ptr < text_limit) { ptr++; }
+        while (CFCUtil_isspace(*ptr) && ptr < text_limit) { ptr++; }
         char *param_name = ptr;
-        while ((isalnum(*ptr) || *ptr == '_') && ptr < text_limit) { ptr++; }
+        while ((CFCUtil_isalnum(*ptr) || *ptr == '_') && ptr < text_limit) {
+            ptr++;
+        }
         size_t param_name_len = (size_t)(ptr - param_name);
         if (!param_name_len) {
             CFCUtil_die("Malformed @param directive in '%s'", raw_text);
         }
 
         // Extract param description.
-        while (isspace(*ptr) && ptr < text_limit) { ptr++; }
+        while (CFCUtil_isspace(*ptr) && ptr < text_limit) { ptr++; }
         char *param_doc = ptr;
         while (ptr < text_limit
                && (*ptr != '@'

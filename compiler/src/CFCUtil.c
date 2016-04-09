@@ -130,13 +130,13 @@ CFCUtil_trim_whitespace(char *text) {
 
     // Find start.
     char *ptr = text;
-    while (*ptr != '\0' && isspace(*ptr)) { ptr++; }
+    while (*ptr != '\0' && CFCUtil_isspace(*ptr)) { ptr++; }
 
     // Find end.
     size_t orig_len = strlen(text);
     char *limit = text + orig_len;
     for (; limit > text; limit--) {
-        if (!isspace(*(limit - 1))) { break; }
+        if (!CFCUtil_isspace(*(limit - 1))) { break; }
     }
 
     // Modify string in place and NULL-terminate.
@@ -306,6 +306,55 @@ CFCUtil_wrapped_realloc(void *ptr, size_t size, const char *file, int line) {
 void
 CFCUtil_wrapped_free(void *ptr) {
     free(ptr);
+}
+
+// Avoid -Wtype-limits warning.
+#if CHAR_MAX <= 127
+  #define IS_ASCII(c) ((c) >= 0)
+#else
+  #define IS_ASCII(c) ((c) >= 0 && (c) <= 127)
+#endif
+
+int
+CFCUtil_isalnum(char c) {
+    return IS_ASCII(c) && isalnum(c);
+}
+
+int
+CFCUtil_isalpha(char c) {
+    return IS_ASCII(c) && isalpha(c);
+}
+
+int
+CFCUtil_isdigit(char c) {
+    return IS_ASCII(c) && isdigit(c);
+}
+
+int
+CFCUtil_islower(char c) {
+    return IS_ASCII(c) && islower(c);
+}
+
+int
+CFCUtil_isspace(char c) {
+    return IS_ASCII(c) && isspace(c);
+}
+
+int
+CFCUtil_isupper(char c) {
+    return IS_ASCII(c) && isupper(c);
+}
+
+char
+CFCUtil_tolower(char c) {
+    if (!IS_ASCII(c)) { return c; }
+    return (char)tolower(c);
+}
+
+char
+CFCUtil_toupper(char c) {
+    if (!IS_ASCII(c)) { return c; }
+    return (char)toupper(c);
 }
 
 int

@@ -18,7 +18,7 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
+
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCClass.h"
@@ -89,7 +89,7 @@ CFCRuby_init(CFCRuby *self, CFCParcel *parcel, CFCHierarchy *hierarchy,
     self->boot_func = CFCUtil_sprintf("%s%s_bootstrap", prefix, boot_class);
 
     for (int i = 0; self->boot_func[i] != 0; i++) {
-        if (!isalnum(self->boot_func[i])) {
+        if (!CFCUtil_isalnum(self->boot_func[i])) {
             self->boot_func[i] = '_';
         }
     }
@@ -134,8 +134,8 @@ S_write_boot_h(CFCRuby *self) {
                               "_BOOT", NULL);
     S_replace_double_colons(guard, '_');
     for (char *ptr = guard; *ptr != '\0'; ptr++) {
-        if (isalpha(*ptr)) {
-            *ptr = (char)toupper(*ptr);
+        if (CFCUtil_isalpha(*ptr)) {
+            *ptr = CFCUtil_toupper(*ptr);
         }
     }
 

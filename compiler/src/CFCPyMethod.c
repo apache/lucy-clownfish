@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 
 #include "CFCPyMethod.h"
 #include "CFCPyTypeMap.h"
@@ -277,7 +276,7 @@ S_build_pymeth_invocation(CFCMethod *method) {
             CFCUtil_die("Unexpectedly long type name: %s", ret_type_str);
         }
         for (size_t i = 0, max = strlen(ret_type_str) + 1; i < max; i++) {
-            type_upcase[i] = (char)toupper(ret_type_str[i]);
+            type_upcase[i] = CFCUtil_toupper(ret_type_str[i]);
         }
         const char pattern[] =
             "    %s cfcb_RESULT = CALL_PYMETH_%s((PyObject*)self, \"%s\", cfcb_ARGS);";
@@ -646,7 +645,7 @@ CFCPyMethod_pymethoddef(CFCMethod *method, CFCClass *invoker) {
     char *meth_sym = CFCMethod_full_method_sym(method, invoker);
     char *micro_sym = CFCUtil_strdup(CFCSymbol_get_name((CFCSymbol*)method));
     for (int i = 0; micro_sym[i] != 0; i++) {
-        micro_sym[i] = (char)tolower(micro_sym[i]);
+        micro_sym[i] = CFCUtil_tolower(micro_sym[i]);
     }
 
     char pattern[] =

@@ -18,7 +18,7 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
+
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCPerl.h"
@@ -108,7 +108,7 @@ CFCPerl_init(CFCPerl *self, CFCHierarchy *hierarchy, const char *lib_dir,
     // Derive the name of the bootstrap function.
     self->boot_func = CFCUtil_sprintf("cfish_%s_bootstrap", boot_class);
     for (int i = 0; self->boot_func[i] != 0; i++) {
-        if (!isalnum(self->boot_func[i])) {
+        if (!CFCUtil_isalnum(self->boot_func[i])) {
             self->boot_func[i] = '_';
         }
     }
@@ -279,8 +279,8 @@ S_write_boot_h(CFCPerl *self) {
     char *guard = CFCUtil_sprintf("%s_BOOT", self->boot_class);
     S_replace_double_colons(guard, '_');
     for (char *ptr = guard; *ptr != '\0'; ptr++) {
-        if (isalpha(*ptr)) {
-            *ptr = (char)toupper(*ptr);
+        if (CFCUtil_isalpha(*ptr)) {
+            *ptr = CFCUtil_toupper(*ptr);
         }
     }
 

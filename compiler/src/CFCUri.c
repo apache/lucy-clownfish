@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -110,7 +109,7 @@ S_parse(CFCUri *self) {
     char       *iter = buf;
     const char *component = S_next_component(&iter);
 
-    if (islower(component[0])) {
+    if (CFCUtil_islower(component[0])) {
         // Parcel
         parcel = component;
         component = S_next_component(&iter);
@@ -179,7 +178,7 @@ S_resolve(CFCUri *self, const char *parcel, const char *struct_sym,
         CFCBase_incref((CFCBase*)klass);
 
         if (callable) {
-            if (islower(callable[0])) {
+            if (CFCUtil_islower(callable[0])) {
                 CFCFunction *function = CFCClass_function(klass, callable);
 
                 if (!function) {
