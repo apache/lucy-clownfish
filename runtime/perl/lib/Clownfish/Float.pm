@@ -15,7 +15,7 @@
 
 package Clownfish::Float;
 use Clownfish;
-our $VERSION = '0.005000';
+our $VERSION = '0.005001';
 $VERSION = eval $VERSION;
 
 1;

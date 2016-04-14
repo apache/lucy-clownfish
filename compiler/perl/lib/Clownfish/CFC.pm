@@ -17,7 +17,7 @@ use strict;
 use warnings;
 
 package Clownfish::CFC;
-our $VERSION = '0.005000';
+our $VERSION = '0.005001';
 $VERSION = eval $VERSION;
 our $MAJOR_VERSION = 0.005000;
 
@@ -27,7 +27,7 @@ END {
 }
 
 use XSLoader;
-BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
+BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.1' ) }
 
 {
     package Clownfish::CFC::Util;

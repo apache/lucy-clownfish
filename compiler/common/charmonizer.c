@@ -7924,7 +7924,7 @@ typedef struct SourceFileContext {
     chaz_MakeVar *common_test_objs;
 } SourceFileContext;
 
-static const char cfc_version[]       = "0.5.0";
+static const char cfc_version[]       = "0.5.1";
 static const char cfc_major_version[] = "0.5";
 
 static void
