@@ -659,7 +659,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int level) {
                 break;
 
             default:
-                CFCUtil_die("Invalid cmark node type: %d", type);
+                CFCUtil_die("Invalid cmark node type: %d", (int)type);
                 break;
         }
     }

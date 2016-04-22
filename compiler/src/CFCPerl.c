@@ -353,13 +353,12 @@ S_write_boot_c(CFCPerl *self) {
                 = CFCPerlClass_get_class_aliases(class_binding);
             for (size_t j = 0; aliases[j] != NULL; j++) {
                 const char *alias = aliases[j];
-                size_t alias_len  = strlen(alias);
+                int alias_len  = (int)strlen(alias);
                 const char pattern[] =
                     "    cfish_Class_add_alias_to_registry("
-                    "%s, \"%s\", %u);\n";
+                    "%s, \"%s\", %d);\n";
                 char *alias_add
-                    = CFCUtil_sprintf(pattern, class_var, alias,
-                                      (unsigned)alias_len);
+                    = CFCUtil_sprintf(pattern, class_var, alias, alias_len);
                 alias_adds = CFCUtil_cat(alias_adds, alias_add, NULL);
                 FREEMEM(alias_add);
             }

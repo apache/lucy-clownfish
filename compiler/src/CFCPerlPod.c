@@ -823,7 +823,7 @@ S_node_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
                 break;
 
             default:
-                CFCUtil_die("Invalid cmark node type: %d", type);
+                CFCUtil_die("Invalid cmark node type: %d", (int)type);
                 break;
         }
     }

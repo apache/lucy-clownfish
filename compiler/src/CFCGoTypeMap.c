@@ -200,7 +200,7 @@ CFCGoTypeMap_go_meth_receiever(const char *struct_name,
         max_required = strlen(orig) + 1;
     }
     if (buf_len < max_required) {
-        CFCUtil_die("Buffer length too short: %d", buf_len);
+        CFCUtil_die("Buffer length too short: %d", (int)buf_len);
     }
 
     // Find the first letter of the type and lowercase it.
@@ -239,7 +239,7 @@ CFCGoTypeMap_go_arg_name(CFCParamList *param_list, size_t tick, char *buf,
     const char *orig = CFCVariable_get_name(vars[tick]);
     size_t max_required = strlen(orig) + 2;
     if (buf_len < max_required || buf_len < 5) {
-        CFCUtil_die("Buffer length too short: %d", buf_len);
+        CFCUtil_die("Buffer length too short: %d", (int)buf_len);
     }
 
     // If the argument name is a Go keyword, append an underscore.  This is
@@ -256,8 +256,8 @@ CFCGoTypeMap_go_arg_name(CFCParamList *param_list, size_t tick, char *buf,
     int last_was_underscore = 0;
     for (size_t i = 0; i <= strlen(orig); i++) {
         if (i > buf_len) {
-            CFCUtil_die("Name too long for buffer of size %d: '%s'", buf_len,
-                        orig);
+            CFCUtil_die("Name too long for buffer of size %d: '%s'",
+                        (int)buf_len, orig);
         }
         if (orig[i] == '_') {
             last_was_underscore = 1;

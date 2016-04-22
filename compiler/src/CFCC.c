@@ -211,7 +211,7 @@ CFCC_link_text(CFCUri *uri_obj) {
         }
 
         default:
-            CFCUtil_die("Unsupported node type: %d", type);
+            CFCUtil_die("Unsupported node type: %d", (int)type);
             break;
     }
 
