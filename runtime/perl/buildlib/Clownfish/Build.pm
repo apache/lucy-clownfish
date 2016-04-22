@@ -310,6 +310,7 @@ sub ACTION_dist {
     # the top-level $REPOS_ROOT.  Because some assets we need are outside this
     # directory, we need to copy them in.
     my %to_copy = (
+        '../../CHANGES'         => 'CHANGES',
         '../../CONTRIBUTING.md' => 'CONTRIBUTING.md',
         '../../LICENSE'         => 'LICENSE',
         '../../NOTICE'          => 'NOTICE',
