@@ -987,8 +987,8 @@ PPCODE:
         case 2: {
                 AV *av = newAV();
                 CFCVariable **vars = CFCParamList_get_variables(self);
-                size_t num_vars = CFCParamList_num_vars(self);
-                for (size_t i = 0; i < num_vars; i++) {
+                int num_vars = CFCParamList_num_vars(self);
+                for (int i = 0; i < num_vars; i++) {
                     SV *ref = S_cfcbase_to_perlref(vars[i]);
                     av_store(av, i, ref);
                 }
@@ -999,8 +999,8 @@ PPCODE:
         case 4: {
                 AV *av = newAV();
                 const char **values = CFCParamList_get_initial_values(self);
-                size_t num_vars = CFCParamList_num_vars(self);
-                for (size_t i = 0; i < num_vars; i++) {
+                int num_vars = CFCParamList_num_vars(self);
+                for (int i = 0; i < num_vars; i++) {
                     if (values[i] != NULL) {
                         SV *val_sv = newSVpvn(values[i], strlen(values[i]));
                         av_store(av, i, val_sv);
@@ -2043,7 +2043,7 @@ PPCODE:
 SV*
 build_param_specs(self, first)
     CFCPerlSub *self;
-    size_t first;
+    int first;
 CODE:
     RETVAL = S_sv_eat_c_string(CFCPerlSub_build_param_specs(self, first));
 OUTPUT: RETVAL

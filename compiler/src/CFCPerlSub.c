@@ -79,14 +79,14 @@ CFCPerlSub_destroy(CFCPerlSub *self) {
 }
 
 char*
-CFCPerlSub_arg_declarations(CFCPerlSub *self, size_t first) {
+CFCPerlSub_arg_declarations(CFCPerlSub *self, int first) {
     CFCParamList *param_list = self->param_list;
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
-    size_t        num_vars   = CFCParamList_num_vars(param_list);
+    int           num_vars   = CFCParamList_num_vars(param_list);
     char         *decls      = CFCUtil_strdup("");
 
     // Declare variables.
-    for (size_t i = first; i < num_vars; i++) {
+    for (int i = first; i < num_vars; i++) {
         CFCVariable *arg_var  = arg_vars[i];
         CFCType     *type     = CFCVariable_get_type(arg_var);
         const char  *type_str = CFCType_to_c(type);
@@ -102,10 +102,10 @@ char*
 CFCPerlSub_arg_name_list(CFCPerlSub *self) {
     CFCParamList  *param_list = self->param_list;
     CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
-    size_t         num_vars   = CFCParamList_num_vars(param_list);
+    int            num_vars   = CFCParamList_num_vars(param_list);
     char          *name_list  = CFCUtil_strdup("");
 
-    for (size_t i = 0; i < num_vars; i++) {
+    for (int i = 0; i < num_vars; i++) {
         const char *var_name = CFCVariable_get_name(arg_vars[i]);
         if (i > 0) {
             name_list = CFCUtil_cat(name_list, ", ", NULL);
@@ -117,18 +117,18 @@ CFCPerlSub_arg_name_list(CFCPerlSub *self) {
 }
 
 char*
-CFCPerlSub_build_param_specs(CFCPerlSub *self, size_t first) {
+CFCPerlSub_build_param_specs(CFCPerlSub *self, int first) {
     CFCParamList  *param_list = self->param_list;
     CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
     const char   **arg_inits  = CFCParamList_get_initial_values(param_list);
-    size_t         num_vars   = CFCParamList_num_vars(param_list);
+    int            num_vars   = CFCParamList_num_vars(param_list);
 
     const char *pattern
         = "    static const XSBind_ParamSpec param_specs[%d] = {";
     char *param_specs = CFCUtil_sprintf(pattern, num_vars - first);
 
     // Iterate over args in param list.
-    for (size_t i = first; i < num_vars; i++) {
+    for (int i = first; i < num_vars; i++) {
         if (i != first) {
             param_specs = CFCUtil_cat(param_specs, ",", NULL);
         }
@@ -154,17 +154,17 @@ CFCPerlSub_arg_assignments(CFCPerlSub *self) {
     CFCParamList  *param_list = self->param_list;
     CFCVariable  **arg_vars   = CFCParamList_get_variables(param_list);
     const char   **arg_inits  = CFCParamList_get_initial_values(param_list);
-    size_t         num_vars   = CFCParamList_num_vars(param_list);
+    int            num_vars   = CFCParamList_num_vars(param_list);
 
     char *arg_assigns = CFCUtil_strdup("");
 
-    for (size_t i = 1; i < num_vars; i++) {
+    for (int i = 1; i < num_vars; i++) {
         char stack_location[30];
         if (self->use_labeled_params) {
-            sprintf(stack_location, "locations[%u]", (unsigned)(i - 1));
+            sprintf(stack_location, "locations[%d]", i - 1);
         }
         else {
-            sprintf(stack_location, "%u", (unsigned)i);
+            sprintf(stack_location, "%d", i);
         }
         char *statement = S_arg_assignment(arg_vars[i], arg_inits[i],
                                            stack_location);

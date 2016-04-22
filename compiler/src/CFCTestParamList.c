@@ -60,7 +60,7 @@ S_run_tests(CFCTest *test) {
         OK(test, CFCParamList_variadic(param_list), "variadic");
         STR_EQ(test, CFCParamList_to_c(param_list),
                "neato_Obj* self, int num, ...", "to_c");
-        UINT_EQ(test, CFCParamList_num_vars(param_list), 2, "num_vars");
+        INT_EQ(test, CFCParamList_num_vars(param_list), 2, "num_vars");
         const char **initial_values
             = CFCParamList_get_initial_values(param_list);
         STR_EQ(test, initial_values[0], "NULL", "initial_values[0]"); 
@@ -78,7 +78,7 @@ S_run_tests(CFCTest *test) {
             = CFCTest_parse_param_list(test, parser, "()");
         CFCParamList_resolve_types(param_list);
         STR_EQ(test, CFCParamList_to_c(param_list), "void", "to_c");
-        UINT_EQ(test, CFCParamList_num_vars(param_list), 0, "num_vars");
+        INT_EQ(test, CFCParamList_num_vars(param_list), 0, "num_vars");
         CFCVariable **variables = CFCParamList_get_variables(param_list);
         OK(test, variables[0] == NULL, "get_variables");
 

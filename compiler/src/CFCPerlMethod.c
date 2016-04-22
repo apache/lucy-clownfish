@@ -239,7 +239,7 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     CFCVariable **arg_vars   = CFCParamList_get_variables(param_list);
     CFCVariable *self_var    = arg_vars[0];
     CFCType     *return_type = CFCMethod_get_return_type(method);
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
     const char  *self_name   = CFCVariable_get_name(self_var);
     char *param_specs = CFCPerlSub_build_param_specs((CFCPerlSub*)self, 1);
     char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
@@ -311,7 +311,7 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     CFCVariable **arg_vars = CFCParamList_get_variables(param_list);
     CFCType     *return_type = CFCMethod_get_return_type(method);
     const char **arg_inits = CFCParamList_get_initial_values(param_list);
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
     char *arg_decls   = CFCPerlSub_arg_declarations((CFCPerlSub*)self, 0);
     char *meth_type_c = CFCMethod_full_typedef(method, klass);
     char *self_assign = S_self_assign_statement(self);
@@ -319,25 +319,24 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     char *body        = S_xsub_body(self, klass);
 
     // Determine how many args are truly required and build an error check.
-    size_t min_required = 0;
-    for (size_t i = 0; i < num_vars; i++) {
+    int min_required = 0;
+    for (int i = 0; i < num_vars; i++) {
         if (arg_inits[i] == NULL) {
             min_required = i + 1;
         }
     }
     char *num_args_cond;
     if (min_required < num_vars) {
-        const char cond_pattern[] = "items < %u || items > %u";
-        num_args_cond = CFCUtil_sprintf(cond_pattern, (unsigned)min_required,
-                                        (unsigned)num_vars);
+        const char cond_pattern[] = "items < %d || items > %d";
+        num_args_cond = CFCUtil_sprintf(cond_pattern, min_required, num_vars);
     }
     else {
-        num_args_cond = CFCUtil_sprintf("items != %u", (unsigned)num_vars);
+        num_args_cond = CFCUtil_sprintf("items != %d", num_vars);
     }
     char *xs_name_list = num_vars > 0
                          ? CFCUtil_strdup(CFCVariable_get_name(arg_vars[0]))
                          : CFCUtil_strdup("");
-    for (size_t i = 1; i < num_vars; i++) {
+    for (int i = 1; i < num_vars; i++) {
         const char *var_name = CFCVariable_get_name(arg_vars[i]);
         if (i < min_required) {
             xs_name_list = CFCUtil_cat(xs_name_list, ", ", var_name, NULL);
@@ -467,7 +466,7 @@ S_callback_start(CFCMethod *method) {
         "    SAVETMPS;\n"
         "    PUSHMARK(SP);\n"
         "    mPUSHs((SV*)CFISH_Obj_To_Host((cfish_Obj*)self, NULL));\n";
-    int num_args = (int)CFCParamList_num_vars(param_list) - 1;
+    int num_args = CFCParamList_num_vars(param_list) - 1;
     int num_to_extend = num_args == 0 ? 1
                       : num_args == 1 ? 2
                       : 1 + (num_args * 2);

@@ -29,7 +29,7 @@ struct CFCParamList {
     CFCVariable **variables;
     char        **values;
     int           variadic;
-    size_t        num_vars;
+    int           num_vars;
     char         *c_string;
     char         *name_list;
 };
@@ -63,7 +63,7 @@ CFCParamList_init(CFCParamList *self, int variadic) {
 
 void
 CFCParamList_resolve_types(CFCParamList *self) {
-    for (size_t i = 0; self->variables[i]; ++i) {
+    for (int i = 0; self->variables[i]; ++i) {
         CFCVariable_resolve_type(self->variables[i]);
     }
 }
@@ -79,7 +79,7 @@ CFCParamList_add_param(CFCParamList *self, CFCVariable *variable,
         CFCType_set_nullable(type, 1);
     }
     self->num_vars++;
-    size_t amount = (self->num_vars + 1) * sizeof(void*);
+    size_t amount = ((size_t)self->num_vars + 1) * sizeof(void*);
     self->variables = (CFCVariable**)REALLOCATE(self->variables, amount);
     self->values    = (char**)REALLOCATE(self->values, amount);
     self->variables[self->num_vars - 1]
@@ -91,7 +91,7 @@ CFCParamList_add_param(CFCParamList *self, CFCVariable *variable,
 
 void
 CFCParamList_destroy(CFCParamList *self) {
-    for (size_t i = 0; i < self->num_vars; i++) {
+    for (int i = 0; i < self->num_vars; i++) {
         CFCBase_decref((CFCBase*)self->variables[i]);
         FREEMEM(self->values[i]);
     }
@@ -108,7 +108,7 @@ S_generate_c_strings(CFCParamList *self) {
     size_t name_list_size = 1;
 
     // Calc space requirements and allocate memory.
-    for (size_t i = 0; i < self->num_vars; i++) {
+    for (int i = 0; i < self->num_vars; i++) {
         CFCVariable *var = self->variables[i];
         c_string_size += sizeof(", ");
         c_string_size += strlen(CFCVariable_local_c(var));
@@ -127,7 +127,7 @@ S_generate_c_strings(CFCParamList *self) {
     self->name_list[0] = '\0';
 
     // Build the strings.
-    for (size_t i = 0; i < self->num_vars; i++) {
+    for (int i = 0; i < self->num_vars; i++) {
         CFCVariable *var = self->variables[i];
         strcat(self->c_string, CFCVariable_local_c(var));
         strcat(self->name_list, CFCVariable_get_name(var));
@@ -156,7 +156,7 @@ CFCParamList_get_initial_values(CFCParamList *self) {
     return (const char**)self->values;
 }
 
-size_t
+int
 CFCParamList_num_vars(CFCParamList *self) {
     return self->num_vars;
 }
@@ -185,7 +185,7 @@ CFCParamList_name_list(CFCParamList *self) {
 
 const char*
 CFCParamList_param_name(CFCParamList *self, int tick) {
-    if ((size_t)tick >= self->num_vars) {
+    if (tick >= self->num_vars) {
         CFCUtil_die("No var at position %d for ParamList (%s)", tick,
                     CFCParamList_to_c(self));
     }
@@ -194,7 +194,7 @@ CFCParamList_param_name(CFCParamList *self, int tick) {
 
 CFCType*
 CFCParamList_param_type(CFCParamList *self, int tick) {
-    if ((size_t)tick >= self->num_vars) {
+    if (tick >= self->num_vars) {
         CFCUtil_die("No var at position %d for ParamList (%s)", tick,
                     CFCParamList_to_c(self));
     }

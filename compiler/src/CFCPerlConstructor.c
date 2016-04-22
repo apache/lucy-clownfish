@@ -91,7 +91,7 @@ char*
 CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
     const char    *c_name        = self->sub.c_name;
     CFCParamList  *param_list    = self->sub.param_list;
-    size_t         num_vars      = CFCParamList_num_vars(param_list);
+    int            num_vars      = CFCParamList_num_vars(param_list);
     CFCVariable  **arg_vars      = CFCParamList_get_variables(param_list);
     CFCVariable   *self_var      = arg_vars[0];
     CFCType       *self_type     = CFCVariable_get_type(self_var);
@@ -115,16 +115,16 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
         locate_args = CFCUtil_strdup("");
     }
     else {
-        unsigned num_params = (unsigned)num_vars - 1;
+        int num_params = num_vars - 1;
         items_check = "items < 1";
         param_specs = CFCPerlSub_build_param_specs((CFCPerlSub*)self, 1);
-        locs_decl   = CFCUtil_sprintf("    int32_t locations[%u];\n"
+        locs_decl   = CFCUtil_sprintf("    int32_t locations[%d];\n"
                                       "    SV *sv;\n",
                                       num_params);
 
         const char *pattern =
             "    XSBind_locate_args(aTHX_ &ST(0), 1, items, param_specs,\n"
-            "                       locations, %u);\n";
+            "                       locations, %d);\n";
         locate_args = CFCUtil_sprintf(pattern, num_params);
     }
 

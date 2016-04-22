@@ -70,7 +70,7 @@ CFCPerlSub_destroy(CFCPerlSub *self);
  * `first` onwards.
  */
 char*
-CFCPerlSub_arg_declarations(CFCPerlSub *self, size_t first);
+CFCPerlSub_arg_declarations(CFCPerlSub *self, int first);
 
 /** Create a comma-separated list of argument names prefixed by "arg_".
  */
@@ -81,7 +81,7 @@ CFCPerlSub_arg_name_list(CFCPerlSub *self);
  * Parameters from `first` onwards are included.
  */
 char*
-CFCPerlSub_build_param_specs(CFCPerlSub *self, size_t first);
+CFCPerlSub_build_param_specs(CFCPerlSub *self, int first);
 
 /** Generate code that that converts and assigns the arguments.
  */

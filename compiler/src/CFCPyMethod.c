@@ -49,12 +49,12 @@ S_maybe_unreachable(CFCType *return_type);
 
 static char*
 S_build_py_args(CFCParamList *param_list) {
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
     CFCVariable **vars = CFCParamList_get_variables(param_list);
     char pattern[] = "    PyObject *cfcb_ARGS = S_pack_tuple(%d";
     char *py_args = CFCUtil_sprintf(pattern, num_vars - 1);
 
-    for (size_t i = 1; vars[i] != NULL; i++) {
+    for (int i = 1; vars[i] != NULL; i++) {
         const char *var_name = CFCVariable_get_name(vars[i]);
         CFCType *type = CFCVariable_get_type(vars[i]);
         char *conversion = CFCPyTypeMap_c_to_py(type, var_name);
@@ -69,9 +69,9 @@ S_build_py_args(CFCParamList *param_list) {
 static char*
 S_gen_decs(CFCParamList *param_list, int first_tick) {
     char *decs = CFCUtil_strdup("");
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
     CFCVariable **vars = CFCParamList_get_variables(param_list);
-    for (int i = first_tick; i < (int)num_vars; i++) {
+    for (int i = first_tick; i < num_vars; i++) {
         CFCType *type = CFCVariable_get_type(vars[i]);
         const char *name = CFCVariable_get_name(vars[i]);
         decs = CFCUtil_cat(decs, "    ", CFCType_to_c(type), " ", name,
@@ -191,7 +191,7 @@ S_gen_arg_parsing(CFCParamList *param_list, int first_tick, char **error) {
 
     CFCVariable **vars = CFCParamList_get_variables(param_list);
     const char **vals = CFCParamList_get_initial_values(param_list);
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
 
     char *declarations = CFCUtil_strdup("");
     char *keywords     = CFCUtil_strdup("");
@@ -199,7 +199,7 @@ S_gen_arg_parsing(CFCParamList *param_list, int first_tick, char **error) {
     char *targets      = CFCUtil_strdup("");
     int optional_started = 0;
 
-    for (int i = first_tick; i < (int)num_vars; i++) {
+    for (int i = first_tick; i < num_vars; i++) {
         CFCVariable *var  = vars[i];
         const char  *val  = vals[i];
 
@@ -432,9 +432,9 @@ S_meth_top(CFCMethod *method) {
 static char*
 S_gen_arg_increfs(CFCParamList *param_list, int first_tick) {
     CFCVariable **vars = CFCParamList_get_variables(param_list);
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
     char *content = CFCUtil_strdup("");
-    for (size_t i = (size_t)first_tick; i < num_vars; i++) {
+    for (int i = first_tick; i < num_vars; i++) {
         CFCType *type = CFCVariable_get_type(vars[i]);
         if (CFCType_decremented(type)) {
             const char *name = CFCVariable_get_name(vars[i]);
@@ -454,10 +454,10 @@ S_gen_arg_increfs(CFCParamList *param_list, int first_tick) {
 static char*
 S_gen_decrefs(CFCParamList *param_list, int first_tick) {
     CFCVariable **vars = CFCParamList_get_variables(param_list);
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
     char *decrefs = CFCUtil_strdup("");
 
-    for (size_t i = (size_t)first_tick; i < num_vars; i++) {
+    for (int i = first_tick; i < num_vars; i++) {
         CFCVariable *var = vars[i];
         CFCType *type = CFCVariable_get_type(var);
         const char *micro_sym = CFCVariable_get_name(var);
@@ -479,9 +479,9 @@ S_gen_decrefs(CFCParamList *param_list, int first_tick) {
 static char*
 S_gen_arg_list(CFCParamList *param_list, const char *first_arg) {
     CFCVariable **vars = CFCParamList_get_variables(param_list);
-    size_t num_vars = CFCParamList_num_vars(param_list);
+    int num_vars = CFCParamList_num_vars(param_list);
     char *arg_list = CFCUtil_strdup("");
-    for (size_t i = 0; i < num_vars; i++) {
+    for (int i = 0; i < num_vars; i++) {
         if (i > 0) {
             arg_list = CFCUtil_cat(arg_list, ", ", NULL);
         }

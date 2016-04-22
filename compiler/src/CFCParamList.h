@@ -69,7 +69,7 @@ CFCParamList_variadic(CFCParamList *self);
 /** Return the number of variables in the ParamList, including "self" for
  * methods.
  */
-size_t
+int
 CFCParamList_num_vars(CFCParamList *self);
 
 

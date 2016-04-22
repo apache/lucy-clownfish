@@ -215,8 +215,8 @@ CFCGoTypeMap_go_meth_receiever(const char *struct_name,
     // Check for another argument with the same name.
     if (param_list != NULL) {
         CFCVariable **vars = CFCParamList_get_variables(param_list);
-        size_t num_vars = CFCParamList_num_vars(param_list);
-        for (size_t i = 1; i < num_vars; i++) {
+        int num_vars = CFCParamList_num_vars(param_list);
+        for (int i = 1; i < num_vars; i++) {
             const char *name = CFCVariable_get_name(vars[i]);
             if (strcmp(name, buf) == 0) {
                 // Bah, a clash.  Use the original name, even though it's
@@ -231,9 +231,9 @@ CFCGoTypeMap_go_meth_receiever(const char *struct_name,
 void
 CFCGoTypeMap_go_arg_name(CFCParamList *param_list, size_t tick, char *buf,
                          size_t buf_len) {
-    size_t num_vars = CFCParamList_num_vars(param_list);
-    if (tick >= num_vars) {
-        CFCUtil_die("Index out of range: %d >= %d", (int)tick, (int)num_vars);
+    int num_vars = CFCParamList_num_vars(param_list);
+    if (tick >= (size_t)num_vars) {
+        CFCUtil_die("Index out of range: %d >= %d", (int)tick, num_vars);
     }
     CFCVariable **vars = CFCParamList_get_variables(param_list);
     const char *orig = CFCVariable_get_name(vars[tick]);

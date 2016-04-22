@@ -71,11 +71,11 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
 
 static char*
 S_gen_positional_sample(const char *prologue, CFCParamList *param_list,
-                        size_t start);
+                        int start);
 
 static char*
 S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
-                     size_t start);
+                     int start);
 
 static char*
 S_perl_var_name(CFCType *type, int is_ctor_retval);
@@ -422,8 +422,8 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
     prologue = CFCUtil_cat(prologue, "->", alias, NULL);
 
     CFCParamList *param_list = CFCCallable_get_param_list(func);
-    size_t        num_vars   = CFCParamList_num_vars(param_list);
-    size_t        start      = is_constructor ? 0 : 1;
+    int           num_vars   = CFCParamList_num_vars(param_list);
+    int           start      = is_constructor ? 0 : 1;
     char         *sample     = NULL;
 
     if (start == num_vars) {
@@ -443,8 +443,8 @@ S_gen_code_sample(CFCCallable *func, const char *alias, CFCClass *klass,
 
 static char*
 S_gen_positional_sample(const char *prologue, CFCParamList *param_list,
-                        size_t start) {
-    size_t        num_vars = CFCParamList_num_vars(param_list);
+                        int start) {
+    int           num_vars = CFCParamList_num_vars(param_list);
     CFCVariable **vars     = CFCParamList_get_variables(param_list);
     const char  **inits    = CFCParamList_get_initial_values(param_list);
 
@@ -470,15 +470,15 @@ S_gen_positional_sample(const char *prologue, CFCParamList *param_list,
 
 static char*
 S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
-                     size_t start) {
-    size_t        num_vars = CFCParamList_num_vars(param_list);
+                     int start) {
+    int           num_vars = CFCParamList_num_vars(param_list);
     CFCVariable **vars     = CFCParamList_get_variables(param_list);
     const char  **inits    = CFCParamList_get_initial_values(param_list);
 
     size_t max_name_len = 0;
 
     // Find maximum length of parameter name.
-    for (size_t i = start; i < num_vars; i++) {
+    for (int i = start; i < num_vars; i++) {
         const char *name = CFCVariable_get_name(vars[i]);
         size_t name_len = strlen(name);
         if (name_len > max_name_len) { max_name_len = name_len; }
@@ -486,7 +486,7 @@ S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
 
     char *params = CFCUtil_strdup("");
 
-    for (size_t i = start; i < num_vars; i++) {
+    for (int i = start; i < num_vars; i++) {
         const char *name    = CFCVariable_get_name(vars[i]);
         const char *init    = inits[i];
         char       *comment = NULL;
