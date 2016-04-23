@@ -747,7 +747,7 @@ S_html_create_methods(CFCClass *klass) {
  */
 static char*
 S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
-    CFCMethod  **fresh_methods = CFCClass_fresh_methods(klass);
+    CFCMethod  **fresh_methods = CFCClass_fresh_methods(ancestor);
     const char  *prefix        = CFCClass_get_prefix(klass);
     char        *result        = CFCUtil_strdup("");
 
@@ -757,7 +757,9 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
             continue;
         }
 
-        if (!CFCMethod_is_fresh(method, ancestor)) {
+        const char *name = CFCMethod_get_name(method);
+        CFCMethod *other = CFCClass_method(klass, name);
+        if (!CFCMethod_is_fresh(other, ancestor)) {
             // The method is implementated in a subclass and already
             // documented.
             continue;
@@ -767,7 +769,6 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
             result = CFCUtil_cat(result, "<dl>\n", NULL);
         }
 
-        const char *name = CFCMethod_get_name(method);
         result = CFCUtil_cat(result, "<dt id=\"func_", name, "\">",
                              name, NULL);
         if (CFCMethod_abstract(method)) {
