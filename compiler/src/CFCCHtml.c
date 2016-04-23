@@ -758,6 +758,11 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
         }
 
         const char *name = CFCMethod_get_name(method);
+        if (strcmp(name, "Destroy") == 0) {
+            // Destroy must not be called directly.
+            continue;
+        }
+
         CFCMethod *other = CFCClass_method(klass, name);
         if (!CFCMethod_is_fresh(other, ancestor)) {
             // The method is implementated in a subclass and already
