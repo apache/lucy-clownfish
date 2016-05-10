@@ -32,6 +32,14 @@ TestBoolean_new() {
 }
 
 static void
+test_singleton(TestBatchRunner *runner) {
+    TEST_TRUE(runner, Bool_singleton(true) == CFISH_TRUE,
+              "Bool_singleton true");
+    TEST_TRUE(runner, Bool_singleton(false) == CFISH_FALSE,
+              "Bool_singleton false");
+}
+
+static void
 test_To_String(TestBatchRunner *runner) {
     String *true_string  = Bool_To_String(CFISH_TRUE);
     String *false_string = Bool_To_String(CFISH_FALSE);
@@ -75,7 +83,13 @@ test_Clone(TestBatchRunner *runner) {
 
 void
 TestBoolean_Run_IMP(TestBoolean *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 10);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 12);
+
+    // Destroying the singletons should have no effect.
+    Bool_Destroy(CFISH_TRUE);
+    Bool_Destroy(CFISH_FALSE);
+
+    test_singleton(runner);
     test_To_String(runner);
     test_accessors(runner);
     test_Equals_and_Compare_To(runner);

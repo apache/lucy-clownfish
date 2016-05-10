@@ -23,6 +23,7 @@
 #include "Clownfish/TestHarness/TestSuite.h"
 
 #include "Clownfish/Test/TestBlob.h"
+#include "Clownfish/Test/TestBoolean.h"
 #include "Clownfish/Test/TestByteBuf.h"
 #include "Clownfish/Test/TestString.h"
 #include "Clownfish/Test/TestCharBuf.h"
@@ -53,6 +54,7 @@ Test_create_test_suite() {
     TestSuite_Add_Batch(suite, (TestBatch*)TestBB_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestStr_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestCB_new());
+    TestSuite_Add_Batch(suite, (TestBatch*)TestBoolean_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestNum_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestStrHelp_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestAtomic_new());
