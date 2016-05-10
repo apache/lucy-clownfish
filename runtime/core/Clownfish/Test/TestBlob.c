@@ -24,10 +24,35 @@
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Class.h"
+#include "Clownfish/Util/Memory.h"
+
+#include <string.h>
 
 TestBlob*
 TestBlob_new() {
     return (TestBlob*)Class_Make_Obj(TESTBLOB);
+}
+
+static void
+test_new_steal(TestBatchRunner *runner) {
+    size_t size = 4;
+    char *buf = (char*)MALLOCATE(size);
+    memset(buf, 'x', size);
+    Blob *blob = Blob_new_steal(buf, size);
+    TEST_TRUE(runner, Blob_Get_Buf(blob) == buf, "new_steal steals buf");
+    TEST_TRUE(runner, Blob_Equals_Bytes(blob, "xxxx", 4),
+              "new_steal doesn't change buf");
+    DECREF(blob);
+}
+
+static void
+test_new_wrap(TestBatchRunner *runner) {
+    static const char buf[] = "xxxx";
+    Blob *blob = Blob_new_wrap(buf, 4);
+    TEST_TRUE(runner, Blob_Get_Buf(blob) == buf, "new_wrap wraps buf");
+    TEST_TRUE(runner, Blob_Equals_Bytes(blob, "xxxx", 4),
+              "new_wrap doesn't change buf");
+    DECREF(blob);
 }
 
 static void
@@ -55,6 +80,9 @@ test_Equals(TestBatchRunner *runner) {
                    "Different content spoils Equals");
         DECREF(other);
     }
+
+    TEST_FALSE(runner, Blob_Equals(blob, (Obj*)BLOB),
+               "Different type spoils Equals");
 
     TEST_TRUE(runner, Blob_Equals_Bytes(blob, "foo", 4), "Equals_Bytes");
     TEST_FALSE(runner, Blob_Equals_Bytes(blob, "foo", 3),
@@ -90,6 +118,8 @@ test_Compare_To(TestBatchRunner *runner) {
         Blob *b = Blob_new("foo\0b", 5);
         TEST_TRUE(runner, Blob_Compare_To(a, (Obj*)b) < 0,
                   "shorter Blob sorts first");
+        TEST_TRUE(runner, Blob_Compare_To(b, (Obj*)a) > 0,
+                  "longer Blob sorts last");
         DECREF(a);
         DECREF(b);
     }
@@ -106,7 +136,9 @@ test_Compare_To(TestBatchRunner *runner) {
 
 void
 TestBlob_Run_IMP(TestBlob *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 11);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 17);
+    test_new_steal(runner);
+    test_new_wrap(runner);
     test_Equals(runner);
     test_Clone(runner);
     test_Compare_To(runner);
