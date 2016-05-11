@@ -43,6 +43,110 @@ test_To_String(TestBatchRunner *runner) {
 }
 
 static void
+test_Cat_Mess(TestBatchRunner *runner) {
+    Err *error = Err_new(Str_newf("alpha"));
+    Err_Cat_Mess(error, SSTR_WRAP_C("\nbeta"));
+    String *mess = Err_Get_Mess(error);
+    TEST_TRUE(runner, Str_Equals_Utf8(mess, "alpha\nbeta", 10), "Cat_Mess");
+    DECREF(error);
+}
+
+static void
+test_Add_Frame(TestBatchRunner *runner) {
+    {
+        Err *error = Err_new(Str_newf("alpha"));
+        Err_Add_Frame(error, "source.c", 128, "function");
+        String *mess = Err_Get_Mess(error);
+        const char *expected = "alpha\n\tfunction at source.c line 128\n";
+        TEST_TRUE(runner, Str_Equals_Utf8(mess, expected, strlen(expected)),
+                  "Add_Frame");
+        DECREF(error);
+    }
+
+    {
+        Err *error = Err_new(Str_newf("alpha\n"));
+        Err_Add_Frame(error, "source.c", 128, "function");
+        String *mess = Err_Get_Mess(error);
+        const char *expected = "alpha\n\tfunction at source.c line 128\n";
+        TEST_TRUE(runner, Str_Equals_Utf8(mess, expected, strlen(expected)),
+                  "Add_Frame with trailing newline");
+        DECREF(error);
+    }
+
+    {
+        Err *error = Err_new(Str_newf("alpha"));
+        Err_Add_Frame(error, "source.c", 128, NULL);
+        String *mess = Err_Get_Mess(error);
+        const char *expected = "alpha\n\tat source.c line 128\n";
+        TEST_TRUE(runner, Str_Equals_Utf8(mess, expected, strlen(expected)),
+                  "Add_Frame without func");
+        DECREF(error);
+    }
+}
+
+static void
+S_rethrow(void *context) {
+    Err *error = (Err*)context;
+    Err_rethrow(error, "src.c", 12, "fn");
+}
+
+static void
+test_rethrow(TestBatchRunner *runner) {
+    Err *error = Err_new(Str_newf("error"));
+    Err *rethrown = Err_trap(S_rethrow, error);
+    String *mess = Err_Get_Mess(rethrown);
+    const char *expected = "error\n\tfn at src.c line 12\n";
+    TEST_TRUE(runner, Str_Starts_With_Utf8(mess, expected, strlen(expected)),
+              "rethrow");
+    DECREF(error);
+}
+
+static void
+S_invalid_downcast(void *context) {
+    Obj *obj = (Obj*)context;
+    DOWNCAST(obj, ERR);
+}
+
+static void
+test_downcast(TestBatchRunner *runner) {
+    Obj *obj = (Obj*)Str_newf("gamma");
+
+    TEST_TRUE(runner, DOWNCAST(obj, STRING) != NULL, "downcast");
+
+    TEST_TRUE(runner, DOWNCAST(NULL, STRING) == NULL, "downcast NULL");
+
+    Err *error = Err_trap(S_invalid_downcast, obj);
+    TEST_TRUE(runner, error != NULL, "downcast throws");
+    DECREF(error);
+
+    DECREF(obj);
+}
+
+static void
+S_invalid_certify(void *context) {
+    Obj *obj = (Obj*)context;
+    CERTIFY(obj, ERR);
+}
+
+static void
+test_certify(TestBatchRunner *runner) {
+    Obj *obj = (Obj*)Str_newf("epsilon");
+    Err *error;
+
+    TEST_TRUE(runner, CERTIFY(obj, STRING) != NULL, "certify");
+
+    error = Err_trap(S_invalid_certify, NULL);
+    TEST_TRUE(runner, error != NULL, "certify NULL");
+    DECREF(error);
+
+    error = Err_trap(S_invalid_certify, obj);
+    TEST_TRUE(runner, error != NULL, "certify throws");
+    DECREF(error);
+
+    DECREF(obj);
+}
+
+static void
 S_err_thread(void *arg) {
     TestBatchRunner *runner = (TestBatchRunner*)arg;
 
@@ -76,8 +180,13 @@ test_threads(TestBatchRunner *runner) {
 
 void
 TestErr_Run_IMP(TestErr *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 4);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 15);
     test_To_String(runner);
+    test_Cat_Mess(runner);
+    test_Add_Frame(runner);
+    test_rethrow(runner);
+    test_downcast(runner);
+    test_certify(runner);
     test_threads(runner);
 }
 
