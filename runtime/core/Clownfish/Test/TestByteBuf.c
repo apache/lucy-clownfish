@@ -27,7 +27,11 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Blob.h"
 #include "Clownfish/Class.h"
+#include "Clownfish/Err.h"
 #include "Clownfish/String.h"
+#include "Clownfish/Util/Memory.h"
+
+#include <string.h>
 
 TestByteBuf*
 TestBB_new() {
@@ -35,8 +39,26 @@ TestBB_new() {
 }
 
 static void
+test_new_steal_bytes(TestBatchRunner *runner) {
+    char *buf = (char*)MALLOCATE(10);
+    memset(buf, 'x', 10);
+    ByteBuf *bb = BB_new_steal_bytes(buf, 5, 10);
+    TEST_TRUE(runner, BB_Get_Buf(bb) == buf, "new_steal_bytes steals buffer");
+    TEST_TRUE(runner, BB_Equals_Bytes(bb, "xxxxx", 5),
+              "new_steal_bytes sets correct size");
+    BB_Set_Size(bb, 10);
+    TEST_TRUE(runner, BB_Equals_Bytes(bb, "xxxxxxxxxx", 10),
+              "new_steal_bytes sets correct capacity");
+    DECREF(bb);
+}
+
+static void
 test_Equals(TestBatchRunner *runner) {
     ByteBuf *bb = BB_new_bytes("foo", 4); // Include terminating NULL.
+
+    TEST_TRUE(runner, BB_Equals(bb, (Obj*)bb), "Equals self");
+    TEST_FALSE(runner, BB_Equals(bb, (Obj*)BYTEBUF),
+               "Equals spoiled by different type");
 
     {
         ByteBuf *other = BB_new_bytes("foo", 4);
@@ -77,6 +99,9 @@ test_Grow(TestBatchRunner *runner) {
     BB_Grow(bb, 9);
     TEST_UINT_EQ(runner, BB_Get_Capacity(bb), 16,
                 "Grow in 8-byte increments");
+    BB_Grow(bb, 16);
+    TEST_UINT_EQ(runner, BB_Get_Capacity(bb), 16,
+                "Grow to same capacity has no effect");
     DECREF(bb);
 }
 
@@ -102,6 +127,8 @@ test_Compare_To(TestBatchRunner *runner) {
     BB_Set_Size(a, 3);
     TEST_TRUE(runner, BB_Compare_To(a, (Obj*)b) < 0,
               "shorter ByteBuf sorts first");
+    TEST_TRUE(runner, BB_Compare_To(b, (Obj*)a) > 0,
+              "longer ByteBuf sorts last");
 
     BB_Set_Size(a, 5);
     BB_Set_Size(b, 5);
@@ -149,15 +176,43 @@ test_Utf8_To_String(TestBatchRunner *runner) {
     DECREF(bb);
 }
 
+static void
+S_set_wrong_size(void *context) {
+    ByteBuf *bb = (ByteBuf*)context;
+    BB_Set_Size(bb, BB_Get_Capacity(bb) + 1);
+}
+
+static void
+test_Set_Size(TestBatchRunner *runner) {
+    ByteBuf *bb = BB_new(10);
+    Err *error = Err_trap(S_set_wrong_size, bb);
+    TEST_TRUE(runner, error != NULL, "Setting size beyond capacity throws");
+    DECREF(error);
+    DECREF(bb);
+}
+
+static void
+test_Yield_Blob(TestBatchRunner *runner) {
+    ByteBuf *bb = BB_new_bytes("alpha", 5);
+    Blob *blob = BB_Yield_Blob(bb);
+    TEST_TRUE(runner, Blob_Equals_Bytes(blob, "alpha", 5), "Yield_Blob");
+    TEST_UINT_EQ(runner, BB_Get_Size(bb), 0, "Yield_Blob clears buf");
+    DECREF(blob);
+    DECREF(bb);
+}
+
 void
 TestBB_Run_IMP(TestByteBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 17);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 27);
+    test_new_steal_bytes(runner);
     test_Equals(runner);
     test_Grow(runner);
     test_Clone(runner);
     test_Compare_To(runner);
-    test_Utf8_To_String(runner);
     test_Cat(runner);
+    test_Utf8_To_String(runner);
+    test_Set_Size(runner);
+    test_Yield_Blob(runner);
 }
 
 
