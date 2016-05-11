@@ -19,12 +19,14 @@
 
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
+#define C_CFISH_CHARBUF
 
 #include "charmony.h"
 
 #include "Clownfish/Test/TestCharBuf.h"
 
 #include "Clownfish/CharBuf.h"
+#include "Clownfish/Err.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Test.h"
@@ -61,6 +63,12 @@ S_cb_equals(CharBuf *cb, String *other) {
 }
 
 static void
+S_cat_invalid_utf8(void *context) {
+    CharBuf *cb = (CharBuf*)context;
+    CB_Cat_Utf8(cb, "\xF0" "a", 2);
+}
+
+static void
 test_Cat(TestBatchRunner *runner) {
     String  *wanted = Str_newf("a%s", smiley);
     CharBuf *got    = S_get_cb("");
@@ -77,6 +85,12 @@ test_Cat(TestBatchRunner *runner) {
     got = S_get_cb("a");
     CB_Cat_Utf8(got, smiley, smiley_len);
     TEST_TRUE(runner, S_cb_equals(got, wanted), "Cat_Utf8");
+    DECREF(got);
+
+    got = S_get_cb("a");
+    Err *error = Err_trap(S_cat_invalid_utf8, got);
+    TEST_TRUE(runner, error != NULL, "Cat_Utf8 throws with invalid UTF-8");
+    DECREF(error);
     DECREF(got);
 
     got = S_get_cb("a");
@@ -116,6 +130,21 @@ test_vcatf_s(TestBatchRunner *runner) {
     TEST_TRUE(runner, S_cb_equals(got, wanted), "%%s");
     DECREF(wanted);
     DECREF(got);
+}
+
+static void
+S_catf_s_invalid_utf8(void *context) {
+    CharBuf *buf = (CharBuf*)context;
+    CB_catf(buf, "bar %s baz", "\x82" "abcd");
+}
+
+static void
+test_vcatf_s_invalid_utf8(TestBatchRunner *runner) {
+    CharBuf *buf = S_get_cb("foo ");
+    Err *error = Err_trap(S_catf_s_invalid_utf8, buf);
+    TEST_TRUE(runner, error != NULL, "%%s with invalid UTF-8");
+    DECREF(error);
+    DECREF(buf);
 }
 
 static void
@@ -260,6 +289,53 @@ test_vcatf_x32(TestBatchRunner *runner) {
     DECREF(got);
 }
 
+typedef struct {
+    CharBuf    *charbuf;
+    const char *pattern;
+} CatfContext;
+
+static void
+S_catf_invalid_pattern(void *vcontext) {
+    CatfContext *context = (CatfContext*)vcontext;
+    CB_catf(context->charbuf, context->pattern, 0);
+}
+
+static void
+test_vcatf_invalid(TestBatchRunner *runner) {
+    CatfContext context;
+    context.charbuf = S_get_cb("foo ");
+
+    static const char *const patterns[] = {
+        "bar %z baz",
+        "bar %i baz",
+        "bar %i1 baz",
+        "bar %i33 baz",
+        "bar %i65 baz",
+        "bar %u baz",
+        "bar %u9 baz",
+        "bar %u33 baz",
+        "bar %u65 baz",
+        "bar %x baz",
+        "bar %x9 baz",
+        "bar %x33 baz",
+        "bar %f baz",
+        "bar %f9 baz",
+        "bar %f65 baz",
+        "bar \xC2 baz"
+    };
+    static const size_t num_patterns = sizeof(patterns) / sizeof(patterns[0]);
+
+    for (size_t i = 0; i < num_patterns; i++) {
+        context.pattern = patterns[i];
+        Err *error = Err_trap(S_catf_invalid_pattern, &context);
+        TEST_TRUE(runner, error != NULL,
+                  "catf throws with invalid pattern '%s'", patterns[i]);
+        DECREF(error);
+    }
+
+    DECREF(context.charbuf);
+}
+
 static void
 test_Clear(TestBatchRunner *runner) {
     CharBuf *cb = S_get_cb("foo");
@@ -271,11 +347,31 @@ test_Clear(TestBatchRunner *runner) {
     DECREF(cb);
 }
 
+static void
+test_Grow(TestBatchRunner *runner) {
+    CharBuf *cb = S_get_cb("omega");
+    CB_Grow(cb, 100);
+    size_t cap = cb->cap;
+    TEST_TRUE(runner, cap >= 100, "Grow");
+    CB_Grow(cb, 100);
+    TEST_UINT_EQ(runner, cb->cap, cap, "Grow to same size has no effect");
+    DECREF(cb);
+}
+
+static void
+test_Get_Size(TestBatchRunner *runner) {
+    CharBuf *got = S_get_cb("a");
+    CB_Cat_Utf8(got, smiley, smiley_len);
+    TEST_UINT_EQ(runner, CB_Get_Size(got), smiley_len + 1, "Get_Size");
+    DECREF(got);
+}
+
 void
 TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 20);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 41);
     test_vcatf_percent(runner);
     test_vcatf_s(runner);
+    test_vcatf_s_invalid_utf8(runner);
     test_vcatf_null_string(runner);
     test_vcatf_str(runner);
     test_vcatf_obj(runner);
@@ -288,8 +384,11 @@ TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
     test_vcatf_u64(runner);
     test_vcatf_f64(runner);
     test_vcatf_x32(runner);
+    test_vcatf_invalid(runner);
     test_Cat(runner);
     test_Clone(runner);
     test_Clear(runner);
+    test_Grow(runner);
+    test_Get_Size(runner);
 }
 
