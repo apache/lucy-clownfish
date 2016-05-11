@@ -19,6 +19,7 @@
 
 #define CFISH_USE_SHORT_NAMES
 #define TESTCFISH_USE_SHORT_NAMES
+#define C_CFISH_HASH
 
 #include "Clownfish/Test/TestHash.h"
 
@@ -97,6 +98,9 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
     TEST_TRUE(runner, Hash_Fetch(hash, foo) == NULL,
               "Fetch against non-existent key returns NULL");
 
+    String *twelve = (String*)Hash_Fetch_Utf8(hash, "12", 2);
+    TEST_TRUE(runner, Str_Equals_Utf8(twelve, "12", 2), "Fetch_Utf8");
+
     Obj *stored_foo = INCREF(foo);
     Hash_Store(hash, forty, stored_foo);
     TEST_TRUE(runner, Str_Equals(foo, Hash_Fetch(hash, forty)),
@@ -117,6 +121,12 @@ test_Store_and_Fetch(TestBatchRunner *runner) {
                  "size not decremented by unsuccessful Delete");
     DECREF(Hash_Delete(dupe, forty));
     TEST_TRUE(runner, Vec_Equals(got, (Obj*)expected), "Equals after Delete");
+
+    Obj *forty_one = Hash_Delete_Utf8(hash, "41", 2);
+    TEST_TRUE(runner, forty_one != NULL, "Delete_Utf8");
+    TEST_UINT_EQ(runner, Hash_Get_Size(hash), 98,
+                 "Delete_Utf8 decrements size");
+    DECREF(forty_one);
 
     Hash_Clear(hash);
     TEST_TRUE(runner, Hash_Fetch(hash, twenty) == NULL, "Clear");
@@ -213,6 +223,25 @@ test_stress(TestBatchRunner *runner) {
 }
 
 static void
+test_collision(TestBatchRunner *runner) {
+    Hash   *hash = Hash_new(0);
+    String *one  = Str_newf("A");
+    String *two  = Str_newf("P{2}|=~-ULE/d");
+
+    TEST_TRUE(runner, Str_Hash_Sum(one) == Str_Hash_Sum(two),
+              "Keys have the same hash sum");
+
+    Hash_Store(hash, one, INCREF(one));
+    Hash_Store(hash, two, INCREF(two));
+    String *elem = (String*)Hash_Fetch(hash, two);
+    TEST_TRUE(runner, elem == two, "Fetch works with collisions");
+
+    DECREF(one);
+    DECREF(two);
+    DECREF(hash);
+}
+
+static void
 test_store_skips_tombstone(TestBatchRunner *runner) {
     Hash *hash = Hash_new(0);
     size_t mask = Hash_Get_Capacity(hash) - 1;
@@ -243,15 +272,54 @@ test_store_skips_tombstone(TestBatchRunner *runner) {
     DECREF(hash);
 }
 
+static void
+test_threshold_accounting(TestBatchRunner *runner) {
+    Hash   *hash = Hash_new(20);
+    String *key  = Str_newf("key");
+
+    size_t threshold = hash->threshold;
+    Hash_Store(hash, key, (Obj*)CFISH_TRUE);
+    Hash_Delete(hash, key);
+    TEST_UINT_EQ(runner, hash->threshold, threshold - 1,
+                 "Tombstone creation decreases threshold");
+
+    Hash_Store(hash, key, (Obj*)CFISH_TRUE);
+    TEST_UINT_EQ(runner, hash->threshold, threshold,
+                 "Tombstone destruction increases threshold");
+
+    DECREF(key);
+    DECREF(hash);
+}
+
+static void
+test_tombstone_identification(TestBatchRunner *runner) {
+    Hash   *hash = Hash_new(20);
+    String *key  = Str_newf("P{2}|=~-U@!y>");
+
+    // Tombstones have a zero hash_sum.
+    TEST_UINT_EQ(runner, Str_Hash_Sum(key), 0, "Key has zero hash sum");
+
+    Hash_Store(hash, key, (Obj*)CFISH_TRUE);
+    Hash_Delete(hash, key);
+    TEST_TRUE(runner, Hash_Fetch(hash, key) == NULL,
+              "Key with zero hash sum isn't mistaken for tombstone");
+
+    DECREF(key);
+    DECREF(hash);
+}
+
 void
 TestHash_Run_IMP(TestHash *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 30);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 39);
     srand((unsigned int)time((time_t*)NULL));
     test_Equals(runner);
     test_Store_and_Fetch(runner);
     test_Keys_Values(runner);
     test_stress(runner);
+    test_collision(runner);
     test_store_skips_tombstone(runner);
+    test_threshold_accounting(runner);
+    test_tombstone_identification(runner);
 }
 
 
