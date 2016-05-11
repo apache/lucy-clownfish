@@ -242,16 +242,7 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
 
 void
 Class_Destroy_IMP(Class *self) {
-    for (size_t i = 0; self->methods[i]; i++) {
-        // Call Destroy directly instead of going through DECREF.
-        Method_Destroy(self->methods[i]);
-    }
-    FREEMEM(self->methods);
-
-    DECREF(self->name);
-    DECREF(self->name_internal);
-
-    SUPER_DESTROY(self, CLASS);
+    THROW(ERR, "Insane attempt to destroy Class for class '%o'", self->name);
 }
 
 void
