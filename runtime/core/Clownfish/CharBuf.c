@@ -124,6 +124,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
         while (slice_end < pattern_end && *slice_end != '%') { slice_end++; }
         if (pattern != slice_end) {
             ptrdiff_t size = slice_end - pattern;
+            VALIDATE_UTF8(pattern, size);
             S_cat_utf8(self, pattern, (size_t)size);
             pattern = slice_end;
         }
@@ -225,12 +226,8 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                         }
                         else {
                             size_t size = strlen(string);
-                            if (StrHelp_utf8_valid(string, size)) {
-                                S_cat_utf8(self, string, size);
-                            }
-                            else {
-                                S_cat_utf8(self, "[INVALID UTF8]", 14);
-                            }
+                            VALIDATE_UTF8(string, size);
+                            S_cat_utf8(self, string, size);
                         }
                     }
                     break;
