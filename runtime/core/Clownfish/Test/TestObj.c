@@ -96,6 +96,7 @@ test_is_a(TestBatchRunner *runner) {
     TEST_TRUE(runner, str_class == STRING, "get_class");
     TEST_TRUE(runner, Str_Equals(Class_Get_Name(STRING), (Obj*)class_name),
               "get_class_name");
+    TEST_FALSE(runner, Obj_is_a(NULL, OBJ), "NULL is not an Obj");
 
     DECREF(string);
 }
@@ -141,7 +142,7 @@ test_abstract_routines(TestBatchRunner *runner) {
 
 void
 TestObj_Run_IMP(TestObj *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 13);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 14);
     test_refcounts(runner);
     test_To_String(runner);
     test_Equals(runner);
