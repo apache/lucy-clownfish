@@ -23,6 +23,7 @@
 
 #include "Clownfish/Test/TestNum.h"
 
+#include "Clownfish/Err.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Num.h"
 #include "Clownfish/Test.h"
@@ -54,6 +55,12 @@ test_To_String(TestBatchRunner *runner) {
 }
 
 static void
+S_float_to_i64(void *context) {
+    Float *f = (Float*)context;
+    Float_To_I64(f);
+}
+
+static void
 test_accessors(TestBatchRunner *runner) {
     Float   *f64 = Float_new(1.33);
     Integer *i64 = Int_new(INT64_MIN);
@@ -64,6 +71,24 @@ test_accessors(TestBatchRunner *runner) {
     TEST_TRUE(runner, *(int64_t*)&got64 == *(int64_t*)&wanted64,
               "F64 Get_Value");
     TEST_TRUE(runner, Float_To_I64(f64) == 1, "Float_To_I64");
+
+    {
+        Float *huge = Float_new(1e40);
+        Err *error = Err_trap(S_float_to_i64, huge);
+        TEST_TRUE(runner, error != NULL,
+                  "Float_To_I64 throws when out of range (+)");
+        DECREF(error);
+        DECREF(huge);
+    }
+
+    {
+        Float *huge = Float_new(-1e40);
+        Err *error = Err_trap(S_float_to_i64, huge);
+        TEST_TRUE(runner, error != NULL,
+                  "Float_To_I64 throws when out of range (-)");
+        DECREF(error);
+        DECREF(huge);
+    }
 
     TEST_TRUE(runner, Int_Get_Value(i64) == INT64_MIN, "I64 Get_Value");
     TEST_TRUE(runner, Int_To_F64(i64) == -9223372036854775808.0, "Int_To_F64");
@@ -108,6 +133,18 @@ S_test_compare_float_int(TestBatchRunner *runner, double f64_val,
 }
 
 static void
+S_float_compare_to(void *context) {
+    Float *f = (Float*)context;
+    Float_Compare_To(f, (Obj*)OBJ);
+}
+
+static void
+S_int_compare_to(void *context) {
+    Integer *i = (Integer*)context;
+    Int_Compare_To(i, (Obj*)OBJ);
+}
+
+static void
 test_Equals_and_Compare_To(TestBatchRunner *runner) {
     {
         Float *f1 = Float_new(1.0);
@@ -143,6 +180,17 @@ test_Equals_and_Compare_To(TestBatchRunner *runner) {
     }
 
     {
+        Float *f = Float_new(1.0);
+        Err *error = Err_trap(S_float_compare_to, f);
+        TEST_TRUE(runner, error != NULL,
+                  "Float_Compare_To with invalid type throws");
+        TEST_FALSE(runner, Float_Equals(f, (Obj*)OBJ),
+                   "Float_Equals with different type");
+        DECREF(error);
+        DECREF(f);
+    }
+
+    {
         Integer *i1 = Int_new(INT64_C(0x6666666666666666));
         Integer *i2 = Int_new(INT64_C(0x6666666666666666));
         TEST_TRUE(runner, Int_Compare_To(i1, (Obj*)i2) == 0,
@@ -175,6 +223,17 @@ test_Equals_and_Compare_To(TestBatchRunner *runner) {
         DECREF(i2);
     }
 
+    {
+        Integer *i = Int_new(0);
+        Err *error = Err_trap(S_int_compare_to, i);
+        TEST_TRUE(runner, error != NULL,
+                  "Int_Compare_To with invalid type throws");
+        TEST_FALSE(runner, Int_Equals(i, (Obj*)OBJ),
+                   "Int_Equals with different type");
+        DECREF(error);
+        DECREF(i);
+    }
+
     // NOTICE: When running these tests on x86/x64, it's best to compile
     // with -ffloat-store to avoid excess FPU precision which can hide
     // implementation bugs.
@@ -188,6 +247,7 @@ test_Equals_and_Compare_To(TestBatchRunner *runner) {
     S_test_compare_float_int(runner, -pow(2.0, 63.0), INT64_MIN, 0);
     // -9223372036854777856.0 == nextafter(-pow(2, 63), -INFINITY)
     S_test_compare_float_int(runner, -9223372036854777856.0, INT64_MIN, -1);
+    S_test_compare_float_int(runner, 1.0, 2, -1);
 }
 
 static void
@@ -208,7 +268,7 @@ test_Clone(TestBatchRunner *runner) {
 
 void
 TestNum_Run_IMP(TestNum *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 68);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 82);
     test_To_String(runner);
     test_accessors(runner);
     test_Equals_and_Compare_To(runner);
