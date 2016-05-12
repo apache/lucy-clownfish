@@ -16,6 +16,10 @@
 
 parcel Clownfish;
 
+__C__
+#include "Clownfish/Err.h"
+__END_C__
+
 inert class Clownfish::Util::StringHelper nickname StrHelp {
 
     /* A table where the values indicate the number of bytes in a UTF-8
@@ -44,6 +48,12 @@ inert class Clownfish::Util::StringHelper nickname StrHelp {
     inert bool
     utf8_valid(const char *ptr, size_t len);
 
+    /** Throws an error if the string isn't valid UTF-8.
+     */
+    inert void
+    validate_utf8(const char *text, size_t size, const char *file, int line,
+                  const char *func);
+
     /** Returns true if the code point qualifies as Unicode whitespace.
      */
     inert bool
@@ -71,12 +81,17 @@ inert class Clownfish::Util::StringHelper nickname StrHelp {
 }
 
 __C__
+#define CFISH_VALIDATE_UTF8(text, size) \
+    cfish_StrHelp_validate_utf8(text, size, \
+                                __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
+
 /** The maximum number of bytes encoded by to_base36(), including the
  * terminating NULL.
  */
 #define cfish_StrHelp_MAX_BASE36_BYTES 14
 #ifdef CFISH_USE_SHORT_NAMES
   #define StrHelp_MAX_BASE36_BYTES cfish_StrHelp_MAX_BASE36_BYTES
+  #define VALIDATE_UTF8            CFISH_VALIDATE_UTF8
 #endif
 __END_C__
 

@@ -257,6 +257,36 @@ test_utf8_valid(TestBatchRunner *runner) {
 }
 
 static void
+S_validate_utf8(void *context) {
+    const char *text = (const char*)context;
+    StrHelp_validate_utf8(text, strlen(text), "src.c", 17, "fn");
+}
+
+static void
+test_validate_utf8(TestBatchRunner *runner) {
+    {
+        Err *error = Err_trap(S_validate_utf8, "Sigma\xC1\x9C.");
+        TEST_TRUE(runner, error != NULL, "validate_utf8 throws");
+        String *mess = Err_Get_Mess(error);
+        const char *expected = "Invalid UTF-8 after 'Sigma': C1 9C 2E\n";
+        bool ok = Str_Starts_With_Utf8(mess, expected, strlen(expected));
+        TEST_TRUE(runner, ok, "validate_utf8 throws correct error message");
+    }
+
+    {
+        Err *error = Err_trap(S_validate_utf8,
+                              "xxx123456789\xE2\x93\xAA"
+                              "1234567890\xC1\x9C.");
+        String *mess = Err_Get_Mess(error);
+        const char *expected =
+            "Invalid UTF-8 after '123456789\xE2\x93\xAA"
+            "1234567890': C1 9C 2E\n";
+        bool ok = Str_Starts_With_Utf8(mess, expected, strlen(expected));
+        TEST_TRUE(runner, ok, "validate_utf8 truncates long prefix");
+    }
+}
+
+static void
 test_is_whitespace(TestBatchRunner *runner) {
     TEST_TRUE(runner, StrHelp_is_whitespace(' '), "space is whitespace");
     TEST_TRUE(runner, StrHelp_is_whitespace('\n'), "newline is whitespace");
@@ -285,11 +315,12 @@ test_back_utf8_char(TestBatchRunner *runner) {
 
 void
 TestStrHelp_Run_IMP(TestStringHelper *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 39);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 42);
     test_overlap(runner);
     test_to_base36(runner);
     test_utf8_round_trip(runner);
     test_utf8_valid(runner);
+    test_validate_utf8(runner);
     test_is_whitespace(runner);
     test_back_utf8_char(runner);
 }

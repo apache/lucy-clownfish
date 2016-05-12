@@ -19,7 +19,6 @@
 #define CFISH_USE_SHORT_NAMES
 
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 
@@ -35,16 +34,6 @@
 #define STACK_ITER(string, byte_offset) \
     S_new_stack_iter(alloca(sizeof(StringIterator)), string, byte_offset)
 
-// Helper function for throwing invalid UTF-8 error. Since THROW uses
-// a String internally, calling THROW with invalid UTF-8 would create an
-// infinite loop -- so we fwrite some of the bogus text to stderr and
-// invoke THROW with a generic message.
-#define DIE_INVALID_UTF8(text, size) \
-    S_die_invalid_utf8(text, size, __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
-static void
-S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
-                   const char *func);
-
 static const char*
 S_memmem(String *self, const char *substring, size_t size);
 
@@ -53,9 +42,7 @@ S_new_stack_iter(void *allocation, String *string, size_t byte_offset);
 
 String*
 Str_new_from_utf8(const char *utf8, size_t size) {
-    if (!StrHelp_utf8_valid(utf8, size)) {
-        DIE_INVALID_UTF8(utf8, size);
-    }
+    VALIDATE_UTF8(utf8, size);
     String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_from_trusted_utf8(self, utf8, size);
 }
@@ -85,9 +72,7 @@ Str_init_from_trusted_utf8(String *self, const char *utf8, size_t size) {
 
 String*
 Str_new_steal_utf8(char *utf8, size_t size) {
-    if (!StrHelp_utf8_valid(utf8, size)) {
-        DIE_INVALID_UTF8(utf8, size);
-    }
+    VALIDATE_UTF8(utf8, size);
     String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_steal_trusted_utf8(self, utf8, size);
 }
@@ -108,9 +93,7 @@ Str_init_steal_trusted_utf8(String *self, char *utf8, size_t size) {
 
 String*
 Str_new_wrap_utf8(const char *utf8, size_t size) {
-    if (!StrHelp_utf8_valid(utf8, size)) {
-        DIE_INVALID_UTF8(utf8, size);
-    }
+    VALIDATE_UTF8(utf8, size);
     String *self = (String*)Class_Make_Obj(STRING);
     return Str_init_wrap_trusted_utf8(self, utf8, size);
 }
@@ -208,16 +191,6 @@ Str_Hash_Sum_IMP(String *self) {
     return hashvalue;
 }
 
-static void
-S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
-                   const char *func) {
-    fprintf(stderr, "Invalid UTF-8, aborting: '");
-    fwrite(text, sizeof(char), size < 200 ? size : 200, stderr);
-    if (size > 200) { fwrite("[...]", sizeof(char), 5, stderr); }
-    fprintf(stderr, "' (length %lu)\n", (unsigned long)size);
-    Err_throw_at(ERR, file, line, func, "Invalid UTF-8");
-}
-
 String*
 Str_To_String_IMP(String *self) {
     return (String*)INCREF(self);
@@ -297,9 +270,7 @@ Str_Cat_IMP(String *self, String *other) {
 
 String*
 Str_Cat_Utf8_IMP(String *self, const char* ptr, size_t size) {
-    if (!StrHelp_utf8_valid(ptr, size)) {
-        DIE_INVALID_UTF8(ptr, size);
-    }
+    VALIDATE_UTF8(ptr, size);
     return Str_Cat_Trusted_Utf8(self, ptr, size);
 }
 

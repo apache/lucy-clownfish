@@ -57,16 +57,6 @@ S_grow_and_oversize(CharBuf *self, size_t min_size);
 static void
 S_overflow_error();
 
-// Helper function for throwing invalid UTF-8 error. Since THROW uses
-// a String internally, calling THROW with invalid UTF-8 would create an
-// infinite loop -- so we fwrite some of the bogus text to stderr and
-// invoke THROW with a generic message.
-#define DIE_INVALID_UTF8(text, size) \
-    S_die_invalid_utf8(text, size, __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
-static void
-S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
-                   const char *func);
-
 // Helper function for throwing invalid pattern error.
 static void
 S_die_invalid_pattern(const char *pattern);
@@ -101,16 +91,6 @@ CB_Grow_IMP(CharBuf *self, size_t size) {
         self->cap = size;
         self->ptr = (char*)REALLOCATE(self->ptr, size);
     }
-}
-
-static void
-S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
-                   const char *func) {
-    fprintf(stderr, "Invalid UTF-8, aborting: '");
-    fwrite(text, sizeof(char), size < 200 ? size : 200, stderr);
-    if (size > 200) { fwrite("[...]", sizeof(char), 5, stderr); }
-    fprintf(stderr, "' (length %lu)\n", (unsigned long)size);
-    Err_throw_at(ERR, file, line, func, "Invalid UTF-8");
 }
 
 static void
@@ -310,9 +290,7 @@ CB_Clone_IMP(CharBuf *self) {
 
 void
 CB_Cat_Utf8_IMP(CharBuf *self, const char* ptr, size_t size) {
-    if (!StrHelp_utf8_valid(ptr, size)) {
-        DIE_INVALID_UTF8(ptr, size);
-    }
+    VALIDATE_UTF8(ptr, size);
     SI_cat_utf8(self, ptr, size);
 }
 
