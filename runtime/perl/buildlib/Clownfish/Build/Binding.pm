@@ -507,7 +507,7 @@ fetch_raw(self, key)
     cfish_Hash *self;
     cfish_String *key;
 CODE:
-    RETVAL = CFISH_OBJ_TO_SV_INC(CFISH_Hash_Fetch_IMP(self, key));
+    RETVAL = CFISH_OBJ_TO_SV_INC(CFISH_Hash_Fetch(self, key));
 OUTPUT: RETVAL
 
 void
@@ -519,7 +519,7 @@ PPCODE:
 {
     cfish_Obj *value
         = (cfish_Obj*)XSBind_perl_to_cfish_nullable(aTHX_ value_sv, CFISH_OBJ);
-    CFISH_Hash_Store_IMP(self, key, value);
+    CFISH_Hash_Store(self, key, value);
 }
 END_XS_CODE
 
@@ -871,7 +871,7 @@ store(self, tick, value);
 PPCODE:
 {
     if (value) { CFISH_INCREF(value); }
-    CFISH_Vec_Store_IMP(self, tick, value);
+    CFISH_Vec_Store(self, tick, value);
 }
 
 SV*

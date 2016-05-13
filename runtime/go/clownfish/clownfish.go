@@ -155,7 +155,7 @@ func (c *ClassIMP) GetMethods() []Method {
 
 func (c *ClassIMP) MakeObj() Obj {
 	self := (*C.cfish_Class)(Unwrap(c, "c"))
-	retvalCF := C.CFISH_Class_Make_Obj_IMP(self)
+	retvalCF := C.CFISH_Class_Make_Obj(self)
 	return WRAPAny(unsafe.Pointer(retvalCF))
 }
 

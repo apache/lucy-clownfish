@@ -316,7 +316,7 @@ Str_Cat_Trusted_Utf8_IMP(String *self, const char* ptr, size_t size) {
 
 bool
 Str_Starts_With_IMP(String *self, String *prefix) {
-    return Str_Starts_With_Utf8_IMP(self, prefix->ptr, prefix->size);
+    return Str_Starts_With_Utf8(self, prefix->ptr, prefix->size);
 }
 
 bool
@@ -336,7 +336,7 @@ Str_Equals_IMP(String *self, Obj *other) {
     String *const twin = (String*)other;
     if (twin == self)              { return true; }
     if (!Obj_is_a(other, STRING)) { return false; }
-    return Str_Equals_Utf8_IMP(self, twin->ptr, twin->size);
+    return Str_Equals_Utf8(self, twin->ptr, twin->size);
 }
 
 int32_t
@@ -371,7 +371,7 @@ Str_Equals_Utf8_IMP(String *self, const char *ptr, size_t size) {
 
 bool
 Str_Ends_With_IMP(String *self, String *suffix) {
-    return Str_Ends_With_Utf8_IMP(self, suffix->ptr, suffix->size);
+    return Str_Ends_With_Utf8(self, suffix->ptr, suffix->size);
 }
 
 bool
@@ -793,7 +793,7 @@ StrIter_Skip_Whitespace_Back_IMP(StringIterator *self) {
 
 bool
 StrIter_Starts_With_IMP(StringIterator *self, String *prefix) {
-    return StrIter_Starts_With_Utf8_IMP(self, prefix->ptr, prefix->size);
+    return StrIter_Starts_With_Utf8(self, prefix->ptr, prefix->size);
 }
 
 bool
@@ -809,7 +809,7 @@ StrIter_Starts_With_Utf8_IMP(StringIterator *self, const char *prefix,
 
 bool
 StrIter_Ends_With_IMP(StringIterator *self, String *suffix) {
-    return StrIter_Ends_With_Utf8_IMP(self, suffix->ptr, suffix->size);
+    return StrIter_Ends_With_Utf8(self, suffix->ptr, suffix->size);
 }
 
 bool

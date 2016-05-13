@@ -205,16 +205,16 @@ Vec_Excise_IMP(Vector *self, size_t offset, size_t length) {
 
 void
 Vec_Clear_IMP(Vector *self) {
-    Vec_Excise_IMP(self, 0, self->size);
+    Vec_Excise(self, 0, self->size);
 }
 
 void
 Vec_Resize_IMP(Vector *self, size_t size) {
     if (size < self->size) {
-        Vec_Excise_IMP(self, size, self->size - size);
+        Vec_Excise(self, size, self->size - size);
     }
     else if (size > self->size) {
-        Vec_Grow_IMP(self, size);
+        Vec_Grow(self, size);
         memset(self->elems + self->size, 0,
                (size - self->size) * sizeof(Obj*));
     }
