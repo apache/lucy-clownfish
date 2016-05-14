@@ -82,11 +82,11 @@ HashIter_Get_Key_IMP(HashIterator *self) {
     if (self->capacity != self->hash->capacity) {
         THROW(ERR, "Hash modified during iteration.");
     }
-    if (self->tick >= self->capacity) {
-        THROW(ERR, "Invalid call to Get_Key after end of iteration.");
-    }
-    else if (self->tick == (size_t)-1) {
+    if (self->tick == (size_t)-1) {
         THROW(ERR, "Invalid call to Get_Key before iteration.");
+    }
+    else if (self->tick >= self->capacity) {
+        THROW(ERR, "Invalid call to Get_Key after end of iteration.");
     }
 
     HashEntry *const entry
@@ -102,11 +102,11 @@ HashIter_Get_Value_IMP(HashIterator *self) {
     if (self->capacity != self->hash->capacity) {
         THROW(ERR, "Hash modified during iteration.");
     }
-    if (self->tick >= self->capacity) {
-        THROW(ERR, "Invalid call to Get_Value after end of iteration.");
-    }
-    else if (self->tick == (size_t)-1) {
+    if (self->tick == (size_t)-1) {
         THROW(ERR, "Invalid call to Get_Value before iteration.");
+    }
+    else if (self->tick >= self->capacity) {
+        THROW(ERR, "Invalid call to Get_Value after end of iteration.");
     }
 
     HashEntry *const entry

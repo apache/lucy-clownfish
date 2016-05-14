@@ -122,6 +122,7 @@ test_Get_Key_and_Get_Value(TestBatchRunner *runner) {
     Hash   *hash = Hash_new(0);
     String *str  = Str_newf("foo");
     Hash_Store(hash, str, (Obj*)str);
+    bool ok;
 
     HashIterator *iter = HashIter_new(hash);
     DECREF(hash);
@@ -129,11 +130,15 @@ test_Get_Key_and_Get_Value(TestBatchRunner *runner) {
     Err *get_key_error = Err_trap(S_invoke_Get_Key, iter);
     TEST_TRUE(runner, get_key_error != NULL,
               "Get_Key throws exception before first call to Next.");
+    ok = Str_Contains_Utf8(Err_Get_Mess(get_key_error), "before", 6);
+    TEST_TRUE(runner, ok, "Get_Key before Next throws correct message");
     DECREF(get_key_error);
 
     Err *get_value_error = Err_trap(S_invoke_Get_Value, iter);
     TEST_TRUE(runner, get_value_error != NULL,
               "Get_Value throws exception before first call to Next.");
+    ok = Str_Contains_Utf8(Err_Get_Mess(get_value_error), "before", 6);
+    TEST_TRUE(runner, ok, "Get_Value before Next throws correct message");
     DECREF(get_value_error);
 
     HashIter_Next(iter);
@@ -146,11 +151,15 @@ test_Get_Key_and_Get_Value(TestBatchRunner *runner) {
     get_key_error = Err_trap(S_invoke_Get_Key, iter);
     TEST_TRUE(runner, get_key_error != NULL,
               "Get_Key throws exception after end of iteration.");
+    ok = Str_Contains_Utf8(Err_Get_Mess(get_key_error), "after", 5);
+    TEST_TRUE(runner, ok, "Get_Key after end throws correct message");
     DECREF(get_key_error);
 
     get_value_error = Err_trap(S_invoke_Get_Value, iter);
     TEST_TRUE(runner, get_value_error != NULL,
               "Get_Value throws exception after end of iteration.");
+    ok = Str_Contains_Utf8(Err_Get_Mess(get_value_error), "after", 5);
+    TEST_TRUE(runner, ok, "Get_Value after end throws correct message");
     DECREF(get_value_error);
 
 
@@ -232,7 +241,7 @@ test_tombstone(TestBatchRunner *runner) {
 
 void
 TestHashIterator_Run_IMP(TestHashIterator *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 17);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 21);
     srand((unsigned int)time((time_t*)NULL));
     test_Next(runner);
     test_empty(runner);
