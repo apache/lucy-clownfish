@@ -271,6 +271,7 @@ test_validate_utf8(TestBatchRunner *runner) {
         const char *expected = "Invalid UTF-8 after 'Sigma': C1 9C 2E\n";
         bool ok = Str_Starts_With_Utf8(mess, expected, strlen(expected));
         TEST_TRUE(runner, ok, "validate_utf8 throws correct error message");
+        DECREF(error);
     }
 
     {
@@ -283,6 +284,7 @@ test_validate_utf8(TestBatchRunner *runner) {
             "1234567890': C1 9C 2E\n";
         bool ok = Str_Starts_With_Utf8(mess, expected, strlen(expected));
         TEST_TRUE(runner, ok, "validate_utf8 truncates long prefix");
+        DECREF(error);
     }
 }
 
