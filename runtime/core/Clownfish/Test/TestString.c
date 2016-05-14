@@ -164,18 +164,20 @@ static void
 test_Contains_and_Find(TestBatchRunner *runner) {
     String *string;
     String *substring = S_get_str("foo");
+    String *empty     = S_get_str("");
 
-    string = S_get_str("");
-    TEST_FALSE(runner, Str_Contains(string, substring),
+    TEST_FALSE(runner, Str_Contains(empty, substring),
                "Not contained in empty string");
-    TEST_INT_EQ(runner, S_find(string, substring), -1,
+    TEST_INT_EQ(runner, S_find(empty, substring), -1,
                 "Not found in empty string");
-    DECREF(string);
 
     string = S_get_str("foo");
     TEST_TRUE(runner, Str_Contains(string, substring),
-              "Contained in complete string");
+              "Contains complete string");
     TEST_INT_EQ(runner, S_find(string, substring), 0, "Find complete string");
+    TEST_TRUE(runner, Str_Contains(string, empty),
+              "Contains empty string");
+    TEST_INT_EQ(runner, S_find(string, empty), 0, "Find empty string");
     DECREF(string);
 
     string = S_get_str("afoo");
@@ -192,6 +194,7 @@ test_Contains_and_Find(TestBatchRunner *runner) {
     TEST_INT_EQ(runner, S_find(string, substring), 1, "Find in middle");
     DECREF(string);
 
+    DECREF(empty);
     DECREF(substring);
 }
 
@@ -333,24 +336,33 @@ test_To_I64(TestBatchRunner *runner) {
     String *string;
 
     string = S_get_str("10");
-    TEST_TRUE(runner, Str_To_I64(string) == 10, "To_I64");
+    TEST_INT_EQ(runner, Str_To_I64(string), 10, "To_I64");
     DECREF(string);
 
     string = S_get_str("-10");
-    TEST_TRUE(runner, Str_To_I64(string) == -10, "To_I64 negative");
+    TEST_INT_EQ(runner, Str_To_I64(string), -10, "To_I64 negative");
     DECREF(string);
 
     string = S_get_str("10.");
-    TEST_TRUE(runner, Str_To_I64(string) == 10, "To_I64 stops at non-digits");
+    TEST_INT_EQ(runner, Str_To_I64(string), 10, "To_I64 stops at non-digits");
+    DECREF(string);
+
+    string = S_get_str("10" SMILEY);
+    TEST_INT_EQ(runner, Str_To_I64(string), 10, "To_I64 stops at non-ASCII");
     DECREF(string);
 
     string = S_get_str("10A");
-    TEST_TRUE(runner, Str_To_I64(string) == 10,
+    TEST_INT_EQ(runner, Str_To_I64(string), 10,
               "To_I64 stops at out-of-range digits");
     DECREF(string);
+}
+
+static void
+test_BaseX_To_I64(TestBatchRunner *runner) {
+    String *string;
 
     string = S_get_str("-JJ");
-    TEST_TRUE(runner, Str_BaseX_To_I64(string, 20) == -399,
+    TEST_INT_EQ(runner, Str_BaseX_To_I64(string, 20), -399,
               "BaseX_To_I64 base 20");
     DECREF(string);
 }
@@ -420,7 +432,7 @@ test_Starts_Ends_With(TestBatchRunner *runner) {
 
     TEST_TRUE(runner, Str_Starts_With(suffix, suffix),
               "Starts_With self returns true");
-    TEST_TRUE(runner, Str_Starts_With(prefix, prefix),
+    TEST_TRUE(runner, Str_Ends_With(prefix, prefix),
               "Ends_With self returns true");
 
     TEST_TRUE(runner, Str_Starts_With(suffix, empty),
@@ -455,6 +467,33 @@ test_Starts_Ends_With(TestBatchRunner *runner) {
     DECREF(prefix);
     DECREF(suffix);
     DECREF(empty);
+}
+
+static void
+test_Starts_Ends_With_Utf8(TestBatchRunner *runner) {
+    String *str = S_get_str("pre" SMILEY "post");
+
+    static const char prefix[] = "pre" SMILEY;
+    static const char postfix[] = SMILEY "post";
+    static const size_t prefix_size = sizeof(prefix) - 1;
+    static const size_t postfix_size = sizeof(postfix) - 1;
+    TEST_TRUE(runner, Str_Starts_With_Utf8(str, prefix, prefix_size),
+              "Starts_With_Utf8 returns true");
+    TEST_TRUE(runner, Str_Ends_With_Utf8(str, postfix, postfix_size),
+              "Ends_With_Utf8 returns true");
+    TEST_FALSE(runner, Str_Starts_With_Utf8(str, postfix, postfix_size),
+              "Starts_With_Utf8 returns false");
+    TEST_FALSE(runner, Str_Ends_With_Utf8(str, prefix, prefix_size),
+              "Ends_With_Utf8 returns false");
+
+    static const char longer[] = "12345678901234567890";
+    static const size_t longer_size = sizeof(longer) - 1;
+    TEST_FALSE(runner, Str_Starts_With_Utf8(str, longer, longer_size),
+              "Starts_With_Utf8 longer str returns false");
+    TEST_FALSE(runner, Str_Ends_With_Utf8(str, longer, longer_size),
+               "Ends_With_Utf8 longer str returns false");
+
+    DECREF(str);
 }
 
 static void
@@ -703,7 +742,7 @@ test_iterator_substring(TestBatchRunner *runner) {
 
 void
 TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 139);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 148);
     test_new(runner);
     test_Cat(runner);
     test_Clone(runner);
@@ -713,12 +752,14 @@ TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
     test_Trim(runner);
     test_To_F64(runner);
     test_To_I64(runner);
+    test_BaseX_To_I64(runner);
     test_To_String(runner);
     test_To_Utf8(runner);
     test_To_ByteBuf(runner);
     test_Length(runner);
     test_Compare_To(runner);
     test_Starts_Ends_With(runner);
+    test_Starts_Ends_With_Utf8(runner);
     test_Get_Ptr8(runner);
     test_iterator(runner);
     test_iterator_whitespace(runner);
