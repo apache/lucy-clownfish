@@ -44,12 +44,6 @@
 #define POW_2_63 9223372036854775808.0
 
 static int32_t
-S_compare_f64(double a, double b);
-
-static int32_t
-S_compare_i64(int64_t a, int64_t b);
-
-static int32_t
 S_compare_i64_f64(int64_t i64, double f64);
 
 static bool
@@ -86,7 +80,9 @@ int32_t
 Float_Compare_To_IMP(Float *self, Obj *other) {
     if (Obj_is_a(other, FLOAT)) {
         Float *twin = (Float*)other;
-        return S_compare_f64(self->value, twin->value);
+        double a = self->value;
+        double b = twin->value;
+        return a < b ? -1 : a > b ? 1 : 0;
     }
     else if (Obj_is_a(other, INTEGER)) {
         Integer *twin = (Integer*)other;
@@ -154,7 +150,9 @@ int32_t
 Int_Compare_To_IMP(Integer *self, Obj *other) {
     if (Obj_is_a(other, INTEGER)) {
         Integer *twin = (Integer*)other;
-        return S_compare_i64(self->value, twin->value);
+        int64_t a = self->value;
+        int64_t b = twin->value;
+        return a < b ? -1 : a > b ? 1 : 0;
     }
     else if (Obj_is_a(other, FLOAT)) {
         Float *twin = (Float*)other;
@@ -187,26 +185,17 @@ Int_Clone_IMP(Integer *self) {
 }
 
 static int32_t
-S_compare_f64(double a, double b) {
-    return a == b ? 0 : a < b ? -1 : 1;
-}
-
-static int32_t
-S_compare_i64(int64_t a, int64_t b) {
-    return a == b ? 0 : a < b ? -1 : 1;
-}
-
-static int32_t
 S_compare_i64_f64(int64_t i64, double f64) {
-    int f64_comparison = S_compare_f64((double)i64, f64);
+    double i64_as_f64 = (double)i64;
+    // This conversion might not be precise. If the numbers compare as
+    // unequal, the result is still correct.
+    if (i64_as_f64 < f64) { return -1; }
+    if (i64_as_f64 > f64) { return  1; }
 
-    // If the integer can be represented precisely as a double or the numbers
-    // compare as unequal when converted to double, the result is correct.
-    if ((i64 >= MIN_PRECISE_I64 && i64 <= MAX_PRECISE_I64)
-        || f64_comparison != 0
-       ) {
-        return f64_comparison;
-    }
+    // If the integer can be represented precisely as a double, the
+    // numbers are equal. Testing for (i64 < MAX_PRECISE_I64) is more
+    // efficient than (i64 <= MAX_PRECISE_I64) on 32-bit systems.
+    if (i64 >= MIN_PRECISE_I64 && i64 < MAX_PRECISE_I64) { return 0; }
 
     // Otherwise, the double is an integer.
 
@@ -214,20 +203,23 @@ S_compare_i64_f64(int64_t i64, double f64) {
     // out of range.
     if (f64 == POW_2_63) { return -1; }
 
-    return S_compare_i64(i64, (int64_t)f64);
+    // llrint() can be faster than casting to int64_t but isn't as
+    // portable.
+    int64_t f64_as_i64 = (int64_t)f64;
+    return i64 < f64_as_i64 ? -1 : i64 > f64_as_i64 ? 1 : 0;
 }
 
 static bool
 S_equals_i64_f64(int64_t i64, double f64) {
-    bool equal = ((double)i64 == f64);
+    double i64_as_f64 = (double)i64;
+    // This conversion might not be precise. If the numbers compare as
+    // unequal, the result is still correct.
+    if (i64_as_f64 != f64) { return false; }
 
-    // If the integer can be represented precisely as a double or the numbers
-    // compare as unequal when converted to double, the result is correct.
-    if ((i64 >= MIN_PRECISE_I64 && i64 <= MAX_PRECISE_I64)
-        || !equal
-       ) {
-        return equal;
-    }
+    // If the integer can be represented precisely as a double, the
+    // numbers are equal. Testing for (i64 < MAX_PRECISE_I64) is more
+    // efficient than (i64 <= MAX_PRECISE_I64) on 32-bit systems.
+    if (i64 >= MIN_PRECISE_I64 && i64 < MAX_PRECISE_I64) { return true; }
 
     // Otherwise, the double is an integer.
 
@@ -235,6 +227,8 @@ S_equals_i64_f64(int64_t i64, double f64) {
     // out of range.
     if (f64 == POW_2_63) { return false; }
 
+    // llrint() can be faster than casting to int64_t but isn't as
+    // portable.
     return i64 == (int64_t)f64;
 }
 
