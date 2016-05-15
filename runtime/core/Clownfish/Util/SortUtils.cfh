@@ -37,24 +37,6 @@ inert class Clownfish::Util::SortUtils nickname Sort {
     inert void
     mergesort(void *elems, void *scratch, size_t num_elems, size_t width,
               CFISH_Sort_Compare_t compare, void *context);
-
-    /** Merge two source arrays together using the classic mergesort merge
-     * algorithm, storing the result in `dest`.
-     *
-     * Most merge functions operate on a single contiguous array and copy the
-     * merged results results back into the source array before returning.
-     * These two differ in that it is possible to operate on two discontiguous
-     * source arrays.  Copying the results back into the source array is the
-     * responsibility of the caller.
-     *
-     * Lucy's external sort takes advantage of this when it is reading
-     * back pre-sorted runs from disk and merging the streams into a
-     * consolidated buffer.
-     */
-    inert void
-    merge(void *left_ptr,  size_t left_num_elems,
-          void *right_ptr, size_t right_num_elems,
-          void *dest, size_t width, CFISH_Sort_Compare_t compare, void *context);
 }
 
 

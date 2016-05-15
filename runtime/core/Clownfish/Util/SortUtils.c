@@ -61,30 +61,6 @@ Sort_mergesort(void *elems, void *scratch, size_t num_elems, size_t width,
     }
 }
 
-void
-Sort_merge(void *left_ptr,  size_t left_size,
-           void *right_ptr, size_t right_size,
-           void *dest, size_t width, CFISH_Sort_Compare_t compare,
-           void *context) {
-    switch (width) {
-        case 0:
-            THROW(ERR, "Parameter 'width' cannot be 0");
-            break;
-        case 4:
-            SI_merge(left_ptr, left_size, right_ptr, right_size,
-                     dest, 4, compare, context);
-            break;
-        case 8:
-            SI_merge(left_ptr, left_size, right_ptr, right_size,
-                     dest, 8, compare, context);
-            break;
-        default:
-            SI_merge(left_ptr, left_size, right_ptr, right_size,
-                     dest, width, compare, context);
-            break;
-    }
-}
-
 #define WIDTH 4
 static void
 S_msort4(void *velems, void *vscratch, size_t left, size_t right,
