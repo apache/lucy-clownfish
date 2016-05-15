@@ -283,7 +283,7 @@ S_run_clash_tests(CFCTest *test) {
     char *cfclash_foo_path   = CFCTest_path("cfclash" CHY_DIR_SEP "foo");
     char *cfclash_bar_path   = CFCTest_path("cfclash" CHY_DIR_SEP "bar");
 
-    if (getenv("LUCY_VALGRIND")) {
+    if (getenv("CLOWNFISH_VALGRIND")) {
         SKIP(test, 1, "Exceptions leak");
     }
     else {
@@ -304,7 +304,7 @@ S_run_clash_tests(CFCTest *test) {
         CFCParcel_reap_singletons();
     }
 
-    if (getenv("LUCY_VALGRIND")) {
+    if (getenv("CLOWNFISH_VALGRIND")) {
         SKIP(test, 1, "Exceptions leak");
     }
     else {
@@ -342,7 +342,7 @@ S_run_clash_tests(CFCTest *test) {
         CFCParcel_reap_singletons();
     }
 
-    if (getenv("LUCY_VALGRIND")) {
+    if (getenv("CLOWNFISH_VALGRIND")) {
         SKIP(test, 1, "Exceptions leak");
     }
     else {

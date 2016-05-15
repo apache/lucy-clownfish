@@ -34,10 +34,6 @@ def all_ccflags
     ccflags += ENV['CFLAGS']
   end
   
-  if ENV.has_key?('LUCY_VALGRIND')
-    ccflags += "-fno-inline-functions "
-  end
-  
   # Compile as C++ under MSVC.  Turn off stupid warnings, too.
   if cc_command =~ /^cl\b/ 
     ccflags += '/TP -D_CRT_SECURE_NO_WARNINGS '
@@ -72,10 +68,6 @@ def extra_ccflags
   
   if ENV.has_key?('CFLAGS')
     ccflags += ENV['CFLAGS']
-  end
-  
-  if ENV.has_key?('LUCY_VALGRIND')
-    ccflags += "-fno-inline-functions "
   end
   
   # Compile as C++ under MSVC.  Turn off stupid warnings, too.

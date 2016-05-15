@@ -7993,10 +7993,6 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
 
     if (chaz_Probe_gcc_version_num()) {
-        if (getenv("LUCY_VALGRIND")) {
-            chaz_CFlags_append(extra_cflags, "-fno-inline-functions");
-        }
-
         chaz_CFlags_append(extra_cflags,
             "-pedantic -Wall -Wextra -Wno-variadic-macros"
             " -Wno-overlength-strings");
