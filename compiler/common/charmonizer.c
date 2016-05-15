@@ -8156,6 +8156,15 @@ S_write_makefile(struct chaz_CLI *cli) {
     chaz_MakeRule_add_prereq(rule, test_cfc_exe);
     chaz_MakeRule_add_command(rule, test_cfc_exe);
 
+    if (chaz_OS_shell_type() == CHAZ_OS_POSIX) {
+        rule = chaz_MakeFile_add_rule(makefile, "valgrind", "all");
+        chaz_MakeRule_add_prereq(rule, test_cfc_exe);
+        scratch = chaz_Util_join(" ", "CLOWNFISH_VALGRIND=1", "valgrind",
+                                 "--leak-check=full", test_cfc_exe, NULL);
+        chaz_MakeRule_add_command(rule, scratch);
+        free(scratch);
+    }
+
     if (chaz_CLI_defined(cli, "enable-coverage")) {
         rule = chaz_MakeFile_add_rule(makefile, "coverage", test_cfc_exe);
         chaz_MakeRule_add_command(rule,

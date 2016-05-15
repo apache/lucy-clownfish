@@ -496,6 +496,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     char          *test_cfish_exe;
     char          *test_cfish_c;
     char          *test_command;
+    char          *valgrind_command = NULL;
 
     test_cfish_exe = chaz_Util_join("", "t", dir_sep, "test_cfish", exe_ext,
                                     NULL);
@@ -524,6 +525,23 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
         test_command = chaz_Util_strdup(test_cfish_exe);
     }
     chaz_MakeRule_add_command(rule, test_command);
+
+    if (chaz_OS_shell_type() == CHAZ_OS_POSIX) {
+        rule = chaz_MakeFile_add_rule(self->makefile, "valgrind",
+                                      test_cfish_exe);
+        if (strcmp(chaz_OS_shared_lib_ext(), ".so") == 0) {
+            valgrind_command
+                = chaz_Util_join(" ", "LD_LIBRARY_PATH=.",
+                                 "CLOWNFISH_VALGRIND=1", "valgrind",
+                                 "--leak-check=full", test_cfish_exe, NULL);
+        }
+        else {
+            valgrind_command
+                = chaz_Util_join(" ", "CLOWNFISH_VALGRIND=1", "valgrind",
+                                 "--leak-check=full", test_cfish_exe, NULL);
+        }
+        chaz_MakeRule_add_command(rule, valgrind_command);
+    }
 
     if (chaz_CLI_defined(self->cli, "enable-coverage")) {
         rule = chaz_MakeFile_add_rule(self->makefile, "coverage",
@@ -564,6 +582,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     free(test_cfish_exe);
     free(test_cfish_c);
     free(test_command);
+    free(valgrind_command);
 }
 
 static void
