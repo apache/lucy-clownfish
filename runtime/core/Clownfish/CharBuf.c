@@ -57,19 +57,9 @@ S_grow_and_oversize(CharBuf *self, size_t min_size);
 static void
 S_overflow_error();
 
-// Helper function for throwing invalid UTF-8 error. Since THROW uses
-// a String internally, calling THROW with invalid UTF-8 would create an
-// infinite loop -- so we fwrite some of the bogus text to stderr and
-// invoke THROW with a generic message.
-#define DIE_INVALID_UTF8(text, size) \
-    S_die_invalid_utf8(text, size, __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
+// Helper function for throwing invalid format specifier error.
 static void
-S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
-                   const char *func);
-
-// Helper function for throwing invalid pattern error.
-static void
-S_die_invalid_pattern(const char *pattern);
+S_die_invalid_specifier(const char *specifier);
 
 CharBuf*
 CB_new(size_t size) {
@@ -104,22 +94,27 @@ CB_Grow_IMP(CharBuf *self, size_t size) {
 }
 
 static void
-S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
-                   const char *func) {
-    fprintf(stderr, "Invalid UTF-8, aborting: '");
-    fwrite(text, sizeof(char), size < 200 ? size : 200, stderr);
-    if (size > 200) { fwrite("[...]", sizeof(char), 5, stderr); }
-    fprintf(stderr, "' (length %lu)\n", (unsigned long)size);
-    Err_throw_at(ERR, file, line, func, "Invalid UTF-8");
-}
+S_die_invalid_specifier(const char *specifier) {
+    char buf[4];
+    buf[0] = specifier[0];
+    buf[1] = '\0';
 
-static void
-S_die_invalid_pattern(const char *pattern) {
-    size_t  pattern_len = strlen(pattern);
-    fprintf(stderr, "Invalid pattern, aborting: '");
-    fwrite(pattern, sizeof(char), pattern_len, stderr);
-    fprintf(stderr, "'\n");
-    THROW(ERR, "Invalid pattern.");
+    if (specifier[0] == 'i' || specifier[0] == 'u' || specifier[0] == 'x'
+        || specifier[0] == 'f'
+       ) {
+        if (specifier[1] < '0' || specifier[1] > '9') {
+            THROW(ERR, "Specifier %%%s must be followed by width", buf);
+        }
+        else {
+            size_t size = specifier[2] >= '0' && specifier[2] <= '9' ? 3 : 2;
+            memcpy(buf, specifier, size);
+            buf[size] = '\0';
+            THROW(ERR, "Specifier %%%s has invalid width", buf);
+        }
+    }
+    else {
+        THROW(ERR, "Invalid specifier %%%s", buf);
+    }
 }
 
 void
@@ -132,9 +127,8 @@ CB_catf(CharBuf *self, const char *pattern, ...) {
 
 void
 CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
-    size_t      pattern_len   = strlen(pattern);
-    const char *pattern_start = pattern;
-    const char *pattern_end   = pattern + pattern_len;
+    size_t      pattern_len = strlen(pattern);
+    const char *pattern_end = pattern + pattern_len;
     char        buf[64];
 
     for (; pattern < pattern_end; pattern++) {
@@ -144,6 +138,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
         while (slice_end < pattern_end && *slice_end != '%') { slice_end++; }
         if (pattern != slice_end) {
             ptrdiff_t size = slice_end - pattern;
+            VALIDATE_UTF8(pattern, size);
             S_cat_utf8(self, pattern, (size_t)size);
             pattern = slice_end;
         }
@@ -186,7 +181,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                             pattern += 2;
                         }
                         else {
-                            S_die_invalid_pattern(pattern_start);
+                            S_die_invalid_specifier(pattern);
                         }
                         int size = sprintf(buf, "%" PRId64, val);
                         S_cat_utf8(self, buf, (size_t)size);
@@ -207,7 +202,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                             pattern += 2;
                         }
                         else {
-                            S_die_invalid_pattern(pattern_start);
+                            S_die_invalid_specifier(pattern);
                         }
                         int size = sprintf(buf, "%" PRIu64, val);
                         S_cat_utf8(self, buf, (size_t)size);
@@ -222,7 +217,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                             pattern += 2;
                         }
                         else {
-                            S_die_invalid_pattern(pattern_start);
+                            S_die_invalid_specifier(pattern);
                         }
                     }
                     break;
@@ -234,7 +229,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                             pattern += 2;
                         }
                         else {
-                            S_die_invalid_pattern(pattern_start);
+                            S_die_invalid_specifier(pattern);
                         }
                     }
                     break;
@@ -245,12 +240,8 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                         }
                         else {
                             size_t size = strlen(string);
-                            if (StrHelp_utf8_valid(string, size)) {
-                                S_cat_utf8(self, string, size);
-                            }
-                            else {
-                                S_cat_utf8(self, "[INVALID UTF8]", 14);
-                            }
+                            VALIDATE_UTF8(string, size);
+                            S_cat_utf8(self, string, size);
                         }
                     }
                     break;
@@ -258,7 +249,7 @@ CB_VCatF_IMP(CharBuf *self, const char *pattern, va_list args) {
                         // Assume NULL-terminated pattern string, which
                         // eliminates the need for bounds checking if '%' is
                         // the last visible character.
-                        S_die_invalid_pattern(pattern_start);
+                        S_die_invalid_specifier(pattern);
                     }
             }
         }
@@ -310,9 +301,7 @@ CB_Clone_IMP(CharBuf *self) {
 
 void
 CB_Cat_Utf8_IMP(CharBuf *self, const char* ptr, size_t size) {
-    if (!StrHelp_utf8_valid(ptr, size)) {
-        DIE_INVALID_UTF8(ptr, size);
-    }
+    VALIDATE_UTF8(ptr, size);
     SI_cat_utf8(self, ptr, size);
 }
 

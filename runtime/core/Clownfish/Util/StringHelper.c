@@ -17,11 +17,14 @@
 #define C_CFISH_STRINGHELPER
 #include <string.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #define CFISH_USE_SHORT_NAMES
 
 #include "Clownfish/Util/StringHelper.h"
+#include "Clownfish/CharBuf.h"
 #include "Clownfish/Err.h"
+#include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
 
 const uint8_t cfish_StrHelp_UTF8_COUNT[] = {
@@ -76,11 +79,13 @@ StrHelp_to_base36(uint64_t num, void *buffer) {
     return size;
 }
 
-bool
-StrHelp_utf8_valid(const char *ptr, size_t size) {
-    const uint8_t *string    = (const uint8_t*)ptr;
+// Return a pointer to the first invalid UTF-8 sequence, or NULL if
+// the UTF-8 is valid.
+static const uint8_t*
+S_find_invalid_utf8(const uint8_t *string, size_t size) {
     const uint8_t *const end = string + size;
     while (string < end) {
+        const uint8_t *start = string;
         const uint8_t header_byte = *string++;
         int count = StrHelp_UTF8_COUNT[header_byte] & 0x7;
         switch (count & 0x7) {
@@ -88,43 +93,96 @@ StrHelp_utf8_valid(const char *ptr, size_t size) {
                 // ASCII
                 break;
             case 2:
-                if (string == end)              { return false; }
+                if (string == end)              { return start; }
                 // Disallow non-shortest-form ASCII.
-                if (!(header_byte & 0x1E))      { return false; }
-                if ((*string++ & 0xC0) != 0x80) { return false; }
+                if (!(header_byte & 0x1E))      { return start; }
+                if ((*string++ & 0xC0) != 0x80) { return start; }
                 break;
             case 3:
-                if (end - string < 2)           { return false; }
+                if (end - string < 2)           { return start; }
                 if (header_byte == 0xED) {
                     if (*string < 0x80 || *string > 0x9F) {
-                        return false;
+                        return start;
                     }
                 }
                 else if (!(header_byte & 0x0F)) {
                     if (!(*string & 0x20)) {
-                        return false;
+                        return start;
                     }
                 }
-                if ((*string++ & 0xC0) != 0x80) { return false; }
-                if ((*string++ & 0xC0) != 0x80) { return false; }
+                if ((*string++ & 0xC0) != 0x80) { return start; }
+                if ((*string++ & 0xC0) != 0x80) { return start; }
                 break;
             case 4:
-                if (end - string < 3)           { return false; }
+                if (end - string < 3)           { return start; }
                 if (!(header_byte & 0x07)) {
                     if (!(*string & 0x30)) {
-                        return false;
+                        return start;
                     }
                 }
-                if ((*string++ & 0xC0) != 0x80) { return false; }
-                if ((*string++ & 0xC0) != 0x80) { return false; }
-                if ((*string++ & 0xC0) != 0x80) { return false; }
+                if ((*string++ & 0xC0) != 0x80) { return start; }
+                if ((*string++ & 0xC0) != 0x80) { return start; }
+                if ((*string++ & 0xC0) != 0x80) { return start; }
                 break;
             default:
-                return false;
+                return start;
         }
     }
 
-    return true;
+    return NULL;
+}
+
+bool
+StrHelp_utf8_valid(const char *ptr, size_t size) {
+    return S_find_invalid_utf8((const uint8_t*)ptr, size) == NULL;
+}
+
+void
+StrHelp_validate_utf8(const char *ptr, size_t size, const char *file,
+                      int line, const char *func) {
+    const uint8_t *string  = (const uint8_t*)ptr;
+    const uint8_t *invalid = S_find_invalid_utf8(string, size);
+    if (invalid == NULL) { return; }
+
+    CharBuf *buf = CB_new(0);
+    CB_Cat_Trusted_Utf8(buf, "Invalid UTF-8", 13);
+
+    if (invalid > string) {
+        const uint8_t *prefix = invalid;
+        size_t num_code_points = 0;
+
+        // Skip up to 20 code points backwards.
+        while (prefix > string) {
+            prefix -= 1;
+
+            if ((*prefix & 0xC0) != 0x80) {
+                num_code_points += 1;
+                if (num_code_points >= 20) { break; }
+            }
+        }
+
+        CB_Cat_Trusted_Utf8(buf, " after '", 8);
+        CB_Cat_Trusted_Utf8(buf, (const char*)prefix, invalid - prefix);
+        CB_Cat_Trusted_Utf8(buf, "'", 1);
+    }
+
+    CB_Cat_Trusted_Utf8(buf, ":", 1);
+
+    // Append offending bytes as hex.
+    const uint8_t *end = string + size;
+    const uint8_t *max = invalid + 5;
+    for (const uint8_t *byte = invalid; byte < end && byte < max; byte++) {
+        char hex[4];
+        sprintf(hex, " %02X", *byte);
+        CB_Cat_Trusted_Utf8(buf, hex, 3);
+    }
+
+    String *mess = CB_Yield_String(buf);
+    DECREF(buf);
+
+    Err *err = Err_new(mess);
+    Err_Add_Frame(err, file, line, func);
+    Err_do_throw(err);
 }
 
 bool
