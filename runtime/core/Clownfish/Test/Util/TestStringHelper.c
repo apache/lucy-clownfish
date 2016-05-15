@@ -141,6 +141,8 @@ test_overlap(TestBatchRunner *runner) {
     TEST_UINT_EQ(runner, result, 3, "first string is longer");
     result = StrHelp_overlap("foo", "foo bar", 3, 7);
     TEST_UINT_EQ(runner, result, 3, "second string is longer");
+    result = StrHelp_overlap("bar", "baz", 3, 3);
+    TEST_UINT_EQ(runner, result, 2, "different byte");
 }
 
 
@@ -227,9 +229,27 @@ test_utf8_valid(TestBatchRunner *runner) {
                     "Non-shortest form ASCII slash");
     S_test_validity(runner, ".\xC0\x80.", 4, false,
                     "Non-shortest form ASCII NUL character");
+    S_test_validity(runner, ".\xE0\x9F\xBF.", 5, false,
+                    "Non-shortest form three byte sequence");
+    S_test_validity(runner, ".\xF0\x8F\xBF\xBF.", 6, false,
+                    "Non-shortest form four byte sequence");
 
     // Range.
     S_test_validity(runner, "\xF8\x88\x80\x80\x80", 5, false, "5-byte UTF-8");
+    S_test_validity(runner, "\xF4\x8F\xBF\xBF", 4, true,
+                    "Code point 0x10FFFF");
+    S_test_validity(runner, "\xF4\x90\x80\x80", 4, false,
+                    "Code point 0x110000 too large");
+    S_test_validity(runner, "\xF5\x80\x80\x80", 4, false,
+                    "Sequence starting with 0xF5");
+
+    // Truncated sequences.
+    S_test_validity(runner, "\xC2", 1, false,
+                    "Truncated two byte sequence");
+    S_test_validity(runner, "\xE2\x98", 2, false,
+                    "Truncated three byte sequence");
+    S_test_validity(runner, "\xF0\x9D\x84", 3, false,
+                    "Truncated four byte sequence");
 
     // Bad continuations.
     S_test_validity(runner, "\xE2\x98\xBA\xE2\x98\xBA", 6, true,
@@ -254,6 +274,12 @@ test_utf8_valid(TestBatchRunner *runner) {
                     "isolated continuation byte 0xBA (end)");
     S_test_validity(runner, "\xE2\x98\xBA\x98", 4, false,
                     "isolated continuation byte 0x98 (end)");
+    S_test_validity(runner, "\xF0xxxx", 5, false,
+                    "missing continuation byte 2/4");
+    S_test_validity(runner, "\xF0\x9Dxxxx", 5, false,
+                    "missing continuation byte 3/4");
+    S_test_validity(runner, "\xF0\x9D\x84xx", 5, false,
+                    "missing continuation byte 4/4");
 }
 
 static void
@@ -302,6 +328,21 @@ test_is_whitespace(TestBatchRunner *runner) {
 }
 
 static void
+S_encode_utf8_char(void *context) {
+    int32_t *code_point_ptr = (int32_t*)context;
+    char buffer[4];
+    StrHelp_encode_utf8_char(*code_point_ptr, buffer);
+}
+
+static void
+test_encode_utf8_char(TestBatchRunner *runner) {
+    int32_t code_point = 0x110000;
+    Err *error = Err_trap(S_encode_utf8_char, &code_point);
+    TEST_TRUE(runner, error != NULL, "Encode code point 0x110000 throws");
+    DECREF(error);
+}
+
+static void
 test_back_utf8_char(TestBatchRunner *runner) {
     char buffer[4];
     char *buf = buffer + 1;
@@ -317,13 +358,14 @@ test_back_utf8_char(TestBatchRunner *runner) {
 
 void
 TestStrHelp_Run_IMP(TestStringHelper *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 42);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 55);
     test_overlap(runner);
     test_to_base36(runner);
     test_utf8_round_trip(runner);
     test_utf8_valid(runner);
     test_validate_utf8(runner);
     test_is_whitespace(runner);
+    test_encode_utf8_char(runner);
     test_back_utf8_char(runner);
 }
 
