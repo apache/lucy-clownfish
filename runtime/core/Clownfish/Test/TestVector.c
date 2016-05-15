@@ -405,72 +405,98 @@ test_Clone(TestBatchRunner *runner) {
 }
 
 static void
-S_overflow_Push(void *context) {
-    UNUSED_VAR(context);
-    Vector *array = Vec_new(0);
-    array->cap  = MAX_VECTOR_SIZE;
-    array->size = array->cap;
-    Vec_Push(array, (Obj*)CFISH_TRUE);
+S_push(void *context) {
+    Vector *vec = (Vector*)context;
+    Vec_Push(vec, (Obj*)CFISH_TRUE);
 }
 
 static void
-S_overflow_Insert(void *context) {
-    UNUSED_VAR(context);
-    Vector *array = Vec_new(0);
-    Vec_Insert(array, SIZE_MAX, (Obj*)CFISH_TRUE);
+S_insert_at_size_max(void *context) {
+    Vector *vec = (Vector*)context;
+    Vec_Insert(vec, SIZE_MAX, (Obj*)CFISH_TRUE);
 }
 
 static void
-S_overflow_Push_All(void *context) {
-    UNUSED_VAR(context);
-    Vector *array = Vec_new(0);
-    array->cap  = 1000000000;
-    array->size = array->cap;
-    Vector *other = Vec_new(0);
-    other->cap  = MAX_VECTOR_SIZE - array->cap + 1;
-    other->size = other->cap;
-    Vec_Push_All(array, other);
+S_store_at_size_max(void *context) {
+    Vector *vec = (Vector*)context;
+    Vec_Store(vec, SIZE_MAX, (Obj*)CFISH_TRUE);
+}
+
+typedef struct {
+    Vector *vec;
+    Vector *other;
+} VectorPair;
+
+static void
+S_push_all(void *vcontext) {
+    VectorPair *context = (VectorPair*)vcontext;
+    Vec_Push_All(context->vec, context->other);
 }
 
 static void
-S_overflow_Insert_All(void *context) {
-    UNUSED_VAR(context);
-    Vector *array = Vec_new(0);
-    Vector *other = Vec_new(0);
-    Vec_Insert_All(array, SIZE_MAX, other);
+S_insert_all_at_size_max(void *vcontext) {
+    VectorPair *context = (VectorPair*)vcontext;
+    Vec_Insert_All(context->vec, SIZE_MAX, context->other);
 }
 
 static void
-S_overflow_Store(void *context) {
-    UNUSED_VAR(context);
-    Vector *array = Vec_new(0);
-    Vec_Store(array, SIZE_MAX, (Obj*)CFISH_TRUE);
-}
-
-static void
-S_test_exception(TestBatchRunner *runner, Err_Attempt_t func,
+S_test_exception(TestBatchRunner *runner, Err_Attempt_t func, void *context,
                  const char *test_name) {
-    Err *error = Err_trap(func, NULL);
+    Err *error = Err_trap(func, context);
     TEST_TRUE(runner, error != NULL, test_name);
     DECREF(error);
 }
 
 static void
 test_exceptions(TestBatchRunner *runner) {
-    if (getenv("CLOWNFISH_VALGRIND")) {
-        SKIP(runner, 5, "memory leak");
-        return;
+    {
+        Vector *vec = Vec_new(0);
+        vec->cap  = MAX_VECTOR_SIZE;
+        vec->size = vec->cap;
+        S_test_exception(runner, S_push, vec, "Push throws on overflow");
+        vec->size = 0;
+        DECREF(vec);
     }
-    S_test_exception(runner, S_overflow_Push,
-                     "Push throws on overflow");
-    S_test_exception(runner, S_overflow_Insert,
-                     "Insert throws on overflow");
-    S_test_exception(runner, S_overflow_Push_All,
-                     "Push_All throws on overflow");
-    S_test_exception(runner, S_overflow_Insert_All,
-                     "Insert_All throws on overflow");
-    S_test_exception(runner, S_overflow_Store,
-                     "Store throws on overflow");
+
+    {
+        Vector *vec = Vec_new(0);
+        S_test_exception(runner, S_insert_at_size_max, vec,
+                         "Insert throws on overflow");
+        DECREF(vec);
+    }
+
+    {
+        Vector *vec = Vec_new(0);
+        S_test_exception(runner, S_store_at_size_max, vec,
+                         "Store throws on overflow");
+        DECREF(vec);
+    }
+
+    {
+        VectorPair context;
+        context.vec         = Vec_new(0);
+        context.vec->cap    = 1000000000;
+        context.vec->size   = context.vec->cap;
+        context.other       = Vec_new(0);
+        context.other->cap  = MAX_VECTOR_SIZE - context.vec->cap + 1;
+        context.other->size = context.other->cap;
+        S_test_exception(runner, S_push_all, &context,
+                         "Push_All throws on overflow");
+        context.vec->size   = 0;
+        context.other->size = 0;
+        DECREF(context.other);
+        DECREF(context.vec);
+    }
+
+    {
+        VectorPair context;
+        context.vec   = Vec_new(0);
+        context.other = Vec_new(0);
+        S_test_exception(runner, S_insert_all_at_size_max, &context,
+                         "Insert_All throws on overflow");
+        DECREF(context.other);
+        DECREF(context.vec);
+    }
 }
 
 static void
