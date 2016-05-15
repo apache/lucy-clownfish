@@ -43,7 +43,7 @@ const uint8_t cfish_StrHelp_UTF8_COUNT[] = {
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,
+    4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
 size_t
@@ -101,11 +101,13 @@ S_find_invalid_utf8(const uint8_t *string, size_t size) {
             case 3:
                 if (end - string < 2)           { return start; }
                 if (header_byte == 0xED) {
+                    // Disallow UTF-16 surrogates.
                     if (*string < 0x80 || *string > 0x9F) {
                         return start;
                     }
                 }
                 else if (!(header_byte & 0x0F)) {
+                    // Disallow non-shortest-form.
                     if (!(*string & 0x20)) {
                         return start;
                     }
@@ -116,7 +118,14 @@ S_find_invalid_utf8(const uint8_t *string, size_t size) {
             case 4:
                 if (end - string < 3)           { return start; }
                 if (!(header_byte & 0x07)) {
+                    // Disallow non-shortest-form.
                     if (!(*string & 0x30)) {
+                        return start;
+                    }
+                }
+                else if (header_byte == 0xF4) {
+                    // Code point larger than 0x10FFFF.
+                    if (*string >= 0x90) {
                         return start;
                     }
                 }
