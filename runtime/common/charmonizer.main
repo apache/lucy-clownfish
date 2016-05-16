@@ -319,10 +319,9 @@ cfish_MakeFile_new(chaz_CLI *cli) {
         self->autogen_src_files = c_autogen_src_files;
     }
 
-    self->shared_lib = chaz_Lib_new("cfish", chaz_Lib_SHARED, cfish_version,
-                                    cfish_major_version);
-    self->static_lib = chaz_Lib_new("clownfish", chaz_Lib_STATIC, cfish_version,
-                                    cfish_major_version);
+    self->shared_lib = chaz_Lib_new_shared("cfish", cfish_version,
+                                           cfish_major_version);
+    self->static_lib = chaz_Lib_new_static("clownfish");
     self->shared_lib_filename = chaz_Lib_filename(self->shared_lib);
     self->static_lib_filename = chaz_Lib_filename(self->static_lib);
 
