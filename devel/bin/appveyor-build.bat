@@ -43,6 +43,9 @@ exit /b
 
 :test_perl
 
+path C:\MinGW\bin;%path%
+call ppm install dmake
+
 perl -V
 
 cd compiler\perl

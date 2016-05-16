@@ -677,6 +677,10 @@ CFCUtil_try_end(jmp_buf *prev_env) {
 #include "XSUB.h"
 #include "ppport.h"
 
+// Undo redefinition by XSUB.h with PERL_IMPLICIT_SYS. Needed for
+// ActivePerl.
+#undef longjmp
+
 void
 CFCUtil_die(const char* format, ...) {
     va_list args;

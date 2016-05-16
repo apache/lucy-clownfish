@@ -19,7 +19,7 @@ environment:
       MSVC_VERSION: 10
     - CLOWNFISH_HOST: c
       MSVC_VERSION: 12
-#    - CLOWNFISH_HOST: perl
+    - CLOWNFISH_HOST: perl
 
 build: off
 
