@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-parcel Clownfish;
+parcel TestClownfish;
 
-__C__
-typedef int
-(*CFISH_Sort_Compare_t)(void *context, const void *va, const void *vb);
-__END_C__
+class Clownfish::Test::TestMethod
+    inherits Clownfish::TestHarness::TestBatch {
 
-/** Specialized sorting routines.
- *
- * SortUtils provides a merge sort algorithm which allows access to its
- * internals, enabling specialized functions to jump in and only execute part
- * of the sort.
- */
-inert class Clownfish::Util::SortUtils nickname Sort {
+    inert incremented TestMethod*
+    new();
 
-    /** Perform a mergesort.  In addition to providing a contiguous array of
-     * elements to be sorted and their count, the caller must also provide a
-     * scratch buffer with room for at least as many elements as are to be
-     * sorted.
-     */
-    inert void
-    mergesort(void *elems, void *scratch, size_t num_elems, size_t width,
-              CFISH_Sort_Compare_t compare, void *context);
+    void
+    Run(TestMethod *self, TestBatchRunner *runner);
 }
-
 

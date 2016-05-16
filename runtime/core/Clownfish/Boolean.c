@@ -51,7 +51,7 @@ Bool_singleton(bool value) {
 
 void
 Bool_Destroy_IMP(Boolean *self) {
-    if (self && self != CFISH_TRUE && self != CFISH_FALSE) {
+    if (self != CFISH_TRUE && self != CFISH_FALSE) {
         DECREF(self->string);
         SUPER_DESTROY(self, BOOLEAN);
     }
