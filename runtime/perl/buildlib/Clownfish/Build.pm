@@ -64,11 +64,11 @@ else {
 
 sub new {
     my ( $class, %args ) = @_;
-    $args{include_dirs}     = [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ];
+    $args{include_dirs}     = [ $XS_SOURCE_DIR ];
     $args{clownfish_params} = {
         autogen_header => _autogen_header(),
         include        => [],                  # Don't use default includes.
-        source => [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ],
+        source         => [ $CORE_SOURCE_DIR ],
     };
     my $self = $class->SUPER::new( recursive_test_files => 1, %args );
 
@@ -83,9 +83,21 @@ sub new {
         $self->extra_compiler_flags(@$extra_cflags);
     }
 
+    $self->charmonizer_params( create_makefile => 1 );
     $self->charmonizer_params( charmonizer_c => $CHARMONIZER_C );
 
     return $self;
+}
+
+sub cf_source_spec {
+    my $self = shift;
+
+    $self->depends_on('charmony');
+
+    return {
+        build_with_make => 1,
+        lib_filename    => $self->charmony('STATIC_LIB_FILENAME'),
+    };
 }
 
 sub _run_make {
@@ -143,19 +155,6 @@ sub ACTION_compile_custom_xs {
     my $self = shift;
 
     $self->depends_on('charmony');
-
-    # Add extra compiler flags from Charmonizer.
-    my $charm_cflags = $self->charmony('EXTRA_CFLAGS');
-    if ($charm_cflags) {
-        my $cf_cflags = $self->clownfish_params('cflags');
-        if ($cf_cflags) {
-            $cf_cflags .= " $charm_cflags";
-        }
-        else {
-            $cf_cflags = $charm_cflags;
-        }
-        $self->clownfish_params( cflags => $cf_cflags );
-    }
 
     # Add extra linker flags from Charmonizer.
     my $charm_ldflags = $self->charmony('EXTRA_LDFLAGS');
