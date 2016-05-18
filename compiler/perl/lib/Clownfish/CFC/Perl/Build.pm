@@ -368,6 +368,10 @@ sub ACTION_ppport {
     }
 }
 
+sub source_spec {
+    return {};
+}
+
 sub ACTION_compile_custom_xs {
     my $self = shift;
 
@@ -387,28 +391,44 @@ sub ACTION_compile_custom_xs {
     mkpath( $archdir, 0, 0777 ) unless -d $archdir;
     my @objects;
 
+    my $source_spec = $self->source_spec();
+
     # Compile C source files.
-    my $c_files = [];
-    my $source_dirs = $self->clownfish_params('source');
-    for my $source_dir (@$source_dirs) {
-        push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
-    }
-    my $extra_cflags = $self->clownfish_params('cflags');
-    for my $c_file (@$c_files) {
-        my $o_file   = $c_file;
-        my $ccs_file = $c_file;
-        $o_file   =~ s/\.c$/$Config{_o}/ or die "no match";
-        $ccs_file =~ s/\.c$/.ccs/        or die "no match";
-        push @objects, $o_file;
-        next if $self->up_to_date( $c_file, $o_file );
-        $self->add_to_cleanup($o_file);
-        $self->add_to_cleanup($ccs_file);
-        $cbuilder->compile(
-            source               => $c_file,
-            extra_compiler_flags => $extra_cflags,
-            include_dirs         => [ $self->cf_c_include_dirs ],
-            object_file          => $o_file,
+    if ($source_spec->{build_with_make}) {
+        my $make_options = $self->clownfish_params('make_options');
+        my $lib_filename = $source_spec->{lib_filename};
+        push @objects, $lib_filename;
+        my @command = (
+            $self->config('make'),
+            $self->split_like_shell($make_options),
+            $lib_filename,
         );
+        print join(' ', @command), "\n";
+        system @command and die($self->config('make') . " failed");
+    }
+    else {
+        my $c_files = [];
+        my $source_dirs = $self->clownfish_params('source');
+        for my $source_dir (@$source_dirs) {
+            push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
+        }
+        my $extra_cflags = $self->clownfish_params('cflags');
+        for my $c_file (@$c_files) {
+            my $o_file   = $c_file;
+            my $ccs_file = $c_file;
+            $o_file   =~ s/\.c$/$Config{_o}/ or die "no match";
+            $ccs_file =~ s/\.c$/.ccs/        or die "no match";
+            push @objects, $o_file;
+            next if $self->up_to_date( $c_file, $o_file );
+            $self->add_to_cleanup($o_file);
+            $self->add_to_cleanup($ccs_file);
+            $cbuilder->compile(
+                source               => $c_file,
+                extra_compiler_flags => $extra_cflags,
+                include_dirs         => [ $self->cf_c_include_dirs ],
+                object_file          => $o_file,
+            );
+        }
     }
 
     # .xs => .c
@@ -502,6 +522,17 @@ sub ACTION_code {
     ));
 
     $self->SUPER::ACTION_code;
+}
+
+sub ACTION_clean {
+    my $self = shift;
+
+    my $source_spec = $self->source_spec();
+    if ($source_spec->{build_with_makefile} && -f 'Makefile') {
+        system $self->config('make'), 'distclean';
+    }
+
+    $self->SUPER::ACTION_clean;
 }
 
 # Monkey patch ExtUtils::CBuilder::Platform::Windows::GCC::format_linker_cmd

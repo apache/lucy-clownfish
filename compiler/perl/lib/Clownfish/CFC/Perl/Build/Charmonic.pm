@@ -31,6 +31,7 @@ use File::Spec::Functions qw( catfile curdir );
 # Add a custom Module::Build hashref property to pass the following build
 # parameters.
 # charmonizer_c: Charmonizer C file, required
+# create_makefile: Whether to create a Makefile.
 if ( $Module::Build::VERSION <= 0.30 ) {
     __PACKAGE__->add_property( charmonizer_params => {} );
 }
@@ -59,9 +60,10 @@ sub ACTION_charmony {
             and die "Failed to compile $CHARMONIZER_EXE_PATH";
     }
 
-    return if $self->up_to_date( $CHARMONIZER_EXE_PATH, [
-        $CHARMONY_H_PATH, $CHARMONY_PM_PATH,
-    ] );
+    my $create_makefile = $self->charmonizer_params('create_makefile');
+    my @derived_files = ( $CHARMONY_H_PATH, $CHARMONY_PM_PATH );
+    push @derived_files, 'Makefile' if $create_makefile;
+    return if $self->up_to_date( $CHARMONIZER_EXE_PATH, \@derived_files );
     print "\nRunning $CHARMONIZER_EXE_PATH...\n\n";
 
     $self->add_to_cleanup($CHARMONY_H_PATH);
@@ -83,10 +85,18 @@ sub ACTION_charmony {
         '--enable-c',
         '--enable-perl',
     );
+    if ($create_makefile) {
+        push @command,
+             '--make=' . $self->config('make'),
+             '--enable-makefile';
+    }
     if ( !$self->config('usethreads') ) {
         push @command, '--disable-threads';
     }
-    push @command, ( '--', @cc_args, $self->config('ccflags') );
+    push @command, (
+        '--', @cc_args, $self->config('ccflags'),
+        '-I' . File::Spec->catdir($self->config('archlibexp'), 'CORE'),
+    );
     if ( $ENV{CHARM_VALGRIND} ) {
         unshift @command, "valgrind", "--leak-check=yes";
     }
@@ -118,7 +128,7 @@ sub charmony {
     if ($config) {
         return $config->{$key};
     }
-    return;
+    return undef;
 }
 
 1;
