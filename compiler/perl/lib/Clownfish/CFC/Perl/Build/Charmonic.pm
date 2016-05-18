@@ -50,17 +50,26 @@ my $CHARMONY_PM_PATH     = 'Charmony.pm';
 # Charmony.pm files.
 sub ACTION_charmony {
     my $self = shift;
-    my $charmonizer_c = $self->charmonizer_params('charmonizer_c');
+
+    my ($cc, @cc_args)  = $self->split_like_shell($self->config('cc'));
+    my $is_msvc         = lc($cc) =~ /^cl\b/;
+    my $charmonizer_c   = $self->charmonizer_params('charmonizer_c');
+    my $create_makefile = $self->charmonizer_params('create_makefile');
+
     $self->add_to_cleanup($CHARMONIZER_EXE_PATH);
     if ( !$self->up_to_date( $charmonizer_c, $CHARMONIZER_EXE_PATH ) ) {
         print "\nCompiling $CHARMONIZER_EXE_PATH...\n\n";
-        my $cc = $self->config('cc');
-        my $outflag = $cc =~ /cl\b/ ? "/Fe" : "-o ";
-        system("$cc $charmonizer_c $outflag$CHARMONIZER_EXE_PATH")
+        my @command = ($cc, @cc_args, $charmonizer_c);
+        if ($is_msvc) {
+            push @command, "/Fe$CHARMONIZER_EXE_PATH";
+        }
+        else {
+            push @command, '-o', $CHARMONIZER_EXE_PATH;
+        }
+        system @command
             and die "Failed to compile $CHARMONIZER_EXE_PATH";
     }
 
-    my $create_makefile = $self->charmonizer_params('create_makefile');
     my @derived_files = ( $CHARMONY_H_PATH, $CHARMONY_PM_PATH );
     push @derived_files, 'Makefile' if $create_makefile;
     return if $self->up_to_date( $CHARMONIZER_EXE_PATH, \@derived_files );
@@ -71,13 +80,11 @@ sub ACTION_charmony {
     # Clean up after charmonizer if it doesn't succeed on its own.
     $self->add_to_cleanup("_charm*");
 
-    if ($Config{cc} =~ /^cl\b/) {
+    if ($is_msvc) {
         $self->add_to_cleanup('charmonizer.obj');
     }
 
     # Prepare arguments to charmonizer.
-    my @cc_args = $self->split_like_shell($self->config('cc'));
-    my $cc = shift(@cc_args);
     my @command = (
         $CHARMONIZER_EXE_PATH,
         "--cc=$cc",
