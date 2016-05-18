@@ -51,7 +51,6 @@ my @BASE_PATH = __PACKAGE__->cf_base_path;
 my $COMMON_SOURCE_DIR = catdir( @BASE_PATH, 'common' );
 my $CORE_SOURCE_DIR   = catdir( @BASE_PATH, 'core' );
 my $CFC_DIR           = catdir( @BASE_PATH, updir(), 'compiler', 'perl' );
-my $XS_SOURCE_DIR = 'xs';
 my $CFC_BUILD     = catfile( $CFC_DIR, 'Build' );
 my $LIB_DIR       = 'lib';
 my $CHARMONIZER_C;
@@ -64,11 +63,10 @@ else {
 
 sub new {
     my ( $class, %args ) = @_;
-    $args{include_dirs}     = [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ];
     $args{clownfish_params} = {
         autogen_header => _autogen_header(),
         include        => [],                  # Don't use default includes.
-        source => [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ],
+        source         => [ $CORE_SOURCE_DIR ],
     };
     my $self = $class->SUPER::new( recursive_test_files => 1, %args );
 
@@ -83,9 +81,21 @@ sub new {
         $self->extra_compiler_flags(@$extra_cflags);
     }
 
+    $self->charmonizer_params( create_makefile => 1 );
     $self->charmonizer_params( charmonizer_c => $CHARMONIZER_C );
 
     return $self;
+}
+
+sub source_spec {
+    my $self = shift;
+
+    $self->depends_on('charmony');
+
+    return {
+        build_with_make => 1,
+        lib_filename    => $self->charmony('STATIC_LIB_FILENAME'),
+    };
 }
 
 sub _run_make {

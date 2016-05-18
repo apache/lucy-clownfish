@@ -1,9 +1,11 @@
+
 *.pod
 /Build
 /Build.bat
 /Charmony.pm
 /MYMETA.json
 /MYMETA.yml
+/Makefile
 /_build/
 /autogen/
 /blib/
@@ -13,6 +15,6 @@
 /charmony.h
 /lib/Clownfish.c
 /lib/Clownfish.xs
+/libclownfish.*
 /ppport.h
 /typemap
-
