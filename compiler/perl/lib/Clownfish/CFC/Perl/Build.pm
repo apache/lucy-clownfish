@@ -64,16 +64,6 @@ sub new {
         $self->extra_linker_flags(@$extra_ldflags);
     }
 
-    my $cf_source = $self->clownfish_params('source');
-    if ( !defined($cf_source) ) {
-        $cf_source = [];
-    }
-    elsif ( !ref($cf_source) ) {
-        $cf_source = [ $cf_source ];
-    }
-    push( @$cf_source, catdir( $AUTOGEN_DIR, 'source' ) );
-    $self->clownfish_params( source => $cf_source );
-
     my $autogen_header = $self->clownfish_params('autogen_header');
     if ( !defined($autogen_header) ) {
         $self->clownfish_params( autogen_header => <<'END_AUTOGEN' );
@@ -409,7 +399,8 @@ sub ACTION_compile_custom_xs {
     else {
         my $c_files = [];
         my $source_dirs = $self->clownfish_params('source');
-        for my $source_dir (@$source_dirs) {
+        my $autogen_src_dir = catdir( $AUTOGEN_DIR, 'source' );
+        for my $source_dir ( @$source_dirs, $autogen_src_dir ) {
             push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
         }
         my $extra_cflags = $self->clownfish_params('cflags');
