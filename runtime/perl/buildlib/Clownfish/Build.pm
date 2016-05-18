@@ -51,7 +51,6 @@ my @BASE_PATH = __PACKAGE__->cf_base_path;
 my $COMMON_SOURCE_DIR = catdir( @BASE_PATH, 'common' );
 my $CORE_SOURCE_DIR   = catdir( @BASE_PATH, 'core' );
 my $CFC_DIR           = catdir( @BASE_PATH, updir(), 'compiler', 'perl' );
-my $XS_SOURCE_DIR = 'xs';
 my $CFC_BUILD     = catfile( $CFC_DIR, 'Build' );
 my $LIB_DIR       = 'lib';
 my $CHARMONIZER_C;
@@ -64,7 +63,6 @@ else {
 
 sub new {
     my ( $class, %args ) = @_;
-    $args{include_dirs}     = [ $CORE_SOURCE_DIR, $XS_SOURCE_DIR ];
     $args{clownfish_params} = {
         autogen_header => _autogen_header(),
         include        => [],                  # Don't use default includes.
