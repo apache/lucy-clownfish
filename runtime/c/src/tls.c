@@ -79,12 +79,15 @@ Tls_get_err_context() {
 
 BOOL WINAPI
 DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved) {
+    UNUSED_VAR(dll);
+    UNUSED_VAR(reserved);
+
     if (reason == DLL_THREAD_DETACH) {
         ErrContext *context
             = (ErrContext*)TlsGetValue(err_context_tls_index);
 
         if (context) {
-            DECREF(context->current_error);
+            CFISH_DECREF(context->current_error);
             FREEMEM(context);
         }
     }
