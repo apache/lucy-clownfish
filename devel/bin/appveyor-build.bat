@@ -23,6 +23,14 @@ exit /b 1
 
 :test_c
 
+if "%BUILD_ENV%" == "msvc" goto test_msvc
+if "%BUILD_ENV%" == "mingw32" goto test_mingw32
+
+echo unknown BUILD_ENV: %BUILD_ENV%
+exit /b 1
+
+:test_msvc
+
 if "%MSVC_VERSION%" == "10" goto msvc_10
 
 call "C:\Program Files (x86)\Microsoft Visual Studio %MSVC_VERSION%.0\VC\vcvarsall.bat" amd64
@@ -38,6 +46,18 @@ call configure && nmake && nmake test || exit /b
 
 cd ..\..\runtime\c
 call configure && nmake && nmake test
+
+exit /b
+
+:test_mingw32
+
+path C:\MinGW\bin;%path%
+
+cd compiler\c
+call configure && mingw32-make && mingw32-make test || exit /b
+
+cd ..\..\runtime\c
+call configure && mingw32-make && mingw32-make test
 
 exit /b
 
