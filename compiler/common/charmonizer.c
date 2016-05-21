@@ -4465,21 +4465,24 @@ S_write_rule(chaz_MakeRule *rule, FILE *out);
 void
 chaz_Make_init(const char *make_command) {
     if (make_command) {
-        chaz_Make.make_command = chaz_Util_strdup(make_command);
+        if (!chaz_Make_detect(make_command, NULL)) {
+            chaz_Util_warn("Make utility '%s' doesn't appear to work");
+        }
     }
     else {
-        chaz_Make_detect("make", "gmake", "nmake", "dmake", "mingw32-make",
-                         "mingw64-make", NULL);
+        if (!chaz_Make_detect("make", "gmake", "nmake", "dmake",
+                              "mingw32-make", "mingw64-make", NULL)
+           ) {
+            chaz_Util_warn("No working make utility found");
+        }
+        else if (chaz_Util_verbosity) {
+            printf("Detected make utility '%s'\n", chaz_Make.make_command);
+        }
     }
 
-    if (chaz_Make.make_command) {
-        if (strcmp(chaz_Make.make_command, "nmake") == 0) {
-            chaz_Make.shell_type = CHAZ_OS_CMD_EXE;
-        }
-        else {
-            /* TODO: Feature test which shell make uses on Windows. */
-            chaz_Make.shell_type = CHAZ_OS_POSIX;
-        }
+    if (chaz_Make.shell_type == 0) {
+        // Assume POSIX.
+        chaz_Make.shell_type = CHAZ_OS_POSIX;
     }
 }
 
@@ -4503,7 +4506,7 @@ chaz_Make_detect(const char *make1, ...) {
     va_list args;
     const char *candidate;
     int found = 0;
-    const char makefile_content[] = "foo:\n\techo \"foo!\"\n";
+    const char makefile_content[] = "foo:\n\t@echo \\^foo!\n";
     chaz_Util_write_file("_charm_Makefile", makefile_content);
 
     /* Audition candidates. */
@@ -4529,7 +4532,12 @@ chaz_Make_audition(const char *make) {
     if (chaz_Util_can_open_file("_charm_foo")) {
         size_t len;
         char *content = chaz_Util_slurp_file("_charm_foo", &len);
-        if (NULL != strstr(content, "foo!")) {
+        if (strncmp(content, "\\foo!", 5) == 0) {
+            chaz_Make.shell_type = CHAZ_OS_CMD_EXE;
+            succeeded = 1;
+        }
+        else if (strncmp(content, "^foo!", 5) == 0) {
+            chaz_Make.shell_type = CHAZ_OS_POSIX;
             succeeded = 1;
         }
         free(content);
@@ -7673,8 +7681,8 @@ chaz_Memory_probe_alloca(void) {
         CHAZ_QUOTE(      void *foo = %s(1);         )
         CHAZ_QUOTE(      return 0;                  )
         CHAZ_QUOTE(  }                              );
-    int has_alloca     = false;
-    int has_builtin_alloca    = false;
+    chaz_CFlags *temp_cflags = chaz_CC_get_temp_cflags();
+    int has_alloca = false;
     char code_buf[sizeof(alloca_code) + 100];
 
     {
@@ -7691,6 +7699,13 @@ chaz_Memory_probe_alloca(void) {
         }
     }
 
+    /* Under GCC, alloca is a builtin that works without including the
+     * correct header, generating only a warning. To avoid misdetection,
+     * disable the alloca builtin temporarily. */
+    if (chaz_CC_gcc_version_num()) {
+        chaz_CFlags_append(temp_cflags, "-fno-builtin-alloca");
+    }
+
     /* Unixen. */
     sprintf(code_buf, alloca_code, "alloca.h", "alloca");
     if (chaz_CC_test_link(code_buf)) {
@@ -7699,11 +7714,6 @@ chaz_Memory_probe_alloca(void) {
         chaz_ConfWriter_add_def("alloca", "alloca");
     }
     if (!has_alloca) {
-        /*
-         * FIXME: Under MinGW, alloca is defined in malloc.h. This probe
-         * produces compiler warnings but works regardless. These warnings
-         * are subsequently repeated during the build.
-         */
         sprintf(code_buf, alloca_code, "stdlib.h", "alloca");
         if (chaz_CC_test_link(code_buf)) {
             has_alloca = true;
@@ -7711,17 +7721,9 @@ chaz_Memory_probe_alloca(void) {
             chaz_ConfWriter_add_def("alloca", "alloca");
         }
     }
-    if (!has_alloca) {
-        sprintf(code_buf, alloca_code, "stdio.h", /* stdio.h is filler */
-                "__builtin_alloca");
-        if (chaz_CC_test_link(code_buf)) {
-            has_builtin_alloca = true;
-            chaz_ConfWriter_add_def("alloca", "__builtin_alloca");
-        }
-    }
 
     /* Windows. */
-    if (!(has_alloca || has_builtin_alloca)) {
+    if (!has_alloca) {
         sprintf(code_buf, alloca_code, "malloc.h", "alloca");
         if (chaz_CC_test_link(code_buf)) {
             has_alloca = true;
@@ -7729,13 +7731,15 @@ chaz_Memory_probe_alloca(void) {
             chaz_ConfWriter_add_def("alloca", "alloca");
         }
     }
-    if (!(has_alloca || has_builtin_alloca)) {
+    if (!has_alloca) {
         sprintf(code_buf, alloca_code, "malloc.h", "_alloca");
         if (chaz_CC_test_link(code_buf)) {
             chaz_ConfWriter_add_def("HAS_MALLOC_H", NULL);
             chaz_ConfWriter_add_def("alloca", "_alloca");
         }
     }
+
+    chaz_CFlags_clear(temp_cflags);
 }
 
 
