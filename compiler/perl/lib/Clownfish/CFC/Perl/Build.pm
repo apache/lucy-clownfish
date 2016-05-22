@@ -64,16 +64,6 @@ sub new {
         $self->extra_linker_flags(@$extra_ldflags);
     }
 
-    my $cf_source = $self->clownfish_params('source');
-    if ( !defined($cf_source) ) {
-        $cf_source = [];
-    }
-    elsif ( !ref($cf_source) ) {
-        $cf_source = [ $cf_source ];
-    }
-    push( @$cf_source, catdir( $AUTOGEN_DIR, 'source' ) );
-    $self->clownfish_params( source => $cf_source );
-
     my $autogen_header = $self->clownfish_params('autogen_header');
     if ( !defined($autogen_header) ) {
         $self->clownfish_params( autogen_header => <<'END_AUTOGEN' );
@@ -348,6 +338,8 @@ sub ACTION_clownfish {
     {
         utime( time, time, $AUTOGEN_DIR );    # touch
     }
+
+    $hierarchy->write_log;
 }
 
 # Write ppport.h, which supplies some XS routines not found in older Perls and
@@ -364,6 +356,10 @@ sub ACTION_ppport {
         $self->add_to_cleanup('ppport.h');
         Devel::PPPort::WriteFile();
     }
+}
+
+sub cf_source_spec {
+    return {};
 }
 
 sub ACTION_compile_custom_xs {
@@ -385,28 +381,45 @@ sub ACTION_compile_custom_xs {
     mkpath( $archdir, 0, 0777 ) unless -d $archdir;
     my @objects;
 
+    my $source_spec = $self->cf_source_spec();
+
     # Compile C source files.
-    my $c_files = [];
-    my $source_dirs = $self->clownfish_params('source');
-    for my $source_dir (@$source_dirs) {
-        push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
-    }
-    my $extra_cflags = $self->clownfish_params('cflags');
-    for my $c_file (@$c_files) {
-        my $o_file   = $c_file;
-        my $ccs_file = $c_file;
-        $o_file   =~ s/\.c$/$Config{_o}/ or die "no match";
-        $ccs_file =~ s/\.c$/.ccs/        or die "no match";
-        push @objects, $o_file;
-        next if $self->up_to_date( $c_file, $o_file );
-        $self->add_to_cleanup($o_file);
-        $self->add_to_cleanup($ccs_file);
-        $cbuilder->compile(
-            source               => $c_file,
-            extra_compiler_flags => $extra_cflags,
-            include_dirs         => [ $self->cf_c_include_dirs ],
-            object_file          => $o_file,
+    if ($source_spec->{build_with_make}) {
+        my $make_options = $self->clownfish_params('make_options');
+        my $lib_filename = $source_spec->{lib_filename};
+        push @objects, $lib_filename;
+        my @command = (
+            $self->config('make'),
+            $self->split_like_shell($make_options),
+            $lib_filename,
         );
+        print join(' ', @command), "\n";
+        system @command and die($self->config('make') . " failed");
+    }
+    else {
+        my $c_files = [];
+        my $source_dirs = $self->clownfish_params('source');
+        my $autogen_src_dir = catdir( $AUTOGEN_DIR, 'source' );
+        for my $source_dir ( @$source_dirs, $autogen_src_dir ) {
+            push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
+        }
+        my $extra_cflags = $self->clownfish_params('cflags');
+        for my $c_file (@$c_files) {
+            my $o_file   = $c_file;
+            my $ccs_file = $c_file;
+            $o_file   =~ s/\.c$/$Config{_o}/ or die "no match";
+            $ccs_file =~ s/\.c$/.ccs/        or die "no match";
+            push @objects, $o_file;
+            next if $self->up_to_date( $c_file, $o_file );
+            $self->add_to_cleanup($o_file);
+            $self->add_to_cleanup($ccs_file);
+            $cbuilder->compile(
+                source               => $c_file,
+                extra_compiler_flags => $extra_cflags,
+                include_dirs         => [ $self->cf_c_include_dirs ],
+                object_file          => $o_file,
+            );
+        }
     }
 
     # .xs => .c
@@ -500,6 +513,17 @@ sub ACTION_code {
     ));
 
     $self->SUPER::ACTION_code;
+}
+
+sub ACTION_clean {
+    my $self = shift;
+
+    my $source_spec = $self->cf_source_spec();
+    if ($source_spec->{build_with_makefile} && -f 'Makefile') {
+        system $self->config('make'), 'distclean';
+    }
+
+    $self->SUPER::ACTION_clean;
 }
 
 # Monkey patch ExtUtils::CBuilder::Platform::Windows::GCC::format_linker_cmd
