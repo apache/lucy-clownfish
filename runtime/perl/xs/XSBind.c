@@ -521,6 +521,37 @@ XSBind_undef_arg_error(pTHX_ const char *label) {
     THROW(CFISH_ERR, "'%s' must not be undef", label);
 }
 
+void
+XSBind_bootstrap(pTHX_ size_t num_classes,
+                 const XSBind_ClassSpec *class_specs,
+                 const XSBind_XSubSpec *xsub_specs,
+                 const char *file) {
+    size_t xsub_idx = 0;
+
+    for (size_t i = 0; i < num_classes; i++) {
+        const XSBind_ClassSpec *class_spec = &class_specs[i];
+
+        // Set up @ISA array.
+        if (class_spec->parent_name) {
+            cfish_String *isa_name
+                = cfish_Str_newf("%s::ISA", class_spec->name);
+            AV *isa = get_av(CFISH_Str_Get_Ptr8(isa_name), 1);
+            av_push(isa, newSVpv(class_spec->parent_name, 0));
+            CFISH_DECREF(isa_name);
+        }
+
+        // Register XSUBs.
+        for (uint32_t j = 0; j < class_spec->num_methods; j++) {
+            const XSBind_XSubSpec *xsub_spec = &xsub_specs[xsub_idx++];
+
+            cfish_String *xsub_name
+                = cfish_Str_newf("%s::%s", class_spec->name, xsub_spec->alias);
+            newXS(CFISH_Str_Get_Ptr8(xsub_name), xsub_spec->xsub, file);
+            CFISH_DECREF(xsub_name);
+        }
+    }
+}
+
 /***************************************************************************
  * The routines below are declared within the Clownfish core but left
  * unimplemented and must be defined for each host language.

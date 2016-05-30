@@ -98,6 +98,11 @@ CFCPerlSub_get_param_list(CFCPerlSub *self);
 const char*
 CFCPerlSub_get_class_name(CFCPerlSub *self);
 
+/** Accessor for alias.
+ */
+const char*
+CFCPerlSub_get_alias(CFCPerlSub *self);
+
 /** Accessor for use_labeled_params.
  */
 int
