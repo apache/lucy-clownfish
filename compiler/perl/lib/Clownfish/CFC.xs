@@ -586,12 +586,14 @@ OUTPUT: RETVAL
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::FileSpec
 
 SV*
-_new(source_dir, path_part, is_included)
+_new(source_dir, path_part, ext, is_included)
     const char *source_dir;
     const char *path_part;
+    const char *ext;
     bool is_included;
 CODE:
-    CFCFileSpec *self = CFCFileSpec_new(source_dir, path_part, is_included);
+    CFCFileSpec *self = CFCFileSpec_new(source_dir, path_part, ext,
+                                        is_included);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL

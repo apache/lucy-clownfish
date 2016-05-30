@@ -45,22 +45,23 @@ static const CFCMeta CFCFILESPEC_META = {
 };
 
 CFCFileSpec*
-CFCFileSpec_new(const char *source_dir, const char *path_part,
+CFCFileSpec_new(const char *source_dir, const char *path_part, const char *ext,
                 int is_included) {
     CFCFileSpec *self = (CFCFileSpec*)CFCBase_allocate(&CFCFILESPEC_META);
-    return CFCFileSpec_init(self, source_dir, path_part, is_included);
+    return CFCFileSpec_init(self, source_dir, path_part, ext, is_included);
 }
 
 CFCFileSpec*
 CFCFileSpec_init(CFCFileSpec *self, const char *source_dir,
-                 const char *path_part, int is_included) {
+                 const char *path_part, const char *ext, int is_included) {
     CFCUTIL_NULL_CHECK(source_dir);
     CFCUTIL_NULL_CHECK(path_part);
+    CFCUTIL_NULL_CHECK(ext);
 
     self->source_dir  = CFCUtil_strdup(source_dir);
     self->path_part   = CFCUtil_strdup(path_part);
-    self->path        = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s", source_dir,
-                                        path_part);
+    self->path        = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s%s", source_dir,
+                                        path_part, ext);
     self->is_included = !!is_included;
 
     return self;

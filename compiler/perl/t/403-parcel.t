@@ -55,7 +55,8 @@ like( $@, qr/parcel with nickname .* already registered/i,
 
 my $foo_file_spec = Clownfish::CFC::Model::FileSpec->new(
     source_dir  => '.',
-    path_part   => 'Foo.cfp',
+    path_part   => 'Foo',
+    ext         => '.cfp',
     is_included => 1,
 );
 my $included_foo = Clownfish::CFC::Model::Parcel->new(
@@ -139,7 +140,8 @@ Clownfish::CFC::Model::Parcel->reap_singletons();
 {
     my $foo_file_spec = Clownfish::CFC::Model::FileSpec->new(
         source_dir  => '.',
-        path_part   => 'Foo.cfp',
+        path_part   => 'Foo',
+        ext         => '.cfp',
         is_included => 1,
     );
     my $foo = Clownfish::CFC::Model::Parcel->new(
@@ -153,7 +155,8 @@ Clownfish::CFC::Model::Parcel->reap_singletons();
     );
     my $cfish_file_spec = Clownfish::CFC::Model::FileSpec->new(
         source_dir  => '.',
-        path_part   => 'Clownfish.cfp',
+        path_part   => 'Clownfish',
+        ext         => '.cfp',
         is_included => 1,
     );
     my $cfish = Clownfish::CFC::Model::Parcel->new(

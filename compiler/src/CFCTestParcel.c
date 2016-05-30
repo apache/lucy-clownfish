@@ -46,7 +46,7 @@ S_run_extended_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    36,
+    37,
     S_run_tests
 };
 
@@ -120,10 +120,12 @@ S_run_basic_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)same_nick);
     }
 
-    CFCFileSpec *file_spec = CFCFileSpec_new(".", "Parcel", true);
+    CFCFileSpec *file_spec = CFCFileSpec_new(".", "Parcel", ".cfp", true);
     CFCParcel *included_foo
         = CFCParcel_new("IncludedFoo", NULL, NULL, file_spec);
     OK(test, CFCParcel_included(included_foo), "included");
+    STR_EQ(test, CFCParcel_get_cfp_path(included_foo),
+           "." CHY_DIR_SEP "Parcel.cfp", "get_cfp_path");
     CFCParcel_register(included_foo);
 
     {
@@ -225,13 +227,13 @@ S_run_extended_tests(CFCTest *test) {
     }
 
     {
-        CFCFileSpec *foo_file_spec = CFCFileSpec_new(".", "Foo", true);
+        CFCFileSpec *foo_file_spec = CFCFileSpec_new(".", "Foo", ".cfp", true);
         CFCParcel *foo = CFCParcel_new("Foo", NULL, NULL, foo_file_spec);
         CFCParcel_register(foo);
 
         CFCVersion *cfish_version = CFCVersion_new("v0.8.7");
         CFCFileSpec *cfish_file_spec
-            = CFCFileSpec_new(".", "Clownfish", true);
+            = CFCFileSpec_new(".", "Clownfish", ".cfp", true);
         CFCParcel *cfish
             = CFCParcel_new("Clownfish", NULL, cfish_version, cfish_file_spec);
         CFCParcel_register(cfish);

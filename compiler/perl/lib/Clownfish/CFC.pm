@@ -197,14 +197,15 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
     our %new_PARAMS = (
         source_dir  => undef,
         path_part   => undef,
-        is_included => 0,
+        ext         => undef,
+        is_included => undef,
     );
 
     sub new {
         my ( $either, %args ) = @_;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
         verify_args( \%new_PARAMS, %args ) or confess $@;
-        return _new( @args{ qw( source_dir path_part is_included ) } );
+        return _new( @args{ qw( source_dir path_part ext is_included ) } );
     }
 }
 

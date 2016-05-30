@@ -87,6 +87,7 @@ is( $foo_jr->get_nickname, "FooJr",
 my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     source_dir  => '.',
     path_part   => 'Foo/FooJr',
+    ext         => '.cfh',
 );
 my $final_foo = Clownfish::CFC::Model::Class->create(
     parcel            => 'Neato',

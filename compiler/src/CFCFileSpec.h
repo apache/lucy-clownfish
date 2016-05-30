@@ -42,12 +42,12 @@ struct CFCClass;
  * @param is_included Should be true if the file is from an include dir.
 */
 CFCFileSpec*
-CFCFileSpec_new(const char *source_dir, const char *path_part,
+CFCFileSpec_new(const char *source_dir, const char *path_part, const char *ext,
                 int is_included);
 
 CFCFileSpec*
 CFCFileSpec_init(CFCFileSpec *self, const char *source_dir,
-                 const char *path_part, int is_included);
+                 const char *path_part, const char *ext, int is_included);
 
 void
 CFCFileSpec_destroy(CFCFileSpec *self);

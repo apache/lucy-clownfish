@@ -23,6 +23,7 @@ use Clownfish::CFC::Model::FileSpec;
 my %args = (
     source_dir  => 'Clownfish/_include',
     path_part   => 'Stuff/Thing',
+    ext         => '.cfh',
 );
 my $file_spec;
 

@@ -42,7 +42,7 @@ S_run_tests(CFCTest *test) {
 #define STUFF_THING "Stuff" CHY_DIR_SEP "Thing"
 
     CFCParser *parser = CFCParser_new();
-    CFCFileSpec *file_spec = CFCFileSpec_new(".", STUFF_THING, 0);
+    CFCFileSpec *file_spec = CFCFileSpec_new(".", STUFF_THING, ".cfh", 0);
 
     {
         const char *string =
