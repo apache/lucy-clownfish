@@ -53,7 +53,6 @@ struct CFCPerl {
     char *pod_header;
     char *pod_footer;
     char *xs_path;
-    char *boot_func;
 };
 
 // Modify a string in place, swapping out "::" for the supplied character.
@@ -105,14 +104,6 @@ CFCPerl_init(CFCPerl *self, CFCHierarchy *hierarchy, const char *lib_dir,
                                     boot_class);
     S_replace_double_colons(self->xs_path, CHY_DIR_SEP_CHAR);
 
-    // Derive the name of the bootstrap function.
-    self->boot_func = CFCUtil_sprintf("cfish_%s_bootstrap", boot_class);
-    for (int i = 0; self->boot_func[i] != 0; i++) {
-        if (!CFCUtil_isalnum(self->boot_func[i])) {
-            self->boot_func[i] = '_';
-        }
-    }
-
     return self;
 }
 
@@ -128,7 +119,6 @@ CFCPerl_destroy(CFCPerl *self) {
     FREEMEM(self->pod_header);
     FREEMEM(self->pod_footer);
     FREEMEM(self->xs_path);
-    FREEMEM(self->boot_func);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -275,14 +265,11 @@ S_write_standalone_pod(CFCPerl *self) {
 }
 
 static void
-S_write_boot_h(CFCPerl *self) {
-    char *guard = CFCUtil_sprintf("%s_BOOT", self->boot_class);
-    S_replace_double_colons(guard, '_');
-    for (char *ptr = guard; *ptr != '\0'; ptr++) {
-        if (CFCUtil_isalpha(*ptr)) {
-            *ptr = CFCUtil_toupper(*ptr);
-        }
-    }
+S_write_boot_h(CFCPerl *self, CFCParcel *parcel) {
+    const char *prefix = CFCParcel_get_prefix(parcel);
+    const char *PREFIX = CFCParcel_get_PREFIX(parcel);
+
+    char *guard = CFCUtil_sprintf("H_%sBOOT", PREFIX);
 
     const char pattern[] = 
         "%s\n"
@@ -295,7 +282,7 @@ S_write_boot_h(CFCPerl *self) {
         "#endif\n"
         "\n"
         "void\n"
-        "%s();\n"
+        "%sbootstrap_perl(void);\n"
         "\n"
         "#ifdef __cplusplus\n"
         "}\n"
@@ -305,11 +292,12 @@ S_write_boot_h(CFCPerl *self) {
         "\n"
         "%s\n";
     char *content
-        = CFCUtil_sprintf(pattern, self->c_header, guard, guard,
-                          self->boot_func, guard, self->c_footer);
+        = CFCUtil_sprintf(pattern, self->c_header, guard, guard, prefix, guard,
+                          self->c_footer);
 
     const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
-    char *boot_h_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "boot.h", inc_dest);
+    char *boot_h_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%sboot.h", inc_dest,
+                                        prefix);
     CFCUtil_write_file(boot_h_path, content, strlen(content));
     FREEMEM(boot_h_path);
 
@@ -318,34 +306,21 @@ S_write_boot_h(CFCPerl *self) {
 }
 
 static void
-S_write_boot_c(CFCPerl *self) {
-    CFCClass  **ordered   = CFCHierarchy_ordered_classes(self->hierarchy);
-    CFCParcel **parcels   = CFCParcel_all_parcels();
-    char *pound_includes  = CFCUtil_strdup("");
-    char *bootstrap_code  = CFCUtil_strdup("");
-    char *alias_adds      = CFCUtil_strdup("");
-    char *isa_pushes      = CFCUtil_strdup("");
-
-    for (size_t i = 0; parcels[i]; ++i) {
-        CFCParcel *parcel = parcels[i];
-
-        if (!CFCParcel_included(parcel)) {
-            const char *prefix = CFCParcel_get_prefix(parcel);
-            pound_includes = CFCUtil_cat(pound_includes, "#include \"", prefix,
-                                         "parcel.h\"\n", NULL);
-            bootstrap_code = CFCUtil_cat(bootstrap_code, "    ", prefix,
-                                         "bootstrap_parcel();\n", NULL);
-        }
-    }
+S_write_boot_c(CFCPerl *self, CFCParcel *parcel) {
+    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    const char  *prefix         = CFCParcel_get_prefix(parcel);
+    char        *alias_adds     = CFCUtil_strdup("");
+    char        *isa_pushes     = CFCUtil_strdup("");
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
+        if (CFCClass_inert(klass)) { continue; }
+        const char *class_prefix = CFCClass_get_prefix(klass);
+        if (strcmp(class_prefix, prefix) != 0) { continue; }
 
         const char *class_name = CFCClass_get_name(klass);
 
-        // Add aliases for selected KinoSearch classes which allow old indexes
-        // to be read.
+        // Add class aliases.
         CFCPerlClass *class_binding = CFCPerlClass_singleton(class_name);
         if (class_binding) {
             const char *class_var = CFCClass_full_class_var(klass);
@@ -382,12 +357,11 @@ S_write_boot_c(CFCPerl *self) {
     }
 
     const char pattern[] =
-        "%s\n"
+        "%s"
         "\n"
-        "#include \"boot.h\"\n"
-        "#include \"Clownfish/String.h\"\n"
+        "#include \"%sboot.h\"\n"
+        "#include \"%sparcel.h\"\n"
         "#include \"Clownfish/Class.h\"\n"
-        "%s\n"
         "\n"
         "/* Avoid conflicts with Clownfish bool type. */\n"
         "#define HAS_BOOL\n"
@@ -397,10 +371,9 @@ S_write_boot_c(CFCPerl *self) {
         "#include \"XSUB.h\"\n"
         "\n"
         "void\n"
-        "%s() {\n"
+        "%sbootstrap_perl() {\n"
         "    dTHX;\n"
-        "\n"
-        "%s"
+        "    %sbootstrap_parcel();\n"
         "\n"
         "%s"
         "\n"
@@ -408,23 +381,21 @@ S_write_boot_c(CFCPerl *self) {
         "%s"
         "}\n"
         "\n"
-        "%s\n"
-        "\n";
+        "%s";
     char *content
-        = CFCUtil_sprintf(pattern, self->c_header, pound_includes,
-                          self->boot_func, bootstrap_code, alias_adds,
-                          isa_pushes, self->c_footer);
+        = CFCUtil_sprintf(pattern, self->c_header, prefix, prefix,
+                          prefix, prefix, alias_adds, isa_pushes,
+                          self->c_footer);
 
     const char *src_dest = CFCHierarchy_get_source_dest(self->hierarchy);
-    char *boot_c_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "boot.c", src_dest);
+    char *boot_c_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%sboot.c", src_dest,
+                                        prefix);
     CFCUtil_write_file(boot_c_path, content, strlen(content));
     FREEMEM(boot_c_path);
 
     FREEMEM(content);
     FREEMEM(isa_pushes);
     FREEMEM(alias_adds);
-    FREEMEM(bootstrap_code);
-    FREEMEM(pound_includes);
     FREEMEM(ordered);
 }
 
@@ -464,13 +435,32 @@ CFCPerl_write_hostdefs(CFCPerl *self) {
 
 void
 CFCPerl_write_boot(CFCPerl *self) {
-    S_write_boot_h(self);
-    S_write_boot_c(self);
+    CFCParcel **parcels = CFCParcel_all_parcels();
+
+    for (size_t i = 0; parcels[i]; ++i) {
+        CFCParcel *parcel = parcels[i];
+
+        if (!CFCParcel_included(parcel)) {
+            S_write_boot_h(self, parcel);
+            S_write_boot_c(self, parcel);
+        }
+    }
 }
 
 static char*
 S_xs_file_contents(CFCPerl *self, const char *generated_xs,
                    const char *xs_init, const char *hand_rolled_xs) {
+    char *bootstrap_calls = CFCUtil_strdup("");
+    CFCParcel **parcels   = CFCParcel_all_parcels();
+    for (size_t i = 0; parcels[i]; ++i) {
+        if (!CFCParcel_included(parcels[i])) {
+            const char *prefix = CFCParcel_get_prefix(parcels[i]);
+            bootstrap_calls
+                = CFCUtil_cat(bootstrap_calls, "    ", prefix,
+                              "bootstrap_perl();\n", NULL);
+        }
+    }
+
     const char pattern[] =
         "%s"
         "\n"
@@ -481,7 +471,7 @@ S_xs_file_contents(CFCPerl *self, const char *generated_xs,
         "BOOT:\n"
         "{\n"
         "    const char* file = __FILE__;\n"
-        "    %s();\n"
+        "%s"
         "%s"
         "}\n"
         "\n"
@@ -490,9 +480,10 @@ S_xs_file_contents(CFCPerl *self, const char *generated_xs,
         "%s";
     char *contents
         = CFCUtil_sprintf(pattern, self->c_header, generated_xs,
-                          self->boot_class, self->boot_class, self->boot_func,
+                          self->boot_class, self->boot_class, bootstrap_calls,
                           xs_init, hand_rolled_xs, self->c_footer);
 
+    FREEMEM(bootstrap_calls);
     return contents;
 }
 
@@ -527,7 +518,13 @@ CFCPerl_write_bindings(CFCPerl *self) {
 
     // Include XSBind.h and boot.h.
     generated_xs = CFCUtil_cat(generated_xs, "#include \"XSBind.h\"\n", NULL);
-    generated_xs = CFCUtil_cat(generated_xs, "#include \"boot.h\"\n", NULL);
+    for (size_t i = 0; parcels[i]; ++i) {
+        if (!CFCParcel_included(parcels[i])) {
+            const char *prefix = CFCParcel_get_prefix(parcels[i]);
+            generated_xs = CFCUtil_cat(generated_xs, "#include \"", prefix,
+                                       "boot.h\"\n", NULL);
+        }
+    }
 
     // Pound-includes for generated headers.
     for (size_t i = 0; ordered[i] != NULL; i++) {
