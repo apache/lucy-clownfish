@@ -128,22 +128,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
         exposure          => 'parcel',
     );
 
-    our %fetch_singleton_PARAMS = (
-        parcel     => undef,
-        class_name => undef,
-    );
-
-    sub fetch_singleton {
-        my ( undef, %args ) = @_;
-        verify_args( \%fetch_singleton_PARAMS, %args ) or confess $@;
-        # Maybe prepend parcel prefix.
-        my $parcel = $args{parcel};
-        if ( defined $parcel ) {
-            $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel);
-        }
-        return _fetch_singleton( $parcel, $args{class_name} );
-    }
-
     sub new {
         confess(
             "The constructor for Clownfish::CFC::Model::Class is create()");

@@ -77,7 +77,7 @@ CFCPerlClass_init(CFCPerlClass *self, CFCParcel *parcel,
     self->parcel = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
     self->class_name = CFCUtil_strdup(class_name);
     // Client may be NULL, since fetch_singleton() does not always succeed.
-    CFCClass *client = CFCClass_fetch_singleton(parcel, class_name);
+    CFCClass *client = CFCClass_fetch_singleton(class_name);
     self->client = (CFCClass*)CFCBase_incref((CFCBase*)client);
     self->pod_spec          = NULL;
     self->xs_code           = NULL;

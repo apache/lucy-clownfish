@@ -105,7 +105,7 @@ S_run_tests(CFCTest *test) {
     CFCClass_add_inert_var(foo, widget);
 
     {
-        CFCClass *should_be_foo = CFCClass_fetch_singleton(neato, "Foo");
+        CFCClass *should_be_foo = CFCClass_fetch_singleton("Foo");
         OK(test, should_be_foo == foo, "fetch_singleton");
     }
 

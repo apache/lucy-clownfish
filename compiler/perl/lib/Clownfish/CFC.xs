@@ -164,11 +164,12 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-_fetch_singleton(parcel, class_name)
-    CFCParcel *parcel;
+fetch_singleton(unused, class_name)
+    SV *unused;
     const char *class_name;
 CODE:
-    CFCClass *klass = CFCClass_fetch_singleton(parcel, class_name);
+    CHY_UNUSED_VAR(unused);
+    CFCClass *klass = CFCClass_fetch_singleton(class_name);
     RETVAL = S_cfcbase_to_perlref(klass);
 OUTPUT: RETVAL
 

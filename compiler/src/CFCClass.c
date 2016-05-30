@@ -34,12 +34,7 @@
 #include "CFCVariable.h"
 #include "CFCFileSpec.h"
 
-typedef struct CFCClassRegEntry {
-    char *key;
-    struct CFCClass *klass;
-} CFCClassRegEntry;
-
-static CFCClassRegEntry *registry = NULL;
+static CFCClass **registry = NULL;
 static size_t registry_size = 0;
 static size_t registry_cap  = 0;
 
@@ -373,77 +368,64 @@ static void
 S_register(CFCClass *self) {
     if (registry_size == registry_cap) {
         size_t new_cap = registry_cap + 10;
-        registry = (CFCClassRegEntry*)REALLOCATE(
+        registry = (CFCClass**)REALLOCATE(
                        registry,
-                       (new_cap + 1) * sizeof(CFCClassRegEntry));
+                       (new_cap + 1) * sizeof(CFCClass*));
         for (size_t i = registry_cap; i <= new_cap; i++) {
-            registry[i].key = NULL;
-            registry[i].klass = NULL;
+            registry[i] = NULL;
         }
         registry_cap = new_cap;
     }
 
-    const char *prefix   = CFCParcel_get_prefix(self->parcel);
-    const char *name     = self->name;
-    const char *nickname = self->nickname;
-    const char *key      = self->full_struct_sym;
+    const char *prefix     = CFCParcel_get_prefix(self->parcel);
+    const char *name       = self->name;
+    const char *nickname   = self->nickname;
+    const char *struct_sym = self->full_struct_sym;
 
     for (size_t i = 0; i < registry_size; i++) {
-        CFCClass   *other          = registry[i].klass;
-        const char *other_prefix   = CFCParcel_get_prefix(other->parcel);
-        const char *other_name     = other->name;
-        const char *other_nickname = other->nickname;
+        CFCClass   *other        = registry[i];
+        const char *other_prefix = CFCParcel_get_prefix(other->parcel);
 
-        if (strcmp(name, other_name) == 0) {
+        if (strcmp(name, other->name) == 0) {
             CFCUtil_die("Two classes with name %s", name);
         }
-        if (strcmp(registry[i].key, key) == 0) {
+        if (strcmp(struct_sym, other->full_struct_sym) == 0) {
             CFCUtil_die("Class name conflict between %s and %s",
-                        name, other_name);
+                        name, other->name);
         }
         if (strcmp(prefix, other_prefix) == 0
-            && strcmp(nickname, other_nickname) == 0
+            && strcmp(nickname, other->nickname) == 0
            ) {
             CFCUtil_die("Class nickname conflict between %s and %s",
-                        name, other_name);
+                        name, other->name);
         }
     }
 
-    registry[registry_size].key   = CFCUtil_strdup(key);
-    registry[registry_size].klass = (CFCClass*)CFCBase_incref((CFCBase*)self);
+    registry[registry_size] = (CFCClass*)CFCBase_incref((CFCBase*)self);
     registry_size++;
 }
 
 #define MAX_SINGLETON_LEN 256
 
 CFCClass*
-CFCClass_fetch_singleton(CFCParcel *parcel, const char *class_name) {
+CFCClass_fetch_singleton(const char *class_name) {
     CFCUTIL_NULL_CHECK(class_name);
 
-    // Build up the key.
-    const char *last_colon = strrchr(class_name, ':');
-    const char *struct_sym = last_colon
-                             ? last_colon + 1
-                             : class_name;
-    const char *prefix = parcel ? CFCParcel_get_prefix(parcel) : "";
-    size_t prefix_len = strlen(prefix);
-    size_t struct_sym_len = strlen(struct_sym);
-    if (prefix_len + struct_sym_len > MAX_SINGLETON_LEN) {
-        CFCUtil_die("names too long: '%s', '%s'", prefix, struct_sym);
+    for (size_t i = 0; i < registry_size; i++) {
+        if (strcmp(registry[i]->name, class_name) == 0) {
+            return registry[i];
+        }
     }
-    char key[MAX_SINGLETON_LEN + 1];
-    sprintf(key, "%s%s", prefix, struct_sym);
-
-    return CFCClass_fetch_by_struct_sym(key);
+    return NULL;
 }
 
 CFCClass*
-CFCClass_fetch_by_struct_sym(const char *key) {
-    CFCUTIL_NULL_CHECK(key);
+CFCClass_fetch_by_struct_sym(const char *struct_sym) {
+    CFCUTIL_NULL_CHECK(struct_sym);
 
     for (size_t i = 0; i < registry_size; i++) {
-        if (strcmp(registry[i].key, key) == 0) {
-            return registry[i].klass;
+        if (strcmp(registry[i]->full_struct_sym, struct_sym) == 0) {
+            return registry[i];
         }
     }
     return NULL;
@@ -452,14 +434,13 @@ CFCClass_fetch_by_struct_sym(const char *key) {
 void
 CFCClass_clear_registry(void) {
     for (size_t i = 0; i < registry_size; i++) {
-        CFCClass *klass = registry[i].klass;
+        CFCClass *klass = registry[i];
         if (klass->parent) {
             // Break circular ref.
             CFCBase_decref((CFCBase*)klass->parent);
             klass->parent = NULL;
         }
         CFCBase_decref((CFCBase*)klass);
-        FREEMEM(registry[i].key);
     }
     FREEMEM(registry);
     registry_size = 0;
