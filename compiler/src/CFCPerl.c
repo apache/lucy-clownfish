@@ -526,59 +526,6 @@ CFCPerl_write_host_code(CFCPerl *self) {
 }
 
 static char*
-S_xs_file_contents(CFCPerl *self, const char *generated_xs,
-                   const char *class_specs, const char *xsub_specs,
-                   const char *hand_rolled_xs) {
-    char *bootstrap_calls = CFCUtil_strdup("");
-    CFCParcel **parcels   = CFCParcel_all_parcels();
-    for (size_t i = 0; parcels[i]; ++i) {
-        if (!CFCParcel_included(parcels[i])) {
-            const char *prefix = CFCParcel_get_prefix(parcels[i]);
-            bootstrap_calls
-                = CFCUtil_cat(bootstrap_calls, "    ", prefix,
-                              "bootstrap_perl();\n", NULL);
-        }
-    }
-
-    const char pattern[] =
-        "%s"
-        "\n"
-        "%s\n"
-        "\n"
-        "MODULE = %s   PACKAGE = %s\n"
-        "\n"
-        "BOOT:\n"
-        "{\n"
-        "    static const cfish_XSBind_ClassSpec class_specs[] = {\n"
-        "%s\n"
-        "    };\n"
-        "    static const cfish_XSBind_XSubSpec xsub_specs[] = {\n"
-        "%s\n"
-        "    };\n"
-        "    size_t num_classes\n"
-        "        = sizeof(class_specs) / sizeof(class_specs[0]);\n"
-        "    const char* file = __FILE__;\n"
-        "\n"
-        "%s"
-        "\n"
-        "    cfish_XSBind_bootstrap(aTHX_ num_classes, class_specs,\n"
-        "                           xsub_specs, file);\n"
-        "}\n"
-        "\n"
-        "%s\n"
-        "\n"
-        "%s";
-    char *contents
-        = CFCUtil_sprintf(pattern, self->c_header, generated_xs,
-                          self->boot_class, self->boot_class, class_specs,
-                          xsub_specs, bootstrap_calls, hand_rolled_xs,
-                          self->c_footer);
-
-    FREEMEM(bootstrap_calls);
-    return contents;
-}
-
-static char*
 S_add_xsub_spec(char *xsub_specs, CFCPerlSub *xsub) {
     const char *c_name = CFCPerlSub_c_name(xsub);
     const char *alias = CFCPerlSub_get_alias(xsub);
@@ -593,53 +540,41 @@ CFCPerl_write_bindings(CFCPerl *self) {
     CFCParcel    **parcels  = CFCParcel_all_parcels();
     CFCClass     **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
     CFCPerlClass **registry = CFCPerlClass_registry();
-    char *hand_rolled_xs   = CFCUtil_strdup("");
-    char *generated_xs     = CFCUtil_strdup("");
-    char *class_specs      = CFCUtil_strdup("");
-    char *xsub_specs       = CFCUtil_strdup("");
+    char *privacy_syms    = CFCUtil_strdup("");
+    char *includes        = CFCUtil_strdup("");
+    char *generated_xs    = CFCUtil_strdup("");
+    char *class_specs     = CFCUtil_strdup("");
+    char *xsub_specs      = CFCUtil_strdup("");
+    char *bootstrap_calls = CFCUtil_strdup("");
+    char *hand_rolled_xs  = CFCUtil_strdup("");
 
-    // Bake the parcel privacy defines into the XS, so it can be compiled
-    // without any extra compiler flags.
     for (size_t i = 0; parcels[i]; ++i) {
-        if (!CFCParcel_included(parcels[i])) {
-            const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
-            generated_xs = CFCUtil_cat(generated_xs, "#define ", privacy_sym,
-                                       "\n", NULL);
-        }
-    }
-    generated_xs = CFCUtil_cat(generated_xs, "\n", NULL);
+        if (CFCParcel_included(parcels[i])) { continue; }
 
-    // Include XSBind.h and *_perl.h.
-    generated_xs = CFCUtil_cat(generated_xs, "#include \"XSBind.h\"\n", NULL);
-    for (size_t i = 0; parcels[i]; ++i) {
-        if (!CFCParcel_included(parcels[i])) {
-            const char *prefix = CFCParcel_get_prefix(parcels[i]);
-            generated_xs = CFCUtil_cat(generated_xs, "#include \"", prefix,
-                                       "perl.h\"\n", NULL);
-        }
+        // Bake the parcel privacy defines into the XS, so it can be compiled
+        // without any extra compiler flags.
+        const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
+        privacy_syms = CFCUtil_cat(privacy_syms, "#define ", privacy_sym,
+                                   "\n", NULL);
+
+        // Bootstrap calls.
+        const char *prefix = CFCParcel_get_prefix(parcels[i]);
+        includes = CFCUtil_cat(includes, "#include \"", prefix, "perl.h\"\n",
+                               NULL);
+        bootstrap_calls = CFCUtil_cat(bootstrap_calls, "    ", prefix,
+                                      "bootstrap_perl();\n", NULL);
     }
 
-    // Pound-includes for generated headers.
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
         if (CFCClass_included(klass)) { continue; }
+
+        // Pound-includes for generated headers.
         const char *include_h = CFCClass_include_h(klass);
-        generated_xs = CFCUtil_cat(generated_xs, "#include \"", include_h,
-                                   "\"\n", NULL);
-    }
-    generated_xs = CFCUtil_cat(generated_xs, "\n", NULL);
+        includes = CFCUtil_cat(includes, "#include \"", include_h, "\"\n",
+                               NULL);
 
-    generated_xs = CFCUtil_cat(generated_xs,
-        "#ifndef XS_INTERNAL\n"
-        "  #define XS_INTERNAL XS\n"
-        "#endif\n"
-        "\n",
-        NULL);
-
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
-
+        if (CFCClass_inert(klass)) { continue; }
         int num_xsubs = 0;
 
         // Constructors.
@@ -707,18 +642,60 @@ CFCPerl_write_bindings(CFCPerl *self) {
         hand_rolled_xs = CFCUtil_cat(hand_rolled_xs, xs, "\n", NULL);
     }
 
-    // Write out if there have been any changes.
-    char *xs_file_contents
-        = S_xs_file_contents(self, generated_xs, class_specs, xsub_specs,
-                             hand_rolled_xs);
-    CFCUtil_write_if_changed(self->xs_path, xs_file_contents,
-                             strlen(xs_file_contents));
+    const char pattern[] =
+        "%s" // Header.
+        "\n"
+        "%s" // Privacy syms.
+        "\n"
+        "#include \"XSBind.h\"\n"
+        "%s" // Includes.
+        "\n"
+        "#ifndef XS_INTERNAL\n"
+        "  #define XS_INTERNAL XS\n"
+        "#endif\n"
+        "\n"
+        "%s" // Generated XS.
+        "\n"
+        "MODULE = %s   PACKAGE = %s\n" // Boot class.
+        "\n"
+        "BOOT:\n"
+        "{\n"
+        "    static const cfish_XSBind_ClassSpec class_specs[] = {\n"
+        "%s\n" // Class specs.
+        "    };\n"
+        "    static const cfish_XSBind_XSubSpec xsub_specs[] = {\n"
+        "%s\n" // XSUB specs.
+        "    };\n"
+        "    size_t num_classes\n"
+        "        = sizeof(class_specs) / sizeof(class_specs[0]);\n"
+        "    const char* file = __FILE__;\n"
+        "\n"
+        "%s" // Bootstrap calls.
+        "\n"
+        "    cfish_XSBind_bootstrap(aTHX_ num_classes, class_specs,\n"
+        "                           xsub_specs, file);\n"
+        "}\n"
+        "\n"
+        "%s" // Hand-rolled XS.
+        "\n"
+        "%s"; // Footer
+    char *contents
+        = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, includes,
+                          generated_xs, self->boot_class, self->boot_class,
+                          class_specs, xsub_specs, bootstrap_calls,
+                          hand_rolled_xs, self->c_footer);
 
-    FREEMEM(xs_file_contents);
+    // Write out if there have been any changes.
+    CFCUtil_write_if_changed(self->xs_path, contents, strlen(contents));
+
+    FREEMEM(contents);
     FREEMEM(hand_rolled_xs);
+    FREEMEM(bootstrap_calls);
     FREEMEM(xsub_specs);
     FREEMEM(class_specs);
     FREEMEM(generated_xs);
+    FREEMEM(includes);
+    FREEMEM(privacy_syms);
     FREEMEM(ordered);
 }
 
