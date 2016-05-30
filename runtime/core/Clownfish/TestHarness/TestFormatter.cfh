@@ -91,7 +91,7 @@ abstract class Clownfish::TestHarness::TestFormatter inherits Clownfish::Obj {
  * A TestFormatter that produces human-readable output in a custom
  * "Clownfish" format.
  */
-class Clownfish::Test::Formatter::TestFormatterCF
+class Clownfish::TestHarness::TestFormatterCF
     inherits Clownfish::TestHarness::TestFormatter {
 
     inert incremented TestFormatterCF*
@@ -127,7 +127,7 @@ class Clownfish::Test::Formatter::TestFormatterCF
  * A TestFormatter that produces TAP output (Test Anything Protocol).
  * See http://testanything.org/
  */
-class Clownfish::Test::Formatter::TestFormatterTAP
+class Clownfish::TestHarness::TestFormatterTAP
     inherits Clownfish::TestHarness::TestFormatter {
 
     inert incremented TestFormatterTAP*
