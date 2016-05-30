@@ -69,16 +69,11 @@ sub bind_test {
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish   PACKAGE = Clownfish::Test
 
-bool
-run_tests(class_name)
-    cfish_String *class_name;
+SV*
+create_test_suite()
 CODE:
-    cfish_TestFormatter *formatter
-        = (cfish_TestFormatter*)cfish_TestFormatterTAP_new();
     cfish_TestSuite *suite = testcfish_Test_create_test_suite();
-    RETVAL = CFISH_TestSuite_Run_Batch(suite, class_name, formatter);
-    CFISH_DECREF(formatter);
-    CFISH_DECREF(suite);
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(suite);
 OUTPUT: RETVAL
 
 void

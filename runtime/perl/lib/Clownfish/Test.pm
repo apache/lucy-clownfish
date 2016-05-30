@@ -18,6 +18,17 @@ use Clownfish;
 our $VERSION = '0.005000';
 $VERSION = eval $VERSION;
 
+sub run_tests {
+    my $class_name = shift;
+    my $formatter  = Clownfish::TestHarness::TestFormatterTAP->new();
+    my $suite      = Clownfish::Test::create_test_suite();
+
+    return $suite->run_batch(
+        class_name => "Clownfish::Test::TestClass",
+        formatter  => $formatter,
+    );
+}
+
 1;
 
 __END__
