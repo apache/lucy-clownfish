@@ -631,6 +631,13 @@ CFCPerl_write_bindings(CFCPerl *self) {
     }
     generated_xs = CFCUtil_cat(generated_xs, "\n", NULL);
 
+    generated_xs = CFCUtil_cat(generated_xs,
+        "#ifndef XS_INTERNAL\n"
+        "  #define XS_INTERNAL XS\n"
+        "#endif\n"
+        "\n",
+        NULL);
+
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
         if (CFCClass_included(klass)) { continue; }

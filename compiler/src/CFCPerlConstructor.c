@@ -142,8 +142,8 @@ CFCPerlConstructor_xsub_def(CFCPerlConstructor *self, CFCClass *klass) {
     }
 
     const char pattern[] =
-        "XS(%s);\n"
-        "XS(%s) {\n"
+        "XS_INTERNAL(%s);\n"
+        "XS_INTERNAL(%s) {\n"
         "    dXSARGS;\n"
         "%s" // param_specs
         "%s" // locs_decl
