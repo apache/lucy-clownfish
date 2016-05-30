@@ -1972,10 +1972,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-write_boot(self)
+write_host_code(self)
     CFCPerl *self;
 PPCODE:
-    CFCPerl_write_boot(self);
+    CFCPerl_write_host_code(self);
 
 void
 write_hostdefs(self)
@@ -1988,12 +1988,6 @@ write_bindings(self)
     CFCPerl *self;
 PPCODE:
     CFCPerl_write_bindings(self);
-
-void
-write_callbacks(self)
-    CFCPerl *self;
-PPCODE:
-    CFCPerl_write_callbacks(self);
 
 void
 write_xs_typemap(self)

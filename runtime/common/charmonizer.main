@@ -300,11 +300,10 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     }
     else if (chaz_CLI_defined(cli, "enable-perl")) {
         static const char *perl_autogen_src_files[] = {
-            "callbacks",
-            "cfish_boot",
             "cfish_parcel",
-            "testcfish_boot",
+            "cfish_perl",
             "testcfish_parcel",
+            "testcfish_perl",
             NULL
         };
         self->host_src_dir = "xs";
