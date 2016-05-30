@@ -72,12 +72,29 @@ CFCPerlClass_new(CFCParcel *parcel, const char *class_name) {
 CFCPerlClass*
 CFCPerlClass_init(CFCPerlClass *self, CFCParcel *parcel,
                   const char *class_name) {
-    CFCUTIL_NULL_CHECK(parcel);
     CFCUTIL_NULL_CHECK(class_name);
-    self->parcel = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
-    self->class_name = CFCUtil_strdup(class_name);
+
     // Client may be NULL, since fetch_singleton() does not always succeed.
     CFCClass *client = CFCClass_fetch_singleton(class_name);
+    if (client == NULL) {
+        if (parcel == NULL) {
+            CFCUtil_die("Missing parcel for class %s", class_name);
+        }
+    }
+    else {
+        CFCParcel *client_parcel = CFCClass_get_parcel(client);
+
+        if (parcel == NULL) {
+            parcel = client_parcel;
+        }
+        else if (client_parcel != parcel) {
+            CFCUtil_die("Wrong parcel %s for class %s",
+                        CFCParcel_get_name(parcel), class_name);
+        }
+    }
+
+    self->parcel = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
+    self->class_name = CFCUtil_strdup(class_name);
     self->client = (CFCClass*)CFCBase_incref((CFCBase*)client);
     self->pod_spec          = NULL;
     self->xs_code           = NULL;
@@ -516,4 +533,8 @@ CFCPerlClass_method_metadata_code(CFCPerlClass *self) {
     return code;
 }
 
+CFCParcel*
+CFCPerlClass_get_parcel(CFCPerlClass *self) {
+    return self->parcel;
+}
 

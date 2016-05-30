@@ -102,7 +102,6 @@ END_XS_CODE
 
 sub bind_test_host {
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "TestClownfish",
         class_name => "Clownfish::Test::TestHost",
     );
     $binding->bind_method(
@@ -148,7 +147,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Blob",
     );
     $binding->set_pod_spec($pod_spec);
@@ -202,7 +200,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Boolean",
     );
     $binding->set_pod_spec($pod_spec);
@@ -247,7 +244,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::ByteBuf",
     );
     $binding->set_pod_spec($pod_spec);
@@ -269,7 +265,6 @@ END_SYNOPSIS
     $pod_spec->add_constructor();
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::CharBuf",
     );
     $binding->set_pod_spec($pod_spec);
@@ -312,7 +307,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::String",
     );
     $binding->set_pod_spec($pod_spec);
@@ -410,7 +404,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::StringIterator",
     );
     $binding->set_pod_spec($pod_spec);
@@ -459,7 +452,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Err",
     );
     $binding->bind_constructor( alias => '_new' );
@@ -519,7 +511,6 @@ PPCODE:
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Hash",
     );
     $binding->set_pod_spec($pod_spec);
@@ -562,7 +553,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::HashIterator",
     );
     $binding->set_pod_spec($pod_spec);
@@ -602,7 +592,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Float",
     );
     $binding->set_pod_spec($pod_spec);
@@ -642,7 +631,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Integer",
     );
     $binding->set_pod_spec($pod_spec);
@@ -801,7 +789,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Obj",
     );
     $binding->bind_method(
@@ -879,7 +866,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Vector",
     );
     $binding->set_pod_spec($pod_spec);
@@ -949,7 +935,6 @@ OUTPUT: RETVAL
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Class",
     );
     $binding->set_pod_spec($pod_spec);
@@ -1051,7 +1036,6 @@ PPCODE:
 END_XS_CODE
 
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-        parcel     => "Clownfish",
         class_name => "Clownfish::Util::StringHelper",
     );
     $binding->append_xs($xs_code);

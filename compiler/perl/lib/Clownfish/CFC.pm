@@ -747,8 +747,10 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
     sub new {
         my ( $either, %args ) = @_;
         verify_args( \%new_PARAMS, %args ) or confess $@;
-        $args{parcel}
-            = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
+        if ( exists( $args{parcel} ) ) {
+            $args{parcel}
+                = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
+        }
         return _new( @args{qw( parcel class_name )} );
     }
 

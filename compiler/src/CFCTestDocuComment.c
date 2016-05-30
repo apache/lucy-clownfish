@@ -251,7 +251,7 @@ S_test_generator(CFCTest *test) {
         "<p>Paragraph after list</p>\n";
     STR_EQ(test, html, expected_html, "create HTML");
 
-    CFCPerlClass *perl_class = CFCPerlClass_new(parcel, "Neato::Object");
+    CFCPerlClass *perl_class = CFCPerlClass_new(NULL, "Neato::Object");
     CFCPerlPod *perl_pod = CFCPerlPod_new();
     CFCPerlClass_set_pod_spec(perl_class, perl_pod);
     char *pod = CFCPerlClass_create_pod(perl_class);

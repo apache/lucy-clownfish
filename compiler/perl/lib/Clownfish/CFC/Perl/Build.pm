@@ -616,7 +616,6 @@ For example, the file C<buildlib/My/Module/Binding.pm> could look like:
         my ($class, $hierarchy) = @_;
 
         my $binding = Clownfish::CFC::Binding::Perl::Class->new(
-            parcel     => 'MyModule',
             class_name => 'My::Module::Class',
         );
         Clownfish::CFC::Binding::Perl::Class->register($binding);
