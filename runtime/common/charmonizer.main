@@ -457,7 +457,7 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
     chaz_MakeRule *rule;
 
     const char *dir_sep  = chaz_OS_dir_sep();
-    const char *exe_ext  = chaz_OS_exe_ext();
+    const char *exe_ext  = chaz_CC_exe_ext();
 
     char *cfc_dir;
     char *cfc_exe;
@@ -494,7 +494,7 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
 static void
 cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     const char *dir_sep  = chaz_OS_dir_sep();
-    const char *exe_ext  = chaz_OS_exe_ext();
+    const char *exe_ext  = chaz_CC_exe_ext();
 
     chaz_CFlags   *test_cflags;
     chaz_MakeRule *rule;
@@ -522,7 +522,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     }
 
     rule = chaz_MakeFile_add_rule(self->makefile, "test", test_cfish_exe);
-    if (strcmp(chaz_OS_shared_lib_ext(), ".so") == 0) {
+    if (chaz_CC_binary_format() == CHAZ_CC_BINFMT_ELF) {
         test_command = chaz_Util_join(" ", "LD_LIBRARY_PATH=.", test_cfish_exe,
                                       NULL);
     }
@@ -534,7 +534,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     if (chaz_OS_shell_type() == CHAZ_OS_POSIX) {
         rule = chaz_MakeFile_add_rule(self->makefile, "valgrind",
                                       test_cfish_exe);
-        if (strcmp(chaz_OS_shared_lib_ext(), ".so") == 0) {
+        if (chaz_CC_binary_format() == CHAZ_CC_BINFMT_ELF) {
             valgrind_command
                 = chaz_Util_join(" ", "LD_LIBRARY_PATH=.",
                                  "CLOWNFISH_VALGRIND=1", "valgrind",

@@ -146,7 +146,7 @@ S_write_makefile(struct chaz_CLI *cli) {
 
     const char *base_dir = "..";
     const char *dir_sep  = chaz_OS_dir_sep();
-    const char *exe_ext  = chaz_OS_exe_ext();
+    const char *exe_ext  = chaz_CC_exe_ext();
     const char *obj_ext  = chaz_CC_obj_ext();
 
     char *lemon_dir    = chaz_Util_join(dir_sep, base_dir, "..", "lemon",
