@@ -53,7 +53,6 @@ struct CFCPerl {
     char *pod_header;
     char *pod_footer;
     char *xs_path;
-    char *boot_func;
 };
 
 // Modify a string in place, swapping out "::" for the supplied character.
@@ -65,9 +64,6 @@ S_write_class_pod(CFCPerl *self);
 
 static CFCPerlPodFile*
 S_write_standalone_pod(CFCPerl *self);
-
-static void
-S_write_callbacks_c(CFCPerl *self);
 
 static const CFCMeta CFCPERL_META = {
     "Clownfish::CFC::Binding::Perl",
@@ -105,14 +101,6 @@ CFCPerl_init(CFCPerl *self, CFCHierarchy *hierarchy, const char *lib_dir,
                                     boot_class);
     S_replace_double_colons(self->xs_path, CHY_DIR_SEP_CHAR);
 
-    // Derive the name of the bootstrap function.
-    self->boot_func = CFCUtil_sprintf("cfish_%s_bootstrap", boot_class);
-    for (int i = 0; self->boot_func[i] != 0; i++) {
-        if (!CFCUtil_isalnum(self->boot_func[i])) {
-            self->boot_func[i] = '_';
-        }
-    }
-
     return self;
 }
 
@@ -128,7 +116,6 @@ CFCPerl_destroy(CFCPerl *self) {
     FREEMEM(self->pod_header);
     FREEMEM(self->pod_footer);
     FREEMEM(self->xs_path);
-    FREEMEM(self->boot_func);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -275,14 +262,11 @@ S_write_standalone_pod(CFCPerl *self) {
 }
 
 static void
-S_write_boot_h(CFCPerl *self) {
-    char *guard = CFCUtil_sprintf("%s_BOOT", self->boot_class);
-    S_replace_double_colons(guard, '_');
-    for (char *ptr = guard; *ptr != '\0'; ptr++) {
-        if (CFCUtil_isalpha(*ptr)) {
-            *ptr = CFCUtil_toupper(*ptr);
-        }
-    }
+S_write_host_h(CFCPerl *self, CFCParcel *parcel) {
+    const char *prefix = CFCParcel_get_prefix(parcel);
+    const char *PREFIX = CFCParcel_get_PREFIX(parcel);
+
+    char *guard = CFCUtil_sprintf("H_%sBOOT", PREFIX);
 
     const char pattern[] = 
         "%s\n"
@@ -295,7 +279,7 @@ S_write_boot_h(CFCPerl *self) {
         "#endif\n"
         "\n"
         "void\n"
-        "%s();\n"
+        "%sbootstrap_perl(void);\n"
         "\n"
         "#ifdef __cplusplus\n"
         "}\n"
@@ -305,47 +289,53 @@ S_write_boot_h(CFCPerl *self) {
         "\n"
         "%s\n";
     char *content
-        = CFCUtil_sprintf(pattern, self->c_header, guard, guard,
-                          self->boot_func, guard, self->c_footer);
+        = CFCUtil_sprintf(pattern, self->c_header, guard, guard, prefix, guard,
+                          self->c_footer);
 
     const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
-    char *boot_h_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "boot.h", inc_dest);
-    CFCUtil_write_file(boot_h_path, content, strlen(content));
-    FREEMEM(boot_h_path);
+    char *host_h_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%sperl.h", inc_dest,
+                                        prefix);
+    CFCUtil_write_file(host_h_path, content, strlen(content));
+    FREEMEM(host_h_path);
 
     FREEMEM(content);
     FREEMEM(guard);
 }
 
 static void
-S_write_boot_c(CFCPerl *self) {
-    CFCClass  **ordered   = CFCHierarchy_ordered_classes(self->hierarchy);
-    CFCParcel **parcels   = CFCParcel_all_parcels();
-    char *pound_includes  = CFCUtil_strdup("");
-    char *bootstrap_code  = CFCUtil_strdup("");
-    char *alias_adds      = CFCUtil_strdup("");
-    char *isa_pushes      = CFCUtil_strdup("");
-
-    for (size_t i = 0; parcels[i]; ++i) {
-        CFCParcel *parcel = parcels[i];
-
-        if (!CFCParcel_included(parcel)) {
-            const char *prefix = CFCParcel_get_prefix(parcel);
-            pound_includes = CFCUtil_cat(pound_includes, "#include \"", prefix,
-                                         "parcel.h\"\n", NULL);
-            bootstrap_code = CFCUtil_cat(bootstrap_code, "    ", prefix,
-                                         "bootstrap_parcel();\n", NULL);
-        }
-    }
+S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
+    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    const char  *prefix     = CFCParcel_get_prefix(parcel);
+    char        *includes   = CFCUtil_strdup("");
+    char        *cb_defs    = CFCUtil_strdup("");
+    char        *alias_adds = CFCUtil_strdup("");
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
+        if (CFCClass_inert(klass)) { continue; }
+        const char *class_prefix = CFCClass_get_prefix(klass);
+        if (strcmp(class_prefix, prefix) != 0) { continue; }
 
         const char *class_name = CFCClass_get_name(klass);
 
-        // Add aliases for selected KinoSearch classes which allow old indexes
-        // to be read.
+        const char *include_h = CFCClass_include_h(klass);
+        includes = CFCUtil_cat(includes, "#include \"", include_h,
+                               "\"\n", NULL);
+
+        // Callbacks.
+        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
+        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
+            CFCMethod *method = fresh_methods[meth_num];
+
+            // Define callback.
+            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
+                char *cb_def = CFCPerlMethod_callback_def(method, klass);
+                cb_defs = CFCUtil_cat(cb_defs, cb_def, "\n", NULL);
+                FREEMEM(cb_def);
+            }
+        }
+
+        // Add class aliases.
         CFCPerlClass *class_binding = CFCPerlClass_singleton(class_name);
         if (class_binding) {
             const char *class_var = CFCClass_full_class_var(klass);
@@ -368,26 +358,17 @@ S_write_boot_c(CFCPerl *self) {
             alias_adds = CFCUtil_cat(alias_adds, metadata_code, NULL);
             FREEMEM(metadata_code);
         }
-
-        CFCClass *parent = CFCClass_get_parent(klass);
-        if (parent) {
-            const char *parent_class_name = CFCClass_get_name(parent);
-            isa_pushes
-                = CFCUtil_cat(isa_pushes, "    isa = get_av(\"",
-                              class_name, "::ISA\", 1);\n", NULL);
-            isa_pushes
-                = CFCUtil_cat(isa_pushes, "    av_push(isa, newSVpv(\"", 
-                              parent_class_name, "\", 0));\n", NULL);
-        }
     }
 
     const char pattern[] =
-        "%s\n"
+        "%s"
         "\n"
-        "#include \"boot.h\"\n"
-        "#include \"Clownfish/String.h\"\n"
+        "#include \"%sperl.h\"\n"
+        "#include \"XSBind.h\"\n"
         "#include \"Clownfish/Class.h\"\n"
-        "%s\n"
+        "#include \"Clownfish/Err.h\"\n"
+        "#include \"Clownfish/Obj.h\"\n"
+        "%s"
         "\n"
         "/* Avoid conflicts with Clownfish bool type. */\n"
         "#define HAS_BOOL\n"
@@ -395,251 +376,6 @@ S_write_boot_c(CFCPerl *self) {
         "#include \"EXTERN.h\"\n"
         "#include \"perl.h\"\n"
         "#include \"XSUB.h\"\n"
-        "\n"
-        "void\n"
-        "%s() {\n"
-        "    dTHX;\n"
-        "\n"
-        "%s"
-        "\n"
-        "%s"
-        "\n"
-        "    AV *isa;\n"
-        "%s"
-        "}\n"
-        "\n"
-        "%s\n"
-        "\n";
-    char *content
-        = CFCUtil_sprintf(pattern, self->c_header, pound_includes,
-                          self->boot_func, bootstrap_code, alias_adds,
-                          isa_pushes, self->c_footer);
-
-    const char *src_dest = CFCHierarchy_get_source_dest(self->hierarchy);
-    char *boot_c_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "boot.c", src_dest);
-    CFCUtil_write_file(boot_c_path, content, strlen(content));
-    FREEMEM(boot_c_path);
-
-    FREEMEM(content);
-    FREEMEM(isa_pushes);
-    FREEMEM(alias_adds);
-    FREEMEM(bootstrap_code);
-    FREEMEM(pound_includes);
-    FREEMEM(ordered);
-}
-
-void
-CFCPerl_write_hostdefs(CFCPerl *self) {
-    const char pattern[] =
-        "%s\n"
-        "\n"
-        "#ifndef H_CFISH_HOSTDEFS\n"
-        "#define H_CFISH_HOSTDEFS 1\n"
-        "\n"
-        "/* Refcount / host object */\n"
-        "typedef union {\n"
-        "    size_t  count;\n"
-        "    void   *host_obj;\n"
-        "} cfish_ref_t;\n"
-        "\n"
-        "#define CFISH_OBJ_HEAD\\\n"
-        "   cfish_ref_t ref;\n"
-        "\n"
-        "#endif /* H_CFISH_HOSTDEFS */\n"
-        "\n"
-        "%s\n";
-    char *content
-        = CFCUtil_sprintf(pattern, self->c_header, self->c_footer);
-
-    // Unlink then write file.
-    const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
-    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "cfish_hostdefs.h",
-                                     inc_dest);
-    remove(filepath);
-    CFCUtil_write_file(filepath, content, strlen(content));
-    FREEMEM(filepath);
-
-    FREEMEM(content);
-}
-
-void
-CFCPerl_write_boot(CFCPerl *self) {
-    S_write_boot_h(self);
-    S_write_boot_c(self);
-}
-
-static char*
-S_xs_file_contents(CFCPerl *self, const char *generated_xs,
-                   const char *xs_init, const char *hand_rolled_xs) {
-    const char pattern[] =
-        "%s"
-        "\n"
-        "%s\n"
-        "\n"
-        "MODULE = %s   PACKAGE = %s\n"
-        "\n"
-        "BOOT:\n"
-        "{\n"
-        "    const char* file = __FILE__;\n"
-        "    %s();\n"
-        "%s"
-        "}\n"
-        "\n"
-        "%s\n"
-        "\n"
-        "%s";
-    char *contents
-        = CFCUtil_sprintf(pattern, self->c_header, generated_xs,
-                          self->boot_class, self->boot_class, self->boot_func,
-                          xs_init, hand_rolled_xs, self->c_footer);
-
-    return contents;
-}
-
-static char*
-S_add_xs_init(char *xs_init, CFCPerlSub *xsub) {
-    const char *c_name = CFCPerlSub_c_name(xsub);
-    const char *perl_name = CFCPerlSub_perl_name(xsub);
-    xs_init = CFCUtil_cat(xs_init, "    newXS(\"", perl_name, "\", ", c_name,
-                          ", file);\n", NULL);
-    return xs_init;
-}
-
-void
-CFCPerl_write_bindings(CFCPerl *self) {
-    CFCParcel    **parcels  = CFCParcel_all_parcels();
-    CFCClass     **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
-    CFCPerlClass **registry = CFCPerlClass_registry();
-    char *hand_rolled_xs   = CFCUtil_strdup("");
-    char *generated_xs     = CFCUtil_strdup("");
-    char *xs_init          = CFCUtil_strdup("");
-
-    // Bake the parcel privacy defines into the XS, so it can be compiled
-    // without any extra compiler flags.
-    for (size_t i = 0; parcels[i]; ++i) {
-        if (!CFCParcel_included(parcels[i])) {
-            const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
-            generated_xs = CFCUtil_cat(generated_xs, "#define ", privacy_sym,
-                                       "\n", NULL);
-        }
-    }
-    generated_xs = CFCUtil_cat(generated_xs, "\n", NULL);
-
-    // Include XSBind.h and boot.h.
-    generated_xs = CFCUtil_cat(generated_xs, "#include \"XSBind.h\"\n", NULL);
-    generated_xs = CFCUtil_cat(generated_xs, "#include \"boot.h\"\n", NULL);
-
-    // Pound-includes for generated headers.
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
-        const char *include_h = CFCClass_include_h(klass);
-        generated_xs = CFCUtil_cat(generated_xs, "#include \"", include_h,
-                                   "\"\n", NULL);
-    }
-    generated_xs = CFCUtil_cat(generated_xs, "\n", NULL);
-
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
-
-        // Constructors.
-        CFCPerlConstructor **constructors
-            = CFCPerlClass_constructor_bindings(klass);
-        for (size_t j = 0; constructors[j] != NULL; j++) {
-            CFCPerlSub *xsub = (CFCPerlSub*)constructors[j];
-
-            // Add the XSUB function definition.
-            char *xsub_def
-                = CFCPerlConstructor_xsub_def(constructors[j], klass);
-            generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
-                                       NULL);
-            FREEMEM(xsub_def);
-
-            // Add XSUB initialization at boot.
-            xs_init = S_add_xs_init(xs_init, xsub);
-
-            CFCBase_decref((CFCBase*)constructors[j]);
-        }
-        FREEMEM(constructors);
-
-        // Methods.
-        CFCPerlMethod **methods = CFCPerlClass_method_bindings(klass);
-        for (size_t j = 0; methods[j] != NULL; j++) {
-            CFCPerlSub *xsub = (CFCPerlSub*)methods[j];
-
-            // Add the XSUB function definition.
-            char *xsub_def = CFCPerlMethod_xsub_def(methods[j], klass);
-            generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
-                                       NULL);
-            FREEMEM(xsub_def);
-
-            // Add XSUB initialization at boot.
-            xs_init = S_add_xs_init(xs_init, xsub);
-
-            CFCBase_decref((CFCBase*)methods[j]);
-        }
-        FREEMEM(methods);
-    }
-
-    // Hand-rolled XS.
-    for (size_t i = 0; registry[i] != NULL; i++) {
-        const char *xs = CFCPerlClass_get_xs_code(registry[i]);
-        hand_rolled_xs = CFCUtil_cat(hand_rolled_xs, xs, "\n", NULL);
-    }
-
-    // Write out if there have been any changes.
-    char *xs_file_contents
-        = S_xs_file_contents(self, generated_xs, xs_init, hand_rolled_xs);
-    CFCUtil_write_if_changed(self->xs_path, xs_file_contents,
-                             strlen(xs_file_contents));
-
-    FREEMEM(xs_file_contents);
-    FREEMEM(hand_rolled_xs);
-    FREEMEM(xs_init);
-    FREEMEM(generated_xs);
-    FREEMEM(ordered);
-}
-
-void
-CFCPerl_write_callbacks(CFCPerl *self) {
-    S_write_callbacks_c(self);
-}
-
-static void
-S_write_callbacks_c(CFCPerl *self) {
-    CFCClass **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
-    char      *includes = CFCUtil_strdup("");
-    char      *cb_defs  = CFCUtil_strdup("");
-
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || CFCClass_inert(klass)) { continue; }
-
-        const char *include_h = CFCClass_include_h(klass);
-        includes = CFCUtil_cat(includes, "#include \"", include_h,
-                               "\"\n", NULL);
-
-        CFCMethod **fresh_methods = CFCClass_fresh_methods(klass);
-        for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
-            CFCMethod *method = fresh_methods[meth_num];
-
-            // Define callback.
-            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
-                char *cb_def = CFCPerlMethod_callback_def(method, klass);
-                cb_defs = CFCUtil_cat(cb_defs, cb_def, "\n", NULL);
-                FREEMEM(cb_def);
-            }
-        }
-    }
-
-    static const char pattern[] =
-        "%s"
-        "\n"
-        "#include \"XSBind.h\"\n"
-        "#include \"Clownfish/Err.h\"\n"
-        "#include \"Clownfish/Obj.h\"\n"
-        "%s"
         "\n"
         "static void\n"
         "S_finish_callback_void(pTHX_ const char *meth_name) {\n"
@@ -713,22 +449,253 @@ S_write_callbacks_c(CFCPerl *self) {
         "    return retval;\n"
         "}\n"
 	"\n"
-	"%s" // Callback definitions.
-	"%s" // Footer.
-        "\n";
-    char *content = CFCUtil_sprintf(pattern, self->c_header, includes, cb_defs,
-                                    self->c_footer);
+        "%s"
+        "\n"
+        "void\n"
+        "%sbootstrap_perl() {\n"
+        "    dTHX;\n"
+        "    %sbootstrap_parcel();\n"
+        "\n"
+        "%s"
+        "}\n"
+        "\n"
+        "%s";
+    char *content
+        = CFCUtil_sprintf(pattern, self->c_header, prefix, includes, cb_defs,
+                          prefix, prefix, alias_adds, self->c_footer);
 
-    // Write if changed.
     const char *src_dest = CFCHierarchy_get_source_dest(self->hierarchy);
-    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "callbacks.c",
-                                     src_dest);
-    CFCUtil_write_if_changed(filepath, content, strlen(content));
+    char *host_c_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%sperl.c", src_dest,
+                                        prefix);
+    CFCUtil_write_file(host_c_path, content, strlen(content));
+    FREEMEM(host_c_path);
 
-    FREEMEM(filepath);
     FREEMEM(content);
+    FREEMEM(alias_adds);
     FREEMEM(cb_defs);
     FREEMEM(includes);
+    FREEMEM(ordered);
+}
+
+void
+CFCPerl_write_hostdefs(CFCPerl *self) {
+    const char pattern[] =
+        "%s\n"
+        "\n"
+        "#ifndef H_CFISH_HOSTDEFS\n"
+        "#define H_CFISH_HOSTDEFS 1\n"
+        "\n"
+        "/* Refcount / host object */\n"
+        "typedef union {\n"
+        "    size_t  count;\n"
+        "    void   *host_obj;\n"
+        "} cfish_ref_t;\n"
+        "\n"
+        "#define CFISH_OBJ_HEAD\\\n"
+        "   cfish_ref_t ref;\n"
+        "\n"
+        "#endif /* H_CFISH_HOSTDEFS */\n"
+        "\n"
+        "%s\n";
+    char *content
+        = CFCUtil_sprintf(pattern, self->c_header, self->c_footer);
+
+    // Unlink then write file.
+    const char *inc_dest = CFCHierarchy_get_include_dest(self->hierarchy);
+    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "cfish_hostdefs.h",
+                                     inc_dest);
+    remove(filepath);
+    CFCUtil_write_file(filepath, content, strlen(content));
+    FREEMEM(filepath);
+
+    FREEMEM(content);
+}
+
+void
+CFCPerl_write_host_code(CFCPerl *self) {
+    CFCParcel **parcels = CFCParcel_all_parcels();
+
+    for (size_t i = 0; parcels[i]; ++i) {
+        CFCParcel *parcel = parcels[i];
+
+        if (!CFCParcel_included(parcel)) {
+            S_write_host_h(self, parcel);
+            S_write_host_c(self, parcel);
+        }
+    }
+}
+
+static char*
+S_add_xsub_spec(char *xsub_specs, CFCPerlSub *xsub) {
+    const char *c_name = CFCPerlSub_c_name(xsub);
+    const char *alias = CFCPerlSub_get_alias(xsub);
+    const char *sep = xsub_specs[0] == '\0' ? "" : ",\n";
+    xsub_specs = CFCUtil_cat(xsub_specs, sep, "        { \"", alias, "\", ",
+                             c_name, " }", NULL);
+    return xsub_specs;
+}
+
+void
+CFCPerl_write_bindings(CFCPerl *self) {
+    CFCParcel    **parcels  = CFCParcel_all_parcels();
+    CFCClass     **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCPerlClass **registry = CFCPerlClass_registry();
+    char *privacy_syms    = CFCUtil_strdup("");
+    char *includes        = CFCUtil_strdup("");
+    char *generated_xs    = CFCUtil_strdup("");
+    char *class_specs     = CFCUtil_strdup("");
+    char *xsub_specs      = CFCUtil_strdup("");
+    char *bootstrap_calls = CFCUtil_strdup("");
+    char *hand_rolled_xs  = CFCUtil_strdup("");
+
+    for (size_t i = 0; parcels[i]; ++i) {
+        if (CFCParcel_included(parcels[i])) { continue; }
+
+        // Bake the parcel privacy defines into the XS, so it can be compiled
+        // without any extra compiler flags.
+        const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
+        privacy_syms = CFCUtil_cat(privacy_syms, "#define ", privacy_sym,
+                                   "\n", NULL);
+
+        // Bootstrap calls.
+        const char *prefix = CFCParcel_get_prefix(parcels[i]);
+        includes = CFCUtil_cat(includes, "#include \"", prefix, "perl.h\"\n",
+                               NULL);
+        bootstrap_calls = CFCUtil_cat(bootstrap_calls, "    ", prefix,
+                                      "bootstrap_perl();\n", NULL);
+    }
+
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        if (CFCClass_included(klass)) { continue; }
+
+        // Pound-includes for generated headers.
+        const char *include_h = CFCClass_include_h(klass);
+        includes = CFCUtil_cat(includes, "#include \"", include_h, "\"\n",
+                               NULL);
+
+        if (CFCClass_inert(klass)) { continue; }
+        int num_xsubs = 0;
+
+        // Constructors.
+        CFCPerlConstructor **constructors
+            = CFCPerlClass_constructor_bindings(klass);
+        for (size_t j = 0; constructors[j] != NULL; j++) {
+            CFCPerlSub *xsub = (CFCPerlSub*)constructors[j];
+
+            // Add the XSUB function definition.
+            char *xsub_def
+                = CFCPerlConstructor_xsub_def(constructors[j], klass);
+            generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
+                                       NULL);
+            FREEMEM(xsub_def);
+
+            // Add XSUB initialization at boot.
+            xsub_specs = S_add_xsub_spec(xsub_specs, xsub);
+            num_xsubs += 1;
+
+            CFCBase_decref((CFCBase*)constructors[j]);
+        }
+        FREEMEM(constructors);
+
+        // Methods.
+        CFCPerlMethod **methods = CFCPerlClass_method_bindings(klass);
+        for (size_t j = 0; methods[j] != NULL; j++) {
+            CFCPerlSub *xsub = (CFCPerlSub*)methods[j];
+
+            // Add the XSUB function definition.
+            char *xsub_def = CFCPerlMethod_xsub_def(methods[j], klass);
+            generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
+                                       NULL);
+            FREEMEM(xsub_def);
+
+            // Add XSUB initialization at boot.
+            xsub_specs = S_add_xsub_spec(xsub_specs, xsub);
+            num_xsubs += 1;
+
+            CFCBase_decref((CFCBase*)methods[j]);
+        }
+        FREEMEM(methods);
+
+        // Append XSBind_ClassSpec entry.
+        const char *class_name = CFCClass_get_name(klass);
+        CFCClass *parent = CFCClass_get_parent(klass);
+        char *parent_name;
+        if (parent) {
+            parent_name = CFCUtil_sprintf("\"%s\"", CFCClass_get_name(parent));
+        }
+        else {
+            parent_name = CFCUtil_strdup("NULL");
+        }
+        char *class_spec = CFCUtil_sprintf("{ \"%s\", %s, %d }", class_name,
+                                           parent_name, num_xsubs);
+        const char *sep = class_specs[0] == '\0' ? "" : ",\n";
+        class_specs = CFCUtil_cat(class_specs, sep, "        ", class_spec,
+                                  NULL);
+        FREEMEM(class_spec);
+        FREEMEM(parent_name);
+    }
+
+    // Hand-rolled XS.
+    for (size_t i = 0; registry[i] != NULL; i++) {
+        const char *xs = CFCPerlClass_get_xs_code(registry[i]);
+        hand_rolled_xs = CFCUtil_cat(hand_rolled_xs, xs, "\n", NULL);
+    }
+
+    const char pattern[] =
+        "%s" // Header.
+        "\n"
+        "%s" // Privacy syms.
+        "\n"
+        "#include \"XSBind.h\"\n"
+        "%s" // Includes.
+        "\n"
+        "#ifndef XS_INTERNAL\n"
+        "  #define XS_INTERNAL XS\n"
+        "#endif\n"
+        "\n"
+        "%s" // Generated XS.
+        "\n"
+        "MODULE = %s   PACKAGE = %s\n" // Boot class.
+        "\n"
+        "BOOT:\n"
+        "{\n"
+        "    static const cfish_XSBind_ClassSpec class_specs[] = {\n"
+        "%s\n" // Class specs.
+        "    };\n"
+        "    static const cfish_XSBind_XSubSpec xsub_specs[] = {\n"
+        "%s\n" // XSUB specs.
+        "    };\n"
+        "    size_t num_classes\n"
+        "        = sizeof(class_specs) / sizeof(class_specs[0]);\n"
+        "    const char* file = __FILE__;\n"
+        "\n"
+        "%s" // Bootstrap calls.
+        "\n"
+        "    cfish_XSBind_bootstrap(aTHX_ num_classes, class_specs,\n"
+        "                           xsub_specs, file);\n"
+        "}\n"
+        "\n"
+        "%s" // Hand-rolled XS.
+        "\n"
+        "%s"; // Footer
+    char *contents
+        = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, includes,
+                          generated_xs, self->boot_class, self->boot_class,
+                          class_specs, xsub_specs, bootstrap_calls,
+                          hand_rolled_xs, self->c_footer);
+
+    // Write out if there have been any changes.
+    CFCUtil_write_if_changed(self->xs_path, contents, strlen(contents));
+
+    FREEMEM(contents);
+    FREEMEM(hand_rolled_xs);
+    FREEMEM(bootstrap_calls);
+    FREEMEM(xsub_specs);
+    FREEMEM(class_specs);
+    FREEMEM(generated_xs);
+    FREEMEM(includes);
+    FREEMEM(privacy_syms);
     FREEMEM(ordered);
 }
 

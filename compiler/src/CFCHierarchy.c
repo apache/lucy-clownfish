@@ -263,7 +263,7 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
         const char *path = context.paths[i];
         char *path_part = S_extract_path_part(path, source_dir, ".cfp");
         CFCFileSpec *file_spec
-            = CFCFileSpec_new(source_dir, path_part, is_included);
+            = CFCFileSpec_new(source_dir, path_part, ".cfp", is_included);
         CFCParcel *parcel = CFCParcel_new_from_file(path, file_spec);
         const char *name = CFCParcel_get_name(parcel);
         CFCParcel *existing = CFCParcel_fetch(name);
@@ -333,7 +333,7 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
             continue;
         }
 
-        CFCFileSpec *file_spec = CFCFileSpec_new(source_dir, path_part,
+        CFCFileSpec *file_spec = CFCFileSpec_new(source_dir, path_part, ".cfh",
                                                  is_included);
 
         // Slurp and parse file.

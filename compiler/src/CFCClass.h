@@ -88,15 +88,13 @@ CFCClass_destroy(CFCClass *self);
 
 /** Retrieve a Class, if one has already been created.
  *
- * @param A Clownfish::CFC::Model::Parcel.
  * @param class_name The name of the Class.
  */
 CFCClass*
-CFCClass_fetch_singleton(struct CFCParcel *parcel, const char *class_name);
+CFCClass_fetch_singleton(const char *class_name);
 
 /** Retrieve a Class by its struct sym.
  *
- * @param A Clownfish::CFC::Model::Parcel.
  * @param full_struct_sym The Class's full struct sym.
  */
 CFCClass*

@@ -45,10 +45,7 @@ my $foo = Clownfish::CFC::Model::Class->create(%foo_create_args);
 $foo->add_function($tread_water);
 $foo->add_member_var($thing);
 $foo->add_inert_var($widget);
-my $should_be_foo = Clownfish::CFC::Model::Class->fetch_singleton(
-    parcel     => 'Neato',
-    class_name => 'Foo',
-);
+my $should_be_foo = Clownfish::CFC::Model::Class->fetch_singleton('Foo');
 is( $$foo, $$should_be_foo, "fetch_singleton" );
 
 eval { Clownfish::CFC::Model::Class->create(%foo_create_args) };
@@ -87,6 +84,7 @@ is( $foo_jr->get_nickname, "FooJr",
 my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     source_dir  => '.',
     path_part   => 'Foo/FooJr',
+    ext         => '.cfh',
 );
 my $final_foo = Clownfish::CFC::Model::Class->create(
     parcel            => 'Neato',

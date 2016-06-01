@@ -128,22 +128,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
         exposure          => 'parcel',
     );
 
-    our %fetch_singleton_PARAMS = (
-        parcel     => undef,
-        class_name => undef,
-    );
-
-    sub fetch_singleton {
-        my ( undef, %args ) = @_;
-        verify_args( \%fetch_singleton_PARAMS, %args ) or confess $@;
-        # Maybe prepend parcel prefix.
-        my $parcel = $args{parcel};
-        if ( defined $parcel ) {
-            $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel);
-        }
-        return _fetch_singleton( $parcel, $args{class_name} );
-    }
-
     sub new {
         confess(
             "The constructor for Clownfish::CFC::Model::Class is create()");
@@ -197,14 +181,15 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
     our %new_PARAMS = (
         source_dir  => undef,
         path_part   => undef,
-        is_included => 0,
+        ext         => undef,
+        is_included => undef,
     );
 
     sub new {
         my ( $either, %args ) = @_;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
         verify_args( \%new_PARAMS, %args ) or confess $@;
-        return _new( @args{ qw( source_dir path_part is_included ) } );
+        return _new( @args{ qw( source_dir path_part ext is_included ) } );
     }
 }
 
@@ -762,8 +747,10 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
     sub new {
         my ( $either, %args ) = @_;
         verify_args( \%new_PARAMS, %args ) or confess $@;
-        $args{parcel}
-            = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
+        if ( exists( $args{parcel} ) ) {
+            $args{parcel}
+                = Clownfish::CFC::Model::Parcel->acquire( $args{parcel} );
+        }
         return _new( @args{qw( parcel class_name )} );
     }
 

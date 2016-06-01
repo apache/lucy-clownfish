@@ -167,6 +167,11 @@ CFCPerlClass_get_class_aliases(CFCPerlClass *self);
 char*
 CFCPerlClass_method_metadata_code(CFCPerlClass *self);
 
+/** Accessor for parcel.
+ */
+struct CFCParcel*
+CFCPerlClass_get_parcel(CFCPerlClass *self);
+
 #ifdef __cplusplus
 }
 #endif

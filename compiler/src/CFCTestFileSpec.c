@@ -32,7 +32,7 @@ static void
 S_run_tests(CFCTest *test) {
     {
         CFCFileSpec *file_spec
-            = CFCFileSpec_new("Clownfish/_include", "Stuff/Thing", 0);
+            = CFCFileSpec_new("Clownfish/_include", "Stuff/Thing", ".cfh", 0);
         STR_EQ(test, CFCFileSpec_get_source_dir(file_spec),
                "Clownfish/_include", "get_source_dir");
         STR_EQ(test, CFCFileSpec_get_path_part(file_spec),
@@ -44,7 +44,7 @@ S_run_tests(CFCTest *test) {
 
     {
         CFCFileSpec *file_spec
-            = CFCFileSpec_new("Clownfish/_include", "Stuff/Thing", 1);
+            = CFCFileSpec_new("Clownfish/_include", "Stuff/Thing", ".cfh", 1);
         OK(test, CFCFileSpec_included(file_spec), "included");
 
         CFCBase_decref((CFCBase*)file_spec);

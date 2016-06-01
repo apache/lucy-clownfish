@@ -39,6 +39,7 @@ my $path_part = catdir(qw( Stuff Thing ));
 my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     source_dir  => '.',
     path_part   => $path_part,
+    ext         => '.cfh',
 );
 
 {

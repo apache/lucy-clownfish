@@ -44,6 +44,17 @@
 extern "C" {
 #endif
 
+typedef struct cfish_XSBind_ClassSpec {
+    const char *name;
+    const char *parent_name;
+    uint32_t    num_methods;
+} cfish_XSBind_ClassSpec;
+
+typedef struct cfish_XSBind_XSubSpec {
+    const char *alias;
+    XSUBADDR_t  xsub;
+} cfish_XSBind_XSubSpec;
+
 typedef struct cfish_XSBind_ParamSpec {
     const char *label;
     uint16_t    label_len;
@@ -203,6 +214,14 @@ cfish_XSBind_invalid_args_error(pTHX_ CV *cv, const char *param_list);
 CFISH_VISIBLE void
 cfish_XSBind_undef_arg_error(pTHX_ const char *label);
 
+/** Initialize ISA relations and XSUBs.
+ */
+CFISH_VISIBLE void
+cfish_XSBind_bootstrap(pTHX_ size_t num_classes,
+                       const cfish_XSBind_ClassSpec *class_specs,
+                       const cfish_XSBind_XSubSpec *xsub_specs,
+                       const char *file);
+
 #define XSBIND_PARAM(key, required) \
     { key, (int16_t)sizeof("" key) - 1, (char)required }
 
@@ -212,6 +231,8 @@ cfish_XSBind_undef_arg_error(pTHX_ const char *label);
  * full symbols nevertheless in case someone else defines e.g. a function
  * named "XSBind_sv_defined".)
  */
+#define XSBind_ClassSpec               cfish_XSBind_ClassSpec
+#define XSBind_XSubSpec                cfish_XSBind_XSubSpec
 #define XSBind_ParamSpec               cfish_XSBind_ParamSpec
 #define XSBind_new_blank_obj           cfish_XSBind_new_blank_obj
 #define XSBind_foster_obj              cfish_XSBind_foster_obj
@@ -230,6 +251,7 @@ cfish_XSBind_undef_arg_error(pTHX_ const char *label);
 #define XSBind_arg_to_cfish_nullable   cfish_XSBind_arg_to_cfish_nullable
 #define XSBind_invalid_args_error      cfish_XSBind_invalid_args_error
 #define XSBind_undef_arg_error         cfish_XSBind_undef_arg_error
+#define XSBind_bootstrap               cfish_XSBind_bootstrap
 
 /* Strip the prefix from some common ClownFish symbols where we know there's
  * no conflict with Perl.  It's a little inconsistent to do this rather than

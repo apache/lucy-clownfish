@@ -164,11 +164,12 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-_fetch_singleton(parcel, class_name)
-    CFCParcel *parcel;
+fetch_singleton(unused, class_name)
+    SV *unused;
     const char *class_name;
 CODE:
-    CFCClass *klass = CFCClass_fetch_singleton(parcel, class_name);
+    CHY_UNUSED_VAR(unused);
+    CFCClass *klass = CFCClass_fetch_singleton(class_name);
     RETVAL = S_cfcbase_to_perlref(klass);
 OUTPUT: RETVAL
 
@@ -586,12 +587,14 @@ OUTPUT: RETVAL
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::FileSpec
 
 SV*
-_new(source_dir, path_part, is_included)
+_new(source_dir, path_part, ext, is_included)
     const char *source_dir;
     const char *path_part;
+    const char *ext;
     bool is_included;
 CODE:
-    CFCFileSpec *self = CFCFileSpec_new(source_dir, path_part, is_included);
+    CFCFileSpec *self = CFCFileSpec_new(source_dir, path_part, ext,
+                                        is_included);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
@@ -746,6 +749,12 @@ CODE:
     int modified = items > 1 ? !!SvTRUE(ST(1)) : 0;
     RETVAL = CFCHierarchy_propagate_modified(self, modified);
 OUTPUT: RETVAL
+
+void
+write_log(self)
+    CFCHierarchy *self;
+PPCODE:
+    CFCHierarchy_write_log(self);
 
 void
 _set_or_get(self, ...)
@@ -1964,10 +1973,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-write_boot(self)
+write_host_code(self)
     CFCPerl *self;
 PPCODE:
-    CFCPerl_write_boot(self);
+    CFCPerl_write_host_code(self);
 
 void
 write_hostdefs(self)
@@ -1980,12 +1989,6 @@ write_bindings(self)
     CFCPerl *self;
 PPCODE:
     CFCPerl_write_bindings(self);
-
-void
-write_callbacks(self)
-    CFCPerl *self;
-PPCODE:
-    CFCPerl_write_callbacks(self);
 
 void
 write_xs_typemap(self)

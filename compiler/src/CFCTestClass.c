@@ -68,7 +68,7 @@ S_run_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
 
     CFCParcel *neato = CFCTest_parse_parcel(test, parser, "parcel Neato;");
-    CFCFileSpec *file_spec = CFCFileSpec_new(".", "Foo/FooJr", 0);
+    CFCFileSpec *file_spec = CFCFileSpec_new(".", "Foo/FooJr", ".cfh", 0);
     CFCClass *thing_class
         = CFCTest_parse_class(test, parser, "class Thing {}");
     CFCClass *widget_class
@@ -105,7 +105,7 @@ S_run_tests(CFCTest *test) {
     CFCClass_add_inert_var(foo, widget);
 
     {
-        CFCClass *should_be_foo = CFCClass_fetch_singleton(neato, "Foo");
+        CFCClass *should_be_foo = CFCClass_fetch_singleton("Foo");
         OK(test, should_be_foo == foo, "fetch_singleton");
     }
 

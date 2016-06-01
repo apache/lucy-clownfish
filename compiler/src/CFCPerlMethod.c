@@ -263,8 +263,8 @@ S_xsub_def_labeled_params(CFCPerlMethod *self, CFCClass *klass) {
     }
 
     char pattern[] =
-        "XS(%s);\n"
-        "XS(%s) {\n"
+        "XS_INTERNAL(%s);\n"
+        "XS_INTERNAL(%s) {\n"
         "    dXSARGS;\n"
         "%s"        // param_specs
         "    int32_t locations[%d];\n"
@@ -361,8 +361,8 @@ S_xsub_def_positional_args(CFCPerlMethod *self, CFCClass *klass) {
     }
 
     char pattern[] =
-        "XS(%s);\n"
-        "XS(%s) {\n"
+        "XS_INTERNAL(%s);\n"
+        "XS_INTERNAL(%s) {\n"
         "    dXSARGS;\n"
         "%s" // working_sv
         "%s" // arg_decls
