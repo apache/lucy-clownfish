@@ -16,6 +16,9 @@
 environment:
   matrix:
     - CLOWNFISH_HOST: c
+      BUILD_ENV: msys2
+      MSYSTEM: MINGW64
+    - CLOWNFISH_HOST: c
       BUILD_ENV: mingw32
     - CLOWNFISH_HOST: c
       BUILD_ENV: msvc

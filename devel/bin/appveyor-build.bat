@@ -25,6 +25,7 @@ exit /b 1
 
 if "%BUILD_ENV%" == "msvc" goto test_msvc
 if "%BUILD_ENV%" == "mingw32" goto test_mingw32
+if "%BUILD_ENV%" == "msys2" goto test_msys2
 
 echo unknown BUILD_ENV: %BUILD_ENV%
 exit /b 1
@@ -58,6 +59,12 @@ call configure && mingw32-make && mingw32-make test || exit /b
 
 cd ..\..\runtime\c
 call configure && mingw32-make && mingw32-make test
+
+exit /b
+
+:test_msys2
+
+C:\msys64\usr\bin\sh -lc "cd /c/projects/lucy-clownfish && devel/bin/travis-test.sh"
 
 exit /b
 
