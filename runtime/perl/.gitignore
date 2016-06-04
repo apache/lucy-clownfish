@@ -4,6 +4,7 @@
 /Charmony.pm
 /MYMETA.json
 /MYMETA.yml
+/Makefile
 /_build/
 /autogen/
 /blib/

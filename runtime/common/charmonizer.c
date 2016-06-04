@@ -8323,6 +8323,8 @@ chaz_VariadicMacros_run(void) {
 
 typedef struct cfish_MakeFile {
     chaz_MakeFile *makefile;
+    chaz_MakeVar  *obj_var;
+    chaz_MakeVar  *cfh_var;
     chaz_CLI      *cli;
 
     /* Directories and files. */
@@ -8332,7 +8334,7 @@ typedef struct cfish_MakeFile {
     char        *autogen_src_dir;
     char        *autogen_inc_dir;
     char        *autogen_target;
-    const char **autogen_src_files;
+    char        *core_objects;
 
     /* Libraries. */
     chaz_Lib *shared_lib;
@@ -8340,10 +8342,6 @@ typedef struct cfish_MakeFile {
     char     *shared_lib_filename;
     char     *static_lib_filename;
 } cfish_MakeFile;
-
-typedef struct SourceFileContext {
-    chaz_MakeVar *var;
-} SourceFileContext;
 
 static const char cfish_version[]       = "0.5.0";
 static const char cfish_major_version[] = "0.5";
@@ -8371,6 +8369,9 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self);
 
 static void
 S_c_file_callback(const char *dir, char *file, void *context);
+
+static void
+S_add_core_object(cfish_MakeFile *self, const char *obj_file);
 
 static void
 S_cfh_file_callback(const char *dir, char *file, void *context);
@@ -8468,6 +8469,7 @@ int main(int argc, const char **argv) {
                                 mf->shared_lib_filename);
         chaz_ConfWriter_add_def("STATIC_LIB_FILENAME",
                                 mf->static_lib_filename);
+        chaz_ConfWriter_add_def("CORE_OBJECTS", mf->core_objects);
         cfish_MakeFile_destroy(mf);
     }
 
@@ -8552,6 +8554,9 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     cfish_MakeFile *self = malloc(sizeof(cfish_MakeFile));
 
     self->makefile = chaz_MakeFile_new();
+    self->obj_var  = chaz_MakeFile_add_var(self->makefile, "CLOWNFISH_OBJS",
+                                           NULL);
+    self->cfh_var  = NULL;
     self->cli      = cli;
 
     self->base_dir = "..";
@@ -8563,42 +8568,18 @@ cfish_MakeFile_new(chaz_CLI *cli) {
         = chaz_Util_join(dir_sep, "autogen", "hierarchy.json", NULL);
 
     if (strcmp(chaz_CLI_strval(cli, "host"), "go") == 0) {
-        static const char *go_autogen_src_files[] = {
-            "cfish_parcel",
-            "testcfish_parcel",
-            NULL
-        };
+        /* TODO: Let Go bindings build code in "ext". */
         self->host_src_dir = "ext";
-        self->autogen_src_files = go_autogen_src_files;
     }
     else if (chaz_CLI_defined(cli, "enable-python")) {
-        static const char *python_autogen_src_files[] = {
-            "cfish_parcel",
-            "testcfish_parcel",
-            NULL
-        };
+        /* TODO: Let Python bindings build code in "cfext". */
         self->host_src_dir = "cfext";
-        self->autogen_src_files = python_autogen_src_files;
     }
-    else if (chaz_CLI_defined(cli, "enable-perl")) {
-        static const char *perl_autogen_src_files[] = {
-            "cfish_parcel",
-            "cfish_perl",
-            "testcfish_parcel",
-            "testcfish_perl",
-            NULL
-        };
-        self->host_src_dir = "xs";
-        self->autogen_src_files = perl_autogen_src_files;
+    else if (strcmp(chaz_CLI_strval(cli, "host"), "c") == 0) {
+        self->host_src_dir = "src";
     }
     else {
-        static const char *c_autogen_src_files[] = {
-            "cfish_parcel",
-            "testcfish_parcel",
-            NULL
-        };
-        self->host_src_dir = "src";
-        self->autogen_src_files = c_autogen_src_files;
+        self->host_src_dir = NULL;
     }
 
     self->shared_lib = chaz_Lib_new_shared("cfish", cfish_version,
@@ -8606,6 +8587,7 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     self->static_lib = chaz_Lib_new_static("clownfish");
     self->shared_lib_filename = chaz_Lib_filename(self->shared_lib);
     self->static_lib_filename = chaz_Lib_filename(self->static_lib);
+    self->core_objects = chaz_Util_strdup("");
 
     return self;
 }
@@ -8623,13 +8605,18 @@ cfish_MakeFile_destroy(cfish_MakeFile *self) {
     chaz_Lib_destroy(self->static_lib);
     free(self->shared_lib_filename);
     free(self->static_lib_filename);
+    free(self->core_objects);
 
     free(self);
 }
 
 static void
 cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
-    SourceFileContext sfc;
+    static const char *const autogen_src_files[] = {
+        "cfish_parcel",
+        "testcfish_parcel",
+        NULL
+    };
 
     const char *dir_sep  = chaz_OS_dir_sep();
     const char *obj_ext  = chaz_CC_obj_ext();
@@ -8668,7 +8655,9 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
 
     chaz_CFlags_add_include_dir(makefile_cflags, ".");
     chaz_CFlags_add_include_dir(makefile_cflags, self->core_dir);
-    chaz_CFlags_add_include_dir(makefile_cflags, self->host_src_dir);
+    if (self->host_src_dir) {
+        chaz_CFlags_add_include_dir(makefile_cflags, self->host_src_dir);
+    }
     chaz_CFlags_add_include_dir(makefile_cflags, self->autogen_inc_dir);
 
     var = chaz_MakeFile_add_var(self->makefile, "CFLAGS", NULL);
@@ -8680,15 +8669,15 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
 
     /* Object files */
 
-    var = chaz_MakeFile_add_var(self->makefile, "CLOWNFISH_OBJS", NULL);
-    sfc.var = var;
-    chaz_Make_list_files(self->host_src_dir, "c", S_c_file_callback, &sfc);
-    chaz_Make_list_files(self->core_dir,     "c", S_c_file_callback, &sfc);
+    if (self->host_src_dir) {
+        chaz_Make_list_files(self->host_src_dir, "c", S_c_file_callback, self);
+    }
+    chaz_Make_list_files(self->core_dir, "c", S_c_file_callback, self);
 
-    for (i = 0; self->autogen_src_files[i] != NULL; ++i) {
+    for (i = 0; autogen_src_files[i] != NULL; ++i) {
         char *path = chaz_Util_join("", self->autogen_src_dir, dir_sep,
-                                    self->autogen_src_files[i], obj_ext, NULL);
-        chaz_MakeVar_append(var, path);
+                                    autogen_src_files[i], obj_ext, NULL);
+        S_add_core_object(self, path);
         free(path);
     }
 
@@ -8696,15 +8685,17 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
 
     chaz_MakeFile_add_rule(self->makefile, "all", self->shared_lib_filename);
     chaz_MakeFile_add_rule(self->makefile, "static", self->static_lib_filename);
+    chaz_MakeFile_add_rule(self->makefile, "core_objects",
+                           "$(CLOWNFISH_OBJS)");
 
     if (strcmp(chaz_CLI_strval(self->cli, "host"), "c") == 0) {
         cfish_MakeFile_write_c_cfc_rules(self);
     }
 
     /* Needed for parallel builds. */
-    for (i = 0; self->autogen_src_files[i] != NULL; ++i) {
+    for (i = 0; autogen_src_files[i] != NULL; ++i) {
         char *path = chaz_Util_join("", self->autogen_src_dir, dir_sep,
-                                    self->autogen_src_files[i], ".c", NULL);
+                                    autogen_src_files[i], ".c", NULL);
         chaz_MakeFile_add_rule(self->makefile, path, self->autogen_target);
         free(path);
     }
@@ -8734,7 +8725,6 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
 
 static void
 cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
-    SourceFileContext sfc;
     chaz_MakeVar  *var;
     chaz_MakeRule *rule;
 
@@ -8752,9 +8742,9 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
     rule = chaz_MakeFile_add_rule(self->makefile, cfc_exe, NULL);
     chaz_MakeRule_add_make_command(rule, cfc_dir, NULL);
 
-    var = chaz_MakeFile_add_var(self->makefile, "CLOWNFISH_HEADERS", NULL);
-    sfc.var = var;
-    chaz_Make_list_files(self->core_dir, "cfh", S_cfh_file_callback, &sfc);
+    self->cfh_var = chaz_MakeFile_add_var(self->makefile, "CLOWNFISH_HEADERS",
+                                          NULL);
+    chaz_Make_list_files(self->core_dir, "cfh", S_cfh_file_callback, self);
 
     rule = chaz_MakeFile_add_rule(self->makefile, self->autogen_target, cfc_exe);
     chaz_MakeRule_add_prereq(rule, "$(CLOWNFISH_HEADERS)");
@@ -8874,7 +8864,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
 
 static void
 S_c_file_callback(const char *dir, char *file, void *context) {
-    SourceFileContext *sfc = (SourceFileContext*)context;
+    cfish_MakeFile *self = (cfish_MakeFile*)context;
     const char *dir_sep = chaz_OS_dir_sep();
     const char *obj_ext = chaz_CC_obj_ext();
     size_t file_len = strlen(file);
@@ -8888,13 +8878,30 @@ S_c_file_callback(const char *dir, char *file, void *context) {
     file[file_len-2] = '\0';
 
     obj_file = chaz_Util_join("", dir, dir_sep, file, obj_ext, NULL);
-    chaz_MakeVar_append(sfc->var, obj_file);
+    S_add_core_object(self, obj_file);
     free(obj_file);
 }
 
 static void
+S_add_core_object(cfish_MakeFile *self, const char *obj_file) {
+    char *new_core_objects;
+
+    chaz_MakeVar_append(self->obj_var, obj_file);
+
+    if (self->core_objects[0] == '\0') {
+        new_core_objects = chaz_Util_strdup(obj_file);
+    }
+    else {
+        new_core_objects = chaz_Util_join(" ", self->core_objects, obj_file,
+                                          NULL);
+    }
+    free(self->core_objects);
+    self->core_objects = new_core_objects;
+}
+
+static void
 S_cfh_file_callback(const char *dir, char *file, void *context) {
-    SourceFileContext *sfc = (SourceFileContext*)context;
+    cfish_MakeFile *self = (cfish_MakeFile*)context;
     const char *dir_sep = chaz_OS_dir_sep();
     char *cfh_file;
 
@@ -8904,7 +8911,7 @@ S_cfh_file_callback(const char *dir, char *file, void *context) {
     }
 
     cfh_file = chaz_Util_join(dir_sep, dir, file, NULL);
-    chaz_MakeVar_append(sfc->var, cfh_file);
+    chaz_MakeVar_append(self->cfh_var, cfh_file);
     free(cfh_file);
 }
 
