@@ -68,8 +68,15 @@ sub new {
     $args{clownfish_params} = {
         autogen_header => _autogen_header(),
         include        => [],                  # Don't use default includes.
-        source   => [ $CORE_SOURCE_DIR ],
-        c_source => [ $XS_SOURCE_DIR ],
+        source         => [ $CORE_SOURCE_DIR ],
+        modules => [
+            {
+                name          => 'Clownfish',
+                parcels       => [ 'Clownfish', 'TestClownfish' ],
+                make_target   => 'core_objects',
+                c_source_dirs => [ $XS_SOURCE_DIR ],
+            },
+        ],
     };
     my $self = $class->SUPER::new( recursive_test_files => 1, %args );
 

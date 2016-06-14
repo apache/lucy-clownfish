@@ -19,6 +19,11 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
+
 #define CFC_NEED_BASE_STRUCT_DEF
 #include "CFCBase.h"
 #include "CFCPerl.h"
@@ -45,14 +50,12 @@ struct CFCPerl {
     CFCBase base;
     CFCHierarchy *hierarchy;
     char *lib_dir;
-    char *boot_class;
     char *header;
     char *footer;
     char *c_header;
     char *c_footer;
     char *pod_header;
     char *pod_footer;
-    char *xs_path;
 };
 
 // Modify a string in place, swapping out "::" for the supplied character.
@@ -72,34 +75,27 @@ static const CFCMeta CFCPERL_META = {
 };
 
 CFCPerl*
-CFCPerl_new(CFCHierarchy *hierarchy, const char *lib_dir,
-            const char *boot_class, const char *header, const char *footer) {
+CFCPerl_new(CFCHierarchy *hierarchy, const char *lib_dir, const char *header,
+            const char *footer) {
     CFCPerl *self = (CFCPerl*)CFCBase_allocate(&CFCPERL_META);
-    return CFCPerl_init(self, hierarchy, lib_dir, boot_class, header, footer);
+    return CFCPerl_init(self, hierarchy, lib_dir, header, footer);
 }
 
 CFCPerl*
 CFCPerl_init(CFCPerl *self, CFCHierarchy *hierarchy, const char *lib_dir,
-             const char *boot_class, const char *header, const char *footer) {
+             const char *header, const char *footer) {
     CFCUTIL_NULL_CHECK(hierarchy);
     CFCUTIL_NULL_CHECK(lib_dir);
-    CFCUTIL_NULL_CHECK(boot_class);
     CFCUTIL_NULL_CHECK(header);
     CFCUTIL_NULL_CHECK(footer);
     self->hierarchy  = (CFCHierarchy*)CFCBase_incref((CFCBase*)hierarchy);
     self->lib_dir    = CFCUtil_strdup(lib_dir);
-    self->boot_class = CFCUtil_strdup(boot_class);
     self->header     = CFCUtil_strdup(header);
     self->footer     = CFCUtil_strdup(footer);
     self->c_header   = CFCUtil_make_c_comment(header);
     self->c_footer   = CFCUtil_make_c_comment(footer);
     self->pod_header = CFCUtil_make_perl_comment(header);
     self->pod_footer = CFCUtil_make_perl_comment(footer);
-
-    // Derive path to generated .xs file.
-    self->xs_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.xs", lib_dir,
-                                    boot_class);
-    S_replace_double_colons(self->xs_path, CHY_DIR_SEP_CHAR);
 
     return self;
 }
@@ -108,14 +104,12 @@ void
 CFCPerl_destroy(CFCPerl *self) {
     CFCBase_decref((CFCBase*)self->hierarchy);
     FREEMEM(self->lib_dir);
-    FREEMEM(self->boot_class);
     FREEMEM(self->header);
     FREEMEM(self->footer);
     FREEMEM(self->c_header);
     FREEMEM(self->c_footer);
     FREEMEM(self->pod_header);
     FREEMEM(self->pod_footer);
-    FREEMEM(self->xs_path);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -536,8 +530,11 @@ S_add_xsub_spec(char *xsub_specs, CFCPerlSub *xsub) {
 }
 
 void
-CFCPerl_write_bindings(CFCPerl *self) {
-    CFCParcel    **parcels  = CFCParcel_all_parcels();
+CFCPerl_write_bindings(CFCPerl *self, const char *boot_class,
+                       CFCParcel **parcels) {
+    CFCUTIL_NULL_CHECK(boot_class);
+    CFCUTIL_NULL_CHECK(parcels);
+
     CFCClass     **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
     CFCPerlClass **registry = CFCPerlClass_registry();
     char *privacy_syms    = CFCUtil_strdup("");
@@ -549,8 +546,6 @@ CFCPerl_write_bindings(CFCPerl *self) {
     char *hand_rolled_xs  = CFCUtil_strdup("");
 
     for (size_t i = 0; parcels[i]; ++i) {
-        if (CFCParcel_included(parcels[i])) { continue; }
-
         // Bake the parcel privacy defines into the XS, so it can be compiled
         // without any extra compiler flags.
         const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
@@ -567,7 +562,16 @@ CFCPerl_write_bindings(CFCPerl *self) {
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
+
+        CFCParcel *parcel = CFCClass_get_parcel(klass);
+        int found = false;
+        for (size_t j = 0; parcels[j]; j++) {
+            if (parcel == parcels[j]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) { continue; }
 
         // Pound-includes for generated headers.
         const char *include_h = CFCClass_include_h(klass);
@@ -638,7 +642,19 @@ CFCPerl_write_bindings(CFCPerl *self) {
 
     // Hand-rolled XS.
     for (size_t i = 0; registry[i] != NULL; i++) {
-        const char *xs = CFCPerlClass_get_xs_code(registry[i]);
+        CFCPerlClass *perl_class = registry[i];
+
+        CFCParcel *parcel = CFCPerlClass_get_parcel(perl_class);
+        int found = false;
+        for (size_t j = 0; parcels[j]; j++) {
+            if (parcel == parcels[j]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) { continue; }
+
+        const char *xs = CFCPerlClass_get_xs_code(perl_class);
         hand_rolled_xs = CFCUtil_cat(hand_rolled_xs, xs, "\n", NULL);
     }
 
@@ -681,13 +697,19 @@ CFCPerl_write_bindings(CFCPerl *self) {
         "%s"; // Footer
     char *contents
         = CFCUtil_sprintf(pattern, self->c_header, privacy_syms, includes,
-                          generated_xs, self->boot_class, self->boot_class,
-                          class_specs, xsub_specs, bootstrap_calls,
-                          hand_rolled_xs, self->c_footer);
+                          generated_xs, boot_class, boot_class, class_specs,
+                          xsub_specs, bootstrap_calls, hand_rolled_xs,
+                          self->c_footer);
+
+    // Derive path to generated .xs file.
+    char *xs_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s.xs", self->lib_dir,
+                                    boot_class);
+    S_replace_double_colons(xs_path, CHY_DIR_SEP_CHAR);
 
     // Write out if there have been any changes.
-    CFCUtil_write_if_changed(self->xs_path, contents, strlen(contents));
+    CFCUtil_write_if_changed(xs_path, contents, strlen(contents));
 
+    FREEMEM(xs_path);
     FREEMEM(contents);
     FREEMEM(hand_rolled_xs);
     FREEMEM(bootstrap_calls);

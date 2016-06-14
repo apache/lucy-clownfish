@@ -140,8 +140,8 @@ sub charmony {
     return;
 }
 
-sub cf_make_core_objects {
-    my $self = shift;
+sub cf_make_objects {
+    my ( $self, $target ) = @_;
 
     return [] unless $self->charmonizer_params('create_makefile');
 
@@ -149,12 +149,12 @@ sub cf_make_core_objects {
     my @command = (
         $self->config('make'),
         $self->split_like_shell($make_options),
-        'core_objects',
+        lc($target),
     );
     print join(' ', @command), "\n";
     system @command and die($self->config('make') . " failed");
 
-    return [ split( /\s+/, $self->charmony('CORE_OBJECTS') ) ];
+    return [ split( /\s+/, $self->charmony(uc($target)) ) ];
 }
 
 1;
