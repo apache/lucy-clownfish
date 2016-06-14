@@ -368,13 +368,21 @@ sub ACTION_compile_custom_xs {
     mkpath( $archdir, 0, 0777 ) unless -d $archdir;
     my @objects;
 
+    # Make core objects.
+    if ($self->can('cf_make_core_objects')) {
+        my $core_objects = $self->cf_make_core_objects();
+        push @objects, @$core_objects;
+        $self->add_to_cleanup(@$core_objects);
+    }
+
     # Compile C source files.
     my $c_files = [];
-    my $source_dirs = $self->clownfish_params('source');
-    my $autogen_src_dir = catdir( $AUTOGEN_DIR, 'source' );
-    for my $source_dir ( @$source_dirs, $autogen_src_dir ) {
+    my $source_dirs = $self->clownfish_params('c_source');
+    for my $source_dir (@$source_dirs) {
         push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
     }
+    my $autogen_src_dir = catdir( $AUTOGEN_DIR, 'source' );
+    push @$c_files, @{ $self->rscan_dir( $autogen_src_dir, qr/_perl\.c$/ ) };
     my $extra_cflags = $self->clownfish_params('cflags');
     for my $c_file (@$c_files) {
         my $o_file   = $c_file;

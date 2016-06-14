@@ -31,6 +31,8 @@ use File::Spec::Functions qw( catfile curdir );
 # Add a custom Module::Build hashref property to pass the following build
 # parameters.
 # charmonizer_c: Charmonizer C file, required
+# create_makefile: Whether to create a Makefile.
+# make_options: Options passed to make.
 if ( $Module::Build::VERSION <= 0.30 ) {
     __PACKAGE__->add_property( charmonizer_params => {} );
 }
@@ -49,19 +51,29 @@ my $CHARMONY_PM_PATH     = 'Charmony.pm';
 # Charmony.pm files.
 sub ACTION_charmony {
     my $self = shift;
-    my $charmonizer_c = $self->charmonizer_params('charmonizer_c');
+
+    my ($cc, @cc_args)  = $self->split_like_shell($self->config('cc'));
+    my $is_msvc         = lc($cc) =~ /^cl\b/;
+    my $charmonizer_c   = $self->charmonizer_params('charmonizer_c');
+    my $create_makefile = $self->charmonizer_params('create_makefile');
+
     $self->add_to_cleanup($CHARMONIZER_EXE_PATH);
     if ( !$self->up_to_date( $charmonizer_c, $CHARMONIZER_EXE_PATH ) ) {
         print "\nCompiling $CHARMONIZER_EXE_PATH...\n\n";
-        my $cc = $self->config('cc');
-        my $outflag = $cc =~ /cl\b/ ? "/Fe" : "-o ";
-        system("$cc $charmonizer_c $outflag$CHARMONIZER_EXE_PATH")
+        my @command = ($cc, @cc_args, $charmonizer_c);
+        if ($is_msvc) {
+            push @command, "/Fe$CHARMONIZER_EXE_PATH";
+        }
+        else {
+            push @command, '-o', $CHARMONIZER_EXE_PATH;
+        }
+        system @command
             and die "Failed to compile $CHARMONIZER_EXE_PATH";
     }
 
-    return if $self->up_to_date( $CHARMONIZER_EXE_PATH, [
-        $CHARMONY_H_PATH, $CHARMONY_PM_PATH,
-    ] );
+    my @derived_files = ( $CHARMONY_H_PATH, $CHARMONY_PM_PATH );
+    push @derived_files, 'Makefile' if $create_makefile;
+    return if $self->up_to_date( $CHARMONIZER_EXE_PATH, \@derived_files );
     print "\nRunning $CHARMONIZER_EXE_PATH...\n\n";
 
     $self->add_to_cleanup($CHARMONY_H_PATH);
@@ -69,13 +81,11 @@ sub ACTION_charmony {
     # Clean up after charmonizer if it doesn't succeed on its own.
     $self->add_to_cleanup("_charm*");
 
-    if ($Config{cc} =~ /^cl\b/) {
+    if ($is_msvc) {
         $self->add_to_cleanup('charmonizer.obj');
     }
 
     # Prepare arguments to charmonizer.
-    my @cc_args = $self->split_like_shell($self->config('cc'));
-    my $cc = shift(@cc_args);
     my @command = (
         $CHARMONIZER_EXE_PATH,
         "--cc=$cc",
@@ -83,10 +93,19 @@ sub ACTION_charmony {
         '--enable-c',
         '--enable-perl',
     );
+    if ($create_makefile) {
+        push @command,
+             '--make=' . $self->config('make'),
+             '--enable-makefile';
+        $self->add_to_cleanup('Makefile');
+    }
     if ( !$self->config('usethreads') ) {
         push @command, '--disable-threads';
     }
-    push @command, ( '--', @cc_args, $self->config('ccflags') );
+    push @command, (
+        '--', @cc_args, $self->config('ccflags'),
+        '-I' . File::Spec->catdir($self->config('archlibexp'), 'CORE'),
+    );
     if ( $ENV{CHARM_VALGRIND} ) {
         unshift @command, "valgrind", "--leak-check=yes";
     }
@@ -119,6 +138,23 @@ sub charmony {
         return $config->{$key};
     }
     return;
+}
+
+sub cf_make_core_objects {
+    my $self = shift;
+
+    return [] unless $self->charmonizer_params('create_makefile');
+
+    my $make_options = $self->charmonizer_params('make_options');
+    my @command = (
+        $self->config('make'),
+        $self->split_like_shell($make_options),
+        'core_objects',
+    );
+    print join(' ', @command), "\n";
+    system @command and die($self->config('make') . " failed");
+
+    return [ split( /\s+/, $self->charmony('CORE_OBJECTS') ) ];
 }
 
 1;
