@@ -382,7 +382,10 @@ sub ACTION_compile_custom_xs {
         push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
     }
     my $autogen_src_dir = catdir( $AUTOGEN_DIR, 'source' );
-    push @$c_files, @{ $self->rscan_dir( $autogen_src_dir, qr/_perl\.c$/ ) };
+    my $autogen_regex = ( grep { /^$autogen_src_dir/ } @objects )
+                        ? qr/_perl\.c$/  # Only compile *_perl.c files.
+                        : qr/\.c$/;
+    push @$c_files, @{ $self->rscan_dir( $autogen_src_dir, $autogen_regex ) };
     my $extra_cflags = $self->clownfish_params('cflags');
     for my $c_file (@$c_files) {
         my $o_file   = $c_file;
