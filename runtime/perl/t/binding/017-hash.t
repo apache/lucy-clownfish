@@ -56,13 +56,20 @@ is( $$hash, ${ $hash->fetch_raw('foo') },
 my $roundtripped = $hash->to_perl;
 is_deeply( $roundtripped, $hashref, 'to_perl handles circular references' );
 
-$hashref = { key => $hashref };
-$hash = to_clownfish($hashref);
-my $val = $hash->fetch_raw('key');
+my $deep_hashref = { key => $hashref };
+my $deep_hash = to_clownfish($deep_hashref);
+my $val = $deep_hash->fetch_raw('key');
 is( $$val, ${ $val->fetch_raw('bar')->fetch_raw(0) },
     'to_clownfish($hashref) handles deep circular references' );
 
-$roundtripped = $hash->to_perl;
-is_deeply( $roundtripped, $hashref,
+$roundtripped = $deep_hash->to_perl;
+is_deeply( $roundtripped, $deep_hashref,
            'to_perl handles deep circular references' );
+
+# During global destruction, Clownfish destructors can be invoked forcefully
+# in a random order. Circular references in Clownfish objects must be broken
+# to avoid segfaults.
+
+$hash->clear();
+$val->clear();
 

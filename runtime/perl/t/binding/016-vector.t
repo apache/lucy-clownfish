@@ -60,3 +60,10 @@ is(
 my $roundtripped = $vector->to_perl;
 is_deeply( $roundtripped, $arrayref, 'to_perl handles circular references');
 
+# During global destruction, Clownfish destructors can be invoked forcefully
+# in a random order. Circular references in Clownfish objects must be broken
+# to avoid segfaults.
+
+$hash->clear();
+$vector->clear();
+
