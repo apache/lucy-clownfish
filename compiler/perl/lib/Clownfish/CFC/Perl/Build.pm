@@ -217,12 +217,17 @@ sub ACTION_copy_clownfish_includes {
     }
 }
 
+my %hierarchy_cache;
+
 sub _compile_clownfish {
     my $self = shift;
 
     require Clownfish::CFC::Model::Hierarchy;
     require Clownfish::CFC::Binding::Perl;
     require Clownfish::CFC::Binding::Perl::Class;
+
+    return @hierarchy_cache{ qw( hierarchy binding ) }
+        if %hierarchy_cache;
 
     # Compile Clownfish.
     my $hierarchy = Clownfish::CFC::Model::Hierarchy->new(
@@ -255,6 +260,8 @@ sub _compile_clownfish {
         header     => $self->clownfish_params('autogen_header'),
         footer     => '',
     );
+
+    @hierarchy_cache{ qw( hierarchy binding ) } = ( $hierarchy, $binding );
 
     return ( $hierarchy, $binding );
 }
