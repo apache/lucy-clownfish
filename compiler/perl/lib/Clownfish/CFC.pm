@@ -720,7 +720,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
     our %new_PARAMS = (
         hierarchy  => undef,
         lib_dir    => undef,
-        boot_class => undef,
         header     => undef,
         footer     => undef,
     );
@@ -729,7 +728,15 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
         my ( $either, %args ) = @_;
         verify_args( \%new_PARAMS, %args ) or confess $@;
         return _new(
-            @args{qw( hierarchy lib_dir boot_class header footer )} );
+            @args{qw( hierarchy lib_dir header footer )} );
+    }
+
+    sub write_bindings {
+        my ( $self, %args ) = @_;
+        $args{parcels} = [ map {
+            Clownfish::CFC::Model::Parcel->acquire($_);
+        } @{ $args{parcels} } ];
+        return $self->_write_bindings( @args{qw( boot_class parcels )} );
     }
 }
 

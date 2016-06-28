@@ -84,6 +84,26 @@ S_array_of_cfcbase_to_av(CFCBase **things) {
     return retval;
 }
 
+// Transform a Perl arrayref into a NULL-terminated array of CFCBase*.
+static CFCBase**
+S_av_to_array_of_cfcbase(SV *ref, const char *class_name) {
+    if (!SvROK(ref)) { croak("Not an arrayref"); }
+    SV *sv = SvRV(ref);
+    if (SvTYPE(sv) != SVt_PVAV) { croak("Not an arrayref"); }
+    AV *av = (AV*)sv;
+    size_t size = av_len(av) + 1;
+    CFCBase **retval = (CFCBase**)CALLOCATE(size + 1, sizeof(CFCBase*));
+    for (size_t i = 0; i < size; i++) {
+        SV **elem = av_fetch(av, i, 0);
+        if (!elem || !sv_derived_from(*elem, class_name)) {
+            croak("Array element not of type %s", class_name);
+        }
+        IV objint = SvIV((SV*)SvRV(*elem));
+        retval[i] = INT2PTR(CFCBase*, objint);
+    }
+    return retval;
+}
+
 static SV*
 S_sv_eat_c_string(char *string) {
     if (string) {
@@ -1945,15 +1965,13 @@ PPCODE:
 MODULE = Clownfish   PACKAGE = Clownfish::CFC::Binding::Perl
 
 SV*
-_new(hierarchy, lib_dir, boot_class, header, footer)
+_new(hierarchy, lib_dir, header, footer)
     CFCHierarchy *hierarchy;
     const char *lib_dir;
-    const char *boot_class;
     const char *header;
     const char *footer;
 CODE:
-    CFCPerl *self = CFCPerl_new(hierarchy, lib_dir, boot_class, header,
-                                footer);
+    CFCPerl *self = CFCPerl_new(hierarchy, lib_dir, header, footer);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
@@ -1985,10 +2003,15 @@ PPCODE:
     CFCPerl_write_hostdefs(self);
 
 void
-write_bindings(self)
+_write_bindings(self, boot_class, sv)
     CFCPerl *self;
+    const char *boot_class;
+    SV *sv;
 PPCODE:
-    CFCPerl_write_bindings(self);
+    CFCParcel **parcels = (CFCParcel**)
+        S_av_to_array_of_cfcbase(sv, "Clownfish::CFC::Model::Parcel");
+    CFCPerl_write_bindings(self, boot_class, parcels);
+    FREEMEM(parcels);
 
 void
 write_xs_typemap(self)
