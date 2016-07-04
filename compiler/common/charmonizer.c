@@ -5500,6 +5500,9 @@ chaz_OS_init(void) {
             chaz_OS.shell_type = CHAZ_OS_CMD_EXE;
             chaz_OS.run_sh_via_cmd_exe = 0;
         }
+
+        /* Redirection is always run through cmd.exe. */
+        strcpy(chaz_OS.dev_null, "nul");
     }
     else if (output_len >= 7 && memcmp(output, "foo^bar", 7) == 0) {
         /* Escape character is backslash. */
@@ -5507,17 +5510,16 @@ chaz_OS_init(void) {
             printf("Detected POSIX shell\n");
         }
         chaz_OS.shell_type = CHAZ_OS_POSIX;
+        strcpy(chaz_OS.dev_null, "/dev/null");
     }
 
     if (chaz_OS.shell_type == CHAZ_OS_CMD_EXE) {
         strcpy(chaz_OS.dir_sep, "\\");
-        strcpy(chaz_OS.dev_null, "nul");
         /* Empty string should work, too. */
         strcpy(chaz_OS.local_command_start, ".\\");
     }
     else if (chaz_OS.shell_type == CHAZ_OS_POSIX) {
         strcpy(chaz_OS.dir_sep, "/");
-        strcpy(chaz_OS.dev_null, "/dev/null");
         strcpy(chaz_OS.local_command_start, "./");
     }
     else {
