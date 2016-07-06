@@ -1,8 +1,10 @@
 /Makefile
 /cfc
 /cfc.exe
+/cfc.lib
 /charmonizer
 /charmonizer.exe
 /charmony.h
+/libcfc.a
 /t/test_cfc
 /t/test_cfc.exe

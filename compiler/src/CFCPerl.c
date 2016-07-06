@@ -299,10 +299,11 @@ S_write_host_h(CFCPerl *self, CFCParcel *parcel) {
 static void
 S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
     CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
-    const char  *prefix     = CFCParcel_get_prefix(parcel);
-    char        *includes   = CFCUtil_strdup("");
-    char        *cb_defs    = CFCUtil_strdup("");
-    char        *alias_adds = CFCUtil_strdup("");
+    const char  *prefix      = CFCParcel_get_prefix(parcel);
+    const char  *privacy_sym = CFCParcel_get_privacy_sym(parcel);
+    char        *includes    = CFCUtil_strdup("");
+    char        *cb_defs     = CFCUtil_strdup("");
+    char        *alias_adds  = CFCUtil_strdup("");
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
@@ -356,6 +357,8 @@ S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
 
     const char pattern[] =
         "%s"
+        "\n"
+        "#define %s\n"  // privacy_sym
         "\n"
         "#include \"%sperl.h\"\n"
         "#include \"XSBind.h\"\n"
@@ -455,8 +458,9 @@ S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
         "\n"
         "%s";
     char *content
-        = CFCUtil_sprintf(pattern, self->c_header, prefix, includes, cb_defs,
-                          prefix, prefix, alias_adds, self->c_footer);
+        = CFCUtil_sprintf(pattern, self->c_header, privacy_sym, prefix,
+                          includes, cb_defs, prefix, prefix, alias_adds,
+                          self->c_footer);
 
     const char *src_dest = CFCHierarchy_get_source_dest(self->hierarchy);
     char *host_c_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%sperl.c", src_dest,
