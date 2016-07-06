@@ -464,8 +464,6 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     chaz_CFlags     *link_cflags;
     chaz_MakeRule   *rule;
 
-    const char *test_command;
-
     exe = chaz_MakeFile_add_exe(self->makefile, "t", "test_cfish");
     chaz_MakeBinary_add_src_file(exe, "t", "test_cfish.c");
     chaz_MakeFile_add_rule(self->makefile, "$(TEST_CFISH_EXE_OBJS)",
@@ -473,16 +471,11 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     link_cflags = chaz_MakeBinary_get_link_flags(exe);
     chaz_CFlags_add_shared_lib(link_cflags, NULL, "cfish",
                                cfish_major_version);
+    chaz_CFlags_add_rpath(link_cflags, "\"$$PWD\"");
     chaz_MakeBinary_add_prereq(exe, "$(CFISH_SHARED_LIB)");
 
     rule = chaz_MakeFile_add_rule(self->makefile, "test", "$(TEST_CFISH_EXE)");
-    if (chaz_CC_binary_format() == CHAZ_CC_BINFMT_ELF) {
-        test_command = "LD_LIBRARY_PATH=. $(TEST_CFISH_EXE)";
-    }
-    else {
-        test_command = "$(TEST_CFISH_EXE)";
-    }
-    chaz_MakeRule_add_command(rule, test_command);
+    chaz_MakeRule_add_command(rule, "$(TEST_CFISH_EXE)");
 
     if (chaz_OS_shell_type() == CHAZ_OS_POSIX) {
         const char *valgrind_command;
@@ -511,7 +504,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
                                   "lcov"
                                   " --zerocounters"
                                   " --directory $(BASE_DIR)");
-        chaz_MakeRule_add_command(rule, test_command);
+        chaz_MakeRule_add_command(rule, "$(TEST_CFISH_EXE)");
         chaz_MakeRule_add_command(rule,
                                   "lcov"
                                   " --capture"

@@ -112,6 +112,9 @@ void
 chaz_CFlags_add_external_lib(chaz_CFlags *flags, const char *library);
 
 void
+chaz_CFlags_add_rpath(chaz_CFlags *flags, const char *path);
+
+void
 chaz_CFlags_enable_code_coverage(chaz_CFlags *flags);
 
 #endif /* H_CHAZ_CFLAGS */
@@ -2019,6 +2022,27 @@ chaz_CFlags_add_external_lib(chaz_CFlags *flags, const char *library) {
     else {
         string = chaz_Util_join(" ", "-l", library, NULL);
     }
+    chaz_CFlags_append(flags, string);
+    free(string);
+}
+
+void
+chaz_CFlags_add_rpath(chaz_CFlags *flags, const char *path) {
+    char *string;
+
+    if (chaz_CC_binary_format() != CHAZ_CC_BINFMT_ELF) { return; }
+
+    if (flags->style == CHAZ_CFLAGS_STYLE_GNU) {
+        string = chaz_Util_join("", "-Wl,-rpath,", path, NULL);
+    }
+    else if (flags->style == CHAZ_CFLAGS_STYLE_SUN_C) {
+        string = chaz_Util_join(" ", "-R", path, NULL);
+    }
+    else {
+        chaz_Util_die("Don't know how to set rpath with '%s'",
+                      chaz_CC_get_cc());
+    }
+
     chaz_CFlags_append(flags, string);
     free(string);
 }
@@ -5086,6 +5110,11 @@ chaz_MakeFile_write(chaz_MakeFile *self) {
     out = fopen("Makefile", "w");
     if (!out) {
         chaz_Util_die("Can't open Makefile\n");
+    }
+
+    if (chaz_Make.shell_type == CHAZ_OS_CMD_EXE) {
+        /* Make sure that mingw32-make uses the cmd.exe shell. */
+        fprintf(out, "SHELL = cmd\n");
     }
 
     for (i = 0; self->vars[i]; i++) {
@@ -9044,8 +9073,6 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     chaz_CFlags     *link_cflags;
     chaz_MakeRule   *rule;
 
-    const char *test_command;
-
     exe = chaz_MakeFile_add_exe(self->makefile, "t", "test_cfish");
     chaz_MakeBinary_add_src_file(exe, "t", "test_cfish.c");
     chaz_MakeFile_add_rule(self->makefile, "$(TEST_CFISH_EXE_OBJS)",
@@ -9053,16 +9080,11 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     link_cflags = chaz_MakeBinary_get_link_flags(exe);
     chaz_CFlags_add_shared_lib(link_cflags, NULL, "cfish",
                                cfish_major_version);
+    chaz_CFlags_add_rpath(link_cflags, "\"$$PWD\"");
     chaz_MakeBinary_add_prereq(exe, "$(CFISH_SHARED_LIB)");
 
     rule = chaz_MakeFile_add_rule(self->makefile, "test", "$(TEST_CFISH_EXE)");
-    if (chaz_CC_binary_format() == CHAZ_CC_BINFMT_ELF) {
-        test_command = "LD_LIBRARY_PATH=. $(TEST_CFISH_EXE)";
-    }
-    else {
-        test_command = "$(TEST_CFISH_EXE)";
-    }
-    chaz_MakeRule_add_command(rule, test_command);
+    chaz_MakeRule_add_command(rule, "$(TEST_CFISH_EXE)");
 
     if (chaz_OS_shell_type() == CHAZ_OS_POSIX) {
         const char *valgrind_command;
@@ -9091,7 +9113,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
                                   "lcov"
                                   " --zerocounters"
                                   " --directory $(BASE_DIR)");
-        chaz_MakeRule_add_command(rule, test_command);
+        chaz_MakeRule_add_command(rule, "$(TEST_CFISH_EXE)");
         chaz_MakeRule_add_command(rule,
                                   "lcov"
                                   " --capture"
