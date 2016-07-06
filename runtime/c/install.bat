@@ -29,13 +29,16 @@ exit /b 1
 :has_prefix
 set prefix=%~2
 
-rem Install libraries.
+mkdir "%prefix%\bin" 2>nul
 mkdir "%prefix%\lib" 2>nul
-copy cfish-%major_version%.dll "%prefix%\lib" >nul
+
+rem Install libraries.
+copy cfish-%major_version%.dll "%prefix%\bin" >nul
+copy libcfish-%major_version%.dll "%prefix%\bin" >nul
 copy cfish-%major_version%.lib "%prefix%\lib" >nul
+copy libcfish-%major_version%.dll.a "%prefix%\lib" >nul
 
 rem Install executables.
-mkdir "%prefix%\bin" 2>nul
 copy ..\..\compiler\c\cfc.exe "%prefix%\bin" >nul
 
 rem Install Clownfish header files.

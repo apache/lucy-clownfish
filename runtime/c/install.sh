@@ -75,6 +75,28 @@ case `uname` in
         ln -sf $lib_file "$prefix/lib/libcfish.dylib"
         install_name_tool -id "$install_name" "$prefix/lib/$lib_file"
         ;;
+    MINGW*|MSYS*)
+        lib_file=libcfish-$major_version.dll
+        if [ ! -f $lib_file ]; then
+            echo "$lib_file not found. Did you run make?"
+            exit 1
+        fi
+        mkdir -p "$prefix/bin"
+        cp $lib_file "$prefix/bin"
+        mkdir -p "$prefix/lib"
+        cp libcfish-$major_version.dll.a "$prefix/lib"
+        ;;
+    CYGWIN*)
+        lib_file=cygcfish-$major_version.dll
+        if [ ! -f $lib_file ]; then
+            echo "$lib_file not found. Did you run make?"
+            exit 1
+        fi
+        mkdir -p "$prefix/bin"
+        cp $lib_file "$prefix/bin"
+        mkdir -p "$prefix/lib"
+        cp libcfish-$major_version.dll.a "$prefix/lib"
+        ;;
     *)
         lib_file=libcfish.so.$version
         if [ ! -f $lib_file ]; then
