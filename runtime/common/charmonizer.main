@@ -185,8 +185,13 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
 
     if (chaz_Probe_gcc_version_num()) {
-        chaz_CFlags_append(extra_cflags,
-            "-pedantic -Wall -Wextra -Wno-variadic-macros");
+        if (!chaz_CC_is_mingw()) {
+            /* When using the MSVCRT, -pedantic complains about %I64 format
+             * specifiers.
+             */
+            chaz_CFlags_append(extra_cflags, "-pedantic");
+        }
+        chaz_CFlags_append(extra_cflags, "-Wall -Wextra -Wno-variadic-macros");
         if (strcmp(chaz_CLI_strval(cli, "host"), "perl") == 0) {
             chaz_CFlags_append(extra_cflags, "-DPERL_GCC_PEDANTIC");
         }
