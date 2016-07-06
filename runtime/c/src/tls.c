@@ -69,7 +69,7 @@ Tls_get_err_context() {
     if (!context) {
         context = (ErrContext*)CALLOCATE(1, sizeof(ErrContext));
         if (!TlsSetValue(err_context_tls_index, context)) {
-            fprintf(stderr, "TlsSetValue failed: %d\n", GetLastError());
+            fprintf(stderr, "TlsSetValue failed: %lu\n", GetLastError());
             abort();
         }
     }
