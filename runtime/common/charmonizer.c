@@ -8597,6 +8597,7 @@ typedef struct cfish_MakeFile {
     const char  *base_dir;
     const char  *host_src_dir;
     char        *core_dir;
+    char        *test_dir;
     char        *autogen_src_dir;
     char        *autogen_inc_dir;
     char        *autogen_target;
@@ -8807,8 +8808,10 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     self->cfh_var  = NULL;
     self->cli      = cli;
 
+    /* TODO: Detect base directory. */
     self->base_dir = "..";
     self->core_dir = chaz_Util_join(dir_sep, self->base_dir, "core", NULL);
+    self->test_dir = chaz_Util_join(dir_sep, self->base_dir, "test", NULL);
     self->autogen_src_dir = chaz_Util_join(dir_sep, "autogen", "source", NULL);
     self->autogen_inc_dir
         = chaz_Util_join(dir_sep, "autogen", "include", NULL);
@@ -8838,6 +8841,7 @@ cfish_MakeFile_destroy(cfish_MakeFile *self) {
     chaz_MakeFile_destroy(self->makefile);
 
     free(self->core_dir);
+    free(self->test_dir);
     free(self->autogen_inc_dir);
     free(self->autogen_src_dir);
     free(self->autogen_target);
@@ -8924,6 +8928,7 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
         chaz_MakeBinary_add_src_dir(self->binary, self->host_src_dir);
     }
     chaz_MakeBinary_add_src_dir(self->binary, self->core_dir);
+    chaz_MakeBinary_add_src_dir(self->binary, self->test_dir);
 
     compile_flags = chaz_MakeBinary_get_compile_flags(self->binary);
     chaz_CFlags_add_define(compile_flags, "CFP_CFISH", NULL);
@@ -8988,10 +8993,12 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
     self->cfh_var = chaz_MakeFile_add_var(self->makefile, "CLOWNFISH_HEADERS",
                                           NULL);
     chaz_Make_list_files(self->core_dir, "cfh", S_cfh_file_callback, self);
+    chaz_Make_list_files(self->test_dir, "cfh", S_cfh_file_callback, self);
 
     rule = chaz_MakeFile_add_rule(self->makefile, self->autogen_target, cfc_exe);
     chaz_MakeRule_add_prereq(rule, "$(CLOWNFISH_HEADERS)");
     cfc_command = chaz_Util_join("", cfc_exe, " --source=", self->core_dir,
+                                 " --source=", self->test_dir,
                                  " --dest=autogen --header=cfc_header", NULL);
     chaz_MakeRule_add_command(rule, cfc_command);
 

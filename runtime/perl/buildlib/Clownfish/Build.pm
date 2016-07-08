@@ -54,13 +54,16 @@ my $XS_SOURCE_DIR = 'xs';
 my $CFC_BUILD     = catfile( $CFC_DIR, 'Build' );
 my $LIB_DIR       = 'lib';
 my $CORE_SOURCE_DIR;
+my $TEST_SOURCE_DIR;
 my $CHARMONIZER_C;
 if ($IS_CPAN_DIST) {
     $CORE_SOURCE_DIR = 'cfcore';
+    $TEST_SOURCE_DIR = 'cftest';
     $CHARMONIZER_C   = 'charmonizer.c';
 }
 else {
     $CORE_SOURCE_DIR = catdir( @BASE_PATH, 'core' );
+    $TEST_SOURCE_DIR = catdir( @BASE_PATH, 'test' );
     $CHARMONIZER_C   = catfile( $COMMON_SOURCE_DIR, 'charmonizer.c' );
 }
 
@@ -70,7 +73,7 @@ sub new {
     $args{clownfish_params} = {
         autogen_header => _autogen_header(),
         include        => [],                  # Don't use default includes.
-        source         => [ $CORE_SOURCE_DIR ],
+        source         => [ $CORE_SOURCE_DIR, $TEST_SOURCE_DIR ],
         modules => [
             {
                 name          => 'Clownfish',
@@ -317,6 +320,7 @@ sub ACTION_dist {
         '../../NOTICE'          => 'NOTICE',
         '../../README.md'       => 'README.md',
         $CORE_SOURCE_DIR        => 'cfcore',
+        $TEST_SOURCE_DIR        => 'cftest',
         $CHARMONIZER_C          => 'charmonizer.c',
     );
     print "Copying files...\n";
