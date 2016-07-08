@@ -48,7 +48,7 @@ else {
 # development, the files are accessed from their original locations.
 
 my @BASE_PATH;
-push(@BASE_PATH, updir()) unless -e 'core';
+push(@BASE_PATH, updir()) unless -d 'core' || -d 'cfcore';
 
 my $AUTOGEN_DIR  = 'autogen';
 my $LIB_DIR      = 'lib';
