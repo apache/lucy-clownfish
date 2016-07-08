@@ -57,7 +57,7 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
 /********************************** Windows *******************************/
 #elif defined(CHY_HAS_WINDOWS_H)
 
-bool
+CFISH_VISIBLE bool
 cfish_Atomic_wrapped_cas_ptr(void *volatile *target, void *old_value,
                             void *new_value);
 
@@ -87,7 +87,7 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
 #elif defined(CHY_HAS_PTHREAD_H)
 #include <pthread.h>
 
-extern pthread_mutex_t cfish_Atomic_mutex;
+extern CFISH_VISIBLE pthread_mutex_t cfish_Atomic_mutex;
 
 static CFISH_INLINE bool
 cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {

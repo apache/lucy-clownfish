@@ -19,22 +19,24 @@
 
 #include <stddef.h>
 
+#include "cfish_parcel.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct cfish_PtrHash cfish_PtrHash;
 
-cfish_PtrHash*
+CFISH_VISIBLE cfish_PtrHash*
 cfish_PtrHash_new(size_t min_cap);
 
-void
+CFISH_VISIBLE void
 CFISH_PtrHash_Destroy(cfish_PtrHash *self);
 
-void
+CFISH_VISIBLE void
 CFISH_PtrHash_Store(cfish_PtrHash *self, void *key, void *value);
 
-void*
+CFISH_VISIBLE void*
 CFISH_PtrHash_Fetch(cfish_PtrHash *self, void *key);
 
 #ifdef CFISH_USE_SHORT_NAMES

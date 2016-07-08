@@ -19,6 +19,8 @@
 
 #include <stddef.h>
 
+#include "cfish_parcel.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,17 +33,17 @@ struct cfish_String;
 
 typedef struct cfish_LockFreeRegistry cfish_LockFreeRegistry;
 
-cfish_LockFreeRegistry*
+CFISH_VISIBLE cfish_LockFreeRegistry*
 cfish_LFReg_new(size_t capacity);
 
-void
+CFISH_VISIBLE void
 cfish_LFReg_destroy(cfish_LockFreeRegistry *self);
 
-bool
+CFISH_VISIBLE bool
 cfish_LFReg_register(cfish_LockFreeRegistry *self, struct cfish_String *key,
                      struct cfish_Obj *value);
 
-struct cfish_Obj*
+CFISH_VISIBLE struct cfish_Obj*
 cfish_LFReg_fetch(cfish_LockFreeRegistry *self, struct cfish_String *key);
 
 #ifdef CFISH_USE_SHORT_NAMES
