@@ -67,7 +67,7 @@ END_XS_CODE
 
 sub bind_test {
     my $xs_code = <<'END_XS_CODE';
-MODULE = Clownfish   PACKAGE = Clownfish::Test
+MODULE = Clownfish::Test   PACKAGE = Clownfish::Test
 
 SV*
 create_test_suite()

@@ -77,9 +77,15 @@ sub new {
         modules => [
             {
                 name          => 'Clownfish',
-                parcels       => [ 'Clownfish', 'TestClownfish' ],
+                parcels       => [ 'Clownfish' ],
                 make_target   => 'core_objects',
                 c_source_dirs => [ $XS_SOURCE_DIR ],
+            },
+            {
+                name          => 'Clownfish::Test',
+                parcels       => [ 'TestClownfish' ],
+                make_target   => 'test_objects',
+                xs_prereqs    => [ 'Clownfish' ],
             },
         ],
     };

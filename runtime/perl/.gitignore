@@ -14,6 +14,8 @@
 /charmony.h
 /lib/Clownfish.c
 /lib/Clownfish.xs
+/lib/Clownfish/Test.c
+/lib/Clownfish/Test.xs
 /ppport.h
 /typemap
 

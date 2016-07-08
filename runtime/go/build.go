@@ -109,7 +109,7 @@ func configure() {
 	if !current(charmonizerC, charmonizerEXE) {
 		runCommand("cc", "-o", charmonizerEXE, charmonizerC)
 	}
-	if !current(charmonizerEXE, charmonyH) {
+	if !current(charmonizerEXE, charmonyH) || !current(charmonizerEXE, "Makefile") {
 		runCommand("./charmonizer", "--cc=cc", "--enable-c", "--host=go",
 			"--enable-makefile", "--disable-threads", "--", "-std=gnu99",
 			"-O2")
@@ -265,6 +265,7 @@ func writeConfigGO() {
 			"// #cgo CFLAGS: -I%s\n"+
 			"// #cgo CFLAGS: -I%s/autogen/include\n"+
 			"// #cgo LDFLAGS: -L%s\n"+
+			"// #cgo LDFLAGS: -ltestcfish\n"+
 			"// #cgo LDFLAGS: -lclownfish\n"+
 			"import \"C\"\n",
 		buildDir, buildDir, buildDir, buildDir)

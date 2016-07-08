@@ -18,6 +18,14 @@ use Clownfish;
 our $VERSION = '0.005000';
 $VERSION = eval $VERSION;
 
+sub dl_load_flags { 1 }
+
+BEGIN {
+    require DynaLoader;
+    our @ISA = qw( DynaLoader );
+    bootstrap Clownfish::Test '0.5.0';
+}
+
 sub run_tests {
     my $class_name = shift;
     my $formatter  = Clownfish::TestHarness::TestFormatterTAP->new();

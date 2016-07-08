@@ -58,8 +58,10 @@ CHARMONIZER_C        = os.path.join(COMMON_SOURCE_DIR, 'charmonizer.c')
 CHARMONIZER_EXE_NAME = compiler.executable_filename('charmonizer')
 CHARMONIZER_EXE_PATH = os.path.join(os.curdir, CHARMONIZER_EXE_NAME)
 CHARMONY_H_PATH      = 'charmony.h'
-LIBCLOWNFISH_NAME    = 'libclownfish.a' # TODO portability
-LIBCLOWNFISH_PATH    = os.path.abspath(os.path.join(os.curdir, LIBCLOWNFISH_NAME))
+CORELIB_NAME         = 'libclownfish.a' # TODO portability
+CORELIB_PATH         = os.path.abspath(os.path.join(os.curdir, CORELIB_NAME))
+TESTLIB_NAME         = 'libtestcfish.a' # TODO portability
+TESTLIB_PATH         = os.path.abspath(os.path.join(os.curdir, TESTLIB_NAME))
 AUTOGEN_INCLUDE      = os.path.join('autogen', 'include')
 CFC_DIR              = os.path.join(BASE_DIR, 'compiler', 'python')
 CFC_BUILD_DIR        = ext_build_dir(os.path.join(CFC_DIR))
@@ -198,7 +200,10 @@ clownfish_extension = Extension('clownfish._clownfish',
                                     CFEXT_DIR,
                                     os.curdir,
                                  ],
-                                 extra_link_args = [LIBCLOWNFISH_PATH],
+                                 extra_link_args = [
+                                    CORELIB_PATH,
+                                    TESTLIB_PATH,
+                                 ],
                                  sources = c_filepaths)
 
 setup(name = 'clownfish',

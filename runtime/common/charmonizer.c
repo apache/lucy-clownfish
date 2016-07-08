@@ -8589,7 +8589,8 @@ chaz_VariadicMacros_run(void) {
 
 typedef struct cfish_MakeFile {
     chaz_MakeFile   *makefile;
-    chaz_MakeBinary *binary;
+    chaz_MakeBinary *lib;
+    chaz_MakeBinary *test_lib;
     chaz_MakeVar    *cfh_var;
     chaz_CLI        *cli;
 
@@ -8804,7 +8805,8 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     cfish_MakeFile *self = malloc(sizeof(cfish_MakeFile));
 
     self->makefile = chaz_MakeFile_new();
-    self->binary   = NULL;
+    self->lib      = NULL;
+    self->test_lib = NULL;
     self->cfh_var  = NULL;
     self->cli      = cli;
 
@@ -8851,14 +8853,11 @@ cfish_MakeFile_destroy(cfish_MakeFile *self) {
 
 static void
 cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
-    static const char *const autogen_src_files[] = {
-        "cfish_parcel.c",
-        "testcfish_parcel.c",
-        NULL
-    };
-
     const char *dir_sep = chaz_OS_dir_sep();
     const char *host    = chaz_CLI_strval(self->cli, "host");
+
+    const char *lib_objs      = NULL;
+    const char *test_lib_objs = NULL;
 
     chaz_MakeVar  *var;
     chaz_MakeRule *rule;
@@ -8867,8 +8866,6 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
     chaz_CFlags *makefile_cflags;
     chaz_CFlags *compile_flags;
     chaz_CFlags *link_flags;
-
-    int i;
 
     printf("Creating Makefile...\n");
 
@@ -8903,77 +8900,119 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
 
     chaz_CFlags_destroy(makefile_cflags);
 
-    /* Binary. */
+    /* Core library. */
 
     if (strcmp(host, "c") == 0 || strcmp(host, "perl") == 0) {
+        /* Shared library for C and Perl. */
+
         chaz_MakeFile_add_rule(self->makefile, "all", "$(CFISH_SHARED_LIB)");
 
-        self->binary
+        self->lib
             = chaz_MakeFile_add_shared_lib(self->makefile, NULL, "cfish",
                                            cfish_version, cfish_major_version);
-        chaz_MakeFile_add_rule(self->makefile, "$(CFISH_SHARED_LIB_OBJS)",
-                               self->autogen_target);
+        lib_objs = "$(CFISH_SHARED_LIB_OBJS)";
+
+        compile_flags = chaz_MakeBinary_get_compile_flags(self->lib);
+        chaz_CFlags_add_define(compile_flags, "CFP_CFISH", NULL);
+
+        link_flags = chaz_MakeBinary_get_link_flags(self->lib);
+        chaz_CFlags_enable_debugging(link_flags);
+        chaz_CFlags_append(link_flags,
+                           chaz_CFlags_get_string(extra_link_flags));
     }
     else {
-        chaz_MakeFile_add_rule(self->makefile, "static",
-                               "$(CLOWNFISH_STATIC_LIB)");
+        /* Static library for Go and Python. */
 
-        self->binary
+        chaz_MakeFile_add_rule(self->makefile, "static",
+                               "$(CLOWNFISH_STATIC_LIB)"
+                               " $(TESTCFISH_STATIC_LIB)");
+
+        self->lib
             = chaz_MakeFile_add_static_lib(self->makefile, NULL, "clownfish");
-        chaz_MakeFile_add_rule(self->makefile, "$(CLOWNFISH_STATIC_LIB_OBJS)",
-                               self->autogen_target);
+        lib_objs = "$(CLOWNFISH_STATIC_LIB_OBJS)";
     }
 
     if (self->host_src_dir) {
-        chaz_MakeBinary_add_src_dir(self->binary, self->host_src_dir);
+        chaz_MakeBinary_add_src_dir(self->lib, self->host_src_dir);
     }
-    chaz_MakeBinary_add_src_dir(self->binary, self->core_dir);
-    chaz_MakeBinary_add_src_dir(self->binary, self->test_dir);
+    chaz_MakeBinary_add_src_dir(self->lib, self->core_dir);
+    chaz_MakeBinary_add_src_file(self->lib, self->autogen_src_dir,
+                                 "cfish_parcel.c");
 
-    compile_flags = chaz_MakeBinary_get_compile_flags(self->binary);
-    chaz_CFlags_add_define(compile_flags, "CFP_CFISH", NULL);
-    chaz_CFlags_add_define(compile_flags, "CFP_TESTCFISH", NULL);
+    /* Test library. */
 
-    link_flags = chaz_MakeBinary_get_link_flags(self->binary);
-    chaz_CFlags_enable_debugging(link_flags);
-    chaz_CFlags_append(link_flags, chaz_CFlags_get_string(extra_link_flags));
+    if (strcmp(host, "c") == 0 || strcmp(host, "perl") == 0) {
+        /* Shared library for C and Perl. */
 
-    for (i = 0; autogen_src_files[i] != NULL; ++i) {
-        chaz_MakeBinary_add_src_file(self->binary, self->autogen_src_dir,
-                                     autogen_src_files[i]);
+        self->test_lib
+            = chaz_MakeFile_add_shared_lib(self->makefile, NULL, "testcfish",
+                                           cfish_version, cfish_major_version);
+        test_lib_objs = "$(TESTCFISH_SHARED_LIB_OBJS)";
+
+        compile_flags = chaz_MakeBinary_get_compile_flags(self->test_lib);
+        chaz_CFlags_add_define(compile_flags, "CFP_TESTCFISH", NULL);
+
+        link_flags = chaz_MakeBinary_get_link_flags(self->test_lib);
+        chaz_CFlags_enable_debugging(link_flags);
+        chaz_CFlags_append(link_flags,
+                           chaz_CFlags_get_string(extra_link_flags));
+        chaz_CFlags_add_shared_lib(link_flags, NULL, "cfish",
+                                   cfish_major_version);
+
+        chaz_MakeBinary_add_prereq(self->test_lib, "$(CFISH_SHARED_LIB)");
     }
+    else {
+        /* Static library for Go and Python. */
+
+        self->test_lib
+            = chaz_MakeFile_add_static_lib(self->makefile, NULL, "testcfish");
+        test_lib_objs = "$(TESTCFISH_STATIC_LIB_OBJS)";
+    }
+
+    chaz_MakeBinary_add_src_dir(self->test_lib, self->test_dir);
+    chaz_MakeBinary_add_src_file(self->test_lib, self->autogen_src_dir,
+                                 "testcfish_parcel.c");
 
     /* Additional rules. */
+
+    /* Object files depend on autogenerated headers. */
+    chaz_MakeFile_add_rule(self->makefile, lib_objs, self->autogen_target);
+    chaz_MakeFile_add_rule(self->makefile, test_lib_objs,
+                           self->autogen_target);
 
     if (strcmp(host, "c") == 0) {
         cfish_MakeFile_write_c_cfc_rules(self);
         cfish_MakeFile_write_c_test_rules(self);
     }
 
+    /* Targets to compile object files for Perl. */
     if (strcmp(host, "perl") == 0) {
-        char *core_objects = chaz_MakeBinary_obj_string(self->binary);
+        char *objects;
+
         chaz_MakeFile_add_rule(self->makefile, "core_objects",
                                "$(CFISH_SHARED_LIB_OBJS)");
-        chaz_ConfWriter_add_def("CORE_OBJECTS", core_objects);
-        free(core_objects);
-    }
+        objects = chaz_MakeBinary_obj_string(self->lib);
+        chaz_ConfWriter_add_def("CORE_OBJECTS", objects);
+        free(objects);
 
-    /* Needed for parallel builds. */
-    for (i = 0; autogen_src_files[i] != NULL; ++i) {
-        char *path = chaz_Util_join(dir_sep, self->autogen_src_dir,
-                                    autogen_src_files[i], NULL);
-        chaz_MakeFile_add_rule(self->makefile, path, self->autogen_target);
-        free(path);
+        chaz_MakeFile_add_rule(self->makefile, "test_objects",
+                               "$(TESTCFISH_SHARED_LIB_OBJS)");
+        objects = chaz_MakeBinary_obj_string(self->test_lib);
+        chaz_ConfWriter_add_def("TEST_OBJECTS", objects);
+        free(objects);
     }
-
-    rule = chaz_MakeFile_clean_rule(self->makefile);
-    chaz_MakeRule_add_recursive_rm_command(rule, "autogen");
 
     chaz_MakeFile_write(self->makefile);
 }
 
 static void
 cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
+    static const char *const autogen_src_files[] = {
+        "cfish_parcel.c",
+        "testcfish_parcel.c",
+        NULL
+    };
+
     chaz_MakeRule *rule;
 
     const char *dir_sep  = chaz_OS_dir_sep();
@@ -8982,6 +9021,8 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
     char *cfc_dir;
     char *cfc_exe;
     char *cfc_command;
+
+    int i;
 
     cfc_dir = chaz_Util_join(dir_sep, self->base_dir, "..", "compiler", "c",
                              NULL);
@@ -8995,14 +9036,24 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
     chaz_Make_list_files(self->core_dir, "cfh", S_cfh_file_callback, self);
     chaz_Make_list_files(self->test_dir, "cfh", S_cfh_file_callback, self);
 
-    rule = chaz_MakeFile_add_rule(self->makefile, self->autogen_target, cfc_exe);
+    rule = chaz_MakeFile_add_rule(self->makefile, self->autogen_target,
+                                  cfc_exe);
     chaz_MakeRule_add_prereq(rule, "$(CLOWNFISH_HEADERS)");
     cfc_command = chaz_Util_join("", cfc_exe, " --source=", self->core_dir,
                                  " --source=", self->test_dir,
                                  " --dest=autogen --header=cfc_header", NULL);
     chaz_MakeRule_add_command(rule, cfc_command);
 
+    /* Tell make how autogenerated source files are built. */
+    for (i = 0; autogen_src_files[i] != NULL; ++i) {
+        char *path = chaz_Util_join(dir_sep, self->autogen_src_dir,
+                                    autogen_src_files[i], NULL);
+        chaz_MakeFile_add_rule(self->makefile, path, self->autogen_target);
+        free(path);
+    }
+
     rule = chaz_MakeFile_clean_rule(self->makefile);
+    chaz_MakeRule_add_recursive_rm_command(rule, "autogen");
     chaz_MakeRule_add_make_command(rule, cfc_dir, "clean");
 
     rule = chaz_MakeFile_distclean_rule(self->makefile);
@@ -9016,18 +9067,24 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
 static void
 cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     chaz_MakeBinary *exe;
-    chaz_CFlags     *link_cflags;
+    chaz_CFlags     *link_flags;
     chaz_MakeRule   *rule;
 
     exe = chaz_MakeFile_add_exe(self->makefile, "t", "test_cfish");
     chaz_MakeBinary_add_src_file(exe, "t", "test_cfish.c");
+
+    link_flags = chaz_MakeBinary_get_link_flags(exe);
+    chaz_CFlags_add_rpath(link_flags, "\"$$PWD\"");
+    chaz_CFlags_add_shared_lib(link_flags, NULL, "testcfish",
+                               cfish_major_version);
+    chaz_CFlags_add_shared_lib(link_flags, NULL, "cfish",
+                               cfish_major_version);
+
+    chaz_MakeBinary_add_prereq(exe, "$(TESTCFISH_SHARED_LIB)");
+    chaz_MakeBinary_add_prereq(exe, "$(CFISH_SHARED_LIB)");
+
     chaz_MakeFile_add_rule(self->makefile, "$(TEST_CFISH_EXE_OBJS)",
                            self->autogen_target);
-    link_cflags = chaz_MakeBinary_get_link_flags(exe);
-    chaz_CFlags_add_shared_lib(link_cflags, NULL, "cfish",
-                               cfish_major_version);
-    chaz_CFlags_add_rpath(link_cflags, "\"$$PWD\"");
-    chaz_MakeBinary_add_prereq(exe, "$(CFISH_SHARED_LIB)");
 
     rule = chaz_MakeFile_add_rule(self->makefile, "test", "$(TEST_CFISH_EXE)");
     chaz_MakeRule_add_command(rule, "$(TEST_CFISH_EXE)");
