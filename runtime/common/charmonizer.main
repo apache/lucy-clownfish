@@ -253,7 +253,8 @@ S_link_flags(chaz_CLI *cli) {
 static cfish_MakeFile*
 cfish_MakeFile_new(chaz_CLI *cli) {
     const char *dir_sep = chaz_OS_dir_sep();
-
+    char *cfcore_filename = chaz_Util_join(dir_sep, "cfcore", "Clownfish.cfp",
+                                           NULL);
     cfish_MakeFile *self = malloc(sizeof(cfish_MakeFile));
 
     self->makefile = chaz_MakeFile_new();
@@ -262,10 +263,17 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     self->cfh_var  = NULL;
     self->cli      = cli;
 
-    /* TODO: Detect base directory. */
-    self->base_dir = "..";
-    self->core_dir = chaz_Util_join(dir_sep, self->base_dir, "core", NULL);
-    self->test_dir = chaz_Util_join(dir_sep, self->base_dir, "test", NULL);
+    if (chaz_Util_can_open_file(cfcore_filename)) {
+        self->base_dir = ".";
+        self->core_dir = chaz_Util_strdup("cfcore");
+        self->test_dir = chaz_Util_strdup("cftest");
+    }
+    else {
+        self->base_dir = "..";
+        self->core_dir = chaz_Util_join(dir_sep, "..", "core", NULL);
+        self->test_dir = chaz_Util_join(dir_sep, "..", "test", NULL);
+    }
+
     self->autogen_src_dir = chaz_Util_join(dir_sep, "autogen", "source", NULL);
     self->autogen_inc_dir
         = chaz_Util_join(dir_sep, "autogen", "include", NULL);
@@ -287,6 +295,7 @@ cfish_MakeFile_new(chaz_CLI *cli) {
         self->host_src_dir = NULL;
     }
 
+    free(cfcore_filename);
     return self;
 }
 
