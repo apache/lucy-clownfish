@@ -31,7 +31,7 @@ my $builder = Clownfish::CFC::Build->new(
     build_requires    => {
         'Module::Build'      => 0.280801,
         'ExtUtils::CBuilder' => 0.18,
-        'ExtUtils::ParseXS'  => 2.16,
+        'ExtUtils::ParseXS'  => 3.00,
         'Devel::PPPort'      => 3.14,
     },
     meta_merge => { keywords => [qw( clownfish )], },
