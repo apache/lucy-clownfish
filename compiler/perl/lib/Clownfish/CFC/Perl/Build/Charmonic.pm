@@ -145,16 +145,31 @@ sub cf_make_objects {
 
     return [] unless $self->charmonizer_params('create_makefile');
 
+    $self->_cf_charm_run_make(lc($target));
+
+    return [ split( /\s+/, $self->charmony(uc($target)) ) ];
+}
+
+sub cf_make_clean {
+    my $self = shift;
+
+    return unless $self->charmonizer_params('create_makefile')
+                  && -e 'Makefile';
+
+    $self->_cf_charm_run_make('clean');
+}
+
+sub _cf_charm_run_make {
+    my ( $self, $target ) = @_;
+
     my $make_options = $self->charmonizer_params('make_options');
     my @command = (
         $self->config('make'),
         $self->split_like_shell($make_options),
-        lc($target),
+        $target,
     );
     print join(' ', @command), "\n";
     system @command and die($self->config('make') . " failed");
-
-    return [ split( /\s+/, $self->charmony(uc($target)) ) ];
 }
 
 1;

@@ -399,11 +399,10 @@ sub _compile_custom_xs {
     mkpath( $archdir, 0, 0777 ) unless -d $archdir;
     my @objects;
 
-    # Make core objects.
+    # Make objects.
     if ($module->{make_target}) {
-        my $core_objects = $self->cf_make_objects($module->{make_target});
-        push @objects, @$core_objects;
-        $self->add_to_cleanup(@$core_objects);
+        my $make_objects = $self->cf_make_objects($module->{make_target});
+        push @objects, @$make_objects;
     }
 
     # Compile C source files.
@@ -536,6 +535,16 @@ sub ACTION_code {
     ));
 
     $self->SUPER::ACTION_code;
+}
+
+sub ACTION_clean {
+    my $self = shift;
+
+    if ( $self->can('cf_make_clean') ) {
+        $self->cf_make_clean();
+    }
+
+    $self->SUPER::ACTION_clean;
 }
 
 # Monkey patch ExtUtils::CBuilder::Platform::Windows::GCC::format_linker_cmd
