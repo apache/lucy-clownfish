@@ -53,6 +53,7 @@ is( $buf, $wanted, 'iter next' );
 
 {
     package MyStringCallbackTest;
+    use Clownfish::Test;
     use base qw(Clownfish::Test::StringCallbackTest);
 
     our $string_ref;

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#define CFP_CFISH
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
 #define C_CFISH_METHOD

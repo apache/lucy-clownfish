@@ -21,7 +21,7 @@ package Clownfish::Build;
 my $IS_CPAN_DIST;
 
 BEGIN {
-    $IS_CPAN_DIST = -e 'core';
+    $IS_CPAN_DIST = -e 'cfcore';
 
     if (!$IS_CPAN_DIST) {
         unshift @INC,
@@ -49,17 +49,22 @@ use Cwd qw( getcwd );
 my @BASE_PATH = __PACKAGE__->cf_base_path;
 
 my $COMMON_SOURCE_DIR = catdir( @BASE_PATH, 'common' );
-my $CORE_SOURCE_DIR   = catdir( @BASE_PATH, 'core' );
 my $CFC_DIR           = catdir( @BASE_PATH, updir(), 'compiler', 'perl' );
 my $XS_SOURCE_DIR = 'xs';
 my $CFC_BUILD     = catfile( $CFC_DIR, 'Build' );
 my $LIB_DIR       = 'lib';
+my $CORE_SOURCE_DIR;
+my $TEST_SOURCE_DIR;
 my $CHARMONIZER_C;
 if ($IS_CPAN_DIST) {
-    $CHARMONIZER_C = 'charmonizer.c';
+    $CORE_SOURCE_DIR = 'cfcore';
+    $TEST_SOURCE_DIR = 'cftest';
+    $CHARMONIZER_C   = 'charmonizer.c';
 }
 else {
-    $CHARMONIZER_C = catfile( $COMMON_SOURCE_DIR, 'charmonizer.c' );
+    $CORE_SOURCE_DIR = catdir( @BASE_PATH, 'core' );
+    $TEST_SOURCE_DIR = catdir( @BASE_PATH, 'test' );
+    $CHARMONIZER_C   = catfile( $COMMON_SOURCE_DIR, 'charmonizer.c' );
 }
 
 sub new {
@@ -68,13 +73,19 @@ sub new {
     $args{clownfish_params} = {
         autogen_header => _autogen_header(),
         include        => [],                  # Don't use default includes.
-        source         => [ $CORE_SOURCE_DIR ],
+        source         => [ $CORE_SOURCE_DIR, $TEST_SOURCE_DIR ],
         modules => [
             {
                 name          => 'Clownfish',
-                parcels       => [ 'Clownfish', 'TestClownfish' ],
+                parcels       => [ 'Clownfish' ],
                 make_target   => 'core_objects',
                 c_source_dirs => [ $XS_SOURCE_DIR ],
+            },
+            {
+                name          => 'Clownfish::Test',
+                parcels       => [ 'TestClownfish' ],
+                make_target   => 'test_objects',
+                xs_prereqs    => [ 'Clownfish' ],
             },
         ],
     };
@@ -314,7 +325,8 @@ sub ACTION_dist {
         '../../LICENSE'         => 'LICENSE',
         '../../NOTICE'          => 'NOTICE',
         '../../README.md'       => 'README.md',
-        $CORE_SOURCE_DIR        => 'core',
+        $CORE_SOURCE_DIR        => 'cfcore',
+        $TEST_SOURCE_DIR        => 'cftest',
         $CHARMONIZER_C          => 'charmonizer.c',
     );
     print "Copying files...\n";

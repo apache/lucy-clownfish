@@ -34,7 +34,7 @@ my $builder = Clownfish::Build->new(
     build_requires => {
         'Module::Build'      => 0.280801,
         'ExtUtils::CBuilder' => 0.21,
-        'ExtUtils::ParseXS'  => 2.18,
+        'ExtUtils::ParseXS'  => 3.00,
         'Devel::PPPort'      => 3.14,
         'Clownfish::CFC'     => 0.005000,
     },

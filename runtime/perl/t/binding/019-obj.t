@@ -17,6 +17,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 25;
+use Clownfish::Test;
 
 package TestObj;
 use base qw( Clownfish::Obj );

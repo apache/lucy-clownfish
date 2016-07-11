@@ -48,7 +48,7 @@ else {
 # development, the files are accessed from their original locations.
 
 my @BASE_PATH;
-push(@BASE_PATH, updir()) unless -e 'core';
+push(@BASE_PATH, updir()) unless -d 'core' || -d 'cfcore';
 
 my $AUTOGEN_DIR  = 'autogen';
 my $LIB_DIR      = 'lib';
@@ -134,7 +134,7 @@ sub cf_base_path {
 }
 
 sub cf_linker_flags {
-    my $self_or_class = shift;
+    my $self = shift;
 
     my $dlext = $Config{dlext};
     # Only needed on Windows
@@ -152,7 +152,7 @@ sub cf_linker_flags {
         my $lib_file;
         my $found;
 
-        for my $dir (@INC) {
+        for my $dir ( catdir( $self->blib, 'arch' ), @INC ) {
             $lib_file = catfile(
                 $dir, 'auto', @module_parts, "$class_name.$ext",
             );
@@ -503,13 +503,19 @@ sub _compile_custom_xs {
     # .o => .(a|bundle)
     my $lib_file = catfile( $archdir, "$class_name.$Config{dlext}" );
     if ( !$self->up_to_date( [ @objects, $AUTOGEN_DIR ], $lib_file ) ) {
+        my $linker_flags = $self->extra_linker_flags;
+        if ( $module->{xs_prereqs} ) {
+            push @$linker_flags,
+                 $self->cf_linker_flags( @{ $module->{xs_prereqs} } );
+        }
         $cbuilder->link(
             module_name        => $module_name,
             objects            => \@objects,
             lib_file           => $lib_file,
-            extra_linker_flags => $self->extra_linker_flags,
+            extra_linker_flags => $linker_flags,
         );
         # Install .lib file on Windows
+        # TODO: Install .dll.a when building with GCC on Windows?
         my $implib_file = catfile( $libdir, "$class_name.lib" );
         if ( -e $implib_file ) {
             $self->copy_if_modified(
@@ -615,16 +621,12 @@ the Perl bindings for Clownfish modules.
     use File::Spec::Functions qw( catdir );
 
     my @cf_base_path    = Clownfish::CFC::Perl::Build->cf_base_path;
-    my @cf_linker_flags = Clownfish::CFC::Perl::Build->cf_linker_flags(
-        'Other::Module',
-    );
 
     my $builder = Clownfish::CFC::Perl::Build->new(
         module_name        => 'My::Module',
         dist_abstract      => 'Do something with this and that',
         dist_author        => 'The Author <author@example.com>',
         dist_version       => '0.1.0',
-        extra_linker_flags => [ @cf_linker_flags ],
         clownfish_params => {
             source  => [ catdir( @cf_base_path, 'core' ) ],
             modules => [
@@ -632,10 +634,12 @@ the Perl bindings for Clownfish modules.
                     name          => 'My::Module',
                     c_source_dirs => 'xs',
                     parcels       => [ 'MyModule' ],
+                    xs_prereqs    => [ 'Clownfish' ],
                 },
                 {
                     name          => 'My::Module::Test',
                     parcels       => [ 'TestMyModule' ],
+                    xs_prereqs    => [ 'Clownfish', 'My::Module' ],
                 },
             ],
         },
@@ -728,14 +732,6 @@ Clownfish .c files.
 
 Returns the base path components of the source tree where C<core> was found.
 Currently either C<()> or C<('..')>.
-
-=head2 cf_linker_flags( I<[module_names]> )
-
-    my @flags = Clownfish::CFC::Perl::Build->cf_linker_flags(@module_names);
-
-Returns the linker flags needed to link against all Clownfish modules in
-C<@module_names>. Should be added to C<extra_linker_flags> for all module
-dependencies. Only needed on Windows.
 
 =head1 METHODS
 
