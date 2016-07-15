@@ -5080,13 +5080,6 @@ chaz_MakeBinary*
 chaz_MakeFile_add_lemon_exe(chaz_MakeFile *self, const char *dir) {
     chaz_MakeBinary *exe = chaz_MakeFile_add_exe(self, dir, "lemon");
     chaz_MakeBinary_add_src_file(exe, dir, "lemon.c");
-
-    if (chaz_CC_gcc_version_num()) {
-        chaz_CFlags *cflags = chaz_MakeBinary_get_compile_flags(exe);
-        chaz_CFlags_append(cflags, "-Wno-pedantic -Wno-sign-compare"
-                           " -Wno-unused-parameter");
-    }
-
     return exe;
 }
 
@@ -8743,6 +8736,7 @@ S_write_makefile(struct chaz_CLI *cli) {
 
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
     chaz_CFlags *makefile_cflags;
+    chaz_CFlags *compile_flags;
     chaz_CFlags *link_flags;
 
     printf("Creating Makefile...\n");
@@ -8769,7 +8763,7 @@ S_write_makefile(struct chaz_CLI *cli) {
         chaz_CFlags_enable_code_coverage(makefile_cflags);
     }
 
-    var = chaz_MakeFile_add_var(makefile, "CFLAGS", NULL);
+    var = chaz_MakeFile_add_var(makefile, "CFC_CFLAGS", NULL);
     chaz_MakeVar_append(var, chaz_CFlags_get_string(extra_cflags));
     chaz_MakeVar_append(var, chaz_CFlags_get_string(makefile_cflags));
     chaz_MakeVar_append(var, chaz_CC_get_cflags());
@@ -8779,8 +8773,6 @@ S_write_makefile(struct chaz_CLI *cli) {
     /* Binaries. */
 
     if (strcmp(host, "c") == 0) {
-        chaz_CFlags *link_flags;
-
         chaz_MakeFile_add_rule(makefile, "all", "$(CFC_EXE)");
 
         exe = chaz_MakeFile_add_exe(makefile, NULL, "cfc");
@@ -8788,16 +8780,22 @@ S_write_makefile(struct chaz_CLI *cli) {
         chaz_MakeBinary_add_prereq(exe, "$(CFC_STATIC_LIB)");
         link_flags = chaz_MakeBinary_get_link_flags(exe);
         chaz_CFlags_append(link_flags, "$(CFC_STATIC_LIB)");
+        compile_flags = chaz_MakeBinary_get_compile_flags(exe);
+        chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");
 
         test_exe = chaz_MakeFile_add_exe(makefile, "t", "test_cfc");
         chaz_MakeBinary_add_src_file(test_exe, "t", "test_cfc.c");
         chaz_MakeBinary_add_prereq(test_exe, "$(CFC_STATIC_LIB)");
         link_flags = chaz_MakeBinary_get_link_flags(test_exe);
         chaz_CFlags_append(link_flags, "$(CFC_STATIC_LIB)");
+        compile_flags = chaz_MakeBinary_get_compile_flags(test_exe);
+        chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");
     }
 
     lib = chaz_MakeFile_add_static_lib(makefile, NULL, "cfc");
     chaz_MakeFile_add_rule(makefile, "static", "$(CFC_STATIC_LIB)");
+    compile_flags = chaz_MakeBinary_get_compile_flags(lib);
+    chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");
 
     /*
      * The dependency is actually on CFCParseHeader.h, but make doesn't cope

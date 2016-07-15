@@ -5080,13 +5080,6 @@ chaz_MakeBinary*
 chaz_MakeFile_add_lemon_exe(chaz_MakeFile *self, const char *dir) {
     chaz_MakeBinary *exe = chaz_MakeFile_add_exe(self, dir, "lemon");
     chaz_MakeBinary_add_src_file(exe, dir, "lemon.c");
-
-    if (chaz_CC_gcc_version_num()) {
-        chaz_CFlags *cflags = chaz_MakeBinary_get_compile_flags(exe);
-        chaz_CFlags_append(cflags, "-Wno-pedantic -Wno-sign-compare"
-                           " -Wno-unused-parameter");
-    }
-
     return exe;
 }
 
