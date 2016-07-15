@@ -199,24 +199,6 @@ sub cf_copy_include_file {
     die( "Clownfish include file " . catfile(@path) . " not found" );
 }
 
-sub ACTION_copy_clownfish_includes {
-    my $self = shift;
-
-    # Copy .cfh files to blib/arch/Clownfish/_include
-    my $inc_dir     = catdir( $self->blib, 'arch', 'Clownfish', '_include' );
-    my $source_dirs = $self->clownfish_params('source');
-
-    for my $source_dir (@$source_dirs) {
-        my $cfh_filepaths = $self->rscan_dir( $source_dir, qr/\.cf[hp]$/ );
-
-        for my $file (@$cfh_filepaths) {
-            my $rel  = abs2rel( $file, $source_dir );
-            my $dest = catfile( $inc_dir, $rel );
-            $self->copy_if_modified( from => $file, to => $dest );
-        }
-    }
-}
-
 my %hierarchy_cache;
 
 sub _compile_clownfish {
@@ -312,6 +294,9 @@ sub ACTION_clownfish {
         print "Writing typemap...\n";
         $self->add_to_cleanup('typemap');
         $perl_binding->write_xs_typemap;
+
+        my $inc_dir = catdir( $self->blib, 'arch', 'Clownfish', '_include' );
+        $hierarchy->copy_headers($inc_dir);
     }
 
     # Rewrite XS if either any .cfh files or relevant .pm files were modified.
@@ -531,7 +516,6 @@ sub ACTION_code {
     $self->depends_on(qw(
         clownfish
         compile_custom_xs
-        copy_clownfish_includes
     ));
 
     $self->SUPER::ACTION_code;

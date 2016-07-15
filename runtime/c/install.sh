@@ -115,24 +115,13 @@ esac
 mkdir -p "$prefix/bin"
 cp ../../compiler/c/cfc "$prefix/bin/cfc"
 
-# Install Clownfish header files.
-for src in `find ../core -name '*.cf[hp]'`; do
-    file=${src#../core/}
-    dest=$prefix/share/clownfish/include/$file
-    dir=`dirname "$dest"`
-    mkdir -p "$dir"
-    cp $src "$dest"
-done
+# Install Clownfish header files and HTML documentation.
+mkdir -p "$prefix/share"
+cp -R autogen/share/* "$prefix/share"
 
 # Install man pages.
 mkdir -p "$prefix/man"
-# Resolve symbolic links.
-man_dir=$(cd "$prefix/man" && pwd -P)
-if [ -n "$man_dir" ]; then
-    cp -R autogen/man "$man_dir"
-else
-    echo "Warning: Invalid directory $prefix/man"
-fi
+cp -R autogen/man/* "$prefix/man"
 
 # Create pkg-config file.
 mkdir -p "$prefix/lib/pkgconfig"

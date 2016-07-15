@@ -248,6 +248,8 @@ main(int argc, char **argv) {
         CFCC_write_man_pages(c_binding);
     }
 
+    CFCHierarchy_copy_headers(hierarchy, NULL);
+
     CFCHierarchy_write_log(hierarchy);
 
     CFCBase_decref((CFCBase*)c_binding);

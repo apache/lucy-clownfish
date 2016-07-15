@@ -773,6 +773,13 @@ CODE:
 OUTPUT: RETVAL
 
 void
+copy_headers(self, dest_dir)
+    CFCHierarchy *self;
+    const char *dest_dir;
+PPCODE:
+    CFCHierarchy_copy_headers(self, dest_dir);
+
+void
 write_log(self)
     CFCHierarchy *self;
 PPCODE:
@@ -1142,12 +1149,6 @@ add_inherited_parcel(self, inherited)
 PPCODE:
     CFCParcel_add_inherited_parcel(self, inherited);
 
-void
-check_prereqs(self)
-    CFCParcel *self;
-PPCODE:
-    CFCParcel_check_prereqs(self);
-
 int
 has_prereq(self, parcel)
     CFCParcel *self;
@@ -1190,7 +1191,6 @@ ALIAS:
     get_version       = 12
     get_prereqs       = 14
     included          = 16
-    required          = 18
     prereq_parcels    = 20
     inherited_parcels = 22
 PPCODE:
@@ -1233,9 +1233,6 @@ PPCODE:
             break;
         case 16:
             retval = newSViv(CFCParcel_included(self));
-            break;
-        case 18:
-            retval = newSViv(CFCParcel_required(self));
             break;
         case 20: {
                 CFCParcel **parcels = CFCParcel_prereq_parcels(self);

@@ -55,7 +55,7 @@ S_run_clash_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_HIERARCHY = {
     "Clownfish::CFC::Model::Hierarchy",
-    47,
+    41,
     S_run_tests
 };
 
@@ -168,13 +168,14 @@ static void
 S_run_include_tests(CFCTest *test) {
     char *cfbase_path = CFCTest_path("cfbase");
     char *cfext_path  = CFCTest_path("cfext");
+    char *cfinc_path  = CFCTest_path("cfinc");
 
     {
         CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
         CFCHierarchy_add_source_dir(hierarchy, cfext_path);
-        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfinc_path);
         const char **include_dirs = CFCHierarchy_get_include_dirs(hierarchy);
-        STR_EQ(test, include_dirs[0], cfbase_path, "include_dirs[0]");
+        STR_EQ(test, include_dirs[0], cfinc_path, "include_dirs[0]");
         OK(test, include_dirs[1] == NULL, "include_dirs[1]");
 
         CFCHierarchy_build(hierarchy);
@@ -235,49 +236,21 @@ S_run_include_tests(CFCTest *test) {
         CFCParcel_reap_singletons();
     }
 
-    {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
-        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
-        CFCHierarchy_add_include_dir(hierarchy, cfext_path);
-        CFCHierarchy_add_prereq(hierarchy, "AnimalExtension");
-
-        CFCHierarchy_build(hierarchy);
-
-        CFCParcel *animal = CFCParcel_fetch("Animal");
-        OK(test, animal != NULL, "parcel Animal registered");
-        OK(test, CFCParcel_required(animal), "parcel Animal required");
-        CFCParcel *animal_ext = CFCParcel_fetch("AnimalExtension");
-        OK(test, animal_ext != NULL, "parcel AnimalExtension registered");
-        OK(test, CFCParcel_required(animal_ext),
-           "parcel AnimalExtension required");
-
-        CFCClass **classes = CFCHierarchy_ordered_classes(hierarchy);
-        int num_classes = 0;
-        while (classes[num_classes]) {
-            ++num_classes;
-        }
-        INT_EQ(test, num_classes, 5, "class count");
-
-        FREEMEM(classes);
-        CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
-        CFCParcel_reap_singletons();
-    }
-
     rmdir(AUTOGEN_INCLUDE);
     rmdir(AUTOGEN_SOURCE);
     rmdir(AUTOGEN);
 
     FREEMEM(cfbase_path);
     FREEMEM(cfext_path);
+    FREEMEM(cfinc_path);
 }
 
 static void
 S_run_clash_tests(CFCTest *test) {
     char *cfbase_path        = CFCTest_path("cfbase");
+    char *cfinc_path         = CFCTest_path("cfinc");
     char *cfclash_file_path  = CFCTest_path("cfclash" CHY_DIR_SEP "file");
     char *cfclash_class_path = CFCTest_path("cfclash" CHY_DIR_SEP "class");
-    char *cfclash_foo_path   = CFCTest_path("cfclash" CHY_DIR_SEP "foo");
     char *cfclash_bar_path   = CFCTest_path("cfclash" CHY_DIR_SEP "bar");
 
     if (getenv("CLOWNFISH_VALGRIND")) {
@@ -307,7 +280,7 @@ S_run_clash_tests(CFCTest *test) {
     else {
         CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
         CFCHierarchy_add_source_dir(hierarchy, cfclash_class_path);
-        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfinc_path);
         char *error;
 
         CFCUTIL_TRY {
@@ -322,38 +295,22 @@ S_run_clash_tests(CFCTest *test) {
         CFCParcel_reap_singletons();
     }
 
-    {
-        CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
-        CFCHierarchy_add_source_dir(hierarchy, cfbase_path);
-        CFCHierarchy_add_include_dir(hierarchy, cfclash_file_path);
-
-        CFCHierarchy_build(hierarchy);
-        CFCClass **ordered = CFCHierarchy_ordered_classes(hierarchy);
-        int count = 0;
-        while (ordered[count]) { count++; }
-        INT_EQ(test, count, 4, "source/include filename clash");
-
-        FREEMEM(ordered);
-        CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
-        CFCParcel_reap_singletons();
-    }
-
     if (getenv("CLOWNFISH_VALGRIND")) {
         SKIP(test, 1, "Exceptions leak");
     }
     else {
         CFCHierarchy *hierarchy = CFCHierarchy_new(AUTOGEN);
         CFCHierarchy_add_source_dir(hierarchy, cfclash_bar_path);
-        CFCHierarchy_add_include_dir(hierarchy, cfclash_foo_path);
-        CFCHierarchy_add_include_dir(hierarchy, cfbase_path);
+        CFCHierarchy_add_include_dir(hierarchy, cfinc_path);
         char *error;
 
         CFCUTIL_TRY {
             CFCHierarchy_build(hierarchy);
         }
         CFCUTIL_CATCH(error);
-        OK(test, error && strstr(error, "from source dir found"),
+        const char *message =
+            "Class Baz from source dir found in parcel Foo from include dir";
+        OK(test, error && strstr(error, message),
            "source class with included parcel");
 
         CFCBase_decref((CFCBase*)hierarchy);
@@ -368,7 +325,6 @@ S_run_clash_tests(CFCTest *test) {
     FREEMEM(cfbase_path);
     FREEMEM(cfclash_file_path);
     FREEMEM(cfclash_class_path);
-    FREEMEM(cfclash_foo_path);
     FREEMEM(cfclash_bar_path);
 }
 
