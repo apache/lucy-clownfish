@@ -88,6 +88,9 @@ CFCParcel_get_name(CFCParcel *self);
 const char*
 CFCParcel_get_nickname(CFCParcel *self);
 
+int
+CFCParcel_is_installed(CFCParcel *self);
+
 struct CFCVersion*
 CFCParcel_get_version(CFCParcel *self);
 

@@ -40,6 +40,7 @@ struct CFCParcel {
     char *Prefix;
     char *PREFIX;
     char *privacy_sym;
+    int is_installed;
     int is_required;
     char **inherited_parcels;
     size_t num_inherited_parcels;
@@ -197,7 +198,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     self->privacy_sym[privacy_sym_len] = '\0';
 
     // Initialize flags.
-    self->is_required = false;
+    self->is_installed = false;
+    self->is_required  = false;
 
     // Initialize arrays.
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
@@ -219,11 +221,12 @@ S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
     if (CFCJson_get_type(parsed) != CFCJSON_HASH) {
         CFCUtil_die("Parcel definition must be a hash in '%s'", path);
     }
-    const char  *name     = NULL;
-    const char  *nickname = NULL;
-    CFCVersion  *version  = NULL;
-    CFCJson     *prereqs  = NULL;
-    CFCJson    **children = CFCJson_get_children(parsed);
+    const char  *name      = NULL;
+    const char  *nickname  = NULL;
+    int          installed = true;
+    CFCVersion  *version   = NULL;
+    CFCJson     *prereqs   = NULL;
+    CFCJson    **children  = CFCJson_get_children(parsed);
     for (size_t i = 0; children[i]; i += 2) {
         const char *key = CFCJson_get_string(children[i]);
         CFCJson *value = children[i + 1];
@@ -240,6 +243,13 @@ S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
                             path);
             }
             nickname = CFCJson_get_string(value);
+        }
+        else if (strcmp(key, "installed") == 0) {
+            if (value_type != CFCJSON_BOOL) {
+                CFCUtil_die("'installed' must be a boolean (filepath %s)",
+                            path);
+            }
+            installed = CFCJson_get_bool(value);
         }
         else if (strcmp(key, "version") == 0) {
             if (value_type != CFCJSON_STRING) {
@@ -267,6 +277,7 @@ S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
         CFCUtil_die("Missing required key 'version' (filepath '%s')", path);
     }
     CFCParcel *self = CFCParcel_new(name, nickname, version, file_spec);
+    self->is_installed = installed;
     if (prereqs) {
         S_set_prereqs(self, prereqs, path);
     }
@@ -362,6 +373,11 @@ CFCParcel_get_name(CFCParcel *self) {
 const char*
 CFCParcel_get_nickname(CFCParcel *self) {
     return self->nickname;
+}
+
+int
+CFCParcel_is_installed(CFCParcel *self) {
+    return self->is_installed;
 }
 
 CFCVersion*
