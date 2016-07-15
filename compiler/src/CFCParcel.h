@@ -64,7 +64,8 @@ CFCParcel_reap_singletons(void);
 
 CFCParcel*
 CFCParcel_new(const char *name, const char *nickname,
-              struct CFCVersion *version, struct CFCFileSpec *file_spec);
+              struct CFCVersion *version, struct CFCVersion *major_version,
+              struct CFCFileSpec *file_spec);
 
 CFCParcel*
 CFCParcel_new_from_file(struct CFCFileSpec *file_spec);
@@ -74,7 +75,8 @@ CFCParcel_new_from_json(const char *json, struct CFCFileSpec *file_spec);
 
 CFCParcel*
 CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
-               struct CFCVersion *version, struct CFCFileSpec *file_spec);
+               struct CFCVersion *version, struct CFCVersion *major_version,
+               struct CFCFileSpec *file_spec);
 
 void
 CFCParcel_destroy(CFCParcel *self);
@@ -93,6 +95,9 @@ CFCParcel_is_installed(CFCParcel *self);
 
 struct CFCVersion*
 CFCParcel_get_version(CFCParcel *self);
+
+struct CFCVersion*
+CFCParcel_get_major_version(CFCParcel *self);
 
 /** Return the all-lowercase version of the Parcel's prefix.
  */

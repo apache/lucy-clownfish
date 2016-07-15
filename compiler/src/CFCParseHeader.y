@@ -325,7 +325,7 @@ parcel_definition(A) ::= PARCEL qualified_id(B) SEMICOLON.
     A = CFCParcel_fetch(B);
     if (!A) {
         /* Allow unregistered parcels to simplify tests. */
-        A = CFCParcel_new(B, NULL, NULL, NULL);
+        A = CFCParcel_new(B, NULL, NULL, NULL, NULL);
         CFCParcel_register(A);
     }
     else {

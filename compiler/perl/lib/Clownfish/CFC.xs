@@ -1065,15 +1065,17 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Parcel
 
 SV*
-_new(name_sv, nickname_sv, version, file_spec)
+_new(name_sv, nickname_sv, version, major_version, file_spec)
     SV *name_sv;
     SV *nickname_sv;
     CFCVersion *version;
+    CFCVersion *major_version;
     CFCFileSpec *file_spec;
 CODE:
     const char *name     = SvOK(name_sv)  ? SvPV_nolen(name_sv)  : NULL;
     const char *nickname = SvOK(nickname_sv) ? SvPV_nolen(nickname_sv) : NULL;
-    CFCParcel *self = CFCParcel_new(name, nickname, version, file_spec);
+    CFCParcel *self = CFCParcel_new(name, nickname, version, major_version,
+                                    file_spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL

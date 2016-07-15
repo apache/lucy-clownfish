@@ -35,6 +35,7 @@ struct CFCParcel {
     char *name;
     char *nickname;
     CFCVersion *version;
+    CFCVersion *major_version;
     CFCFileSpec *file_spec;
     char *prefix;
     char *Prefix;
@@ -128,14 +129,16 @@ static const CFCMeta CFCPARCEL_META = {
 
 CFCParcel*
 CFCParcel_new(const char *name, const char *nickname, CFCVersion *version,
-              CFCFileSpec *file_spec) {
+              CFCVersion *major_version, CFCFileSpec *file_spec) {
     CFCParcel *self = (CFCParcel*)CFCBase_allocate(&CFCPARCEL_META);
-    return CFCParcel_init(self, name, nickname, version, file_spec);
+    return CFCParcel_init(self, name, nickname, version, major_version,
+                          file_spec);
 }
 
 CFCParcel*
 CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
-               CFCVersion *version, CFCFileSpec *file_spec) {
+               CFCVersion *version, CFCVersion *major_version,
+               CFCFileSpec *file_spec) {
     // Validate name.
     if (!name || !S_validate_name_or_nickname(name)) {
         CFCUtil_die("Invalid name: '%s'", name ? name : "[NULL]");
@@ -160,6 +163,13 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     }
     else {
         self->version = CFCVersion_new("v0");
+    }
+    if (major_version) {
+        self->major_version
+            = (CFCVersion*)CFCBase_incref((CFCBase*)major_version);
+    }
+    else {
+        self->major_version = CFCVersion_new("v0");
     }
 
     // Set file_spec.
@@ -222,12 +232,13 @@ S_new_from_json(const char *json, CFCFileSpec *file_spec) {
     if (CFCJson_get_type(parsed) != CFCJSON_HASH) {
         CFCUtil_die("Parcel definition must be a hash in '%s'", path);
     }
-    const char  *name      = NULL;
-    const char  *nickname  = NULL;
-    int          installed = true;
-    CFCVersion  *version   = NULL;
-    CFCJson     *prereqs   = NULL;
-    CFCJson    **children  = CFCJson_get_children(parsed);
+    const char  *name          = NULL;
+    const char  *nickname      = NULL;
+    int          installed     = true;
+    CFCVersion  *version       = NULL;
+    CFCVersion  *major_version = NULL;
+    CFCJson     *prereqs       = NULL;
+    CFCJson    **children      = CFCJson_get_children(parsed);
     for (size_t i = 0; children[i]; i += 2) {
         const char *key = CFCJson_get_string(children[i]);
         CFCJson *value = children[i + 1];
@@ -259,6 +270,13 @@ S_new_from_json(const char *json, CFCFileSpec *file_spec) {
             }
             version = CFCVersion_new(CFCJson_get_string(value));
         }
+        else if (strcmp(key, "major_version") == 0) {
+            if (value_type != CFCJSON_STRING) {
+                CFCUtil_die("'major_version' must be a string (filepath %s)",
+                            path);
+            }
+            major_version = CFCVersion_new(CFCJson_get_string(value));
+        }
         else if (strcmp(key, "prerequisites") == 0) {
             if (value_type != CFCJSON_HASH) {
                 CFCUtil_die("'prerequisites' must be a hash (filepath %s)",
@@ -277,7 +295,8 @@ S_new_from_json(const char *json, CFCFileSpec *file_spec) {
     if (!version) {
         CFCUtil_die("Missing required key 'version' (filepath '%s')", path);
     }
-    CFCParcel *self = CFCParcel_new(name, nickname, version, file_spec);
+    CFCParcel *self = CFCParcel_new(name, nickname, version, major_version,
+                                    file_spec);
     self->is_installed = installed;
     if (prereqs) {
         S_set_prereqs(self, prereqs, path);
@@ -340,6 +359,7 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->name);
     FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->version);
+    CFCBase_decref((CFCBase*)self->major_version);
     CFCBase_decref((CFCBase*)self->file_spec);
     FREEMEM(self->prefix);
     FREEMEM(self->Prefix);
@@ -385,6 +405,11 @@ CFCParcel_is_installed(CFCParcel *self) {
 CFCVersion*
 CFCParcel_get_version(CFCParcel *self) {
     return self->version;
+}
+
+CFCVersion*
+CFCParcel_get_major_version(CFCParcel *self) {
+    return self->major_version;
 }
 
 const char*
