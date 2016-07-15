@@ -295,30 +295,9 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
         char *filename = filenames[i];
         char *path     = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s", doc_path,
                                          filename);
-
-        // Make path.
-
-        char *dir  = CFCUtil_strdup(path);
-        for (size_t j = strlen(dir); j--;) {
-            if (dir[j] == CHY_DIR_SEP_CHAR) {
-                do {
-                    dir[j] = '\0';
-                } while (j-- && dir[j] == CHY_DIR_SEP_CHAR);
-                break;
-            }
-        }
-
-        if (dir[0] != '\0' && !CFCUtil_is_dir(dir)) {
-            CFCUtil_make_path(dir);
-            if (!CFCUtil_is_dir(dir)) {
-                CFCUtil_die("Can't make path %s", dir);
-            }
-        }
-
         char *html_doc = html_docs[i];
         CFCUtil_write_if_changed(path, html_doc, strlen(html_doc));
         FREEMEM(html_doc);
-        FREEMEM(dir);
         FREEMEM(path);
         FREEMEM(filename);
     }

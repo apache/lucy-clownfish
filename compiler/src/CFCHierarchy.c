@@ -67,9 +67,6 @@ typedef struct CFCFindFilesContext {
 } CFCFindFilesContext;
 
 static void
-S_do_make_path(const char *path);
-
-static void
 S_parse_parcel_files(const char *source_dir, int is_included);
 
 static void
@@ -139,8 +136,6 @@ CFCHierarchy_init(CFCHierarchy *self, const char *dest) {
 
     self->inc_dest = CFCUtil_sprintf("%s" CHY_DIR_SEP "include", self->dest);
     self->src_dest = CFCUtil_sprintf("%s" CHY_DIR_SEP "source", self->dest);
-    S_do_make_path(self->inc_dest);
-    S_do_make_path(self->src_dest);
 
     return self;
 }
@@ -167,16 +162,6 @@ CFCHierarchy_destroy(CFCHierarchy *self) {
     FREEMEM(self->src_dest);
     CFCBase_decref((CFCBase*)self->parser);
     CFCBase_destroy((CFCBase*)self);
-}
-
-static void
-S_do_make_path(const char *path) {
-    if (!CFCUtil_is_dir(path)) {
-        CFCUtil_make_path(path);
-        if (!CFCUtil_is_dir(path)) {
-            CFCUtil_die("Can't make path %s", path);
-        }
-    }
 }
 
 void

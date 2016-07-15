@@ -55,7 +55,7 @@ S_run_clash_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_HIERARCHY = {
     "Clownfish::CFC::Model::Hierarchy",
-    48,
+    47,
     S_run_tests
 };
 
@@ -132,8 +132,6 @@ S_run_basic_tests(CFCTest *test) {
         AUTOGEN_INCLUDE CHY_DIR_SEP "Animal" CHY_DIR_SEP "Dog.h",
         AUTOGEN_INCLUDE CHY_DIR_SEP "Animal" CHY_DIR_SEP "Util.h"
     };
-    OK(test, CFCUtil_make_path(AUTOGEN_INCLUDE CHY_DIR_SEP "Animal"),
-       "make_path");
     for (int i = 0; i < 3; ++i) {
         const char *h_path  = h_paths[i];
         const char *content = "#include <stdio.h>\n";

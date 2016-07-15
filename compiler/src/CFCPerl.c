@@ -150,15 +150,6 @@ CFCPerl_write_pod(CFCPerl *self) {
         for (size_t i = 0; pod_files[i].contents; i++) {
             char *pod      = pod_files[i].contents;
             char *pod_path = pod_files[i].path;
-            char *pod_dir  = CFCUtil_strdup(pod_path);
-
-            char *last_dir_sep = strrchr(pod_dir, CHY_DIR_SEP_CHAR);
-            if (last_dir_sep) {
-                *last_dir_sep = '\0';
-                if (!CFCUtil_make_path(pod_dir)) {
-                    CFCUtil_die("Can't make path %s", pod_dir);
-                }
-            }
 
             if (CFCUtil_write_if_changed(pod_path, pod, strlen(pod))) {
                 pod_paths[num_written] = pod_path;
@@ -169,7 +160,6 @@ CFCPerl_write_pod(CFCPerl *self) {
             }
 
             FREEMEM(pod);
-            FREEMEM(pod_dir);
         }
 
         FREEMEM(pod_files);
