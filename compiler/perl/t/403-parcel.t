@@ -18,7 +18,7 @@ use warnings;
 
 use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
 use Test::More tests => 35;
-use File::Spec::Functions qw( catfile );
+use File::Spec::Functions qw( catdir );
 
 BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
 
@@ -89,7 +89,11 @@ isa_ok(
 
 isa_ok(
     Clownfish::CFC::Model::Parcel->new_from_file(
-        path => catfile( test_files_dir(), qw( cfbase Animal.cfp ) ),
+        file_spec => Clownfish::CFC::Model::FileSpec->new(
+            source_dir => catdir( test_files_dir(), 'cfbase' ),
+            path_part  => 'Animal',
+            ext        => '.cfp',
+        ),
     ),
     "Clownfish::CFC::Model::Parcel",
     "new_from_file"

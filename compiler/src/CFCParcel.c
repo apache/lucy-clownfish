@@ -213,7 +213,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
 }
 
 static CFCParcel*
-S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
+S_new_from_json(const char *json, CFCFileSpec *file_spec) {
+    const char *path = file_spec ? CFCFileSpec_get_path(file_spec) : "[NULL]";
     CFCJson *parsed = CFCJson_parse(json);
     if (!parsed) {
         CFCUtil_die("Invalid JSON parcel definition in '%s'", path);
@@ -321,14 +322,15 @@ S_set_prereqs(CFCParcel *self, CFCJson *node, const char *path) {
 
 CFCParcel*
 CFCParcel_new_from_json(const char *json, CFCFileSpec *file_spec) {
-    return S_new_from_json(json, "[NULL]", file_spec);
+    return S_new_from_json(json, file_spec);
 }
 
 CFCParcel*
-CFCParcel_new_from_file(const char *path, CFCFileSpec *file_spec) {
+CFCParcel_new_from_file(CFCFileSpec *file_spec) {
+    const char *path = CFCFileSpec_get_path(file_spec);
     size_t len;
     char *json = CFCUtil_slurp_text(path, &len);
-    CFCParcel *self = S_new_from_json(json, path, file_spec);
+    CFCParcel *self = S_new_from_json(json, file_spec);
     FREEMEM(json);
     return self;
 }

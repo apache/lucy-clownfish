@@ -67,7 +67,7 @@ CFCParcel_new(const char *name, const char *nickname,
               struct CFCVersion *version, struct CFCFileSpec *file_spec);
 
 CFCParcel*
-CFCParcel_new_from_file(const char *path, struct CFCFileSpec *file_spec);
+CFCParcel_new_from_file(struct CFCFileSpec *file_spec);
 
 CFCParcel*
 CFCParcel_new_from_json(const char *json, struct CFCFileSpec *file_spec);

@@ -249,7 +249,7 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
         char *path_part = S_extract_path_part(path, source_dir, ".cfp");
         CFCFileSpec *file_spec
             = CFCFileSpec_new(source_dir, path_part, ".cfp", is_included);
-        CFCParcel *parcel = CFCParcel_new_from_file(path, file_spec);
+        CFCParcel *parcel = CFCParcel_new_from_file(file_spec);
         const char *name = CFCParcel_get_name(parcel);
         CFCParcel *existing = CFCParcel_fetch(name);
         if (existing) {

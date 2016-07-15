@@ -1079,11 +1079,10 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-_new_from_file(path, file_spec)
-    const char *path;
+_new_from_file(file_spec)
     CFCFileSpec *file_spec;
 CODE:
-    CFCParcel *self = CFCParcel_new_from_file(path, file_spec);
+    CFCParcel *self = CFCParcel_new_from_file(file_spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
