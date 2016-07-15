@@ -39,6 +39,19 @@ static const CFCMeta CFCVERSION_META = {
     (CFCBase_destroy_t)CFCVersion_destroy
 };
 
+int
+CFCVersion_is_vstring(const char *vstring) {
+    if (*vstring++ != 'v') { return false; }
+
+    do {
+        if (!CFCUtil_isdigit(*vstring++)) { return false; }
+        while (CFCUtil_isdigit(*vstring)) { vstring++; }
+        if (*vstring == '\0') { return true; }
+    } while (*vstring++ == '.');
+
+    return false;
+}
+
 CFCVersion*
 CFCVersion_new(const char *vstring) {
     CFCVersion *self = (CFCVersion*)CFCBase_allocate(&CFCVERSION_META);

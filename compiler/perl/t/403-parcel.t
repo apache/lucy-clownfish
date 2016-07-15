@@ -17,7 +17,7 @@ use strict;
 use warnings;
 
 use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
-use Test::More tests => 35;
+use Test::More tests => 32;
 use File::Spec::Functions qw( catdir );
 
 BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
@@ -181,11 +181,6 @@ Clownfish::CFC::Model::Parcel->reap_singletons();
     |;
     my $crust = Clownfish::CFC::Model::Parcel->new_from_json( json => $json );
     $crust->register;
-
-    $crust->check_prereqs;
-    ok( !$foo->required, 'parcel not required' );
-    ok( $cfish->required, 'prereq required' );
-    ok( $crust->required, 'self required' );
 
     my $prereq_parcels = $crust->prereq_parcels;
     isa_ok( $prereq_parcels, 'ARRAY', 'prereq_parcels' );

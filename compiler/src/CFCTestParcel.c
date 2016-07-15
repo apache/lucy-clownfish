@@ -46,7 +46,7 @@ S_run_extended_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    44,
+    41,
     S_run_tests
 };
 
@@ -265,11 +265,6 @@ S_run_extended_tests(CFCTest *test) {
             "        }\n";
         CFCParcel *crust = CFCParcel_new_from_json(crust_json, NULL);
         CFCParcel_register(crust);
-
-        CFCParcel_check_prereqs(crust);
-        INT_EQ(test, CFCParcel_required(foo), false, "parcel not required");
-        INT_EQ(test, CFCParcel_required(cfish), true, "prereq required");
-        INT_EQ(test, CFCParcel_required(crust), true, "self required");
 
         CFCParcel **prereq_parcels = CFCParcel_prereq_parcels(crust);
         OK(test, prereq_parcels[0] != NULL, "prereq_parcels[0]");

@@ -32,6 +32,9 @@ extern "C" {
 
 typedef struct CFCVersion CFCVersion;
 
+int
+CFCVersion_is_vstring(const char *vstring);
+
 /**
  * @param vstring - A version string consisting of a lower-case 'v' followed
  * by one or more unsigned integers separated by dots.
