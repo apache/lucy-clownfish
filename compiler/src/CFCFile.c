@@ -179,11 +179,6 @@ CFCFile_h_path(CFCFile *self, const char *base_dir) {
     return S_some_path(self, base_dir, ".h");
 }
 
-char*
-CFCFile_cfh_path(CFCFile *self, const char *base_dir) {
-    return S_some_path(self, base_dir, ".cfh");
-}
-
 CFCParcel*
 CFCFile_get_parcel(CFCFile *self) {
     return self->parcel;
@@ -207,6 +202,11 @@ CFCFile_set_modified(CFCFile *self, int modified) {
 int
 CFCFile_get_modified(CFCFile *self) {
     return self->modified;
+}
+
+const char*
+CFCFile_get_path(CFCFile *self) {
+    return CFCFileSpec_get_path(self->spec);
 }
 
 const char*

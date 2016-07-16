@@ -28,18 +28,20 @@
 #include "CFCFileSpec.h"
 #include "CFCVersion.h"
 #include "CFCUtil.h"
+#include "CFCJson.h"
 
 struct CFCParcel {
     CFCBase base;
     char *name;
     char *nickname;
     CFCVersion *version;
+    CFCVersion *major_version;
     CFCFileSpec *file_spec;
     char *prefix;
     char *Prefix;
     char *PREFIX;
     char *privacy_sym;
-    int is_required;
+    int is_installed;
     char **inherited_parcels;
     size_t num_inherited_parcels;
     char **struct_syms;
@@ -48,37 +50,8 @@ struct CFCParcel {
     size_t num_prereqs;
 };
 
-#define JSON_STRING 1
-#define JSON_HASH   2
-#define JSON_NULL   3
-
-typedef struct JSONNode {
-    int type;
-    char *string;
-    struct JSONNode **kids;
-    size_t num_kids;
-} JSONNode;
-
 static void
-S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path);
-
-static JSONNode*
-S_parse_json_for_parcel(const char *json);
-
-static JSONNode*
-S_parse_json_hash(const char **json);
-
-static JSONNode*
-S_parse_json_string(const char **json);
-
-static JSONNode*
-S_parse_json_null(const char **json);
-
-static void
-S_skip_whitespace(const char **json);
-
-static void
-S_destroy_json(JSONNode *node);
+S_set_prereqs(CFCParcel *self, CFCJson *node, const char *path);
 
 static CFCParcel **registry = NULL;
 static size_t num_registered = 0;
@@ -155,14 +128,16 @@ static const CFCMeta CFCPARCEL_META = {
 
 CFCParcel*
 CFCParcel_new(const char *name, const char *nickname, CFCVersion *version,
-              CFCFileSpec *file_spec) {
+              CFCVersion *major_version, CFCFileSpec *file_spec) {
     CFCParcel *self = (CFCParcel*)CFCBase_allocate(&CFCPARCEL_META);
-    return CFCParcel_init(self, name, nickname, version, file_spec);
+    return CFCParcel_init(self, name, nickname, version, major_version,
+                          file_spec);
 }
 
 CFCParcel*
 CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
-               CFCVersion *version, CFCFileSpec *file_spec) {
+               CFCVersion *version, CFCVersion *major_version,
+               CFCFileSpec *file_spec) {
     // Validate name.
     if (!name || !S_validate_name_or_nickname(name)) {
         CFCUtil_die("Invalid name: '%s'", name ? name : "[NULL]");
@@ -187,6 +162,13 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     }
     else {
         self->version = CFCVersion_new("v0");
+    }
+    if (major_version) {
+        self->major_version
+            = (CFCVersion*)CFCBase_incref((CFCBase*)major_version);
+    }
+    else {
+        self->major_version = CFCVersion_new("v0");
     }
 
     // Set file_spec.
@@ -225,7 +207,7 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     self->privacy_sym[privacy_sym_len] = '\0';
 
     // Initialize flags.
-    self->is_required = false;
+    self->is_installed = false;
 
     // Initialize arrays.
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
@@ -239,46 +221,62 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
 }
 
 static CFCParcel*
-S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
-    JSONNode *parsed = S_parse_json_for_parcel(json);
+S_new_from_json(const char *json, CFCFileSpec *file_spec) {
+    const char *path = file_spec ? CFCFileSpec_get_path(file_spec) : "[NULL]";
+    CFCJson *parsed = CFCJson_parse(json);
     if (!parsed) {
         CFCUtil_die("Invalid JSON parcel definition in '%s'", path);
     }
-    if (parsed->type != JSON_HASH) {
+    if (CFCJson_get_type(parsed) != CFCJSON_HASH) {
         CFCUtil_die("Parcel definition must be a hash in '%s'", path);
     }
-    const char *name     = NULL;
-    const char *nickname = NULL;
-    CFCVersion *version  = NULL;
-    JSONNode   *prereqs  = NULL;
-    for (size_t i = 0, max = parsed->num_kids; i < max; i += 2) {
-        JSONNode *key   = parsed->kids[i];
-        JSONNode *value = parsed->kids[i + 1];
-        if (key->type != JSON_STRING) {
-            CFCUtil_die("JSON parsing error (filepath '%s')", path);
-        }
-        if (strcmp(key->string, "name") == 0) {
-            if (value->type != JSON_STRING) {
+    const char  *name          = NULL;
+    const char  *nickname      = NULL;
+    int          installed     = true;
+    CFCVersion  *version       = NULL;
+    CFCVersion  *major_version = NULL;
+    CFCJson     *prereqs       = NULL;
+    CFCJson    **children      = CFCJson_get_children(parsed);
+    for (size_t i = 0; children[i]; i += 2) {
+        const char *key = CFCJson_get_string(children[i]);
+        CFCJson *value = children[i + 1];
+        int value_type = CFCJson_get_type(value);
+        if (strcmp(key, "name") == 0) {
+            if (value_type != CFCJSON_STRING) {
                 CFCUtil_die("'name' must be a string (filepath %s)", path);
             }
-            name = value->string;
+            name = CFCJson_get_string(value);
         }
-        else if (strcmp(key->string, "nickname") == 0) {
-            if (value->type != JSON_STRING) {
+        else if (strcmp(key, "nickname") == 0) {
+            if (value_type != CFCJSON_STRING) {
                 CFCUtil_die("'nickname' must be a string (filepath %s)",
                             path);
             }
-            nickname = value->string;
+            nickname = CFCJson_get_string(value);
         }
-        else if (strcmp(key->string, "version") == 0) {
-            if (value->type != JSON_STRING) {
+        else if (strcmp(key, "installed") == 0) {
+            if (value_type != CFCJSON_BOOL) {
+                CFCUtil_die("'installed' must be a boolean (filepath %s)",
+                            path);
+            }
+            installed = CFCJson_get_bool(value);
+        }
+        else if (strcmp(key, "version") == 0) {
+            if (value_type != CFCJSON_STRING) {
                 CFCUtil_die("'version' must be a string (filepath %s)",
                             path);
             }
-            version = CFCVersion_new(value->string);
+            version = CFCVersion_new(CFCJson_get_string(value));
         }
-        else if (strcmp(key->string, "prerequisites") == 0) {
-            if (value->type != JSON_HASH) {
+        else if (strcmp(key, "major_version") == 0) {
+            if (value_type != CFCJSON_STRING) {
+                CFCUtil_die("'major_version' must be a string (filepath %s)",
+                            path);
+            }
+            major_version = CFCVersion_new(CFCJson_get_string(value));
+        }
+        else if (strcmp(key, "prerequisites") == 0) {
+            if (value_type != CFCJSON_HASH) {
                 CFCUtil_die("'prerequisites' must be a hash (filepath %s)",
                             path);
             }
@@ -286,7 +284,7 @@ S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
         }
         else {
             CFCUtil_die("Unrecognized key: '%s' (filepath '%s')",
-                        key->string, path);
+                        key, path);
         }
     }
     if (!name) {
@@ -295,35 +293,35 @@ S_new_from_json(const char *json, const char *path, CFCFileSpec *file_spec) {
     if (!version) {
         CFCUtil_die("Missing required key 'version' (filepath '%s')", path);
     }
-    CFCParcel *self = CFCParcel_new(name, nickname, version, file_spec);
+    CFCParcel *self = CFCParcel_new(name, nickname, version, major_version,
+                                    file_spec);
+    self->is_installed = installed;
     if (prereqs) {
         S_set_prereqs(self, prereqs, path);
     }
     CFCBase_decref((CFCBase*)version);
 
-    S_destroy_json(parsed);
+    CFCJson_destroy(parsed);
     return self;
 }
 
 static void
-S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path) {
-    size_t num_prereqs = node->num_kids / 2;
+S_set_prereqs(CFCParcel *self, CFCJson *node, const char *path) {
+    size_t num_prereqs = CFCJson_get_num_children(node) / 2;
+    CFCJson **children = CFCJson_get_children(node);
     CFCPrereq **prereqs
         = (CFCPrereq**)MALLOCATE((num_prereqs + 1) * sizeof(CFCPrereq*));
 
     for (size_t i = 0; i < num_prereqs; ++i) {
-        JSONNode *key = node->kids[2*i];
-        if (key->type != JSON_STRING) {
-            CFCUtil_die("Prereq key must be a string (filepath '%s')", path);
-        }
-        const char *name = key->string;
+        const char *name = CFCJson_get_string(children[2*i]);
 
-        JSONNode *value = node->kids[2*i+1];
+        CFCJson *value = children[2*i+1];
+        int value_type = CFCJson_get_type(value);
         CFCVersion *version = NULL;
-        if (value->type == JSON_STRING) {
-            version = CFCVersion_new(value->string);
+        if (value_type == CFCJSON_STRING) {
+            version = CFCVersion_new(CFCJson_get_string(value));
         }
-        else if (value->type != JSON_NULL) {
+        else if (value_type != CFCJSON_NULL) {
             CFCUtil_die("Invalid prereq value (filepath '%s')", path);
         }
 
@@ -341,14 +339,15 @@ S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path) {
 
 CFCParcel*
 CFCParcel_new_from_json(const char *json, CFCFileSpec *file_spec) {
-    return S_new_from_json(json, "[NULL]", file_spec);
+    return S_new_from_json(json, file_spec);
 }
 
 CFCParcel*
-CFCParcel_new_from_file(const char *path, CFCFileSpec *file_spec) {
+CFCParcel_new_from_file(CFCFileSpec *file_spec) {
+    const char *path = CFCFileSpec_get_path(file_spec);
     size_t len;
     char *json = CFCUtil_slurp_text(path, &len);
-    CFCParcel *self = S_new_from_json(json, path, file_spec);
+    CFCParcel *self = S_new_from_json(json, file_spec);
     FREEMEM(json);
     return self;
 }
@@ -358,6 +357,7 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->name);
     FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->version);
+    CFCBase_decref((CFCBase*)self->major_version);
     CFCBase_decref((CFCBase*)self->file_spec);
     FREEMEM(self->prefix);
     FREEMEM(self->Prefix);
@@ -395,9 +395,19 @@ CFCParcel_get_nickname(CFCParcel *self) {
     return self->nickname;
 }
 
+int
+CFCParcel_is_installed(CFCParcel *self) {
+    return self->is_installed;
+}
+
 CFCVersion*
 CFCParcel_get_version(CFCParcel *self) {
     return self->version;
+}
+
+CFCVersion*
+CFCParcel_get_major_version(CFCParcel *self) {
+    return self->major_version;
 }
 
 const char*
@@ -437,11 +447,6 @@ CFCParcel_get_source_dir(CFCParcel *self) {
 int
 CFCParcel_included(CFCParcel *self) {
     return self->file_spec ? CFCFileSpec_included(self->file_spec) : false;
-}
-
-int
-CFCParcel_required(CFCParcel *self) {
-    return self->is_required;
 }
 
 void
@@ -494,43 +499,6 @@ CFCParcel_prereq_parcels(CFCParcel *self) {
     }
 
     return parcels;
-}
-
-void
-CFCParcel_check_prereqs(CFCParcel *self) {
-    // This is essentially a depth-first search of the dependency graph.
-    // It might be possible to skip indirect dependencies, at least if
-    // they're not part of the inheritance chain. But for now, all
-    // dependencies are marked recursively.
-
-    if (self->is_required) { return; }
-    self->is_required = true;
-
-    const char *name = CFCParcel_get_name(self);
-
-    for (int i = 0; self->prereqs[i]; ++i) {
-        CFCPrereq *prereq = self->prereqs[i];
-
-        const char *req_name   = CFCPrereq_get_name(prereq);
-        CFCParcel  *req_parcel = CFCParcel_fetch(req_name);
-        if (!req_parcel) {
-            // TODO: Add include path to error message.
-            CFCUtil_die("Parcel '%s' required by '%s' not found", req_name,
-                        name);
-        }
-
-        CFCVersion *version     = req_parcel->version;
-        CFCVersion *req_version = CFCPrereq_get_version(prereq);
-        if (CFCVersion_compare_to(version, req_version) < 0) {
-            const char *vstring     = CFCVersion_get_vstring(version);
-            const char *req_vstring = CFCVersion_get_vstring(req_version);
-            CFCUtil_die("Version %s of parcel '%s' required by '%s' is lower"
-                        " than required version %s",
-                        vstring, req_name, name, req_vstring);
-        }
-
-        CFCParcel_check_prereqs(req_parcel);
-    }
 }
 
 int
@@ -653,172 +621,5 @@ CFCPrereq_get_name(CFCPrereq *self) {
 CFCVersion*
 CFCPrereq_get_version(CFCPrereq *self) {
     return self->version;
-}
-
-/*****************************************************************************
- * The hack JSON parser coded up below is only meant to parse Clownfish parcel
- * file content.  It is limited in its capabilities because so little is legal
- * in a .cfp file.
- */
-
-static JSONNode*
-S_parse_json_for_parcel(const char *json) {
-    if (!json) {
-        return NULL;
-    }
-    S_skip_whitespace(&json);
-    if (*json != '{') {
-        return NULL;
-    }
-    JSONNode *parsed = S_parse_json_hash(&json);
-    S_skip_whitespace(&json);
-    if (*json != '\0') {
-        S_destroy_json(parsed);
-        parsed = NULL;
-    }
-    return parsed;
-}
-
-static void
-S_append_kid(JSONNode *node, JSONNode *child) {
-    size_t size = (node->num_kids + 2) * sizeof(JSONNode*);
-    node->kids = (JSONNode**)realloc(node->kids, size);
-    node->kids[node->num_kids++] = child;
-    node->kids[node->num_kids]   = NULL;
-}
-
-static JSONNode*
-S_parse_json_hash(const char **json) {
-    const char *text = *json;
-    S_skip_whitespace(&text);
-    if (*text != '{') {
-        return NULL;
-    }
-    text++;
-    JSONNode *node = (JSONNode*)calloc(1, sizeof(JSONNode));
-    node->type = JSON_HASH;
-    while (1) {
-        // Parse key.
-        S_skip_whitespace(&text);
-        if (*text == '}') {
-            text++;
-            break;
-        }
-        else if (*text == '"') {
-            JSONNode *key = S_parse_json_string(&text);
-            S_skip_whitespace(&text);
-            if (!key || *text != ':') {
-                S_destroy_json(node);
-                return NULL;
-            }
-            text++;
-            S_append_kid(node, key);
-        }
-        else {
-            S_destroy_json(node);
-            return NULL;
-        }
-
-        // Parse value.
-        S_skip_whitespace(&text);
-        JSONNode *value = NULL;
-        if (*text == '"') {
-            value = S_parse_json_string(&text);
-        }
-        else if (*text == '{') {
-            value = S_parse_json_hash(&text);
-        }
-        else if (*text == 'n') {
-            value = S_parse_json_null(&text);
-        }
-        if (!value) {
-            S_destroy_json(node);
-            return NULL;
-        }
-        S_append_kid(node, value);
-
-        // Parse comma.
-        S_skip_whitespace(&text);
-        if (*text == ',') {
-            text++;
-        }
-        else if (*text == '}') {
-            text++;
-            break;
-        }
-        else {
-            S_destroy_json(node);
-            return NULL;
-        }
-    }
-
-    // Move pointer.
-    *json = text;
-
-    return node;
-}
-
-// Parse a double quoted string.  Don't allow escapes.
-static JSONNode*
-S_parse_json_string(const char **json) {
-    const char *text = *json; 
-    if (*text != '\"') {
-        return NULL;
-    }
-    text++;
-    const char *start = text;
-    while (*text != '"') {
-        if (*text == '\\' || *text == '\0') {
-            return NULL;
-        }
-        text++;
-    }
-    JSONNode *node = (JSONNode*)calloc(1, sizeof(JSONNode));
-    node->type = JSON_STRING;
-    node->string = CFCUtil_strndup(start, (size_t)(text - start));
-
-    // Move pointer.
-    text++;
-    *json = text;
-
-    return node;
-}
-
-// Parse a JSON null value.
-static JSONNode*
-S_parse_json_null(const char **json) {
-    static const char null_str[] = "null";
-
-    if (strncmp(*json, null_str, sizeof(null_str) - 1) != 0) {
-        return NULL;
-    }
-
-    JSONNode *node = (JSONNode*)calloc(1, sizeof(JSONNode));
-    node->type = JSON_NULL;
-
-    // Move pointer.
-    *json += sizeof(null_str) - 1;
-
-    return node;
-}
-
-static void
-S_skip_whitespace(const char **json) {
-    while (CFCUtil_isspace(json[0][0])) { *json = *json + 1; }
-}
-
-static void
-S_destroy_json(JSONNode *node) {
-    if (!node) {
-        return;
-    }
-    if (node->kids) {
-        for (size_t i = 0; node->kids[i] != NULL; i++) {
-            S_destroy_json(node->kids[i]);
-        }
-    }
-    free(node->string);
-    free(node->kids);
-    free(node);
 }
 

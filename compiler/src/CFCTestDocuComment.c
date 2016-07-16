@@ -134,7 +134,7 @@ S_test_md_to_pod(CFCTest *test) {
 static void
 S_test_generator(CFCTest *test) {
     CFCHierarchy *hierarchy = CFCHierarchy_new("autogen");
-    CFCParcel *parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
+    CFCParcel *parcel = CFCParcel_new("Neato", NULL, NULL, NULL, NULL);
     CFCParcel_register(parcel);
 
     CFCDocuComment *docu = CFCDocuComment_parse(

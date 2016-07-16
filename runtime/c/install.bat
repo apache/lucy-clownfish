@@ -41,9 +41,8 @@ copy libcfish-%major_version%.dll.a "%prefix%\lib" >nul
 rem Install executables.
 copy ..\..\compiler\c\cfc.exe "%prefix%\bin" >nul
 
-rem Install Clownfish header files.
-xcopy /siy ..\core\*.cfh "%prefix%\share\clownfish\include" >nul
-xcopy /siy ..\core\*.cfp "%prefix%\share\clownfish\include" >nul
+rem Install Clownfish header files and HTML documentation.
+xcopy /siy autogen\share "%prefix%" >nul
 
 rem Install man pages.
 xcopy /siy autogen\man "%prefix%" >nul

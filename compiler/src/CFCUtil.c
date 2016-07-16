@@ -380,6 +380,15 @@ CFCUtil_current(const char *orig, const char *dest) {
 
 void
 CFCUtil_write_file(const char *filename, const char *content, size_t len) {
+    const char *last_sep = strrchr(filename, CHY_DIR_SEP_CHAR);
+    if (last_sep != NULL && last_sep != filename) {
+        char *dir = CFCUtil_strndup(filename, last_sep - filename);
+        if (!CFCUtil_is_dir(dir) && !CFCUtil_make_path(dir)) {
+            CFCUtil_die("Couldn't create directory '%s'", dir);
+        }
+        FREEMEM(dir);
+    }
+
     FILE *fh = fopen(filename, "w+");
     if (fh == NULL) {
         CFCUtil_die("Couldn't open '%s': %s", filename, strerror(errno));

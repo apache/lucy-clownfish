@@ -76,6 +76,15 @@ CFCHierarchy_build(CFCHierarchy *self);
 int
 CFCHierarchy_propagate_modified(CFCHierarchy *self, int modified);
 
+/** Copy .cfh and .cfp files for installed source parcels to the autogen
+ * directory.
+ *
+ * @param dest_dir Destination directory. Defaults to
+ * `autogen/share/clownfish/include` if NULL.
+ */
+void
+CFCHierarchy_copy_headers(CFCHierarchy *self, const char *dest_dir);
+
 /** Write a JSON files with statistics about the class hierarchy. At the
  * moment, this file is empty. It is only used for reliable dependency
  * handling in the Makefiles of the C build. Thus, the log file should only

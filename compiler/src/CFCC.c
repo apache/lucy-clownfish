@@ -110,12 +110,6 @@ CFCC_write_man_pages(CFCC *self) {
     const char *dest = CFCHierarchy_get_dest(hierarchy);
     char *man3_path
         = CFCUtil_sprintf("%s" CHY_DIR_SEP "man" CHY_DIR_SEP "man3", dest);
-    if (!CFCUtil_is_dir(man3_path)) {
-        CFCUtil_make_path(man3_path);
-        if (!CFCUtil_is_dir(man3_path)) {
-            CFCUtil_die("Can't make path %s", man3_path);
-        }
-    }
 
     // Write out any man pages that have changed.
     for (size_t i = 0, j = 0; ordered[i] != NULL; i++) {

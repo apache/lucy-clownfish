@@ -38,6 +38,7 @@
 #include "CFCUtil.h"
 #include "CFCParser.h"
 #include "CFCDocument.h"
+#include "CFCVersion.h"
 
 struct CFCHierarchy {
     CFCBase base;
@@ -67,13 +68,17 @@ typedef struct CFCFindFilesContext {
 } CFCFindFilesContext;
 
 static void
-S_do_make_path(const char *path);
+S_parse_source_cfp_files(const char *source_dir);
 
 static void
-S_parse_parcel_files(const char *source_dir, int is_included);
+S_find_prereqs(CFCHierarchy *self, CFCParcel *parcel);
 
 static void
-S_check_prereqs(CFCHierarchy *self);
+S_find_prereq(CFCHierarchy *self, CFCParcel *parent, CFCPrereq *prereq);
+
+static CFCParcel*
+S_audition_parcel(const char *version_dir, const char *vstring,
+                  CFCVersion *min_version, CFCParcel *best);
 
 static void
 S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included);
@@ -139,8 +144,6 @@ CFCHierarchy_init(CFCHierarchy *self, const char *dest) {
 
     self->inc_dest = CFCUtil_sprintf("%s" CHY_DIR_SEP "include", self->dest);
     self->src_dest = CFCUtil_sprintf("%s" CHY_DIR_SEP "source", self->dest);
-    S_do_make_path(self->inc_dest);
-    S_do_make_path(self->src_dest);
 
     return self;
 }
@@ -167,16 +170,6 @@ CFCHierarchy_destroy(CFCHierarchy *self) {
     FREEMEM(self->src_dest);
     CFCBase_decref((CFCBase*)self->parser);
     CFCBase_destroy((CFCBase*)self);
-}
-
-static void
-S_do_make_path(const char *path) {
-    if (!CFCUtil_is_dir(path)) {
-        CFCUtil_make_path(path);
-        if (!CFCUtil_is_dir(path)) {
-            CFCUtil_die("Can't make path %s", path);
-        }
-    }
 }
 
 void
@@ -223,21 +216,36 @@ void
 CFCHierarchy_build(CFCHierarchy *self) {
     // Read .cfp files.
     for (size_t i = 0; self->sources[i] != NULL; i++) {
-        S_parse_parcel_files(self->sources[i], false);
-    }
-    for (size_t i = 0; self->includes[i] != NULL; i++) {
-        S_parse_parcel_files(self->includes[i], true);
+        S_parse_source_cfp_files(self->sources[i]);
     }
 
-    S_check_prereqs(self);
+    // Copy array of source parcels.
+    CFCParcel **parcels = CFCParcel_all_parcels();
+    size_t num_source_parcels = 0;
+    while (parcels[num_source_parcels] != NULL) { num_source_parcels++; }
+    size_t alloc_size = num_source_parcels * sizeof(CFCParcel*);
+    CFCParcel **source_parcels = (CFCParcel**)MALLOCATE(alloc_size);
+    memcpy(source_parcels, parcels, alloc_size);
+
+    // Find prerequisite parcels.
+    for (size_t i = 0; i < num_source_parcels; i++) {
+        S_find_prereqs(self, source_parcels[i]);
+    }
 
     // Read .cfh and .md files.
     for (size_t i = 0; self->sources[i] != NULL; i++) {
         S_parse_cf_files(self, self->sources[i], false);
         S_find_doc_files(self->sources[i]);
     }
-    for (size_t i = 0; self->includes[i] != NULL; i++) {
-        S_parse_cf_files(self, self->includes[i], true);
+
+    // Read .cfh files of included parcels.
+    parcels = CFCParcel_all_parcels();
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel *parcel = parcels[i];
+        if (CFCParcel_included(parcel)) {
+            const char *source_dir = CFCParcel_get_source_dir(parcel);
+            S_parse_cf_files(self, source_dir, true);
+        }
     }
 
     for (int i = 0; self->classes[i] != NULL; i++) {
@@ -248,10 +256,12 @@ CFCHierarchy_build(CFCHierarchy *self) {
     for (size_t i = 0; self->trees[i] != NULL; i++) {
         CFCClass_grow_tree(self->trees[i]);
     }
+
+    FREEMEM(source_parcels);
 }
 
 static void
-S_parse_parcel_files(const char *source_dir, int is_included) {
+S_parse_source_cfp_files(const char *source_dir) {
     CFCFindFilesContext context;
     context.ext       = ".cfp";
     context.paths     = (char**)CALLOCATE(1, sizeof(char*));
@@ -263,21 +273,14 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
         const char *path = context.paths[i];
         char *path_part = S_extract_path_part(path, source_dir, ".cfp");
         CFCFileSpec *file_spec
-            = CFCFileSpec_new(source_dir, path_part, ".cfp", is_included);
-        CFCParcel *parcel = CFCParcel_new_from_file(path, file_spec);
+            = CFCFileSpec_new(source_dir, path_part, ".cfp", false);
+        CFCParcel *parcel = CFCParcel_new_from_file(file_spec);
         const char *name = CFCParcel_get_name(parcel);
         CFCParcel *existing = CFCParcel_fetch(name);
         if (existing) {
-            const char *existing_source_dir
-                = CFCParcel_get_source_dir(existing);
-            CFCUTIL_NULL_CHECK(existing_source_dir);
-            // Skip parcel if it's from an include dir and was already
-            // processed in another source or include dir.
-            if (!is_included || strcmp(source_dir, existing_source_dir) == 0) {
-                CFCUtil_die("Parcel '%s' defined twice in %s and %s",
-                            CFCParcel_get_name(parcel),
-                            CFCParcel_get_cfp_path(existing), path);
-            }
+            CFCUtil_die("Parcel '%s' defined twice in %s and %s",
+                        CFCParcel_get_name(parcel),
+                        CFCParcel_get_cfp_path(existing), path);
         }
         else {
             CFCParcel_register(parcel);
@@ -291,26 +294,122 @@ S_parse_parcel_files(const char *source_dir, int is_included) {
 }
 
 static void
-S_check_prereqs(CFCHierarchy *self) {
-    CFCParcel **parcels = CFCParcel_all_parcels();
+S_find_prereqs(CFCHierarchy *self, CFCParcel *parcel) {
+    CFCPrereq **prereqs = CFCParcel_get_prereqs(parcel);
 
+    for (size_t i = 0; prereqs[i] != NULL; i++) {
+        S_find_prereq(self, parcel, prereqs[i]);
+    }
+}
+
+static void
+S_find_prereq(CFCHierarchy *self, CFCParcel *parent, CFCPrereq *prereq) {
+    const char *name        = CFCPrereq_get_name(prereq);
+    CFCVersion *min_version = CFCPrereq_get_version(prereq);
+
+    // Check whether prereq was processed already.
+    CFCParcel **parcels = CFCParcel_all_parcels();
     for (int i = 0; parcels[i]; ++i) {
         CFCParcel *parcel = parcels[i];
-        if (!CFCParcel_included(parcel)) {
-            CFCParcel_check_prereqs(parcel);
+        const char *other_name = CFCParcel_get_name(parcel);
+
+        if (strcmp(other_name, name) == 0) {
+            CFCVersion *other_version = CFCParcel_get_version(parcel);
+            CFCVersion *major_version = CFCParcel_get_major_version(parcel);
+
+            if (CFCVersion_compare_to(major_version, min_version) <= 0
+                && CFCVersion_compare_to(min_version, other_version) <= 0
+               ) {
+                // Compatible version found.
+                return;
+            }
+            else {
+                CFCUtil_die("Parcel %s %s required by %s not compatible with"
+                            " version %s required by %s",
+                            name, other_version, "[TODO]",
+                            CFCVersion_get_vstring(min_version),
+                            CFCParcel_get_name(parent));
+            }
         }
     }
 
-    for (int i = 0; self->prereqs[i]; ++i) {
-        const char *prereq = self->prereqs[i];
-        CFCParcel *parcel = CFCParcel_fetch(prereq);
-        if (parcel == NULL) {
-            CFCUtil_die("Prerequisite parcel '%s' not found", prereq);
+    CFCParcel *parcel = NULL;
+
+    // TODO: Decide whether to prefer higher versions from directories
+    // that come later in the list of include dirs or stop processing once
+    // a suitable version was found in a dir.
+    for (size_t i = 0; self->includes[i] != NULL; i++) {
+        char *name_dir = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s",
+                                         self->includes[i], name);
+
+        if (CFCUtil_is_dir(name_dir)) {
+            void *dirhandle = CFCUtil_opendir(name_dir);
+            const char *entry = NULL;
+
+            while (NULL != (entry = CFCUtil_dirnext(dirhandle))) {
+                if (!CFCVersion_is_vstring(entry)) { continue; }
+
+                char *version_dir = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s",
+                                                    name_dir, entry);
+
+                if (CFCUtil_is_dir(version_dir)) {
+                    parcel = S_audition_parcel(version_dir, entry, min_version,
+                                               parcel);
+                }
+
+                FREEMEM(version_dir);
+            }
+
+            CFCUtil_closedir(dirhandle, name_dir);
+        }
+
+        FREEMEM(name_dir);
+    }
+
+    if (parcel == NULL) {
+        CFCUtil_die("Parcel %s %s required by %s not found",
+                    name, CFCVersion_get_vstring(min_version),
+                    CFCParcel_get_name(parent));
+    }
+
+    CFCParcel_register(parcel);
+
+    S_find_prereqs(self, parcel);
+
+    CFCBase_decref((CFCBase*)parcel);
+}
+
+static CFCParcel*
+S_audition_parcel(const char *version_dir, const char *vstring,
+                  CFCVersion *min_version, CFCParcel *best) {
+    CFCVersion *version      = CFCVersion_new(vstring);
+    CFCVersion *best_version = best ? CFCParcel_get_version(best) : NULL;
+
+    // Version must match min_version and be greater than the previous best.
+    if (CFCVersion_compare_to(version, min_version) >= 0
+        && (best_version == NULL
+            || CFCVersion_compare_to(version, best_version) > 0)
+       ) {
+        // Parse parcel JSON for major version check.
+        CFCFileSpec *file_spec = CFCFileSpec_new(version_dir, "parcel",
+                                                 ".json", true);
+        CFCParcel *parcel = CFCParcel_new_from_file(file_spec);
+        CFCVersion *major_version = CFCParcel_get_major_version(parcel);
+
+        if (CFCVersion_compare_to(major_version, min_version) <= 0) {
+            CFCBase_decref((CFCBase*)best);
+            best = parcel;
         }
         else {
-            CFCParcel_check_prereqs(parcel);
+            CFCBase_decref((CFCBase*)parcel);
         }
+
+        CFCBase_decref((CFCBase*)file_spec);
     }
+
+    CFCBase_decref((CFCBase*)version);
+
+    return best;
 }
 
 static void
@@ -346,25 +445,16 @@ S_parse_cf_files(CFCHierarchy *self, const char *source_dir, int is_included) {
             CFCUtil_die("%s:%d: parser error", source_path, lineno);
         }
 
-        // Add parsed file to pool if it's from a required parcel. Skip
-        // file if it's from an include dir and the parcel was already
-        // processed in another source or include dir.
-        CFCParcel *parcel = CFCFile_get_parcel(file);
-        const char *parcel_source_dir = CFCParcel_get_source_dir(parcel);
-        CFCUTIL_NULL_CHECK(parcel_source_dir);
-        if (CFCParcel_required(parcel)
-            && (!is_included || strcmp(source_dir, parcel_source_dir) == 0)) {
-            // Make sure path_part is unique because the name of the generated
-            // C header is derived from it.
-            CFCFile *existing = S_fetch_file(self, path_part);
-            if (existing) {
-                CFCUtil_die("File %s.cfh found twice in %s and %s",
-                            path_part, CFCFile_get_source_dir(existing),
-                            source_dir);
-            }
-
-            S_add_file(self, file);
+        // Make sure path_part is unique because the name of the generated
+        // C header is derived from it.
+        CFCFile *existing = S_fetch_file(self, path_part);
+        if (existing) {
+            CFCUtil_die("File %s.cfh found twice in %s and %s",
+                        path_part, CFCFile_get_source_dir(existing),
+                        source_dir);
         }
+
+        S_add_file(self, file);
 
         CFCBase_decref((CFCBase*)file);
         CFCBase_decref((CFCBase*)file_spec);
@@ -495,16 +585,13 @@ S_do_propagate_modified(CFCHierarchy *self, CFCClass *klass, int modified) {
     CFCUTIL_NULL_CHECK(path_part);
     CFCFile *file = S_fetch_file(self, path_part);
     CFCUTIL_NULL_CHECK(file);
-    const char *source_dir = CFCFile_get_source_dir(file);
-    CFCUTIL_NULL_CHECK(source_dir);
-    char *source_path = CFCFile_cfh_path(file, source_dir);
-    char *h_path      = CFCFile_h_path(file, self->inc_dest);
+    const char *source_path = CFCFile_get_path(file);
+    char *h_path = CFCFile_h_path(file, self->inc_dest);
 
     if (!CFCUtil_current(source_path, h_path)) {
         modified = true;
     }
     FREEMEM(h_path);
-    FREEMEM(source_path);
     if (modified) {
         CFCFile_set_modified(file, modified);
     }
@@ -566,6 +653,70 @@ CFCHierarchy_ordered_classes(CFCHierarchy *self) {
     }
     ladder[num_classes] = NULL;
     return ladder;
+}
+
+void
+CFCHierarchy_copy_headers(CFCHierarchy *self, const char *dest_dir) {
+    char *default_dest = NULL;
+
+    if (dest_dir == NULL) {
+        default_dest = CFCUtil_sprintf("%s" CHY_DIR_SEP "share" CHY_DIR_SEP
+                                       "clownfish" CHY_DIR_SEP "include",
+                                       self->dest);
+        dest_dir = default_dest;
+    }
+
+    /* Copy .cfp files. */
+    CFCParcel **parcels = CFCParcel_all_parcels();
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel *parcel = parcels[i];
+        if (CFCParcel_included(parcel) || !CFCParcel_is_installed(parcel)) {
+            continue;
+        }
+
+        const char *source_path = CFCParcel_get_cfp_path(parcel);
+        const char *parcel_name = CFCParcel_get_name(parcel);
+        CFCVersion *version     = CFCParcel_get_version(parcel);
+        const char *vstring     = CFCVersion_get_vstring(version);
+
+        char *dest_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s" CHY_DIR_SEP
+                                          "%s" CHY_DIR_SEP "parcel.json",
+                                          dest_dir, parcel_name, vstring);
+
+        size_t len = 0;
+        char *content = CFCUtil_slurp_text(source_path, &len);
+        CFCUtil_write_file(dest_path, content, len);
+
+        FREEMEM(content);
+        FREEMEM(dest_path);
+    }
+
+    /* Copy .cfh files. */
+    for (size_t i = 0; self->files[i] != NULL; i++) {
+        CFCFile *file = self->files[i];
+        if (CFCFile_included(file)) { continue; }
+        CFCParcel *parcel = CFCFile_get_parcel(file);
+        if (!CFCParcel_is_installed(parcel)) { continue; }
+
+        const char *source_path = CFCFile_get_path(file);
+        const char *parcel_name = CFCParcel_get_name(parcel);
+        CFCVersion *version     = CFCParcel_get_version(parcel);
+        const char *vstring     = CFCVersion_get_vstring(version);
+        const char *path_part   = CFCFile_get_path_part(file);
+
+        char *dest_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s" CHY_DIR_SEP
+                                          "%s" CHY_DIR_SEP "%s.cfh", dest_dir,
+                                          parcel_name, vstring, path_part);
+
+        size_t len = 0;
+        char *content = CFCUtil_slurp_text(source_path, &len);
+        CFCUtil_write_file(dest_path, content, len);
+
+        FREEMEM(content);
+        FREEMEM(dest_path);
+    }
+
+    FREEMEM(default_dest);
 }
 
 void

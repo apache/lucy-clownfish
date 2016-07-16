@@ -89,7 +89,7 @@ for my $file (@files) {
         or die "utime failed for '$h_path': $!";
 }
 
-my $path_to_animal_cf = $animal->cfh_path( $base_dir );
+my $path_to_animal_cf = $animal->get_path;
 # Strawberry Perl may unpack the distribution's files as read-only.
 if ( ! -w $path_to_animal_cf ) {
     chmod( 0644, $path_to_animal_cf )

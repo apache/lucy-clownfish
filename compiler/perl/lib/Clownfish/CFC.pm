@@ -329,17 +329,20 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
     use Carp;
 
     our %new_PARAMS = (
-        name      => undef,
-        nickname  => undef,
-        version   => undef,
-        file_spec => undef,
+        name          => undef,
+        nickname      => undef,
+        version       => undef,
+        major_version => undef,
+        file_spec     => undef,
     );
 
     sub new {
         my ( $either, %args ) = @_;
         verify_args( \%new_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
-        return _new( @args{qw( name nickname version file_spec )} );
+        return _new( @args{qw(
+            name nickname version major_version file_spec
+        )} );
     }
 
     our %new_from_json_PARAMS = (
@@ -355,7 +358,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
     }
 
     our %new_from_file_PARAMS = (
-        path      => undef,
         file_spec => undef,
     );
 
@@ -363,7 +365,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
         my ( $either, %args ) = @_;
         verify_args( \%new_from_file_PARAMS, %args ) or confess $@;
         confess "no subclassing allowed" unless $either eq __PACKAGE__;
-        return _new_from_file( @args{qw( path file_spec )} );
+        return _new_from_file( @args{qw( file_spec )} );
     }
 
 #    $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel_name_or_parcel_object);

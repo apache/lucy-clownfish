@@ -81,7 +81,7 @@ S_run_tests(CFCTest *test) {
 
 static void
 S_run_basic_tests(CFCTest *test) {
-    CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
+    CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL, NULL);
     CFCParcel_register(neato_parcel);
     CFCType *type = CFCType_new(0, neato_parcel, "mytype_t", 0);
 
@@ -114,7 +114,7 @@ S_run_basic_tests(CFCTest *test) {
 
 static void
 S_run_primitive_tests(CFCTest *test) {
-    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, NULL);
+    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, NULL, NULL);
     CFCType *type = CFCType_new(CFCTYPE_PRIMITIVE, parcel, "hump_t", 0);
     OK(test, CFCType_is_primitive(type), "is_primitive");
 
@@ -344,7 +344,7 @@ S_run_object_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)parser);
     }
 
-    CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
+    CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL, NULL);
     CFCClass *foo_class
         = CFCClass_create(neato_parcel, NULL, "Foo", NULL, NULL, NULL, NULL,
                           false, false, false);
@@ -399,7 +399,7 @@ S_run_object_tests(CFCTest *test) {
 
     {
         CFCParcel *foreign_parcel
-            = CFCParcel_new("Foreign", NULL, NULL, NULL);
+            = CFCParcel_new("Foreign", NULL, NULL, NULL, NULL);
         CFCClass *foreign_foo_class
             = CFCClass_create(foreign_parcel, NULL, "Foreign::Foo", NULL, NULL,
                               NULL, NULL, false, false, false);
@@ -467,7 +467,8 @@ S_run_va_list_tests(CFCTest *test) {
 static void
 S_run_arbitrary_tests(CFCTest *test) {
     {
-        CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
+        CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL,
+                                                NULL);
         CFCParcel_register(neato_parcel);
 
         CFCType *foo = CFCType_new_arbitrary(neato_parcel, "foo_t");
@@ -507,7 +508,7 @@ S_run_arbitrary_tests(CFCTest *test) {
 static void
 S_run_composite_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
-    CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL);
+    CFCParcel *neato_parcel = CFCParcel_new("Neato", NULL, NULL, NULL, NULL);
     CFCParser_set_parcel(parser, neato_parcel);
 
     {

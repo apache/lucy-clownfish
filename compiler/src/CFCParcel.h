@@ -64,17 +64,19 @@ CFCParcel_reap_singletons(void);
 
 CFCParcel*
 CFCParcel_new(const char *name, const char *nickname,
-              struct CFCVersion *version, struct CFCFileSpec *file_spec);
+              struct CFCVersion *version, struct CFCVersion *major_version,
+              struct CFCFileSpec *file_spec);
 
 CFCParcel*
-CFCParcel_new_from_file(const char *path, struct CFCFileSpec *file_spec);
+CFCParcel_new_from_file(struct CFCFileSpec *file_spec);
 
 CFCParcel*
 CFCParcel_new_from_json(const char *json, struct CFCFileSpec *file_spec);
 
 CFCParcel*
 CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
-               struct CFCVersion *version, struct CFCFileSpec *file_spec);
+               struct CFCVersion *version, struct CFCVersion *major_version,
+               struct CFCFileSpec *file_spec);
 
 void
 CFCParcel_destroy(CFCParcel *self);
@@ -88,8 +90,14 @@ CFCParcel_get_name(CFCParcel *self);
 const char*
 CFCParcel_get_nickname(CFCParcel *self);
 
+int
+CFCParcel_is_installed(CFCParcel *self);
+
 struct CFCVersion*
 CFCParcel_get_version(CFCParcel *self);
+
+struct CFCVersion*
+CFCParcel_get_major_version(CFCParcel *self);
 
 /** Return the all-lowercase version of the Parcel's prefix.
  */
@@ -128,12 +136,6 @@ CFCParcel_get_source_dir(CFCParcel *self);
 int
 CFCParcel_included(CFCParcel *self);
 
-/** Return true if the parcel is required. This is only valid after all
- * prerequisites were checked.
- */
-int
-CFCParcel_required(CFCParcel *self);
-
 /** Add another Parcel containing superclasses that subclasses in the Parcel
  * extend.
  */
@@ -156,12 +158,6 @@ CFCParcel_get_prereqs(CFCParcel *self);
  */
 CFCParcel**
 CFCParcel_prereq_parcels(CFCParcel *self);
-
-/** Recursively verify that all prerequisite parcels are present in the
- * required version. Mark all needed parcels including 'self' as required.
- */
-void
-CFCParcel_check_prereqs(CFCParcel *self);
 
 /** Return true if parcel equals self or is a direct prerequisite of self.
  */
