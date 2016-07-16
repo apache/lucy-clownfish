@@ -480,16 +480,13 @@ S_do_propagate_modified(CFCHierarchy *self, CFCClass *klass, int modified) {
     CFCUTIL_NULL_CHECK(path_part);
     CFCFile *file = S_fetch_file(self, path_part);
     CFCUTIL_NULL_CHECK(file);
-    const char *source_dir = CFCFile_get_source_dir(file);
-    CFCUTIL_NULL_CHECK(source_dir);
-    char *source_path = CFCFile_cfh_path(file, source_dir);
-    char *h_path      = CFCFile_h_path(file, self->inc_dest);
+    const char *source_path = CFCFile_get_path(file);
+    char *h_path = CFCFile_h_path(file, self->inc_dest);
 
     if (!CFCUtil_current(source_path, h_path)) {
         modified = true;
     }
     FREEMEM(h_path);
-    FREEMEM(source_path);
     if (modified) {
         CFCFile_set_modified(file, modified);
     }

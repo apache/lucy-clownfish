@@ -522,6 +522,7 @@ ALIAS:
     get_source_dir     = 16
     included           = 18
     get_parcel         = 20
+    get_path           = 22
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -571,6 +572,11 @@ PPCODE:
                 retval = S_cfcbase_to_perlref(parcel);
             }
             break;
+        case 22: {
+                const char *value = CFCFile_get_path(self);
+                retval = newSVpv(value, strlen(value));
+            }
+            break;
     END_SET_OR_GET_SWITCH
 }
 
@@ -581,7 +587,6 @@ _gen_path(self, base_dir = NULL)
 ALIAS:
     c_path       = 1
     h_path       = 2
-    cfh_path     = 3
 CODE:
 {
     char *buf;
@@ -591,9 +596,6 @@ CODE:
             break;
         case 2:
             buf = CFCFile_h_path(self, base_dir);
-            break;
-        case 3:
-            buf = CFCFile_cfh_path(self, base_dir);
             break;
         default:
             croak("unexpected ix value: %d", (int)ix);

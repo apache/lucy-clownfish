@@ -139,9 +139,8 @@ S_run_basic_tests(CFCTest *test) {
         CFCTest_set_file_times(h_path, past_time);
     }
 
-    char *cfh_path = CFCFile_cfh_path(animal, cfbase_path);
+    const char *cfh_path = CFCFile_get_path(animal);
     CFCTest_set_file_times(cfh_path, now);
-    FREEMEM(cfh_path);
 
     CFCHierarchy_propagate_modified(hierarchy, 0);
 

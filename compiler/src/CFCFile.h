@@ -64,11 +64,6 @@ CFCFile_c_path(CFCFile *self, const char *base_dir);
 char*
 CFCFile_h_path(CFCFile *self, const char *base_dir);
 
-/** As c_path, but with a ".cfh" extension.
- */
-char*
-CFCFile_cfh_path(CFCFile *self, const char *base_dir);
-
 struct CFCParcel*
 CFCFile_get_parcel(CFCFile *self);
 
@@ -89,6 +84,9 @@ CFCFile_set_modified(CFCFile *self, int modified);
 
 int
 CFCFile_get_modified(CFCFile *self);
+
+const char*
+CFCFile_get_path(CFCFile *self);
 
 const char*
 CFCFile_get_source_dir(CFCFile *self);
