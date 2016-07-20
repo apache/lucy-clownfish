@@ -399,8 +399,8 @@ sub _compile_custom_xs {
         push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
     }
     my $autogen_src_dir = catdir( $AUTOGEN_DIR, 'source' );
-    for my $parcel ( @{ $module->{parcels} } ) {
-        $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel);
+    for my $parcel_name ( @{ $module->{parcels} } ) {
+        my $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel_name);
         my $prefix = $parcel->get_prefix;
         # Assume *_parcel.c is built with make.
         push @$c_files, catfile( $autogen_src_dir, "${prefix}parcel.c" )
@@ -490,10 +490,8 @@ sub _compile_custom_xs {
     my $lib_file = catfile( $archdir, "$class_name.$Config{dlext}" );
     if ( !$self->up_to_date( [ @objects, $AUTOGEN_DIR ], $lib_file ) ) {
         my $linker_flags = $self->extra_linker_flags;
-        if ( $module->{xs_prereqs} ) {
-            push @$linker_flags,
-                 $self->cf_linker_flags( @{ $module->{xs_prereqs} } );
-        }
+        my @xs_prereqs = $self->_cf_find_xs_prereqs($module);
+        push @$linker_flags, $self->cf_linker_flags(@xs_prereqs);
         $cbuilder->link(
             module_name        => $module_name,
             objects            => \@objects,
@@ -510,6 +508,47 @@ sub _compile_custom_xs {
             );
         }
     }
+}
+
+sub _cf_find_xs_prereqs {
+    my ( $self, $module ) = @_;
+
+    my $modules = $self->clownfish_params('modules');
+    my @xs_prereqs;
+
+    for my $parcel_name ( @{ $module->{parcels} } ) {
+        my $parcel = Clownfish::CFC::Model::Parcel->acquire($parcel_name);
+
+        for my $prereq_parcel ( @{ $parcel->prereq_parcels } ) {
+            my $prereq_module;
+
+            if ($prereq_parcel->included) {
+                $prereq_module = $prereq_parcel->get_xs_module;
+            }
+            else {
+                my $prereq_parcel_name = $prereq_parcel->get_name;
+
+                for my $candidate (@$modules) {
+                    my @matches = grep {
+                        $_ eq $prereq_parcel_name
+                    } @{ $candidate->{parcels} };
+
+                    if (@matches) {
+                        $prereq_module = $candidate->{name};
+                        last;
+                    }
+                }
+            }
+
+            die("No XS module found for parcel $parcel_name")
+                if !defined($prereq_module);
+            push @xs_prereqs, $prereq_module
+                if $prereq_module ne $module->{name}
+                   && !grep { $_ eq $prereq_module } @xs_prereqs;
+        }
+    }
+
+    return @xs_prereqs;
 }
 
 sub ACTION_code {
@@ -629,12 +668,10 @@ the Perl bindings for Clownfish modules.
                     name          => 'My::Module',
                     c_source_dirs => 'xs',
                     parcels       => [ 'MyModule' ],
-                    xs_prereqs    => [ 'Clownfish' ],
                 },
                 {
                     name          => 'My::Module::Test',
                     parcels       => [ 'TestMyModule' ],
-                    xs_prereqs    => [ 'Clownfish', 'My::Module' ],
                 },
             ],
         },

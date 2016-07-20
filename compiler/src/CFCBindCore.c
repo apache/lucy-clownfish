@@ -783,6 +783,15 @@ S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
     const char *parcel_name = CFCParcel_get_name(parcel);
     CFCVersion *version     = CFCParcel_get_version(parcel);
     const char *vstring     = CFCVersion_get_vstring(version);
+    char       *json_pairs  = CFCUtil_strdup("");
+
+    const char *host_module_name = CFCParcel_get_host_module_name(parcel);
+    if (host_module_name != NULL) {
+        const char *pattern = "    \"host_module\": \"%s\"";
+        char *pair = CFCUtil_sprintf(pattern, host_module_name);
+        json_pairs = CFCUtil_cat(json_pairs, pair, NULL);
+        FREEMEM(pair);
+    }
 
     char *classes_json = CFCUtil_strdup("");
     CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
@@ -805,25 +814,35 @@ S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
     }
     FREEMEM(ordered);
 
+    if (classes_json[0] != '\0') {
+        const char *pattern =
+            "    \"classes\": {\n"
+            "%s\n"
+            "    }";
+        char *pair = CFCUtil_sprintf(pattern, classes_json);
+        const char *sep = json_pairs[0] == '\0' ? "" : ",\n";
+        json_pairs = CFCUtil_cat(json_pairs, sep, pair, NULL);
+        FREEMEM(pair);
+    }
+
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s" CHY_DIR_SEP "%s"
                                      CHY_DIR_SEP "parcel_%s.json", dest_dir,
                                      parcel_name, vstring, host_lang);
     remove(filepath);
 
-    if (classes_json[0] != '\0') {
+    if (json_pairs[0] != '\0') {
         const char *pattern =
             "{\n"
-            "    \"classes\": {\n"
             "%s\n"
-            "    }\n"
             "}\n";
-        char *json = CFCUtil_sprintf(pattern, classes_json);
+        char *json = CFCUtil_sprintf(pattern, json_pairs);
         CFCUtil_write_file(filepath, json, strlen(json));
         FREEMEM(json);
     }
 
     FREEMEM(filepath);
     FREEMEM(classes_json);
+    FREEMEM(json_pairs);
 }
 
 

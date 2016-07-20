@@ -90,6 +90,12 @@ CFCParcel_get_name(CFCParcel *self);
 const char*
 CFCParcel_get_nickname(CFCParcel *self);
 
+const char*
+CFCParcel_get_host_module_name(CFCParcel *self);
+
+void
+CFCParcel_set_host_module_name(CFCParcel *self, const char *name);
+
 int
 CFCParcel_is_installed(CFCParcel *self);
 

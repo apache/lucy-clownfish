@@ -35,6 +35,7 @@ struct CFCParcel {
     CFCBase base;
     char *name;
     char *nickname;
+    char *host_module_name;
     CFCVersion *version;
     CFCVersion *major_version;
     CFCFileSpec *file_spec;
@@ -357,6 +358,7 @@ void
 CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->name);
     FREEMEM(self->nickname);
+    FREEMEM(self->host_module_name);
     CFCBase_decref((CFCBase*)self->version);
     CFCBase_decref((CFCBase*)self->major_version);
     CFCBase_decref((CFCBase*)self->file_spec);
@@ -394,6 +396,24 @@ CFCParcel_get_name(CFCParcel *self) {
 const char*
 CFCParcel_get_nickname(CFCParcel *self) {
     return self->nickname;
+}
+
+const char*
+CFCParcel_get_host_module_name(CFCParcel *self) {
+    return self->host_module_name;
+}
+
+void
+CFCParcel_set_host_module_name(CFCParcel *self, const char *name) {
+    if (self->host_module_name != NULL) {
+        if (strcmp(self->host_module_name, name) != 0) {
+            CFCUtil_die("Conflicting host modules '%s' and '%s' for parcel %s",
+                        self->host_module_name, name, self->name);
+        }
+    }
+    else {
+        self->host_module_name = CFCUtil_strdup(name);
+    }
 }
 
 int
@@ -532,17 +552,25 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang) {
     if (!extra_data) {
         CFCUtil_die("Invalid JSON in file '%s'", path);
     }
-    CFCJson *class_hash = CFCJson_find_hash_elem(extra_data, "classes");
-    if (!class_hash) { return; }
 
-    CFCJson **children = CFCJson_get_children(class_hash);
-    for (int i = 0; children[i]; i += 2) {
-        const char *class_name = CFCJson_get_string(children[i]);
-        CFCClass *klass = CFCClass_fetch_singleton(class_name);
-        if (!klass) {
-            CFCUtil_die("Class '%s' in '%s' not found", class_name, path);
+    CFCJson *host_module_json
+        = CFCJson_find_hash_elem(extra_data, "host_module");
+    if (host_module_json) {
+        const char *name = CFCJson_get_string(host_module_json);
+        CFCParcel_set_host_module_name(self, name);
+    }
+
+    CFCJson *class_hash = CFCJson_find_hash_elem(extra_data, "classes");
+    if (class_hash) {
+        CFCJson **children = CFCJson_get_children(class_hash);
+        for (int i = 0; children[i]; i += 2) {
+            const char *class_name = CFCJson_get_string(children[i]);
+            CFCClass *klass = CFCClass_fetch_singleton(class_name);
+            if (!klass) {
+                CFCUtil_die("Class '%s' in '%s' not found", class_name, path);
+            }
+            CFCClass_read_host_data_json(klass, children[i+1], path);
         }
-        CFCClass_read_host_data_json(klass, children[i+1], path);
     }
 
     CFCJson_destroy(extra_data);
