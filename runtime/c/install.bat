@@ -42,8 +42,8 @@ rem Install executables.
 copy ..\..\compiler\c\cfc.exe "%prefix%\bin" >nul
 
 rem Install Clownfish header files and HTML documentation.
-xcopy /siy autogen\share "%prefix%" >nul
+xcopy /siy autogen\share "%prefix%\share" >nul
 
 rem Install man pages.
-xcopy /siy autogen\man "%prefix%" >nul
+xcopy /siy autogen\man "%prefix%\man" >nul
 
