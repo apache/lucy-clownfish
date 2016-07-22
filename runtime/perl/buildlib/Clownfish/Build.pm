@@ -140,10 +140,10 @@ sub ACTION_cfc {
     chdir($old_dir);
 }
 
-sub ACTION_copy_clownfish_includes {
+sub ACTION_code {
     my $self = shift;
 
-    $self->SUPER::ACTION_copy_clownfish_includes;
+    $self->SUPER::ACTION_code;
 
     $self->cf_copy_include_file( 'XSBind.h' );
 }
