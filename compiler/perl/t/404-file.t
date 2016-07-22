@@ -17,7 +17,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 21;
-use File::Spec::Functions qw( catdir );
+use File::Spec::Functions qw( catfile );
 
 use Clownfish::CFC::Model::File;
 use Clownfish::CFC::Parser;
@@ -35,7 +35,7 @@ my $class_content      = qq|
 |;
 my $c_block = "__C__\nint foo;\n__END_C__\n";
 
-my $path_part = catdir(qw( Stuff Thing ));
+my $path_part = catfile(qw( Stuff Thing ));
 my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     source_dir  => '.',
     path_part   => $path_part,
@@ -43,10 +43,13 @@ my $file_spec = Clownfish::CFC::Model::FileSpec->new(
 );
 
 {
+    my $path_sep = $^O =~ /^mswin/i ? '\\' : '/';
     my $file
         = $parser->_parse_file( "$parcel_declaration\n$class_content\n$c_block",
         $file_spec );
 
+    is( $file->get_path, join( $path_sep, qw( . Stuff Thing.cfh ) ),
+        "get_path" );
     is( $file->get_source_dir, ".", "get_source_dir" );
     is( $file->get_path_part, $path_part, "get_path_part" );
     ok( !$file->included, "included" );
@@ -61,9 +64,7 @@ my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     $file->set_modified(1);
     ok( $file->get_modified, "set_modified, get_modified" );
 
-    my $path_sep = $^O =~ /^mswin/i ? '\\' : '/';
     my $path_to_stuff_thing = join( $path_sep, qw( path to Stuff Thing ) );
-    is( $file->cfh_path('path/to'), "$path_to_stuff_thing.cfh", "cfh_path" );
     is( $file->c_path('path/to'),   "$path_to_stuff_thing.c",   "c_path" );
     is( $file->h_path('path/to'),   "$path_to_stuff_thing.h",   "h_path" );
 

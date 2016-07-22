@@ -35,7 +35,7 @@ call :add_to_path "%LIB%" "%runtime_dir%\c"
 set LIB=%retval%
 call :add_to_path "%LIBRARY_PATH%" "%runtime_dir%\c"
 set LIBRARY_PATH=%retval%
-call :add_to_path "%CLOWNFISH_INCLUDE%" "%runtime_dir%\core"
+call :add_to_path "%CLOWNFISH_INCLUDE%" "%runtime_dir%\c\autogen\share\clownfish\include"
 set CLOWNFISH_INCLUDE=%retval%
 call :add_to_path "%PERL5LIB%" "%compiler_dir%\perl\blib\arch"
 set PERL5LIB=%retval%

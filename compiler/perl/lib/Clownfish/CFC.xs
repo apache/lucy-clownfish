@@ -522,6 +522,7 @@ ALIAS:
     get_source_dir     = 16
     included           = 18
     get_parcel         = 20
+    get_path           = 22
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -571,6 +572,11 @@ PPCODE:
                 retval = S_cfcbase_to_perlref(parcel);
             }
             break;
+        case 22: {
+                const char *value = CFCFile_get_path(self);
+                retval = newSVpv(value, strlen(value));
+            }
+            break;
     END_SET_OR_GET_SWITCH
 }
 
@@ -581,7 +587,6 @@ _gen_path(self, base_dir = NULL)
 ALIAS:
     c_path       = 1
     h_path       = 2
-    cfh_path     = 3
 CODE:
 {
     char *buf;
@@ -591,9 +596,6 @@ CODE:
             break;
         case 2:
             buf = CFCFile_h_path(self, base_dir);
-            break;
-        case 3:
-            buf = CFCFile_cfh_path(self, base_dir);
             break;
         default:
             croak("unexpected ix value: %d", (int)ix);
@@ -1065,25 +1067,26 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Parcel
 
 SV*
-_new(name_sv, nickname_sv, version, file_spec)
+_new(name_sv, nickname_sv, version, major_version, file_spec)
     SV *name_sv;
     SV *nickname_sv;
     CFCVersion *version;
+    CFCVersion *major_version;
     CFCFileSpec *file_spec;
 CODE:
     const char *name     = SvOK(name_sv)  ? SvPV_nolen(name_sv)  : NULL;
     const char *nickname = SvOK(nickname_sv) ? SvPV_nolen(nickname_sv) : NULL;
-    CFCParcel *self = CFCParcel_new(name, nickname, version, file_spec);
+    CFCParcel *self = CFCParcel_new(name, nickname, version, major_version,
+                                    file_spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
 
 SV*
-_new_from_file(path, file_spec)
-    const char *path;
+_new_from_file(file_spec)
     CFCFileSpec *file_spec;
 CODE:
-    CFCParcel *self = CFCParcel_new_from_file(path, file_spec);
+    CFCParcel *self = CFCParcel_new_from_file(file_spec);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
@@ -1139,12 +1142,6 @@ add_inherited_parcel(self, inherited)
 PPCODE:
     CFCParcel_add_inherited_parcel(self, inherited);
 
-void
-check_prereqs(self)
-    CFCParcel *self;
-PPCODE:
-    CFCParcel_check_prereqs(self);
-
 int
 has_prereq(self, parcel)
     CFCParcel *self;
@@ -1187,7 +1184,6 @@ ALIAS:
     get_version       = 12
     get_prereqs       = 14
     included          = 16
-    required          = 18
     prereq_parcels    = 20
     inherited_parcels = 22
 PPCODE:
@@ -1230,9 +1226,6 @@ PPCODE:
             break;
         case 16:
             retval = newSViv(CFCParcel_included(self));
-            break;
-        case 18:
-            retval = newSViv(CFCParcel_required(self));
             break;
         case 20: {
                 CFCParcel **parcels = CFCParcel_prereq_parcels(self);
@@ -1883,6 +1876,13 @@ CODE:
     RETVAL = CFCBindCore_write_all_modified(self, modified);
 }
 OUTPUT: RETVAL
+
+void
+copy_headers(self, dest_dir)
+    CFCBindCore *self;
+    const char *dest_dir;
+PPCODE:
+    CFCBindCore_copy_headers(self, dest_dir);
 
 
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Binding::Core::Function

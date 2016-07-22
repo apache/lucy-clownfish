@@ -57,6 +57,15 @@ CFCBindCore_destroy(CFCBindCore *self);
 int
 CFCBindCore_write_all_modified(CFCBindCore *self, int modified);
 
+/** Copy .cfh and .cfp files for installed source parcels to the autogen
+ * directory.
+ *
+ * @param dest_dir Destination directory. Defaults to
+ * `autogen/share/clownfish/include` if NULL.
+ */
+void
+CFCBindCore_copy_headers(CFCBindCore *self, const char *dest_dir);
+
 #ifdef __cplusplus
 }
 #endif

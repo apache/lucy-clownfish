@@ -295,30 +295,20 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
                     name, CFCParcel_get_name(parcel));
     }
 
-    // Skip class if it's from an include dir and the parcel was already
-    // processed in another source or include dir.
-    const char *class_source_dir  = CFCClass_get_source_dir(self);
-    const char *parcel_source_dir = CFCParcel_get_source_dir(parcel);
-    if (!CFCClass_included(self)
-        || !class_source_dir
-        || !parcel_source_dir
-        || strcmp(class_source_dir, parcel_source_dir) == 0
-    ) {
-        char *error;
+    char *error;
 
-        CFCUTIL_TRY {
-            // Store in registry.
-            S_register(self);
-        }
-        CFCUTIL_CATCH(error);
-
-        if (error) {
-            CFCBase_decref((CFCBase*)self);
-            CFCUtil_rethrow(error);
-        }
-
-        CFCParcel_add_struct_sym(parcel, self->struct_sym);
+    CFCUTIL_TRY {
+        // Store in registry.
+        S_register(self);
     }
+    CFCUTIL_CATCH(error);
+
+    if (error) {
+        CFCBase_decref((CFCBase*)self);
+        CFCUtil_rethrow(error);
+    }
+
+    CFCParcel_add_struct_sym(parcel, self->struct_sym);
 
     return self;
 }

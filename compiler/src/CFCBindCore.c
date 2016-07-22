@@ -30,6 +30,7 @@
 #include "CFCHierarchy.h"
 #include "CFCParcel.h"
 #include "CFCUtil.h"
+#include "CFCVersion.h"
 
 #define STRING(s)  #s
 #define XSTRING(s) STRING(s)
@@ -133,11 +134,9 @@ CFCBindCore_write_all_modified(CFCBindCore *self, int modified) {
         CFCParcel **parcels = CFCParcel_all_parcels();
         for (size_t i = 0; parcels[i]; ++i) {
             CFCParcel *parcel = parcels[i];
-            if (CFCParcel_required(parcel)) {
-                S_write_parcel_h(self, parcel);
-                if (!CFCParcel_included(parcel)) {
-                    S_write_parcel_c(self, parcel);
-                }
+            S_write_parcel_h(self, parcel);
+            if (!CFCParcel_included(parcel)) {
+                S_write_parcel_c(self, parcel);
             }
         }
     }
@@ -693,6 +692,71 @@ S_charmony_alloca_defines() {
                           XSTRING(chy_alloca), "\n", NULL);
 
     return defines;
+}
+
+void
+CFCBindCore_copy_headers(CFCBindCore *self, const char *dest_dir) {
+    char *default_dest = NULL;
+
+    if (dest_dir == NULL) {
+        default_dest = CFCUtil_sprintf("%s" CHY_DIR_SEP "share" CHY_DIR_SEP
+                                       "clownfish" CHY_DIR_SEP "include",
+                                       CFCHierarchy_get_dest(self->hierarchy));
+        dest_dir = default_dest;
+    }
+
+    /* Copy .cfp files. */
+    CFCParcel **parcels = CFCParcel_all_parcels();
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel *parcel = parcels[i];
+        if (CFCParcel_included(parcel) || !CFCParcel_is_installed(parcel)) {
+            continue;
+        }
+
+        const char *source_path = CFCParcel_get_cfp_path(parcel);
+        const char *parcel_name = CFCParcel_get_name(parcel);
+        CFCVersion *version     = CFCParcel_get_version(parcel);
+        const char *vstring     = CFCVersion_get_vstring(version);
+
+        char *dest_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s" CHY_DIR_SEP
+                                          "%s" CHY_DIR_SEP "parcel.json",
+                                          dest_dir, parcel_name, vstring);
+
+        size_t len = 0;
+        char *content = CFCUtil_slurp_text(source_path, &len);
+        CFCUtil_write_file(dest_path, content, len);
+
+        FREEMEM(content);
+        FREEMEM(dest_path);
+    }
+
+    /* Copy .cfh files. */
+    CFCFile **files = CFCHierarchy_files(self->hierarchy);
+    for (size_t i = 0; files[i] != NULL; i++) {
+        CFCFile *file = files[i];
+        if (CFCFile_included(file)) { continue; }
+        CFCParcel *parcel = CFCFile_get_parcel(file);
+        if (!CFCParcel_is_installed(parcel)) { continue; }
+
+        const char *source_path = CFCFile_get_path(file);
+        const char *parcel_name = CFCParcel_get_name(parcel);
+        CFCVersion *version     = CFCParcel_get_version(parcel);
+        const char *vstring     = CFCVersion_get_vstring(version);
+        const char *path_part   = CFCFile_get_path_part(file);
+
+        char *dest_path = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s" CHY_DIR_SEP
+                                          "%s" CHY_DIR_SEP "%s.cfh", dest_dir,
+                                          parcel_name, vstring, path_part);
+
+        size_t len = 0;
+        char *content = CFCUtil_slurp_text(source_path, &len);
+        CFCUtil_write_file(dest_path, content, len);
+
+        FREEMEM(content);
+        FREEMEM(dest_path);
+    }
+
+    FREEMEM(default_dest);
 }
 
 

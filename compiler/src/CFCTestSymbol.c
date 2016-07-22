@@ -54,7 +54,7 @@ S_try_new_symbol(const char *name) {
 
 static void
 S_run_tests(CFCTest *test) {
-    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, NULL);
+    CFCParcel *parcel = CFCParcel_new("Parcel", NULL, NULL, NULL, NULL);
 
     {
         static const char *exposures[4] = {
@@ -112,7 +112,7 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCParcel *eep_parcel = CFCParcel_new("Eep", NULL, NULL, NULL);
+        CFCParcel *eep_parcel = CFCParcel_new("Eep", NULL, NULL, NULL, NULL);
         CFCParcel_register(eep_parcel);
         CFCClass *ork
             = CFCClass_create(eep_parcel, NULL, "Op::Ork", NULL, NULL, NULL,

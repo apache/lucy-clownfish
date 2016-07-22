@@ -58,6 +58,8 @@ S_run_tests(CFCTest *test) {
             "__END_C__\n";
         CFCFile *file = CFCParser_parse_file(parser, string, file_spec);
 
+        STR_EQ(test, CFCFile_get_path(file),
+               "." CHY_DIR_SEP STUFF_THING ".cfh", "get_path");
         STR_EQ(test, CFCFile_get_source_dir(file), ".", "get_source_dir");
         STR_EQ(test, CFCFile_get_path_part(file), STUFF_THING,
                "get_path_part");
@@ -80,9 +82,6 @@ S_run_tests(CFCTest *test) {
     "Stuff" CHY_DIR_SEP \
     "Thing"
 
-        char *cfh_path = CFCFile_cfh_path(file, "path/to");
-        STR_EQ(test, cfh_path, PATH_TO_STUFF_THING ".cfh", "cfh_path");
-        FREEMEM(cfh_path);
         char *c_path = CFCFile_c_path(file, "path/to");
         STR_EQ(test, c_path, PATH_TO_STUFF_THING ".c", "c_path");
         FREEMEM(c_path);

@@ -35,22 +35,7 @@ CFCBindFile_write_h(CFCFile *file, const char *dest, const char *header,
     CFCUTIL_NULL_CHECK(header);
     CFCUTIL_NULL_CHECK(footer);
 
-    // Make directories.
     char *h_path = CFCFile_h_path(file, dest);
-    char *h_dir  = CFCUtil_strdup(h_path);
-    for (size_t len = strlen(h_dir); len--;) {
-        if (h_dir[len] == CHY_DIR_SEP_CHAR) {
-            h_dir[len] = 0;
-            break;
-        }
-    }
-    if (!CFCUtil_is_dir(h_dir)) {
-        CFCUtil_make_path(h_dir);
-        if (!CFCUtil_is_dir(h_dir)) {
-            CFCUtil_die("Can't make path %s", h_dir);
-        }
-    }
-    FREEMEM(h_dir);
 
     // Create the include-guard strings.
     const char *include_guard_start = CFCFile_guard_start(file);

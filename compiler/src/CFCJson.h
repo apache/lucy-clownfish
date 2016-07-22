@@ -14,52 +14,44 @@
  * limitations under the License.
  */
 
-
-/** Clownfish::CFC::Model::Version - Version number.
- *
- * A version number, comprised of one or more unsigned integers.  Digits
- * beyond the first are treated as implicit zeros for the purposes of
- * comparision, so that v1.2 and v1.2.0 are equivalent.
- */
-#ifndef H_CFCVERSION
-#define H_CFCVERSION
+#ifndef H_CFCJSON
+#define H_CFCJSON
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "charmony.h"
+#define CFCJSON_STRING 1
+#define CFCJSON_HASH   2
+#define CFCJSON_NULL   3
+#define CFCJSON_BOOL   4
 
-typedef struct CFCVersion CFCVersion;
+typedef struct CFCJson CFCJson;
 
-int
-CFCVersion_is_vstring(const char *vstring);
-
-/**
- * @param vstring - A version string consisting of a lower-case 'v' followed
- * by one or more unsigned integers separated by dots.
-*/
-CFCVersion*
-CFCVersion_new(const char *vstring);
-
-CFCVersion*
-CFCVersion_init(CFCVersion *self, const char *vstring);
+CFCJson*
+CFCJson_parse(const char *json);
 
 void
-CFCVersion_destroy(CFCVersion *self);
+CFCJson_destroy(CFCJson *self);
 
 int
-CFCVersion_compare_to(CFCVersion *self, CFCVersion *other);
+CFCJson_get_type(CFCJson *self);
 
 const char*
-CFCVersion_get_vstring(CFCVersion *self);
+CFCJson_get_string(CFCJson *self);
 
-uint32_t
-CFCVersion_get_major(CFCVersion *self);
+int
+CFCJson_get_bool(CFCJson *self);
+
+size_t
+CFCJson_get_num_children(CFCJson *self);
+
+CFCJson**
+CFCJson_get_children(CFCJson *self);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* H_CFCVERSION */
+#endif /* H_CFCJSON */
 

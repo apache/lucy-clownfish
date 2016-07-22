@@ -46,7 +46,7 @@ S_run_extended_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    37,
+    41,
     S_run_tests
 };
 
@@ -84,13 +84,22 @@ S_run_prereq_tests(CFCTest *test) {
 
 static void
 S_run_basic_tests(CFCTest *test) {
-    CFCParcel *foo = CFCParcel_new("Foo", NULL, NULL, NULL);
+    CFCVersion *version = CFCVersion_new("v32.10.102");
+    CFCVersion *major   = CFCVersion_new("v32.0.0");
+    CFCParcel *foo = CFCParcel_new("Foo", "FooNick", version, major, NULL);
     OK(test, foo != NULL, "new");
+    STR_EQ(test, CFCParcel_get_name(foo), "Foo", "get_name");
+    STR_EQ(test, CFCParcel_get_nickname(foo), "FooNick", "get_nickname");
+    STR_EQ(test, CFCVersion_get_vstring(CFCParcel_get_version(foo)),
+           "v32.10.102", "get_version");
+    STR_EQ(test, CFCVersion_get_vstring(CFCParcel_get_major_version(foo)),
+           "v32.0.0", "get_major_version");
     OK(test, !CFCParcel_included(foo), "not included");
+    OK(test, !CFCParcel_is_installed(foo), "not installed");
     CFCParcel_register(foo);
 
     {
-        CFCParcel *same_name = CFCParcel_new("Foo", NULL, NULL, NULL);
+        CFCParcel *same_name = CFCParcel_new("Foo", NULL, NULL, NULL, NULL);
         char      *error;
 
         CFCUTIL_TRY {
@@ -106,7 +115,7 @@ S_run_basic_tests(CFCTest *test) {
 
     {
         CFCParcel *same_nick
-            = CFCParcel_new("OtherFoo", "Foo", NULL, NULL);
+            = CFCParcel_new("OtherFoo", "FooNick", NULL, NULL, NULL);
         char *error;
 
         CFCUTIL_TRY {
@@ -122,10 +131,15 @@ S_run_basic_tests(CFCTest *test) {
 
     CFCFileSpec *file_spec = CFCFileSpec_new(".", "Parcel", ".cfp", true);
     CFCParcel *included_foo
-        = CFCParcel_new("IncludedFoo", NULL, NULL, file_spec);
+        = CFCParcel_new("IncludedFoo", NULL, NULL, NULL, file_spec);
     OK(test, CFCParcel_included(included_foo), "included");
     STR_EQ(test, CFCParcel_get_cfp_path(included_foo),
            "." CHY_DIR_SEP "Parcel.cfp", "get_cfp_path");
+    STR_EQ(test, CFCVersion_get_vstring(CFCParcel_get_version(included_foo)),
+           "v0", "version defaults to v0");
+    STR_EQ(test,
+           CFCVersion_get_vstring(CFCParcel_get_major_version(included_foo)),
+           "v0", "major_version defaults to v0");
     CFCParcel_register(included_foo);
 
     {
@@ -169,15 +183,18 @@ S_run_extended_tests(CFCTest *test) {
     }
 
     {
-        char *path = CFCTest_path("cfbase" CHY_DIR_SEP "Animal.cfp");
-        CFCParcel *parcel = CFCParcel_new_from_file(path, NULL);
+        char *dir = CFCTest_path("cfbase");
+        CFCFileSpec *file_spec = CFCFileSpec_new(dir, "Animal", ".cfp", false);
+        CFCParcel *parcel = CFCParcel_new_from_file(file_spec);
         OK(test, parcel != NULL, "new_from_file");
         CFCBase_decref((CFCBase*)parcel);
-        FREEMEM(path);
+        CFCBase_decref((CFCBase*)file_spec);
+        FREEMEM(dir);
     }
 
     {
-        CFCParcel *parcel = CFCParcel_new("Crustacean", "Crust", NULL, NULL);
+        CFCParcel *parcel = CFCParcel_new("Crustacean", "Crust", NULL, NULL,
+                                          NULL);
         CFCParcel_register(parcel);
         STR_EQ(test, CFCVersion_get_vstring(CFCParcel_get_version(parcel)),
                "v0", "get_version");
@@ -228,14 +245,14 @@ S_run_extended_tests(CFCTest *test) {
 
     {
         CFCFileSpec *foo_file_spec = CFCFileSpec_new(".", "Foo", ".cfp", true);
-        CFCParcel *foo = CFCParcel_new("Foo", NULL, NULL, foo_file_spec);
+        CFCParcel *foo = CFCParcel_new("Foo", NULL, NULL, NULL, foo_file_spec);
         CFCParcel_register(foo);
 
         CFCVersion *cfish_version = CFCVersion_new("v0.8.7");
         CFCFileSpec *cfish_file_spec
             = CFCFileSpec_new(".", "Clownfish", ".cfp", true);
-        CFCParcel *cfish
-            = CFCParcel_new("Clownfish", NULL, cfish_version, cfish_file_spec);
+        CFCParcel *cfish = CFCParcel_new("Clownfish", NULL, cfish_version,
+                                         NULL, cfish_file_spec);
         CFCParcel_register(cfish);
 
         const char *crust_json =
@@ -248,11 +265,6 @@ S_run_extended_tests(CFCTest *test) {
             "        }\n";
         CFCParcel *crust = CFCParcel_new_from_json(crust_json, NULL);
         CFCParcel_register(crust);
-
-        CFCParcel_check_prereqs(crust);
-        INT_EQ(test, CFCParcel_required(foo), false, "parcel not required");
-        INT_EQ(test, CFCParcel_required(cfish), true, "prereq required");
-        INT_EQ(test, CFCParcel_required(crust), true, "self required");
 
         CFCParcel **prereq_parcels = CFCParcel_prereq_parcels(crust);
         OK(test, prereq_parcels[0] != NULL, "prereq_parcels[0]");
