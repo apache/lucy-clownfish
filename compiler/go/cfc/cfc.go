@@ -164,6 +164,12 @@ func (obj *BindCore) WriteAllModified(modified bool) bool {
 	return C.CFCBindCore_write_all_modified(obj.ref, mod) != 0
 }
 
+func (obj *BindCore) CopyHeaders(destDir string) {
+	destDirCString := C.CString(destDir)
+	defer C.free(unsafe.Pointer(destDirCString))
+	C.CFCBindCore_copy_headers(obj.ref, destDirCString)
+}
+
 func NewBindC(hierarchy *Hierarchy, header string, footer string) *BindC {
 	headerCString := C.CString(header)
 	footerCString := C.CString(footer)

@@ -132,6 +132,7 @@ func runCFC() {
 		specMethods(parcel)
 		packageDir := path.Join(buildDir, "clownfish")
 		goBinding.WriteBindings(parcel, packageDir)
+		coreBinding.CopyHeaders("")
 		hierarchy.WriteLog()
 	}
 }
@@ -214,11 +215,11 @@ func copyFile(source, dest string) {
 }
 
 func installHeaders() {
-	coreDir := "../core"
+	srcDir := path.Join("autogen", "share", "clownfish", "include")
 	incDir := cfc.MainIncludeDir()
 	doInstall := func(source string, info os.FileInfo, err error) error {
-		if strings.HasSuffix(source, ".cfp") || strings.HasSuffix(source, ".cfh") {
-			dest := path.Join(incDir, strings.TrimPrefix(source, coreDir))
+		if info.Mode().IsRegular() {
+			dest := path.Join(incDir, strings.TrimPrefix(source, srcDir))
 			destDir := path.Dir(dest)
 			if _, err := os.Stat(destDir); os.IsNotExist(err) {
 				err = os.MkdirAll(destDir, 0755)
@@ -231,7 +232,7 @@ func installHeaders() {
 		}
 		return nil
 	}
-	filepath.Walk("../core", doInstall)
+	filepath.Walk(srcDir, doInstall)
 }
 
 func installStaticLib() {

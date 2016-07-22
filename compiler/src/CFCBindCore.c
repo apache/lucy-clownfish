@@ -698,7 +698,7 @@ void
 CFCBindCore_copy_headers(CFCBindCore *self, const char *dest_dir) {
     char *default_dest = NULL;
 
-    if (dest_dir == NULL) {
+    if (dest_dir == NULL || dest_dir[0] == '\0') {
         default_dest = CFCUtil_sprintf("%s" CHY_DIR_SEP "share" CHY_DIR_SEP
                                        "clownfish" CHY_DIR_SEP "include",
                                        CFCHierarchy_get_dest(self->hierarchy));
