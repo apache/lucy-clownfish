@@ -49,6 +49,9 @@ CFCJson_get_num_children(CFCJson *self);
 CFCJson**
 CFCJson_get_children(CFCJson *self);
 
+CFCJson*
+CFCJson_find_hash_elem(CFCJson *self, const char *key);
+
 #ifdef __cplusplus
 }
 #endif

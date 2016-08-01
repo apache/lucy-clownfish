@@ -528,11 +528,7 @@ S_extract_path_part(const char *path, const char *dir, const char *ext) {
         --path_part_len;
     }
 
-    char *path_part = (char*)MALLOCATE(path_part_len + 1);
-    memcpy(path_part, src, path_part_len);
-    path_part[path_part_len] = '\0';
-
-    return path_part;
+    return CFCUtil_strndup(src, path_part_len);
 }
 
 static void
@@ -557,6 +553,19 @@ S_connect_classes(CFCHierarchy *self) {
         }
         else {
             S_add_tree(self, klass);
+        }
+    }
+}
+
+void
+CFCHierarchy_read_host_data_json(CFCHierarchy *self, const char *host_lang) {
+    CHY_UNUSED_VAR(self);
+    CFCParcel **parcels = CFCParcel_all_parcels();
+
+    for (int i = 0; parcels[i]; ++i) {
+        CFCParcel *parcel = parcels[i];
+        if (CFCParcel_included(parcel)) {
+            CFCParcel_read_host_data_json(parcel, host_lang);
         }
     }
 }

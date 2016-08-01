@@ -764,6 +764,12 @@ build(self)
 PPCODE:
     CFCHierarchy_build(self);
 
+void
+read_host_data_json(self)
+    CFCHierarchy *self;
+PPCODE:
+    CFCHierarchy_read_host_data_json(self, "perl");
+
 int
 propagate_modified(self, ...)
     CFCHierarchy *self;
@@ -1186,6 +1192,7 @@ ALIAS:
     included          = 16
     prereq_parcels    = 20
     inherited_parcels = 22
+    get_xs_module     = 24
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -1237,6 +1244,11 @@ PPCODE:
                 CFCParcel **parcels = CFCParcel_inherited_parcels(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)parcels);
                 FREEMEM(parcels);
+            }
+            break;
+        case 24: {
+                const char *xs_module = CFCParcel_get_host_module_name(self);
+                retval = newSVpvn(xs_module, strlen(xs_module));
             }
             break;
     END_SET_OR_GET_SWITCH
@@ -1883,6 +1895,13 @@ copy_headers(self, dest_dir)
     const char *dest_dir;
 PPCODE:
     CFCBindCore_copy_headers(self, dest_dir);
+
+void
+write_host_data_json(self, dest_dir)
+    CFCBindCore *self;
+    const char *dest_dir;
+PPCODE:
+    CFCBindCore_write_host_data_json(self, dest_dir, "perl");
 
 
 MODULE = Clownfish::CFC  PACKAGE = Clownfish::CFC::Binding::Core::Function

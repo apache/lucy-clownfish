@@ -90,6 +90,12 @@ CFCParcel_get_name(CFCParcel *self);
 const char*
 CFCParcel_get_nickname(CFCParcel *self);
 
+const char*
+CFCParcel_get_host_module_name(CFCParcel *self);
+
+void
+CFCParcel_set_host_module_name(CFCParcel *self, const char *name);
+
 int
 CFCParcel_is_installed(CFCParcel *self);
 
@@ -163,6 +169,11 @@ CFCParcel_prereq_parcels(CFCParcel *self);
  */
 int
 CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel);
+
+/** Read host-specific data for an included parcel from a JSON file.
+ */
+void
+CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang);
 
 void
 CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym);

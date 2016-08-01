@@ -33,6 +33,7 @@
 #include "CFCUtil.h"
 #include "CFCVariable.h"
 #include "CFCFileSpec.h"
+#include "CFCJson.h"
 
 static CFCClass **registry = NULL;
 static size_t registry_size = 0;
@@ -739,6 +740,22 @@ CFCClass_tree_to_ladder(CFCClass *self) {
         FREEMEM(child_ladder);
     }
     return ladder;
+}
+
+void
+CFCClass_read_host_data_json(CFCClass *self, CFCJson *hash, const char *path) {
+    CFCJson *method_hash = CFCJson_find_hash_elem(hash, "methods");
+    if (!method_hash) { return; }
+
+    CFCJson **children = CFCJson_get_children(method_hash);
+    for (int i = 0; children[i]; i += 2) {
+        const char *method_name = CFCJson_get_string(children[i]);
+        CFCMethod *method = CFCClass_method(self, method_name);
+        if (!method) {
+            CFCUtil_die("Method '%s' in '%s' not found", method_name, path);
+        }
+        CFCMethod_read_host_data_json(method, children[i+1], path);
+    }
 }
 
 CFCMethod**

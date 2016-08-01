@@ -68,6 +68,11 @@ CFCHierarchy_add_prereq(CFCHierarchy *self, const char *parcel);
 void
 CFCHierarchy_build(CFCHierarchy *self);
 
+/** Read host-specific data for included parcels.
+ */
+void
+CFCHierarchy_read_host_data_json(CFCHierarchy *self, const char *host_lang);
+
 /** Visit all File objects in the hierarchy.  If a parent node is modified, mark
  * all of its children as modified.
  *

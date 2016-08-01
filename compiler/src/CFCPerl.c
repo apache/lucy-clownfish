@@ -540,14 +540,21 @@ CFCPerl_write_bindings(CFCPerl *self, const char *boot_class,
     char *hand_rolled_xs  = CFCUtil_strdup("");
 
     for (size_t i = 0; parcels[i]; ++i) {
+        CFCParcel *parcel = parcels[i];
+
+        // Set host_module_name for parcel.
+        if (!CFCParcel_included(parcel) && CFCParcel_is_installed(parcel)) {
+            CFCParcel_set_host_module_name(parcel, boot_class);
+        }
+
         // Bake the parcel privacy defines into the XS, so it can be compiled
         // without any extra compiler flags.
-        const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
+        const char *privacy_sym = CFCParcel_get_privacy_sym(parcel);
         privacy_syms = CFCUtil_cat(privacy_syms, "#define ", privacy_sym,
                                    "\n", NULL);
 
         // Bootstrap calls.
-        const char *prefix = CFCParcel_get_prefix(parcels[i]);
+        const char *prefix = CFCParcel_get_prefix(parcel);
         includes = CFCUtil_cat(includes, "#include \"", prefix, "perl.h\"\n",
                                NULL);
         bootstrap_calls = CFCUtil_cat(bootstrap_calls, "    ", prefix,

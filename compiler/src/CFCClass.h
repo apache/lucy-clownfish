@@ -37,6 +37,7 @@ struct CFCFunction;
 struct CFCMethod;
 struct CFCVariable;
 struct CFCFileSpec;
+struct CFCJson;
 
 /** Return true if the string is a valid class name.
  */
@@ -166,6 +167,12 @@ CFCClass_grow_tree(CFCClass *self);
  */
 CFCClass**
 CFCClass_tree_to_ladder(CFCClass *self);
+
+/** Read host-specific data for the class from a JSON hash.
+ */
+void
+CFCClass_read_host_data_json(CFCClass *self, struct CFCJson *hash,
+                            const char *path);
 
 /** Return an array of all methods implemented in this class.
  * Must not be freed by the caller.

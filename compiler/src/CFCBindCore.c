@@ -74,6 +74,10 @@ S_charmony_stdint_defines();
 static char*
 S_charmony_alloca_defines();
 
+static void
+S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
+                       const char *dest_dir, const char *host_lang);
+
 static const CFCMeta CFCBINDCORE_META = {
     "Clownfish::CFC::Binding::Core",
     sizeof(CFCBindCore),
@@ -757,6 +761,88 @@ CFCBindCore_copy_headers(CFCBindCore *self, const char *dest_dir) {
     }
 
     FREEMEM(default_dest);
+}
+
+void
+CFCBindCore_write_host_data_json(CFCBindCore *self, const char *dest_dir,
+                                 const char *host_lang) {
+    CFCParcel **parcels = CFCParcel_all_parcels();
+
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel *parcel = parcels[i];
+        if (!CFCParcel_included(parcel) && CFCParcel_is_installed(parcel)) {
+            S_write_host_data_json(self, parcel, dest_dir, host_lang);
+        }
+    }
+}
+
+static void
+S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
+                       const char *dest_dir, const char *host_lang) {
+    const char *prefix      = CFCParcel_get_prefix(parcel);
+    const char *parcel_name = CFCParcel_get_name(parcel);
+    CFCVersion *version     = CFCParcel_get_version(parcel);
+    const char *vstring     = CFCVersion_get_vstring(version);
+    char       *json_pairs  = CFCUtil_strdup("");
+
+    const char *host_module_name = CFCParcel_get_host_module_name(parcel);
+    if (host_module_name != NULL) {
+        const char *pattern = "    \"host_module\": \"%s\"";
+        char *pair = CFCUtil_sprintf(pattern, host_module_name);
+        json_pairs = CFCUtil_cat(json_pairs, pair, NULL);
+        FREEMEM(pair);
+    }
+
+    char *classes_json = CFCUtil_strdup("");
+    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+
+    for (size_t i = 0; ordered[i] != NULL; i++) {
+        CFCClass *klass = ordered[i];
+        const char *class_prefix = CFCClass_get_prefix(klass);
+        if (strcmp(class_prefix, prefix) != 0) { continue; }
+
+        CFCBindClass *class_binding = CFCBindClass_new(klass);
+
+        char *class_json = CFCBindClass_host_data_json(class_binding);
+        if (class_json[0] != '\0') {
+            const char *sep = classes_json[0] == '\0' ? "" : ",\n";
+            classes_json = CFCUtil_cat(classes_json, sep, class_json, NULL);
+        }
+
+        FREEMEM(class_json);
+        CFCBase_decref((CFCBase*)class_binding);
+    }
+    FREEMEM(ordered);
+
+    if (classes_json[0] != '\0') {
+        const char *pattern =
+            "    \"classes\": {\n"
+            "%s\n"
+            "    }";
+        char *pair = CFCUtil_sprintf(pattern, classes_json);
+        const char *sep = json_pairs[0] == '\0' ? "" : ",\n";
+        json_pairs = CFCUtil_cat(json_pairs, sep, pair, NULL);
+        FREEMEM(pair);
+    }
+
+    char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "%s" CHY_DIR_SEP "%s"
+                                     CHY_DIR_SEP "parcel_%s.json", dest_dir,
+                                     parcel_name, vstring, host_lang);
+    remove(filepath);
+
+    if (json_pairs[0] != '\0') {
+        const char *pattern =
+            "{\n"
+            "%s\n"
+            "}\n";
+        char *json = CFCUtil_sprintf(pattern, json_pairs);
+        CFCUtil_write_file(filepath, json, strlen(json));
+        FREEMEM(json);
+    }
+
+    FREEMEM(filepath);
+    FREEMEM(classes_json);
+    FREEMEM(json_pairs);
 }
 
 

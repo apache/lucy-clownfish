@@ -85,7 +85,6 @@ sub new {
                 name          => 'Clownfish::Test',
                 parcels       => [ 'TestClownfish' ],
                 make_target   => 'test_objects',
-                xs_prereqs    => [ 'Clownfish' ],
             },
         ],
     };

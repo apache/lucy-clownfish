@@ -26,6 +26,7 @@
 #include "CFCParamList.h"
 #include "CFCDocuComment.h"
 #include "CFCVariable.h"
+#include "CFCJson.h"
 
 #ifndef true
     #define true 1
@@ -249,6 +250,35 @@ CFCMethod_can_be_bound(CFCMethod *method) {
      */
     return !CFCSymbol_private((CFCSymbol*)method)
            && CFCCallable_can_be_bound((CFCCallable*)method);
+}
+
+void
+CFCMethod_read_host_data_json(CFCMethod *self, CFCJson *hash,
+                              const char *path) {
+    int         excluded = false;
+    const char *alias    = NULL;
+
+    CFCJson **children = CFCJson_get_children(hash);
+    for (int i = 0; children[i]; i += 2) {
+        const char *key = CFCJson_get_string(children[i]);
+
+        if (strcmp(key, "excluded") == 0) {
+            excluded = CFCJson_get_bool(children[i+1]);
+        }
+        else if (strcmp(key, "alias") == 0) {
+            alias = CFCJson_get_string(children[i+1]);
+        }
+        else {
+            CFCUtil_die("Unexpected key '%s' in '%s'", key, path);
+        }
+    }
+
+    if (excluded) {
+        CFCMethod_exclude_from_host(self);
+    }
+    else if (alias) {
+        CFCMethod_set_host_alias(self, alias);
+    }
 }
 
 void

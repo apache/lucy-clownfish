@@ -237,39 +237,6 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.5.0' ) }
         verify_args( \%new_PARAMS, %args ) or confess $@;
         return _new( @args{qw( dest )} );
     }
-
-    # Recreate host language specific metadata of dependencies.
-    #
-    # TODO: This should be done automatically when building the hierarchy.
-    # But since the current approach relies on runtime introspection, the Perl
-    # modules for all dependencies must first be loaded.
-    sub inherit_metadata {
-        my $self = shift;
-
-        require Clownfish;
-
-        for my $class (@{ $self->ordered_classes }) {
-            next if !$class->included || $class->inert;
-
-            my $class_name = $class->get_name;
-            my $rt_class = Clownfish::Class->fetch_class($class_name)
-                or die("Class $class_name not found");
-
-            for my $rt_method (@{ $rt_class->get_methods }) {
-                if ($rt_method->is_excluded_from_host) {
-                    my $method = $class->method($rt_method->get_name);
-                    $method->exclude_from_host;
-                }
-                else {
-                    my $alias = $rt_method->get_host_alias;
-                    if (defined($alias)) {
-                        my $method = $class->method($rt_method->get_name);
-                        $method->set_host_alias($alias);
-                    }
-                }
-            }
-        }
-    }
 }
 
 {

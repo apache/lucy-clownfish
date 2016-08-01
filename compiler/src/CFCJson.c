@@ -277,3 +277,18 @@ CFCJson_get_children(CFCJson *self) {
     return self->kids;
 }
 
+CFCJson*
+CFCJson_find_hash_elem(CFCJson *self, const char *key) {
+    if (self->type != CFCJSON_HASH) {
+        CFCUtil_die("Not a JSON hash");
+    }
+
+    for (int i = 0; self->kids[i]; i += 2) {
+        if (strcmp(self->kids[i]->string, key) == 0) {
+            return self->kids[i+1];
+        }
+    }
+
+    return NULL;
+}
+
