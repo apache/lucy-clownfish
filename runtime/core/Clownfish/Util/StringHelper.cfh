@@ -68,11 +68,6 @@ inert class Clownfish::Util::StringHelper nickname StrHelp {
     inert uint32_t
     encode_utf8_char(int32_t code_point, void *buffer);
 
-    /** Decode a UTF-8 sequence to a Unicode code point.  Assumes valid UTF-8.
-     */
-    inert int32_t
-    decode_utf8_char(const char *utf8);
-
     /** Return the first non-continuation byte before the supplied pointer.
      * If backtracking progresses beyond the supplied start, return NULL.
      */

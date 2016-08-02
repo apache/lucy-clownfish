@@ -250,41 +250,6 @@ StrHelp_encode_utf8_char(int32_t code_point, void *buffer) {
     }
 }
 
-int32_t
-StrHelp_decode_utf8_char(const char *ptr) {
-    const uint8_t *const string = (const uint8_t*)ptr;
-    int32_t retval = *string;
-    int bytes = StrHelp_UTF8_COUNT[retval];
-
-    switch (bytes & 0x7) {
-        case 1:
-            break;
-
-        case 2:
-            retval = ((retval     & 0x1F) << 6)
-                     | (string[1] & 0x3F);
-            break;
-
-        case 3:
-            retval = ((retval      & 0x0F) << 12)
-                     | ((string[1] & 0x3F) << 6)
-                     | (string[2]  & 0x3F);
-            break;
-
-        case 4:
-            retval = ((retval      & 0x07) << 18)
-                     | ((string[1] & 0x3F) << 12)
-                     | ((string[2] & 0x3F) << 6)
-                     | (string[3]  & 0x3F);
-            break;
-
-        default:
-            THROW(ERR, "Invalid UTF-8 header byte: %x32", retval);
-    }
-
-    return retval;
-}
-
 const char*
 StrHelp_back_utf8_char(const char *ptr, const char *start) {
     while (--ptr >= start) {
