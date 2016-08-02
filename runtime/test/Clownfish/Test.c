@@ -39,7 +39,6 @@
 #include "Clownfish/Test/TestVector.h"
 #include "Clownfish/Test/Util/TestAtomic.h"
 #include "Clownfish/Test/Util/TestMemory.h"
-#include "Clownfish/Test/Util/TestStringHelper.h"
 
 TestSuite*
 Test_create_test_suite() {
@@ -58,7 +57,6 @@ Test_create_test_suite() {
     TestSuite_Add_Batch(suite, (TestBatch*)TestCB_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestBoolean_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestNum_new());
-    TestSuite_Add_Batch(suite, (TestBatch*)TestStrHelp_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestAtomic_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestLFReg_new());
     TestSuite_Add_Batch(suite, (TestBatch*)TestMemory_new());
