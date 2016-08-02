@@ -690,7 +690,10 @@ StrIter_Advance_IMP(StringIterator *self, size_t num) {
             break;
         }
         uint8_t first_byte = ptr[byte_offset];
-        byte_offset += StrHelp_UTF8_COUNT[first_byte];
+        if      (first_byte < 0x80) { byte_offset += 1; }
+        else if (first_byte < 0xE0) { byte_offset += 2; }
+        else if (first_byte < 0xF0) { byte_offset += 3; }
+        else                        { byte_offset += 4; }
         ++num_skipped;
     }
 

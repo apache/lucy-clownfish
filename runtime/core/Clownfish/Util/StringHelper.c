@@ -87,54 +87,55 @@ S_find_invalid_utf8(const uint8_t *string, size_t size) {
     while (string < end) {
         const uint8_t *start = string;
         const uint8_t header_byte = *string++;
-        int count = StrHelp_UTF8_COUNT[header_byte] & 0x7;
-        switch (count & 0x7) {
-            case 1:
-                // ASCII
-                break;
-            case 2:
-                if (string == end)              { return start; }
-                // Disallow non-shortest-form ASCII.
-                if (!(header_byte & 0x1E))      { return start; }
-                if ((*string++ & 0xC0) != 0x80) { return start; }
-                break;
-            case 3:
-                if (end - string < 2)           { return start; }
-                if (header_byte == 0xED) {
-                    // Disallow UTF-16 surrogates.
-                    if (*string < 0x80 || *string > 0x9F) {
-                        return start;
-                    }
+
+        if (header_byte < 0x80) {
+            // ASCII
+            ;
+        }
+        else if (header_byte < 0xE0) {
+            // Disallow non-shortest-form ASCII and continuation bytes.
+            if (header_byte < 0xC2)         { return start; }
+            // Two-byte sequence.
+            if (string == end)              { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+        }
+        else if (header_byte < 0xF0) {
+            // Three-byte sequence.
+            if (end - string < 2)           { return start; }
+            if (header_byte == 0xED) {
+                // Disallow UTF-16 surrogates.
+                if (*string < 0x80 || *string > 0x9F) {
+                    return start;
                 }
-                else if (!(header_byte & 0x0F)) {
-                    // Disallow non-shortest-form.
-                    if (!(*string & 0x20)) {
-                        return start;
-                    }
+            }
+            else if (!(header_byte & 0x0F)) {
+                // Disallow non-shortest-form.
+                if (!(*string & 0x20)) {
+                    return start;
                 }
-                if ((*string++ & 0xC0) != 0x80) { return start; }
-                if ((*string++ & 0xC0) != 0x80) { return start; }
-                break;
-            case 4:
-                if (end - string < 3)           { return start; }
-                if (!(header_byte & 0x07)) {
-                    // Disallow non-shortest-form.
-                    if (!(*string & 0x30)) {
-                        return start;
-                    }
+            }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+        }
+        else {
+            if (header_byte > 0xF4)         { return start; }
+            // Four-byte sequence.
+            if (end - string < 3)           { return start; }
+            if (!(header_byte & 0x07)) {
+                // Disallow non-shortest-form.
+                if (!(*string & 0x30)) {
+                    return start;
                 }
-                else if (header_byte == 0xF4) {
-                    // Code point larger than 0x10FFFF.
-                    if (*string >= 0x90) {
-                        return start;
-                    }
+            }
+            else if (header_byte == 0xF4) {
+                // Code point larger than 0x10FFFF.
+                if (*string >= 0x90) {
+                    return start;
                 }
-                if ((*string++ & 0xC0) != 0x80) { return start; }
-                if ((*string++ & 0xC0) != 0x80) { return start; }
-                if ((*string++ & 0xC0) != 0x80) { return start; }
-                break;
-            default:
-                return start;
+            }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
         }
     }
 
