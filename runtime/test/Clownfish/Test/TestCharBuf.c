@@ -32,6 +32,7 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
+#include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Class.h"
 
 static char smiley[] = { (char)0xE2, (char)0x98, (char)0xBA, 0 };
@@ -99,6 +100,68 @@ test_Cat(TestBatchRunner *runner) {
     DECREF(got);
 
     DECREF(wanted);
+}
+
+static void
+test_roundtrip(TestBatchRunner *runner) {
+    CharBuf *cb = CB_new(0);
+    int32_t code_point;
+
+    for (code_point = 0; code_point <= 0x10FFFF; code_point++) {
+        if (code_point >= 0xD800 && code_point <= 0xDFFF) { continue; }
+
+        CB_Cat_Char(cb, code_point);
+        String *str = CB_Yield_String(cb);
+        const char *start = Str_Get_Ptr8(str);
+        size_t size = Str_Get_Size(str);
+
+        // Verify that utf8_valid agrees.
+        if (!StrHelp_utf8_valid(start, size)) {
+            break;
+        }
+
+        // Verify round trip of encode/decode.
+        if (Str_Code_Point_At(str, 0) != code_point) {
+            break;
+        }
+
+        DECREF(str);
+    }
+    if (code_point == 0x110000) {
+        PASS(runner, "Successfully round tripped 0 - 0x10FFFF");
+    }
+    else {
+        FAIL(runner, "Failed round trip at 0x%04X", (unsigned)code_point);
+    }
+}
+
+typedef struct {
+    CharBuf *cb;
+    int32_t  code_point;
+} CatCharContext;
+
+static void
+S_cat_invalid_char(void *vcontext) {
+    CatCharContext *context = (CatCharContext*)vcontext;
+    CB_Cat_Char(context->cb, context->code_point);
+}
+
+static void
+test_invalid_chars(TestBatchRunner *runner) {
+    static const int32_t cps[] = { -1, 0xD800, 0xDFFF, 0x110000 };
+    size_t num_cps = sizeof(cps) / sizeof(cps[0]);
+    CatCharContext context;
+    context.cb = CB_new(0);
+
+    for (size_t i = 0; i < num_cps; i++) {
+        context.code_point = cps[i];
+        Err *error = Err_trap(S_cat_invalid_char, &context);
+        TEST_TRUE(runner, error != NULL, "Cat_Char with invalid code point %d",
+                  (int)cps[i]);
+        DECREF(error);
+    }
+
+    DECREF(context.cb);
 }
 
 static void
@@ -368,7 +431,7 @@ test_Get_Size(TestBatchRunner *runner) {
 
 void
 TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 41);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 46);
     test_vcatf_percent(runner);
     test_vcatf_s(runner);
     test_vcatf_s_invalid_utf8(runner);
@@ -386,6 +449,8 @@ TestCB_Run_IMP(TestCharBuf *self, TestBatchRunner *runner) {
     test_vcatf_x32(runner);
     test_vcatf_invalid(runner);
     test_Cat(runner);
+    test_roundtrip(runner);
+    test_invalid_chars(runner);
     test_Clone(runner);
     test_Clear(runner);
     test_Grow(runner);
