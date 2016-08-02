@@ -33,7 +33,6 @@
 #include "Clownfish/PtrHash.h"
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Atomic.h"
-#include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Util/Memory.h"
 
 #define XSBIND_REFCOUNT_FLAG   1

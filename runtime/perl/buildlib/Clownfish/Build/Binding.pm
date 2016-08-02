@@ -1010,7 +1010,7 @@ CODE:
 {
     STRLEN len;
     char *ptr = SvPV(sv, len);
-    RETVAL = cfish_StrHelp_utf8_valid(ptr, len);
+    RETVAL = cfish_Str_utf8_valid(ptr, len);
 }
 OUTPUT: RETVAL
 

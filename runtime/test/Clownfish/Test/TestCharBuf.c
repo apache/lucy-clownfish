@@ -32,7 +32,6 @@
 #include "Clownfish/Test.h"
 #include "Clownfish/TestHarness/TestBatchRunner.h"
 #include "Clownfish/TestHarness/TestUtils.h"
-#include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Class.h"
 
 static char smiley[] = { (char)0xE2, (char)0x98, (char)0xBA, 0 };
@@ -116,7 +115,7 @@ test_roundtrip(TestBatchRunner *runner) {
         size_t size = Str_Get_Size(str);
 
         // Verify that utf8_valid agrees.
-        if (!StrHelp_utf8_valid(start, size)) {
+        if (!Str_utf8_valid(start, size)) {
             break;
         }
 

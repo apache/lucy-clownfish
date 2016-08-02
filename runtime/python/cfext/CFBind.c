@@ -39,7 +39,6 @@
 #include "Clownfish/TestHarness/TestUtils.h"
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Vector.h"
 
 static bool Err_initialized;
@@ -195,7 +194,7 @@ S_maybe_py_to_cfish(PyObject *py_obj, cfish_Class *klass, bool increment,
         Py_ssize_t size;
         char *ptr = PyUnicode_AsUTF8AndSize(py_obj, &size);
         // TODO: Can we guarantee that Python will always supply valid UTF-8?
-        if (!ptr || !cfish_StrHelp_utf8_valid(ptr, size)) {
+        if (!ptr || !cfish_Str_utf8_valid(ptr, size)) {
             return false;
         }
         *obj_ptr = (cfish_Obj*)cfish_Str_new_from_trusted_utf8(ptr, size);
