@@ -30,7 +30,6 @@
 #include "Clownfish/Err.h"
 #include "Clownfish/String.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/Util/StringHelper.h"
 #include "Clownfish/Class.h"
 
 // Append trusted UTF-8 to the CharBuf.
@@ -280,11 +279,17 @@ CB_Yield_String_IMP(CharBuf *self) {
 
 void
 CB_Cat_Char_IMP(CharBuf *self, int32_t code_point) {
+    if (code_point < 0
+        || (code_point >= 0xD800 && code_point < 0xE000)
+        || code_point >= 0x110000
+       ) {
+        THROW(ERR, "Invalid code point: 0x%x32", (uint32_t)code_point);
+    }
     const size_t MAX_UTF8_BYTES = 4;
     size_t old_size = self->size;
     SI_add_grow_and_oversize(self, old_size, MAX_UTF8_BYTES);
     char *end = self->ptr + old_size;
-    size_t count = StrHelp_encode_utf8_char(code_point, (uint8_t*)end);
+    size_t count = Str_encode_utf8_char(code_point, (uint8_t*)end);
     self->size += count;
 }
 

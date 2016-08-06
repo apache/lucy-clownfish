@@ -24,6 +24,9 @@ __C__
 // For CFISH_ALLOCA_OBJ.
 #include "Clownfish/Class.h"
 
+// For CFISH_ERR_FUNC_MACRO.
+#include "Clownfish/Err.h"
+
 __END_C__
 
 /**
@@ -36,6 +39,31 @@ public final class Clownfish::String nickname Str
     const char *ptr;
     size_t      size;
     String     *origin;
+
+    /** Return true if the string is valid UTF-8, false otherwise.
+     */
+    public inert bool
+    utf8_valid(const char *ptr, size_t len);
+
+    /** Throws an error if the string isn't valid UTF-8.
+     */
+    public inert void
+    validate_utf8(const char *text, size_t size, const char *file, int line,
+                  const char *func);
+
+    /** Returns true if the code point qualifies as Unicode whitespace.
+     */
+    public inert bool
+    is_whitespace(int32_t code_point);
+
+    /** Encode a Unicode code point to a UTF-8 sequence.
+     *
+     * @param code_point A legal unicode code point.
+     * @param buffer Write buffer which must hold at least 4 bytes (the
+     * maximum legal length for a UTF-8 char).
+     */
+    inert uint32_t
+    encode_utf8_char(int32_t code_point, void *buffer);
 
     /** Return a String which holds a copy of the supplied UTF-8 character
      * data after checking for validity.
@@ -506,6 +534,10 @@ public final class Clownfish::StringIterator nickname StrIter
 
 __C__
 
+#define CFISH_VALIDATE_UTF8(text, size) \
+    cfish_Str_validate_utf8(text, size, \
+                            __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
+
 #define CFISH_SSTR_BLANK() \
     cfish_Str_init_stack_string(CFISH_ALLOCA_OBJ(CFISH_STRING), "", 0)
 
@@ -519,6 +551,7 @@ __C__
 #define CFISH_STR_OOB       -1
 
 #ifdef CFISH_USE_SHORT_NAMES
+  #define VALIDATE_UTF8          CFISH_VALIDATE_UTF8
   #define SSTR_BLANK             CFISH_SSTR_BLANK
   #define SSTR_WRAP_C            CFISH_SSTR_WRAP_C
   #define SSTR_WRAP_UTF8         CFISH_SSTR_WRAP_UTF8

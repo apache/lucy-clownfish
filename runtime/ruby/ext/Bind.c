@@ -16,7 +16,6 @@
 
 #include "ruby.h"
 #include "Bind.h"
-#include "Clownfish/Util/StringHelper.h"
 
 VALUE
 Bind_cfish_to_ruby(cfish_Obj *obj) {

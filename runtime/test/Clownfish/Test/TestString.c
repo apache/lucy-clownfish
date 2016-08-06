@@ -38,6 +38,25 @@ static char smiley[] = { (char)0xE2, (char)0x98, (char)0xBA, 0 };
 static uint32_t smiley_len = 3;
 static int32_t smiley_cp  = 0x263A;
 
+static const uint8_t UTF8_COUNT[256] = {
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
 TestString*
 TestStr_new() {
     return (TestString*)Class_Make_Obj(TESTSTRING);
@@ -69,6 +88,274 @@ S_smiley_with_whitespace(size_t *num_spaces_ptr) {
 
     DECREF(buf);
     return retval;
+}
+
+/* This alternative implementation of utf8_valid() is (presumably) slower, but
+ * it implements the standard in a more linear, easy-to-grok way.
+ */
+#define TRAIL_OK(n) (n >= 0x80 && n <= 0xBF)
+static bool
+S_utf8_valid_alt(const char *maybe_utf8, size_t size) {
+    const uint8_t *string = (const uint8_t*)maybe_utf8;
+    const uint8_t *const end = string + size;
+    while (string < end) {
+        int count = UTF8_COUNT[*string];
+        bool valid = false;
+        if (count == 1) {
+            if (string[0] <= 0x7F) {
+                valid = true;
+            }
+        }
+        else if (count == 2) {
+            if (string[0] >= 0xC2 && string[0] <= 0xDF) {
+                if (TRAIL_OK(string[1])) {
+                    valid = true;
+                }
+            }
+        }
+        else if (count == 3) {
+            if (string[0] == 0xE0) {
+                if (string[1] >= 0xA0 && string[1] <= 0xBF
+                    && TRAIL_OK(string[2])
+                   ) {
+                    valid = true;
+                }
+            }
+            else if (string[0] >= 0xE1 && string[0] <= 0xEC) {
+                if (TRAIL_OK(string[1])
+                    && TRAIL_OK(string[2])
+                   ) {
+                    valid = true;
+                }
+            }
+            else if (string[0] == 0xED) {
+                if (string[1] >= 0x80 && string[1] <= 0x9F
+                    && TRAIL_OK(string[2])
+                   ) {
+                    valid = true;
+                }
+            }
+            else if (string[0] >= 0xEE && string[0] <= 0xEF) {
+                if (TRAIL_OK(string[1])
+                    && TRAIL_OK(string[2])
+                   ) {
+                    valid = true;
+                }
+            }
+        }
+        else if (count == 4) {
+            if (string[0] == 0xF0) {
+                if (string[1] >= 0x90 && string[1] <= 0xBF
+                    && TRAIL_OK(string[2])
+                    && TRAIL_OK(string[3])
+                   ) {
+                    valid = true;
+                }
+            }
+            else if (string[0] >= 0xF1 && string[0] <= 0xF3) {
+                if (TRAIL_OK(string[1])
+                    && TRAIL_OK(string[2])
+                    && TRAIL_OK(string[3])
+                   ) {
+                    valid = true;
+                }
+            }
+            else if (string[0] == 0xF4) {
+                if (string[1] >= 0x80 && string[1] <= 0x8F
+                    && TRAIL_OK(string[2])
+                    && TRAIL_OK(string[3])
+                   ) {
+                    valid = true;
+                }
+            }
+        }
+
+        if (!valid) {
+            return false;
+        }
+        string += count;
+    }
+
+    if (string != end) {
+        return false;
+    }
+
+    return true;
+}
+
+static void
+test_all_code_points(TestBatchRunner *runner) {
+    int32_t code_point;
+    for (code_point = 0; code_point <= 0x10FFFF; code_point++) {
+        char buffer[4];
+        uint32_t size = Str_encode_utf8_char(code_point, buffer);
+        char *start = buffer;
+
+        // Verify length returned by encode_utf8_char().
+        if (size != UTF8_COUNT[(unsigned char)buffer[0]]) {
+            break;
+        }
+        // Verify that utf8_valid() agrees with alternate implementation.
+        if (!!Str_utf8_valid(start, size)
+            != !!S_utf8_valid_alt(start, size)
+           ) {
+            break;
+        }
+    }
+    if (code_point == 0x110000) {
+        PASS(runner, "Successfully round tripped 0 - 0x10FFFF");
+    }
+    else {
+        FAIL(runner, "Failed round trip at 0x%.1X", (unsigned)code_point);
+    }
+}
+
+static void
+S_test_validity(TestBatchRunner *runner, const char *content, size_t size,
+                bool expected, const char *description) {
+    bool sane = Str_utf8_valid(content, size);
+    bool double_check = S_utf8_valid_alt(content, size);
+    if (sane != double_check) {
+        FAIL(runner, "Disagreement: %s", description);
+    }
+    else {
+        TEST_TRUE(runner, sane == expected, "%s", description);
+    }
+}
+
+static void
+test_utf8_valid(TestBatchRunner *runner) {
+    // Musical symbol G clef:
+    // Code point: U+1D11E
+    // UTF-16:     0xD834 0xDD1E
+    // UTF-8       0xF0 0x9D 0x84 0x9E
+    S_test_validity(runner, "\xF0\x9D\x84\x9E", 4, true,
+                    "Musical symbol G clef");
+    S_test_validity(runner, "\xED\xA0\xB4\xED\xB4\x9E", 6, false,
+                    "G clef as UTF-8 encoded UTF-16 surrogates");
+    S_test_validity(runner, ".\xED\xA0\xB4.", 5, false,
+                    "Isolated high surrogate");
+    S_test_validity(runner, ".\xED\xB4\x9E.", 5, false,
+                    "Isolated low surrogate");
+
+    // Shortest form.
+    S_test_validity(runner, ".\xC1\x9C.", 4, false,
+                    "Non-shortest form ASCII backslash");
+    S_test_validity(runner, ".\xC0\xAF.", 4, false,
+                    "Non-shortest form ASCII slash");
+    S_test_validity(runner, ".\xC0\x80.", 4, false,
+                    "Non-shortest form ASCII NUL character");
+    S_test_validity(runner, ".\xE0\x9F\xBF.", 5, false,
+                    "Non-shortest form three byte sequence");
+    S_test_validity(runner, ".\xF0\x8F\xBF\xBF.", 6, false,
+                    "Non-shortest form four byte sequence");
+
+    // Range.
+    S_test_validity(runner, "\xF8\x88\x80\x80\x80", 5, false, "5-byte UTF-8");
+    S_test_validity(runner, "\xF4\x8F\xBF\xBF", 4, true,
+                    "Code point 0x10FFFF");
+    S_test_validity(runner, "\xF4\x90\x80\x80", 4, false,
+                    "Code point 0x110000 too large");
+    S_test_validity(runner, "\xF5\x80\x80\x80", 4, false,
+                    "Sequence starting with 0xF5");
+
+    // Truncated sequences.
+    S_test_validity(runner, "\xC2", 1, false,
+                    "Truncated two byte sequence");
+    S_test_validity(runner, "\xE2\x98", 2, false,
+                    "Truncated three byte sequence");
+    S_test_validity(runner, "\xF0\x9D\x84", 3, false,
+                    "Truncated four byte sequence");
+
+    // Bad continuations.
+    S_test_validity(runner, "\xE2\x98\xBA\xE2\x98\xBA", 6, true,
+                    "SmileySmiley");
+    S_test_validity(runner, "\xE2\xBA\xE2\x98\xBA", 5, false,
+                    "missing first continuation byte");
+    S_test_validity(runner, "\xE2\x98\xE2\x98\xBA", 5, false,
+                    "missing second continuation byte");
+    S_test_validity(runner, "\xE2\xE2\x98\xBA", 4, false,
+                    "missing both continuation bytes");
+    S_test_validity(runner, "\xBA\xE2\x98\xBA\xE2\xBA", 5, false,
+                    "missing first continuation byte (end)");
+    S_test_validity(runner, "\xE2\x98\xBA\xE2\x98", 5, false,
+                    "missing second continuation byte (end)");
+    S_test_validity(runner, "\xE2\x98\xBA\xE2", 4, false,
+                    "missing both continuation bytes (end)");
+    S_test_validity(runner, "\xBA\xE2\x98\xBA", 4, false,
+                    "isolated continuation byte 0xBA");
+    S_test_validity(runner, "\x98\xE2\x98\xBA", 4, false,
+                    "isolated continuation byte 0x98");
+    S_test_validity(runner, "\xE2\x98\xBA\xBA", 4, false,
+                    "isolated continuation byte 0xBA (end)");
+    S_test_validity(runner, "\xE2\x98\xBA\x98", 4, false,
+                    "isolated continuation byte 0x98 (end)");
+    S_test_validity(runner, "\xF0xxxx", 5, false,
+                    "missing continuation byte 2/4");
+    S_test_validity(runner, "\xF0\x9Dxxxx", 5, false,
+                    "missing continuation byte 3/4");
+    S_test_validity(runner, "\xF0\x9D\x84xx", 5, false,
+                    "missing continuation byte 4/4");
+}
+
+static void
+S_validate_utf8(void *context) {
+    const char *text = (const char*)context;
+    Str_validate_utf8(text, strlen(text), "src.c", 17, "fn");
+}
+
+static void
+test_validate_utf8(TestBatchRunner *runner) {
+    {
+        Err *error = Err_trap(S_validate_utf8, "Sigma\xC1\x9C.");
+        TEST_TRUE(runner, error != NULL, "validate_utf8 throws");
+        String *mess = Err_Get_Mess(error);
+        const char *expected = "Invalid UTF-8 after 'Sigma': C1 9C 2E\n";
+        bool ok = Str_Starts_With_Utf8(mess, expected, strlen(expected));
+        TEST_TRUE(runner, ok, "validate_utf8 throws correct error message");
+        DECREF(error);
+    }
+
+    {
+        Err *error = Err_trap(S_validate_utf8,
+                              "xxx123456789\xE2\x93\xAA"
+                              "1234567890\xC1\x9C.");
+        String *mess = Err_Get_Mess(error);
+        const char *expected =
+            "Invalid UTF-8 after '123456789\xE2\x93\xAA"
+            "1234567890': C1 9C 2E\n";
+        bool ok = Str_Starts_With_Utf8(mess, expected, strlen(expected));
+        TEST_TRUE(runner, ok, "validate_utf8 truncates long prefix");
+        DECREF(error);
+    }
+}
+
+static void
+test_is_whitespace(TestBatchRunner *runner) {
+    TEST_TRUE(runner, Str_is_whitespace(' '), "space is whitespace");
+    TEST_TRUE(runner, Str_is_whitespace('\n'), "newline is whitespace");
+    TEST_TRUE(runner, Str_is_whitespace('\t'), "tab is whitespace");
+    TEST_TRUE(runner, Str_is_whitespace('\v'),
+              "vertical tab is whitespace");
+    TEST_FALSE(runner, Str_is_whitespace('a'), "'a' isn't whitespace");
+    TEST_FALSE(runner, Str_is_whitespace(0), "NULL isn't whitespace");
+    TEST_FALSE(runner, Str_is_whitespace(0x263A),
+               "Smiley isn't whitespace");
+}
+
+static void
+S_encode_utf8_char(void *context) {
+    int32_t *code_point_ptr = (int32_t*)context;
+    char buffer[4];
+    Str_encode_utf8_char(*code_point_ptr, buffer);
+}
+
+static void
+test_encode_utf8_char(TestBatchRunner *runner) {
+    int32_t code_point = 0x110000;
+    Err *error = Err_trap(S_encode_utf8_char, &code_point);
+    TEST_TRUE(runner, error != NULL, "Encode code point 0x110000 throws");
+    DECREF(error);
 }
 
 static void
@@ -813,7 +1100,12 @@ test_iterator_substring(TestBatchRunner *runner) {
 
 void
 TestStr_Run_IMP(TestString *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 158);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 200);
+    test_all_code_points(runner);
+    test_utf8_valid(runner);
+    test_validate_utf8(runner);
+    test_is_whitespace(runner);
+    test_encode_utf8_char(runner);
     test_new(runner);
     test_Cat(runner);
     test_Clone(runner);

@@ -19,6 +19,7 @@
 #define CFISH_USE_SHORT_NAMES
 
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 
@@ -29,7 +30,6 @@
 #include "Clownfish/CharBuf.h"
 #include "Clownfish/Err.h"
 #include "Clownfish/Util/Memory.h"
-#include "Clownfish/Util/StringHelper.h"
 
 #define STACK_ITER(string, byte_offset) \
     S_new_stack_iter(alloca(sizeof(StringIterator)), string, byte_offset)
@@ -39,6 +39,178 @@ S_memmem(String *self, const char *substring, size_t size);
 
 static StringIterator*
 S_new_stack_iter(void *allocation, String *string, size_t byte_offset);
+
+// Return a pointer to the first invalid UTF-8 sequence, or NULL if
+// the UTF-8 is valid.
+static const uint8_t*
+S_find_invalid_utf8(const uint8_t *string, size_t size) {
+    const uint8_t *const end = string + size;
+    while (string < end) {
+        const uint8_t *start = string;
+        const uint8_t header_byte = *string++;
+
+        if (header_byte < 0x80) {
+            // ASCII
+            ;
+        }
+        else if (header_byte < 0xE0) {
+            // Disallow non-shortest-form ASCII and continuation bytes.
+            if (header_byte < 0xC2)         { return start; }
+            // Two-byte sequence.
+            if (string == end)              { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+        }
+        else if (header_byte < 0xF0) {
+            // Three-byte sequence.
+            if (end - string < 2)           { return start; }
+            if (header_byte == 0xED) {
+                // Disallow UTF-16 surrogates.
+                if (*string < 0x80 || *string > 0x9F) {
+                    return start;
+                }
+            }
+            else if (!(header_byte & 0x0F)) {
+                // Disallow non-shortest-form.
+                if (!(*string & 0x20)) {
+                    return start;
+                }
+            }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+        }
+        else {
+            if (header_byte > 0xF4)         { return start; }
+            // Four-byte sequence.
+            if (end - string < 3)           { return start; }
+            if (!(header_byte & 0x07)) {
+                // Disallow non-shortest-form.
+                if (!(*string & 0x30)) {
+                    return start;
+                }
+            }
+            else if (header_byte == 0xF4) {
+                // Code point larger than 0x10FFFF.
+                if (*string >= 0x90) {
+                    return start;
+                }
+            }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+            if ((*string++ & 0xC0) != 0x80) { return start; }
+        }
+    }
+
+    return NULL;
+}
+
+bool
+Str_utf8_valid(const char *ptr, size_t size) {
+    return S_find_invalid_utf8((const uint8_t*)ptr, size) == NULL;
+}
+
+void
+Str_validate_utf8(const char *ptr, size_t size, const char *file, int line,
+                  const char *func) {
+    const uint8_t *string  = (const uint8_t*)ptr;
+    const uint8_t *invalid = S_find_invalid_utf8(string, size);
+    if (invalid == NULL) { return; }
+
+    CharBuf *buf = CB_new(0);
+    CB_Cat_Trusted_Utf8(buf, "Invalid UTF-8", 13);
+
+    if (invalid > string) {
+        const uint8_t *prefix = invalid;
+        size_t num_code_points = 0;
+
+        // Skip up to 20 code points backwards.
+        while (prefix > string) {
+            prefix -= 1;
+
+            if ((*prefix & 0xC0) != 0x80) {
+                num_code_points += 1;
+                if (num_code_points >= 20) { break; }
+            }
+        }
+
+        CB_Cat_Trusted_Utf8(buf, " after '", 8);
+        CB_Cat_Trusted_Utf8(buf, (const char*)prefix, invalid - prefix);
+        CB_Cat_Trusted_Utf8(buf, "'", 1);
+    }
+
+    CB_Cat_Trusted_Utf8(buf, ":", 1);
+
+    // Append offending bytes as hex.
+    const uint8_t *end = string + size;
+    const uint8_t *max = invalid + 5;
+    for (const uint8_t *byte = invalid; byte < end && byte < max; byte++) {
+        char hex[4];
+        sprintf(hex, " %02X", *byte);
+        CB_Cat_Trusted_Utf8(buf, hex, 3);
+    }
+
+    String *mess = CB_Yield_String(buf);
+    DECREF(buf);
+
+    Err *err = Err_new(mess);
+    Err_Add_Frame(err, file, line, func);
+    Err_do_throw(err);
+}
+
+bool
+Str_is_whitespace(int32_t code_point) {
+    switch (code_point) {
+            // <control-0009>..<control-000D>
+        case 0x0009: case 0x000A: case 0x000B: case 0x000C: case 0x000D:
+        case 0x0020: // SPACE
+        case 0x0085: // <control-0085>
+        case 0x00A0: // NO-BREAK SPACE
+        case 0x1680: // OGHAM SPACE MARK
+            // EN QUAD..HAIR SPACE
+        case 0x2000: case 0x2001: case 0x2002: case 0x2003: case 0x2004:
+        case 0x2005: case 0x2006: case 0x2007: case 0x2008: case 0x2009:
+        case 0x200A:
+        case 0x2028: // LINE SEPARATOR
+        case 0x2029: // PARAGRAPH SEPARATOR
+        case 0x202F: // NARROW NO-BREAK SPACE
+        case 0x205F: // MEDIUM MATHEMATICAL SPACE
+        case 0x3000: // IDEOGRAPHIC SPACE
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+uint32_t
+Str_encode_utf8_char(int32_t code_point, void *buffer) {
+    uint8_t *buf = (uint8_t*)buffer;
+    if (code_point <= 0x7F) { // ASCII
+        buf[0] = (uint8_t)code_point;
+        return 1;
+    }
+    else if (code_point <= 0x07FF) { // 2 byte range
+        buf[0] = (uint8_t)(0xC0 | (code_point >> 6));
+        buf[1] = (uint8_t)(0x80 | (code_point & 0x3f));
+        return 2;
+    }
+    else if (code_point <= 0xFFFF) { // 3 byte range
+        buf[0] = (uint8_t)(0xE0 | (code_point  >> 12));
+        buf[1] = (uint8_t)(0x80 | ((code_point >> 6) & 0x3F));
+        buf[2] = (uint8_t)(0x80 | (code_point        & 0x3f));
+        return 3;
+    }
+    else if (code_point <= 0x10FFFF) { // 4 byte range
+        buf[0] = (uint8_t)(0xF0 | (code_point  >> 18));
+        buf[1] = (uint8_t)(0x80 | ((code_point >> 12) & 0x3F));
+        buf[2] = (uint8_t)(0x80 | ((code_point >> 6)  & 0x3F));
+        buf[3] = (uint8_t)(0x80 | (code_point         & 0x3f));
+        return 4;
+    }
+    else {
+        THROW(ERR, "Illegal Unicode code point: %u32", code_point);
+        UNREACHABLE_RETURN(uint32_t);
+    }
+}
 
 String*
 Str_new_from_utf8(const char *utf8, size_t size) {
@@ -122,7 +294,7 @@ String*
 Str_new_from_char(int32_t code_point) {
     const size_t MAX_UTF8_BYTES = 4;
     char   *ptr  = (char*)MALLOCATE(MAX_UTF8_BYTES + 1);
-    size_t  size = StrHelp_encode_utf8_char(code_point, (uint8_t*)ptr);
+    size_t  size = Str_encode_utf8_char(code_point, (uint8_t*)ptr);
     ptr[size] = '\0';
 
     String *self = (String*)Class_Make_Obj(STRING);
@@ -690,7 +862,10 @@ StrIter_Advance_IMP(StringIterator *self, size_t num) {
             break;
         }
         uint8_t first_byte = ptr[byte_offset];
-        byte_offset += StrHelp_UTF8_COUNT[first_byte];
+        if      (first_byte < 0x80) { byte_offset += 1; }
+        else if (first_byte < 0xE0) { byte_offset += 2; }
+        else if (first_byte < 0xF0) { byte_offset += 3; }
+        else                        { byte_offset += 4; }
         ++num_skipped;
     }
 
@@ -737,7 +912,7 @@ StrIter_Skip_Whitespace_IMP(StringIterator *self) {
     int32_t code_point;
 
     while (STR_OOB != (code_point = StrIter_Next(self))) {
-        if (!StrHelp_is_whitespace(code_point)) { break; }
+        if (!Str_is_whitespace(code_point)) { break; }
         byte_offset = self->byte_offset;
         ++num_skipped;
     }
@@ -753,7 +928,7 @@ StrIter_Skip_Whitespace_Back_IMP(StringIterator *self) {
     int32_t code_point;
 
     while (STR_OOB != (code_point = StrIter_Prev(self))) {
-        if (!StrHelp_is_whitespace(code_point)) { break; }
+        if (!Str_is_whitespace(code_point)) { break; }
         byte_offset = self->byte_offset;
         ++num_skipped;
     }
