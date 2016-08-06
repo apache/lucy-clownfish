@@ -8627,6 +8627,8 @@ int main(int argc, const char **argv) {
                       CHAZ_CLI_ARG_REQUIRED);
     chaz_CLI_register(cli, "disable-threads", "whether to disable threads",
                       CHAZ_CLI_NO_ARG);
+    chaz_CLI_register(cli, "with-system-cmark", "use system cmark library",
+                      CHAZ_CLI_NO_ARG);
     chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
     {
         int result = chaz_Probe_parse_cli_args(argc, argv, cli);
@@ -8712,6 +8714,8 @@ static void
 S_write_makefile(struct chaz_CLI *cli) {
     SourceFileContext sfc;
 
+    int with_system_cmark = chaz_CLI_defined(cli, "with-system-cmark");
+
     const char *base_dir = "..";
     const char *dir_sep  = chaz_OS_dir_sep();
     const char *host     = chaz_CLI_strval(cli, "host");
@@ -8758,7 +8762,9 @@ S_write_makefile(struct chaz_CLI *cli) {
     chaz_CFlags_add_include_dir(makefile_cflags, ".");
     chaz_CFlags_add_include_dir(makefile_cflags, include_dir);
     chaz_CFlags_add_include_dir(makefile_cflags, src_dir);
-    chaz_CFlags_add_include_dir(makefile_cflags, cmark_dir);
+    if (!with_system_cmark) {
+        chaz_CFlags_add_include_dir(makefile_cflags, cmark_dir);
+    }
     if (chaz_CLI_defined(cli, "enable-coverage")) {
         chaz_CFlags_enable_code_coverage(makefile_cflags);
     }
@@ -8780,6 +8786,9 @@ S_write_makefile(struct chaz_CLI *cli) {
         chaz_MakeBinary_add_prereq(exe, "$(CFC_STATIC_LIB)");
         link_flags = chaz_MakeBinary_get_link_flags(exe);
         chaz_CFlags_append(link_flags, "$(CFC_STATIC_LIB)");
+        if (with_system_cmark) {
+            chaz_CFlags_add_external_lib(link_flags, "cmark");
+        }
         compile_flags = chaz_MakeBinary_get_compile_flags(exe);
         chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");
 
@@ -8788,6 +8797,9 @@ S_write_makefile(struct chaz_CLI *cli) {
         chaz_MakeBinary_add_prereq(test_exe, "$(CFC_STATIC_LIB)");
         link_flags = chaz_MakeBinary_get_link_flags(test_exe);
         chaz_CFlags_append(link_flags, "$(CFC_STATIC_LIB)");
+        if (with_system_cmark) {
+            chaz_CFlags_add_external_lib(link_flags, "cmark");
+        }
         compile_flags = chaz_MakeBinary_get_compile_flags(test_exe);
         chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");
     }
@@ -8806,7 +8818,9 @@ S_write_makefile(struct chaz_CLI *cli) {
     sfc.core_binary = lib;
     sfc.test_binary = test_exe;
     chaz_Make_list_files(src_dir, "c", S_source_file_callback, &sfc);
-    chaz_Make_list_files(cmark_dir, "c", S_source_file_callback, &sfc);
+    if (!with_system_cmark) {
+        chaz_Make_list_files(cmark_dir, "c", S_source_file_callback, &sfc);
+    }
 
     chaz_MakeBinary_add_src_file(lib, src_dir, "CFCParseHeader.c");
 

@@ -42,3 +42,7 @@ Options include
         Enable code coverage. Create HTML pages with coverage data using
         lcov by running "make coverage".
 
+    --with-system-cmark
+        The Clownfish compiler is built with a bundled version of libcmark
+        by default. Use this option if you want to link against the system
+        libcmark.

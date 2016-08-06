@@ -62,24 +62,45 @@ my $CMARK_SOURCE_DIR = catdir( $MODULES_DIR, 'CommonMark', 'src' );
 my $LEMON_EXE_PATH   = catfile( $LEMON_DIR, "lemon$Config{_exe}" );
 my $PPPORT_H_PATH    = catfile( $INCLUDE,   'ppport.h' );
 
+__PACKAGE__->add_property('with_system_cmark');
+
 sub new {
     my ( $class, %args ) = @_;
-    $args{c_source} = [ $CFC_SOURCE_DIR, $CMARK_SOURCE_DIR ];
+    $args{c_source} = [ $CFC_SOURCE_DIR ];
     $args{include_dirs} ||= [];
     my @aux_include = (
         $INCLUDE,
         $CFC_SOURCE_DIR,
-        $CMARK_SOURCE_DIR,
         curdir(),    # for charmony.h
     );
     push @{ $args{include_dirs} }, @aux_include;
-    return $class->SUPER::new(
+    my $self = $class->SUPER::new(
         %args,
         recursive_test_files => 1,
         charmonizer_params   => {
             charmonizer_c => $CHARMONIZER_C,
         },
     );
+    if ($self->with_system_cmark) {
+        my %pkg_info = eval {
+            require ExtUtils::PkgConfig;
+            ExtUtils::PkgConfig->find('libcmark');
+        };
+        if ($@) {
+            push @{ $self->extra_linker_flags }, '-lcmark';
+        }
+        else {
+            push @{ $self->extra_compiler_flags }, $pkg_info{cflags}
+                if defined $pkg_info{cflags};
+            push @{ $self->extra_linker_flags }, $pkg_info{libs}
+                if defined $pkg_info{libs};
+        }
+    }
+    else {
+        push @{ $self->c_source }, $CMARK_SOURCE_DIR;
+        push @{ $self->include_dirs }, $CMARK_SOURCE_DIR;
+    }
+    return $self;
 }
 
 sub _run_make {
