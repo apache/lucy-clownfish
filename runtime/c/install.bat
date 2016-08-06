@@ -33,10 +33,10 @@ mkdir "%prefix%\bin" 2>nul
 mkdir "%prefix%\lib" 2>nul
 
 rem Install libraries.
-copy cfish-%major_version%.dll "%prefix%\bin" >nul
-copy libcfish-%major_version%.dll "%prefix%\bin" >nul
-copy cfish-%major_version%.lib "%prefix%\lib" >nul
-copy libcfish-%major_version%.dll.a "%prefix%\lib" >nul
+copy clownfish-%major_version%.dll "%prefix%\bin" >nul
+copy libclownfish-%major_version%.dll "%prefix%\bin" >nul
+copy clownfish-%major_version%.lib "%prefix%\lib" >nul
+copy libclownfish-%major_version%.dll.a "%prefix%\lib" >nul
 
 rem Install executables.
 copy ..\..\compiler\c\cfc.exe "%prefix%\bin" >nul

@@ -108,5 +108,5 @@ compiled with `autogen/include` added to the header search path.
 
 When linking, add the object files of the CFC-generated code created
 in the previous step. You must also link the shared library of the
-Clownfish runtime (`-lcfish` under GCC).
+Clownfish runtime (`-lclownfish` under GCC).
 

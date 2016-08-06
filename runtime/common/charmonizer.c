@@ -8945,12 +8945,13 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
     if (strcmp(host, "c") == 0 || strcmp(host, "perl") == 0) {
         /* Shared library for C and Perl. */
 
-        chaz_MakeFile_add_rule(self->makefile, "all", "$(CFISH_SHARED_LIB)");
+        chaz_MakeFile_add_rule(self->makefile, "all",
+                               "$(CLOWNFISH_SHARED_LIB)");
 
         self->lib
-            = chaz_MakeFile_add_shared_lib(self->makefile, NULL, "cfish",
+            = chaz_MakeFile_add_shared_lib(self->makefile, NULL, "clownfish",
                                            cfish_version, cfish_major_version);
-        lib_objs = "$(CFISH_SHARED_LIB_OBJS)";
+        lib_objs = "$(CLOWNFISH_SHARED_LIB_OBJS)";
 
         compile_flags = chaz_MakeBinary_get_compile_flags(self->lib);
         chaz_CFlags_add_define(compile_flags, "CFP_CFISH", NULL);
@@ -9005,10 +9006,10 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
         chaz_CFlags_enable_debugging(link_flags);
         chaz_CFlags_append(link_flags,
                            chaz_CFlags_get_string(extra_link_flags));
-        chaz_CFlags_add_shared_lib(link_flags, NULL, "cfish",
+        chaz_CFlags_add_shared_lib(link_flags, NULL, "clownfish",
                                    cfish_major_version);
 
-        chaz_MakeBinary_add_prereq(self->test_lib, "$(CFISH_SHARED_LIB)");
+        chaz_MakeBinary_add_prereq(self->test_lib, "$(CLOWNFISH_SHARED_LIB)");
     }
     else {
         /* Static library for Go and Python. */
@@ -9048,7 +9049,7 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
         char *objects;
 
         chaz_MakeFile_add_rule(self->makefile, "core_objects",
-                               "$(CFISH_SHARED_LIB_OBJS)");
+                               "$(CLOWNFISH_SHARED_LIB_OBJS)");
         objects = chaz_MakeBinary_obj_string(self->lib);
         chaz_ConfWriter_add_def("CORE_OBJECTS", objects);
         free(objects);
@@ -9135,11 +9136,11 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     chaz_CFlags_add_rpath(link_flags, "\"$$PWD\"");
     chaz_CFlags_add_shared_lib(link_flags, NULL, "testcfish",
                                cfish_major_version);
-    chaz_CFlags_add_shared_lib(link_flags, NULL, "cfish",
+    chaz_CFlags_add_shared_lib(link_flags, NULL, "clownfish",
                                cfish_major_version);
 
     chaz_MakeBinary_add_prereq(exe, "$(TESTCFISH_SHARED_LIB)");
-    chaz_MakeBinary_add_prereq(exe, "$(CFISH_SHARED_LIB)");
+    chaz_MakeBinary_add_prereq(exe, "$(CLOWNFISH_SHARED_LIB)");
 
     chaz_MakeFile_add_rule(self->makefile, "$(TEST_CFISH_EXE_OBJS)",
                            self->autogen_target);

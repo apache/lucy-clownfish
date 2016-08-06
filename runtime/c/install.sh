@@ -63,20 +63,20 @@ prefix=`cd "$prefix" && pwd`
 # Install libraries.
 case `uname` in
     Darwin*)
-        lib_file=libcfish.$version.dylib
+        lib_file=libclownfish.$version.dylib
         if [ ! -f $lib_file ]; then
             echo "$lib_file not found. Did you run make?"
             exit 1
         fi
         mkdir -p "$prefix/lib"
         cp $lib_file "$prefix/lib"
-        install_name=$prefix/lib/libcfish.$major_version.dylib
+        install_name=$prefix/lib/libclownfish.$major_version.dylib
         ln -sf $lib_file "$install_name"
-        ln -sf $lib_file "$prefix/lib/libcfish.dylib"
+        ln -sf $lib_file "$prefix/lib/libclownfish.dylib"
         install_name_tool -id "$install_name" "$prefix/lib/$lib_file"
         ;;
     MINGW*|MSYS*)
-        lib_file=libcfish-$major_version.dll
+        lib_file=libclownfish-$major_version.dll
         if [ ! -f $lib_file ]; then
             echo "$lib_file not found. Did you run make?"
             exit 1
@@ -84,10 +84,10 @@ case `uname` in
         mkdir -p "$prefix/bin"
         cp $lib_file "$prefix/bin"
         mkdir -p "$prefix/lib"
-        cp libcfish-$major_version.dll.a "$prefix/lib"
+        cp libclownfish-$major_version.dll.a "$prefix/lib"
         ;;
     CYGWIN*)
-        lib_file=cygcfish-$major_version.dll
+        lib_file=cygclownfish-$major_version.dll
         if [ ! -f $lib_file ]; then
             echo "$lib_file not found. Did you run make?"
             exit 1
@@ -95,19 +95,19 @@ case `uname` in
         mkdir -p "$prefix/bin"
         cp $lib_file "$prefix/bin"
         mkdir -p "$prefix/lib"
-        cp libcfish-$major_version.dll.a "$prefix/lib"
+        cp libclownfish-$major_version.dll.a "$prefix/lib"
         ;;
     *)
-        lib_file=libcfish.so.$version
+        lib_file=libclownfish.so.$version
         if [ ! -f $lib_file ]; then
             echo "$lib_file not found. Did you run make?"
             exit 1
         fi
         mkdir -p "$prefix/lib"
         cp $lib_file "$prefix/lib"
-        soname=libcfish.so.$major_version
+        soname=libclownfish.so.$major_version
         ln -sf $lib_file "$prefix/lib/$soname"
-        ln -sf $soname "$prefix/lib/libcfish.so"
+        ln -sf $soname "$prefix/lib/libclownfish.so"
         ;;
 esac
 
@@ -130,6 +130,6 @@ Name: Clownfish
 Description: Symbiotic object system
 Version: $version
 URL: http://lucy.apache.org/
-Libs: -L$prefix/lib -lcfish
+Libs: -L$prefix/lib -lclownfish
 EOF
 
