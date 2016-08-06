@@ -99,7 +99,8 @@ sub ACTION_charmony {
              '--enable-makefile';
         $self->add_to_cleanup('Makefile');
     }
-    if ( !$self->config('usethreads') ) {
+    # Perl 5.8.7 added support for CLONE_SKIP.
+    if ( !$self->config('usethreads') || $^V lt v5.8.7 ) {
         push @command, '--disable-threads';
     }
     push @command, (
