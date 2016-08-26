@@ -38,8 +38,15 @@ compiler_type = distutils.ccompiler.get_default_compiler()
 # There's no public way to get a string representing the compiler executable
 # out of distutils, but the member variable has been in the same place for a
 # long time, so violating encapsulation may be ok.
-compiler_name = " ".join(compiler.compiler)
-make_command = "make" # TODO portability
+if compiler_type == 'unix':
+    compiler_name = "".join(compiler.compiler)
+    make_command  = ["make", "-j"] # TODO portability
+    LIBCFC_NAME   = 'libcfc.a'     # TODO portability
+elif compiler_type == 'msvc':
+    compiler.initialize()
+    compiler_name = compiler.cc
+    make_command  = ["nmake"]
+    LIBCFC_NAME   = 'cfc.lib'
 
 BASE_DIR        = os.path.abspath(os.path.join(os.pardir, os.pardir))
 PARENT_DIR      = os.path.abspath(os.pardir)
@@ -50,7 +57,6 @@ CHARMONIZER_C        = os.path.join(COMMON_SOURCE_DIR, 'charmonizer.c')
 CHARMONIZER_EXE_NAME = compiler.executable_filename('charmonizer')
 CHARMONIZER_EXE_PATH = os.path.join(os.curdir, CHARMONIZER_EXE_NAME)
 CHARMONY_H_PATH      = 'charmony.h'
-LIBCFC_NAME          = 'libcfc.a' # TODO portability
 LIBCFC_PATH          = os.path.abspath(os.path.join(os.curdir, LIBCFC_NAME))
 
 c_filepaths = [os.path.join('src', 'cfc', '_cfc.c')]
@@ -92,9 +98,9 @@ class charmony(_Command):
                 '--enable-c',
                 '--host=python',
                 '--enable-makefile',
-                '--',
-                cflags
             ]
+            if cflags is not None:
+                command.extend(('--', cflags));
             if 'CHARM_VALGRIND' in os.environ:
                 command[0:0] = "valgrind", "--leak-check=yes";
             print(" ".join(command))
@@ -109,17 +115,17 @@ class libcfc(_Command):
         pass
     def run(self):
         self.run_command('charmony')
-        subprocess.check_call([make_command, '-j', 'static'])
+        subprocess.check_call(make_command + ['static'])
         # Touch Python binding file if the library has changed.
         cfc_c = os.path.join('src', 'cfc', '_cfc.c')
-        if newer_group(['libcfc.a'], cfc_c):
+        if newer_group([LIBCFC_NAME], cfc_c):
             os.utime(cfc_c, None)
 
 class my_clean(_clean):
     def run(self):
         _clean.run(self)
         if os.path.isfile("Makefile"):
-            subprocess.check_call([make_command, 'distclean'])
+            subprocess.check_call(make_command + ['distclean'])
         for elem in paths_to_clean:
             for path in glob.glob(elem):
                 print("removing " + path)

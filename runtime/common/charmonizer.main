@@ -398,8 +398,16 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
              * library.
              */
             compile_flags = chaz_MakeBinary_get_compile_flags(self->lib);
-            chaz_CFlags_compile_shared_library(compile_flags);
+            if (chaz_CC_msvc_version_num()) {
+                /* Python uses /MT. */
+                chaz_CFlags_append(compile_flags, "/MT");
+            }
+            else {
+                chaz_CFlags_compile_shared_library(compile_flags);
+            }
             chaz_CFlags_add_define(compile_flags, "CFP_CFISH", NULL);
+            /* Test code isn't separated yet. */
+            chaz_CFlags_add_define(compile_flags, "CFP_TESTCFISH", NULL);
         }
     }
 
@@ -444,8 +452,16 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
              * library.
              */
             compile_flags = chaz_MakeBinary_get_compile_flags(self->test_lib);
-            chaz_CFlags_compile_shared_library(compile_flags);
+            if (chaz_CC_msvc_version_num()) {
+                /* Python uses /MT. */
+                chaz_CFlags_append(compile_flags, "/MT");
+            }
+            else {
+                chaz_CFlags_compile_shared_library(compile_flags);
+            }
             chaz_CFlags_add_define(compile_flags, "CFP_TESTCFISH", NULL);
+            /* Test code isn't separated yet. */
+            chaz_CFlags_add_define(compile_flags, "CFP_CFISH", NULL);
         }
     }
 

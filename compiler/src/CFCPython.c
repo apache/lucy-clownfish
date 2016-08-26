@@ -459,6 +459,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
 
     CFCClass  **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
     CFCParcel **parcels = CFCParcel_all_parcels();
+    char *privacy_syms       = CFCUtil_strdup("");
     char *callbacks          = S_gen_callbacks(self, parcel, ordered);
     char *type_linkups       = S_gen_type_linkups(self, parcel, ordered);
     char *pound_includes     = CFCUtil_strdup("");
@@ -467,9 +468,12 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *pytype_ready_calls = CFCUtil_strdup("");
     char *module_adds        = CFCUtil_strdup("");
 
-    // Add parcel bootstrapping calls.
+    // Add privacy defines and parcel bootstrapping calls.
     for (size_t i = 0; parcels[i]; ++i) {
         if (!CFCParcel_included(parcels[i])) {
+            const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
+            privacy_syms = CFCUtil_cat(privacy_syms, "#define ", privacy_sym,
+                                       "\n", NULL);
             const char *prefix = CFCParcel_get_prefix(parcels[i]);
             parcel_boots = CFCUtil_cat(parcel_boots, "    ", prefix,
                                        "bootstrap_parcel();\n", NULL);
@@ -502,6 +506,8 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
 
     const char pattern[] =
         "%s\n"
+        "\n"
+        "%s"
         "\n"
         "#include \"Python.h\"\n"
         "#include \"cfish_parcel.h\"\n"
@@ -542,10 +548,10 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         "\n";
 
     char *content
-        = CFCUtil_sprintf(pattern, self->header, pound_includes, callbacks,
-                          helper_mod_name, class_bindings, type_linkups,
-                          last_component, pytype_ready_calls, parcel_boots,
-                          module_adds, self->footer);
+        = CFCUtil_sprintf(pattern, self->header, privacy_syms, pound_includes,
+                          callbacks, helper_mod_name, class_bindings,
+                          type_linkups, last_component, pytype_ready_calls,
+                          parcel_boots, module_adds, self->footer);
 
     char *filepath = CFCUtil_sprintf("%s" CHY_DIR_SEP "_%s.c", dest,
                                      last_component);
@@ -562,6 +568,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(pound_includes);
     FREEMEM(type_linkups);
     FREEMEM(callbacks);
+    FREEMEM(privacy_syms);
     FREEMEM(ordered);
 }
 
