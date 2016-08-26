@@ -50,7 +50,7 @@ CFCGoClass_singleton(const char *class_name);
 /** All registered class bindings.
  */
 CFCGoClass**
-CFCGoClass_registry();
+CFCGoClass_registry(void);
 
 /** Release all memory and references held by the registry.
  */

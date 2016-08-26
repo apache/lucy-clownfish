@@ -42,7 +42,7 @@ S_grow_and_oversize(ByteBuf *self, size_t min_size);
 // Not inlining the THROW macro reduces code size and complexity of
 // SI_add_grow_and_oversize.
 static void
-S_overflow_error();
+S_overflow_error(void);
 
 ByteBuf*
 BB_new(size_t capacity) {

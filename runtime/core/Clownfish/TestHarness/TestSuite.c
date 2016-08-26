@@ -32,7 +32,7 @@
 #include "Clownfish/Class.h"
 
 static void
-S_unbuffer_stdout();
+S_unbuffer_stdout(void);
 
 TestSuite*
 TestSuite_new() {

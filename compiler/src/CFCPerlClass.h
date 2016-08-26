@@ -61,7 +61,7 @@ CFCPerlClass_singleton(const char *class_name);
 /** All registered class bindings.
  */
 CFCPerlClass**
-CFCPerlClass_registry();
+CFCPerlClass_registry(void);
 
 /** Release all memory and references held by the registry.
  */

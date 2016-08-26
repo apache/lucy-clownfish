@@ -54,7 +54,7 @@ S_grow_and_oversize(CharBuf *self, size_t min_size);
 // Not inlining the THROW macro reduces code size and complexity of
 // SI_add_grow_and_oversize.
 static void
-S_overflow_error();
+S_overflow_error(void);
 
 // Helper function for throwing invalid format specifier error.
 static void
