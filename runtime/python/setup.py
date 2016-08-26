@@ -199,7 +199,8 @@ class test(_Command):
         loader = unittest.TestLoader()
         tests = loader.discover("test")
         test_runner = unittest.runner.TextTestRunner()
-        test_runner.run(tests)
+        if not test_runner.run(tests).wasSuccessful():
+            sys.exit(1)
 
         # restore sys.path
         sys.path = orig_sys_path
