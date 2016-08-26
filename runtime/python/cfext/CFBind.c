@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#define CFP_CFISH
 #define C_CFISH_OBJ
 #define C_CFISH_CLASS
 #define C_CFISH_METHOD
@@ -1124,7 +1123,7 @@ CFISH_BB_To_Host_IMP(cfish_ByteBuf *self, void *vcache) {
     CFISH_UNUSED_VAR(vcache);
     CFISH_BB_To_Host_t super_to_host
         = CFISH_SUPER_METHOD_PTR(CFISH_BYTEBUF, CFISH_BB_To_Host);
-    return super_to_host(self);
+    return super_to_host(self, NULL);
 }
 
 void*

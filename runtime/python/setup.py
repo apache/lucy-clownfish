@@ -201,8 +201,8 @@ clownfish_extension = Extension('clownfish._clownfish',
                                     os.curdir,
                                  ],
                                  extra_link_args = [
-                                    CORELIB_PATH,
                                     TESTLIB_PATH,
+                                    CORELIB_PATH,
                                  ],
                                  sources = c_filepaths)
 
