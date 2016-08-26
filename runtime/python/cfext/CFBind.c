@@ -837,6 +837,19 @@ cfish_get_refcount(void *vself) {
 
 cfish_Obj*
 cfish_inc_refcount(void *vself) {
+    cfish_Obj *self = (cfish_Obj*)vself;
+
+    // Handle special cases.
+    if (self->klass == CFISH_STRING) {
+        // Only copy-on-incref Strings get special-cased.  Ordinary
+        // Strings fall through to the general case.
+        if (CFISH_Str_Is_Copy_On_IncRef((cfish_String*)self)) {
+            const char *utf8 = CFISH_Str_Get_Ptr8((cfish_String*)self);
+            size_t size = CFISH_Str_Get_Size((cfish_String*)self);
+            return (cfish_Obj*)cfish_Str_new_from_trusted_utf8(utf8, size);
+        }
+    }
+
     Py_INCREF(vself);
     return (cfish_Obj*)vself;
 }
