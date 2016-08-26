@@ -17,6 +17,7 @@ rem limitations under the License.
 
 if "%CLOWNFISH_HOST%" == "c" goto test_c
 if "%CLOWNFISH_HOST%" == "perl" goto test_perl
+if "%CLOWNFISH_HOST%" == "python" goto test_python
 
 echo unknown CLOWNFISH_HOST: %CLOWNFISH_HOST%
 exit /b 1
@@ -80,6 +81,22 @@ perl Build.PL && call Build && call Build test || exit /b
 
 cd ..\..\runtime\perl
 perl Build.PL && call Build && call Build test
+
+exit /b
+
+:test_python
+
+path C:\Python35-x64;%path%
+python -V
+
+set DISTUTILS_USE_SDK=1
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+
+cd compiler\python
+python setup.py test || exit /b
+
+cd ..\..\runtime\python
+python setup.py test
 
 exit /b
 

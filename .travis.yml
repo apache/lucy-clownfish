@@ -18,16 +18,23 @@ sudo: false
 # Override Travis' default Perl installation script.
 install: 'true'
 script: devel/bin/travis-test.sh
-env:
-  - CLOWNFISH_HOST=c
-  - CLOWNFISH_HOST=go
-  - CLOWNFISH_HOST=perl PERL_VERSION=5.20-extras
-  - CLOWNFISH_HOST=perl PERL_VERSION=5.18-extras
-  - CLOWNFISH_HOST=perl PERL_VERSION=5.16
-  - CLOWNFISH_HOST=perl PERL_VERSION=5.14
-  - CLOWNFISH_HOST=perl PERL_VERSION=5.12
-  - CLOWNFISH_HOST=perl PERL_VERSION=5.10
-  - CLOWNFISH_HOST=perl PERL_VERSION=5.8
+matrix:
+  include:
+    - env: CLOWNFISH_HOST=c
+    - env: CLOWNFISH_HOST=go
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.20-extras
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.18-extras
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.16
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.14
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.12
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.10
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.8
+#    - env: CLOWNFISH_HOST=python
+#      addons:
+#        apt:
+#          packages:
+#           - python3
+#           - python3-dev
 git:
   depth: 10
 

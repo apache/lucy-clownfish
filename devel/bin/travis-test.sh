@@ -55,6 +55,13 @@ test_go() {
     go run build.go test
 }
 
+test_python() {
+    cd compiler/python
+    python3 setup.py test
+    cd ../../runtime/python
+    python3 setup.py test
+}
+
 case $CLOWNFISH_HOST in
     perl)
         test_perl
@@ -64,6 +71,9 @@ case $CLOWNFISH_HOST in
         ;;
     go)
         test_go
+        ;;
+    python)
+        test_python
         ;;
     *)
         echo "unknown CLOWNFISH_HOST: $CLOWNFISH_HOST"
