@@ -323,6 +323,7 @@ S_run_clash_tests(CFCTest *test) {
     rmdir(AUTOGEN);
 
     FREEMEM(cfbase_path);
+    FREEMEM(cfinc_path);
     FREEMEM(cfclash_file_path);
     FREEMEM(cfclash_class_path);
     FREEMEM(cfclash_bar_path);

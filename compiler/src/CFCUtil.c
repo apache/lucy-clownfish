@@ -713,7 +713,9 @@ CFCUtil_rethrow(char *error) {
         longjmp(*current_env, 1);
     }
     else {
-        croak("%s", error);
+        SV *error_sv = newSVpv(error, 0);
+        free(error);
+        croak_sv(sv_2mortal(error_sv));
     }
 }
 

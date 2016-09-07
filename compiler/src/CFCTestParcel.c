@@ -165,6 +165,8 @@ S_run_basic_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)included_foo);
     CFCBase_decref((CFCBase*)file_spec);
     CFCBase_decref((CFCBase*)foo);
+    CFCBase_decref((CFCBase*)major);
+    CFCBase_decref((CFCBase*)version);
     CFCParcel_reap_singletons();
 }
 
