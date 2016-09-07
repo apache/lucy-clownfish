@@ -132,6 +132,8 @@ test_roundtrip(TestBatchRunner *runner) {
     else {
         FAIL(runner, "Failed round trip at 0x%04X", (unsigned)code_point);
     }
+
+    DECREF(cb);
 }
 
 typedef struct {
