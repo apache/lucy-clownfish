@@ -294,6 +294,7 @@ sub ACTION_dist {
         '../common/test/cfbase'  => 't/cfbase',
         '../common/test/cfclash' => 't/cfclash',
         '../common/test/cfext'   => 't/cfext',
+        '../common/test/cfinc'   => 't/cfinc',
         $CHARMONIZER_C           => 'charmonizer.c',
     );
     print "Copying files...\n";
