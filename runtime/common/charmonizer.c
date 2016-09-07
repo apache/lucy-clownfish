@@ -5609,6 +5609,8 @@ chaz_MakeBinary_obj_string(chaz_MakeBinary *self) {
         tmp = chaz_Util_join("", retval, sep, obj_path, NULL);
         free(retval);
         retval = tmp;
+
+        free(obj_path);
     }
 
     return retval;
