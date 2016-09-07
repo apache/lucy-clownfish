@@ -32,7 +32,7 @@ sub run_tests {
     my $suite      = Clownfish::Test::create_test_suite();
 
     return $suite->run_batch(
-        class_name => "Clownfish::Test::TestClass",
+        class_name => $class_name,
         formatter  => $formatter,
     );
 }
