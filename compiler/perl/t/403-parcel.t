@@ -15,6 +15,7 @@
 
 use strict;
 use warnings;
+use lib 'buildlib';
 
 use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
 use Test::More tests => 32;

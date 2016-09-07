@@ -15,6 +15,7 @@
 
 use strict;
 use warnings;
+use lib 'buildlib';
 
 use Test::More tests => 21;
 
