@@ -302,6 +302,7 @@ S_new_from_json(const char *json, CFCFileSpec *file_spec) {
         S_set_prereqs(self, prereqs, path);
     }
     CFCBase_decref((CFCBase*)version);
+    CFCBase_decref((CFCBase*)major_version);
 
     CFCJson_destroy(parsed);
     return self;
