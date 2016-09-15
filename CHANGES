@@ -1,5 +1,41 @@
 Revision history for Apache Clownfish
 
+0.6.0  XXXX-XX-XX
+
+  Bugfixes:
+
+    * [CLOWNFISH-36] - Handle circular references in Perl array and hash
+                       conversion
+    * [CLOWNFISH-78] - Bootstrap process isn't thread-safe
+    * [CLOWNFISH-88] - Travis Perl setup broken
+    * [CLOWNFISH-90] - Unsafe usage of ctype.h functions
+    * [CLOWNFISH-92] - Skip threaded tests under Perl < 5.8.7
+    * [CLOWNFISH-93] - Missing C API docs for inherited methods
+    * [CLOWNFISH-96] - CB_VCatF allows invalid UTF-8 in patterns
+    * [CLOWNFISH-98] - Fix HashIterator error message
+    * [CLOWNFISH-99] - UTF-8 validator allows code points above 0x10FFFF
+    * [CLOWNFISH-100] - Support building with MSYS make
+    * [CLOWNFISH-101] - MinGW C build breaks in tls.c
+
+  Improvements:
+
+    * [CLOWNFISH-14] - Test CFC exceptions in C
+    * [CLOWNFISH-80] - Remove test code from binaries
+    * [CLOWNFISH-83] - Install host alias and exclusion data for prereq
+                       parcels
+    * [CLOWNFISH-87] - Use system cmark if possible
+    * [CLOWNFISH-91] - Changelog missing from CPAN tarball
+    * [CLOWNFISH-94] - Remove C API documentation for Destroy method
+    * [CLOWNFISH-95] - Improve test coverage
+    * [CLOWNFISH-97] - Don't print errors to stderr
+    * [CLOWNFISH-102] - Better directory layout for installed Clownfish
+                        headers
+    * [CLOWNFISH-103] - Rename Clownfish C library to libclownfish
+
+  Tasks:
+
+    * [CLOWNFISH-76] - Move most string helpers to Lucy
+
 0.5.1  2016-04-14
 
   Bugfixes:
