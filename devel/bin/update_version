@@ -97,6 +97,14 @@ if ( $z == 0 && $dev == 0 ) {
 }
 write_file( 'runtime/perl/lib/Clownfish.pm', $buf );
 
+# Update Clownfish/Test.pm.
+$buf = read_file('runtime/perl/lib/Clownfish/Test.pm');
+$buf =~ s/(our \$VERSION\ +=\ +)'.+?'/$1'$x_yyyzzz_version'/g
+    or die "no match";
+$buf =~ s/(bootstrap Clownfish::Test ')(.+?)'/$1$x_y_z_d_version'/
+    or die "no match";
+write_file( 'runtime/perl/lib/Clownfish/Test.pm', $buf );
+
 # Update compiler Build.PL
 $buf = read_file('compiler/perl/Build.PL');
 $buf =~ s/(dist_version\ +=>\ +)'.+?'/$1'$x_y_z_d_version'/
@@ -145,15 +153,19 @@ write_file( 'compiler/perl/lib/Clownfish/CFC/Perl/Build.pm', $buf );
 $buf = read_file('runtime/core/Clownfish.cfp');
 $buf =~ s/("version":\s+)"v\d+\.\d+\.\d+"/$1"v$x_y_z_version"/
     or die "no match";
+if ( $z == 0 && $dev == 0 ) {
+    $buf =~ s/("major_version":\s+)"v\d+\.\d+\.\d+"/$1"v$x_y_z_version"/
+        or die "no match";
+}
 write_file( 'runtime/core/Clownfish.cfp', $buf );
 
-# Update runtime/core/TestClownfish.cfp
-$buf = read_file('runtime/core/TestClownfish.cfp');
+# Update runtime/test/TestClownfish.cfp
+$buf = read_file('runtime/test/TestClownfish.cfp');
 $buf =~ s/("version":\s+)"v\d+\.\d+\.\d+"/$1"v$x_y_z_version"/
     or die "no match";
 $buf =~ s/("Clownfish":\s+)"v\d+\.\d+\.\d+"/$1"v$x_y_z_version"/
     or die "no match";
-write_file( 'runtime/core/TestClownfish.cfp', $buf );
+write_file( 'runtime/test/TestClownfish.cfp', $buf );
 
 # Update runtime/core/Clownfish/Docs/WritingClasses.md
 $buf = read_file('runtime/core/Clownfish/Docs/WritingClasses.md');
