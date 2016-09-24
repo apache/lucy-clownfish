@@ -18,7 +18,7 @@ use warnings;
 
 package Clownfish::CFC::Perl::Build;
 use base qw( Module::Build );
-our $VERSION = '0.005000';
+our $VERSION = '0.006000';
 $VERSION = eval $VERSION;
 
 use File::Spec::Functions qw( catdir catfile curdir updir abs2rel rel2abs );
@@ -679,10 +679,10 @@ the Perl bindings for Clownfish modules.
             'Other::Module' => '0.3.0',
         },
         configure_requires => {
-            'Clownfish::CFC::Perl::Build' => 0.005000,
+            'Clownfish::CFC::Perl::Build' => 0.006000,
         },
         build_requires => {
-            'Clownfish::CFC::Perl::Build' => 0.005000,
+            'Clownfish::CFC::Perl::Build' => 0.006000,
         },
     );
 

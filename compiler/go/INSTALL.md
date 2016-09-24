@@ -5,7 +5,7 @@ To install from an official release of Clownfish:
 
     mkdir -p $GOPATH/src/git-wip-us.apache.org/repos/asf/lucy.git
     tar -C $GOPATH/src/git-wip-us.apache.org/repos/asf/lucy.git \
-        -zxf apache-clownfish-0.5.0.tgz
+        -zxf apache-clownfish-0.6.0.tgz
 
 Developers actively working on Clownfish may instead clone from the Clownfish
 Git repository:

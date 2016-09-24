@@ -8609,8 +8609,8 @@ typedef struct SourceFileContext {
     chaz_MakeBinary *test_binary;
 } SourceFileContext;
 
-static const char cfc_version[]       = "0.5.0";
-static const char cfc_major_version[] = "0.5";
+static const char cfc_version[]       = "0.6.0";
+static const char cfc_major_version[] = "0.6";
 
 static void
 S_add_compiler_flags(struct chaz_CLI *cli);

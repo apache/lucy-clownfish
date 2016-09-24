@@ -8637,8 +8637,8 @@ typedef struct cfish_MakeFile {
     char        *autogen_target;
 } cfish_MakeFile;
 
-static const char cfish_version[]       = "0.5.0";
-static const char cfish_major_version[] = "0.5";
+static const char cfish_version[]       = "0.6.0";
+static const char cfish_major_version[] = "0.6";
 
 static void
 S_add_compiler_flags(struct chaz_CLI *cli);
