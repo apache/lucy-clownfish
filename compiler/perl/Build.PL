@@ -29,7 +29,7 @@ my $builder = Clownfish::CFC::Build->new(
     requires           => { 'perl' => '5.8.3', },
     configure_requires => { 'Module::Build' => 0.280801 },
     build_requires    => {
-        'Module::Build'      => 0.280801,
+        'Module::Build'      => 0.3604,
         'ExtUtils::CBuilder' => 0.18,
         'ExtUtils::ParseXS'  => 3.00,
         'Devel::PPPort'      => 3.14,
