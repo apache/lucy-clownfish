@@ -368,7 +368,7 @@ CFCUtil_current(const char *orig, const char *dest) {
     // If the source file is newer than the dest, we're not current.
     struct stat orig_stat;
     if (stat(orig, &orig_stat) == -1) {
-        CFCUtil_die("Missing source file '%s'", orig);
+        CFCUtil_die("Missing source file '%s': %s", orig, strerror(errno));
     }
     if (orig_stat.st_mtime > dest_stat.st_mtime) {
         return false;
