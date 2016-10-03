@@ -74,14 +74,14 @@ if ( $micro == 0 && $rc < 2 ) {
 }
 
 say qq|# Create a tag for the release candidate.|;
-say qq|git tag apache-clownfish-$full_rc_version |
+say qq|git tag v$full_rc_version |
     . qq|-m "Tagging release candidate $rc for $x_y_z_version."\n|;
 
 say qq|# Export a pristine copy of the source from the release candidate|;
 say qq|# tag.|;
 say qq|git archive --prefix=apache-clownfish-$x_y_z_version/ |
     . qq|--output=apache-clownfish-$x_y_z_version.tar.gz |
-    . qq|apache-clownfish-$full_rc_version\n|;
+    . qq|v$full_rc_version\n|;
 
 say qq|# Create an RC directory in our dev area on dist.apache.org|;
 say qq|# and check out a copy.|;
@@ -127,7 +127,7 @@ say qq|[...]\n|;
 
 say qq|# Push your branch and the tag for the RC.|;
 say qq|git push origin $major.$minor|;
-say qq|git push origin apache-clownfish-$full_rc_version\n|;
+say qq|git push origin v$full_rc_version\n|;
 
 say qq|###############################################################|;
 say qq|# Voting|;
@@ -143,10 +143,10 @@ say qq|# After the vote has passed...|;
 say qq|###############################################################\n|;
 
 say qq|# Tag the release and delete the RC tags.|;
-say qq|git tag rel/apache-clownfish-$x_y_z_version apache-clownfish-$full_rc_version|;
-say qq|git push origin rel/apache-clownfish-$x_y_z_version|;
+say qq|git tag rel/v$x_y_z_version v$full_rc_version|;
+say qq|git push origin rel/v$x_y_z_version|;
 for ( 1 .. $rc ) {
-    my $rc_tag = qq|apache-clownfish-$major.$minor.$micro-rc$_|;
+    my $rc_tag = qq|v$major.$minor.$micro-rc$_|;
     say qq|git tag -d $rc_tag|;
     say qq|git push origin :$rc_tag|;
 }
@@ -242,7 +242,7 @@ This candidate was assembled according to the process documented at:
 
 It was cut using "git archive" from the tag at:
 
-    https://git-wip-us.apache.org/repos/asf?p=lucy-clownfish.git;a=tag;h=refs/tags/apache-clownfish-$full_rc_version
+    https://git-wip-us.apache.org/repos/asf?p=lucy-clownfish.git;a=tag;h=refs/tags/v$full_rc_version
 
 Please vote on releasing this candidate as Apache Clownfish version
 $x_y_z_version.  The vote will be held open for at least the next 72
