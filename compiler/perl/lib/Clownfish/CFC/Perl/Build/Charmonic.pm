@@ -100,7 +100,8 @@ sub ACTION_charmony {
         $self->add_to_cleanup('Makefile');
     }
     # Perl 5.8.7 added support for CLONE_SKIP.
-    if ( !$self->config('usethreads') || $^V lt v5.8.7 ) {
+    # Thread support in 5.10.0 seems completely broken (CLOWNFISH-107).
+    if ( !$self->config('usethreads') || $^V lt v5.8.7 || $^V eq v5.10.0 ) {
         push @command, '--disable-threads';
     }
     push @command, (
