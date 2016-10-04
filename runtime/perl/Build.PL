@@ -38,15 +38,16 @@ my $builder = Clownfish::Build->new(
         'Devel::PPPort'      => 3.14,
         'Clownfish::CFC'     => 0.006000,
     },
+    no_index => {
+        directory => [qw( buildlib )],
+        package => [qw( Clownfish::Test )],
+    },
     meta_merge => { keywords => [qw( clownfish )], },
     meta_add   => {
         resources => {
             homepage   => 'http://lucy.apache.org',
             repository => 'https://git-wip-us.apache.org/repos/asf/lucy-clownfish.git',
             bugtracker => 'https://issues.apache.org/jira/browse/CLOWNFISH',
-        },
-        no_index => {
-            directory => [qw( buildlib )],
         },
     },
     add_to_cleanup => [

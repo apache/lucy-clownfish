@@ -311,6 +311,9 @@ sub ACTION_clean {
 sub ACTION_dist {
     my $self = shift;
 
+    die("Module::Build 0.40_11 is required for ./Build dist")
+        if $Module::Build::VERSION < 0.40_11;
+
     # Create POD.
     $self->depends_on('clownfish');
     rmtree("autogen");
