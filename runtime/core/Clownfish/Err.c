@@ -254,7 +254,8 @@ Err_win_error() {
     DWORD message_len = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
                                       NULL,       // message source table
                                       GetLastError(),
-                                      0,          // language id
+                                      MAKELANGID(LANG_ENGLISH,
+                                                 SUBLANG_ENGLISH_US),
                                       buf,
                                       buf_size,
                                       NULL        // empty va_list
