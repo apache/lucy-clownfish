@@ -145,6 +145,19 @@ sub ACTION_code {
     $self->SUPER::ACTION_code;
 
     $self->cf_copy_include_file( 'XSBind.h' );
+
+    # Check whether 'use Clownfish::Test' succeeds. If this fails, it is
+    # probably caused by a failure to find symbols from Clownfish.so,
+    # indicating a build problem. In this case, make the build fail, so
+    # we get the full build log on CPAN Testers. Also print contents of
+    # the generated Makefile.
+    my $error = system("$^X -Mblib -MClownfish::Test -e1");
+    if ($error) {
+        print STDERR "Build succeeded, but 'use Clownfish::Test' failed.\n";
+        my $makefile = do { local(@ARGV, $/) = 'Makefile'; <> };
+        print STDERR "Contents of Makefile:\n$makefile";
+        die;
+    }
 }
 
 sub ACTION_clownfish {
