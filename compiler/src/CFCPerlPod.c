@@ -487,9 +487,10 @@ S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
     char *params = CFCUtil_strdup("");
 
     for (int i = start; i < num_vars; i++) {
-        const char *name    = CFCVariable_get_name(vars[i]);
-        const char *init    = inits[i];
-        char       *comment = NULL;
+        const char *name            = CFCVariable_get_name(vars[i]);
+        const char *init            = inits[i];
+        char       *name_with_comma = CFCUtil_sprintf("%s,", name);
+        char       *comment         = NULL;
 
         if (init) {
             if (strcmp(init, "NULL") == 0) { init = "undef"; }
@@ -501,11 +502,12 @@ S_gen_labeled_sample(const char *prologue, CFCParamList *param_list,
 
         char *line = CFCUtil_sprintf("        %-*s => $%-*s  # %s\n",
                                      (int)max_name_len, name,
-                                     (int)max_name_len, name,
+                                     (int)max_name_len + 1, name_with_comma,
                                      comment);
         params = CFCUtil_cat(params, line, NULL);
         FREEMEM(line);
         FREEMEM(comment);
+        FREEMEM(name_with_comma);
     }
 
     const char pattern[] =
