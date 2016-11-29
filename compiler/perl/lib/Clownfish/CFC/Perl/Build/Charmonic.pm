@@ -52,7 +52,7 @@ my $CHARMONY_PM_PATH     = 'Charmony.pm';
 sub ACTION_charmony {
     my $self = shift;
 
-    my ($cc, @cc_args)  = $self->split_like_shell($self->config('cc'));
+    my $cc              = $self->config('cc');
     my $is_msvc         = lc($cc) =~ /^cl\b/;
     my $charmonizer_c   = $self->charmonizer_params('charmonizer_c');
     my $create_makefile = $self->charmonizer_params('create_makefile');
@@ -60,7 +60,7 @@ sub ACTION_charmony {
     $self->add_to_cleanup($CHARMONIZER_EXE_PATH);
     if ( !$self->up_to_date( $charmonizer_c, $CHARMONIZER_EXE_PATH ) ) {
         print "\nCompiling $CHARMONIZER_EXE_PATH...\n\n";
-        my @command = ($cc, @cc_args, $charmonizer_c);
+        my @command = ( $self->split_like_shell($cc), $charmonizer_c );
         if ($is_msvc) {
             push @command, "/Fe$CHARMONIZER_EXE_PATH";
         }
@@ -88,7 +88,7 @@ sub ACTION_charmony {
     # Prepare arguments to charmonizer.
     my @command = (
         $CHARMONIZER_EXE_PATH,
-        "--cc=$cc",
+        "--cc=$cc",  # May contain spaces and args.
         '--host=perl',
         '--enable-c',
         '--enable-perl',
@@ -105,7 +105,7 @@ sub ACTION_charmony {
         push @command, '--disable-threads';
     }
     push @command, (
-        '--', @cc_args, $self->config('ccflags'),
+        '--', $self->config('ccflags'),
         '-I' . File::Spec->catdir($self->config('archlibexp'), 'CORE'),
     );
     if ( $ENV{CHARM_VALGRIND} ) {
