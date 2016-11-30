@@ -154,8 +154,10 @@ sub ACTION_code {
     my $error = system("$^X -Mblib -MClownfish::Test -e1");
     if ($error) {
         print STDERR "Build succeeded, but 'use Clownfish::Test' failed.\n";
-        my $makefile = do { local(@ARGV, $/) = 'Makefile'; <> };
-        print STDERR "Contents of Makefile:\n$makefile";
+        if ($ENV{AUTOMATED_TESTING}) {
+            my $makefile = do { local(@ARGV, $/) = 'Makefile'; <> };
+            print STDERR "\nContents of Makefile:\n$makefile";
+        }
         die;
     }
 }
