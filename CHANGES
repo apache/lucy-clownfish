@@ -1,5 +1,16 @@
 Revision history for Apache Clownfish
 
+0.6.1  2016-12-09
+
+  Bugfixes:
+
+    * [CLOWNFISH-104] - BSD make doesn't support pattern rules
+    * [CLOWNFISH-105] - CPAN dist includes Clownfish/Test.xs
+    * [CLOWNFISH-106] - CFC needs more recent Module::Build
+    * [CLOWNFISH-107] - Threaded error tests segfault under Perl 5.10.0
+    * [CLOWNFISH-108] - Clownfish::Test shouldn't be listed in META.yml
+    * [CLOWNFISH-111] - Compilation fails with ccache
+
 0.6.0  2016-09-24
 
   Bugfixes:
