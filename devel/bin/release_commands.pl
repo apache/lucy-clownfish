@@ -166,7 +166,9 @@ say qq|svnmucc -m "Publish Apache Clownfish $x_y_z_version" |
     . qq|mv dev/lucy/clownfish/apache-clownfish-$full_rc_version/apache-clownfish-$x_y_z_version.tar.gz.asc |
     . qq|release/lucy/clownfish/apache-clownfish-$x_y_z_version.tar.gz.asc |
     . qq|mv dev/lucy/clownfish/apache-clownfish-$full_rc_version/CHANGES-$x_y_z_version.txt |
-    . qq|release/lucy/clownfish/CHANGES-$x_y_z_version.txt |
+    . qq|release/lucy/clownfish/CHANGES-$x_y_z_version.txt|;
+say qq|svnmucc -m "Remove apache-clownfish-$full_rc_version directory" |
+    . qq|-U https://dist.apache.org/repos/dist/ |
     . qq|rm dev/lucy/clownfish/apache-clownfish-$full_rc_version\n|;
 
 say qq|# Carefully remove the artifacts for any previous releases superseded|;
