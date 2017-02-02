@@ -192,45 +192,6 @@ Err_throw_at(Class *klass, const char *file, int line,
     Err_do_throw(err);
 }
 
-// Inlined, slightly optimized version of Obj_is_a.
-static CFISH_INLINE bool
-SI_obj_is_a(Obj *obj, Class *target_class) {
-    Class *klass = obj->klass;
-
-    while (klass != NULL) {
-        if (klass == target_class) {
-            return true;
-        }
-        klass = klass->parent;
-    }
-
-    return false;
-}
-
-Obj*
-Err_downcast(Obj *obj, Class *klass, const char *file, int line,
-             const char *func) {
-    if (obj && !SI_obj_is_a(obj, klass)) {
-        Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
-                     Obj_get_class_name(obj), Class_Get_Name(klass));
-    }
-    return obj;
-}
-
-Obj*
-Err_certify(Obj *obj, Class *klass, const char *file, int line,
-            const char *func) {
-    if (!obj) {
-        Err_throw_at(ERR, file, line, func, "Object isn't a %o, it's NULL",
-                     Class_Get_Name(klass));
-    }
-    else if (!SI_obj_is_a(obj, klass)) {
-        Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
-                     Obj_get_class_name(obj), Class_Get_Name(klass));
-    }
-    return obj;
-}
-
 void
 Err_abstract_method_call(Obj *obj, Class *klass, const char *method_name) {
     String *class_name = obj ? Obj_get_class_name(obj) : Class_Get_Name(klass);

@@ -102,51 +102,6 @@ test_rethrow(TestBatchRunner *runner) {
 }
 
 static void
-S_invalid_downcast(void *context) {
-    Obj *obj = (Obj*)context;
-    DOWNCAST(obj, ERR);
-}
-
-static void
-test_downcast(TestBatchRunner *runner) {
-    Obj *obj = (Obj*)Str_newf("gamma");
-
-    TEST_TRUE(runner, DOWNCAST(obj, STRING) != NULL, "downcast");
-
-    TEST_TRUE(runner, DOWNCAST(NULL, STRING) == NULL, "downcast NULL");
-
-    Err *error = Err_trap(S_invalid_downcast, obj);
-    TEST_TRUE(runner, error != NULL, "downcast throws");
-    DECREF(error);
-
-    DECREF(obj);
-}
-
-static void
-S_invalid_certify(void *context) {
-    Obj *obj = (Obj*)context;
-    CERTIFY(obj, ERR);
-}
-
-static void
-test_certify(TestBatchRunner *runner) {
-    Obj *obj = (Obj*)Str_newf("epsilon");
-    Err *error;
-
-    TEST_TRUE(runner, CERTIFY(obj, STRING) != NULL, "certify");
-
-    error = Err_trap(S_invalid_certify, NULL);
-    TEST_TRUE(runner, error != NULL, "certify NULL");
-    DECREF(error);
-
-    error = Err_trap(S_invalid_certify, obj);
-    TEST_TRUE(runner, error != NULL, "certify throws");
-    DECREF(error);
-
-    DECREF(obj);
-}
-
-static void
 S_err_thread(void *arg) {
     TestBatchRunner *runner = (TestBatchRunner*)arg;
 
@@ -180,13 +135,11 @@ test_threads(TestBatchRunner *runner) {
 
 void
 TestErr_Run_IMP(TestErr *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 15);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 9);
     test_To_String(runner);
     test_Cat_Mess(runner);
     test_Add_Frame(runner);
     test_rethrow(runner);
-    test_downcast(runner);
-    test_certify(runner);
     test_threads(runner);
 }
 

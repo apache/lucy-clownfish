@@ -156,32 +156,6 @@ public class Clownfish::Err inherits Clownfish::Obj {
     make_mess(const char *file, int line, const char *func,
               const char *pattern, ...);
 
-    /** Verify that `obj` is either NULL or inherits from
-     * `klass`. Throws an exception if the test fails. The following
-     * convenience macro fills `file`, `line`, and `func` with the
-     * current code location:
-     *
-     *     CFISH_DOWNCAST(obj, klass)
-     *
-     * @return the object.
-     */
-    public inert nullable Obj*
-    downcast(Obj *obj, Class *klass, const char *file, int line,
-                const char *func);
-
-    /** Verify that `obj` is not NULL and inherits from
-     * `klass`. Throws an exception if the test fails. The following
-     * convenience macro fills `file`, `line`, and `func` with the
-     * current code location:
-     *
-     *     CFISH_CERTIFY(obj, klass)
-     *
-     * @return the object.
-     */
-    public inert Obj*
-    certify(Obj *obj, Class *klass, const char *file, int line,
-            const char *func);
-
     /** Verify that an object belongs to a subclass and not an abstract class.
      */
     inert inline void
@@ -251,15 +225,6 @@ __C__
   CFISH_MAKE_MESS(char* format, ...);
 #endif
 
-#define CFISH_DOWNCAST(_obj, _class) \
-    cfish_Err_downcast((cfish_Obj*)(_obj), (_class), \
-                       __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
-
-
-#define CFISH_CERTIFY(_obj, _class) \
-    cfish_Err_certify((cfish_Obj*)(_obj), (_class), \
-                      __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
-
 static CFISH_INLINE void
 cfish_Err_abstract_class_check(cfish_Obj *obj, cfish_Class *klass) {
     cfish_Class *const my_class = (cfish_Class*)((cfish_Dummy*)obj)->klass;
@@ -281,8 +246,6 @@ cfish_Err_abstract_class_check(cfish_Obj *obj, cfish_Class *klass) {
   #define MAKE_MESS             CFISH_MAKE_MESS
   #define ERR_ADD_FRAME         CFISH_ERR_ADD_FRAME
   #define ERR_FUNC_MACRO        CFISH_ERR_FUNC_MACRO
-  #define DOWNCAST              CFISH_DOWNCAST
-  #define CERTIFY               CFISH_CERTIFY
   #define ABSTRACT_CLASS_CHECK  CFISH_ABSTRACT_CLASS_CHECK
 #endif
 __END_C__

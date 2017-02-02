@@ -102,6 +102,51 @@ test_is_a(TestBatchRunner *runner) {
 }
 
 static void
+S_invalid_downcast(void *context) {
+    Obj *obj = (Obj*)context;
+    DOWNCAST(obj, ERR);
+}
+
+static void
+test_downcast(TestBatchRunner *runner) {
+    Obj *obj = (Obj*)Str_newf("gamma");
+
+    TEST_TRUE(runner, DOWNCAST(obj, STRING) != NULL, "downcast");
+
+    TEST_TRUE(runner, DOWNCAST(NULL, STRING) == NULL, "downcast NULL");
+
+    Err *error = Err_trap(S_invalid_downcast, obj);
+    TEST_TRUE(runner, error != NULL, "downcast throws");
+    DECREF(error);
+
+    DECREF(obj);
+}
+
+static void
+S_invalid_certify(void *context) {
+    Obj *obj = (Obj*)context;
+    CERTIFY(obj, ERR);
+}
+
+static void
+test_certify(TestBatchRunner *runner) {
+    Obj *obj = (Obj*)Str_newf("epsilon");
+    Err *error;
+
+    TEST_TRUE(runner, CERTIFY(obj, STRING) != NULL, "certify");
+
+    error = Err_trap(S_invalid_certify, NULL);
+    TEST_TRUE(runner, error != NULL, "certify NULL");
+    DECREF(error);
+
+    error = Err_trap(S_invalid_certify, obj);
+    TEST_TRUE(runner, error != NULL, "certify throws");
+    DECREF(error);
+
+    DECREF(obj);
+}
+
+static void
 S_attempt_init(void *context) {
     Obj_init((Obj*)context);
 }
@@ -142,11 +187,13 @@ test_abstract_routines(TestBatchRunner *runner) {
 
 void
 TestObj_Run_IMP(TestObj *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 14);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 20);
     test_refcounts(runner);
     test_To_String(runner);
     test_Equals(runner);
     test_is_a(runner);
+    test_downcast(runner);
+    test_certify(runner);
     test_abstract_routines(runner);
 }
 

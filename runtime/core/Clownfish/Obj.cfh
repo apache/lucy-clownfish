@@ -78,9 +78,51 @@ public abstract class Clownfish::Obj {
     public inert bool
     is_a(nullable Obj *self, nullable Class *ancestor);
 
+    /** Verify that `obj` is either NULL or inherits from
+     * `klass`. Throws an exception if the test fails. The following
+     * convenience macro fills `file`, `line`, and `func` with the
+     * current code location:
+     *
+     *     CFISH_DOWNCAST(obj, klass)
+     *
+     * @return the object.
+     */
+    public inert nullable Obj*
+    downcast(nullable Obj *obj, Class *klass, const char *file, int line,
+             const char *func);
+
+    /** Verify that `obj` is not NULL and inherits from
+     * `klass`. Throws an exception if the test fails. The following
+     * convenience macro fills `file`, `line`, and `func` with the
+     * current code location:
+     *
+     *     CFISH_CERTIFY(obj, klass)
+     *
+     * @return the object.
+     */
+    public inert Obj*
+    certify(nullable Obj *obj, Class *klass, const char *file, int line,
+            const char *func);
+
     /** Generic stringification: "ClassName@hex_mem_address".
      */
     public incremented String*
     To_String(Obj *self);
 }
+
+__C__
+#define CFISH_DOWNCAST(_obj, _class) \
+    cfish_Obj_downcast((cfish_Obj*)(_obj), (_class), \
+                       __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
+
+
+#define CFISH_CERTIFY(_obj, _class) \
+    cfish_Obj_certify((cfish_Obj*)(_obj), (_class), \
+                      __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
+
+#ifdef CFISH_USE_SHORT_NAMES
+  #define DOWNCAST              CFISH_DOWNCAST
+  #define CERTIFY               CFISH_CERTIFY
+#endif
+__END_C__
 

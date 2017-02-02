@@ -31,6 +31,20 @@
 #include "Clownfish/Class.h"
 #include "Clownfish/Util/Memory.h"
 
+static CFISH_INLINE bool
+SI_obj_is_a(Obj *obj, Class *ancestor) {
+    Class *klass = obj->klass;
+
+    while (klass != NULL) {
+        if (klass == ancestor) {
+            return true;
+        }
+        klass = klass->parent;
+    }
+
+    return false;
+}
+
 Obj*
 Obj_init(Obj *self) {
     ABSTRACT_CLASS_CHECK(self, OBJ);
@@ -44,16 +58,31 @@ Obj_Destroy_IMP(Obj *self) {
 
 bool
 Obj_is_a(Obj *self, Class *ancestor) {
-    Class *klass = self ? self->klass : NULL;
+    return self ? SI_obj_is_a(self, ancestor) : false;
+}
 
-    while (klass != NULL) {
-        if (klass == ancestor) {
-            return true;
-        }
-        klass = klass->parent;
+Obj*
+Obj_downcast(Obj *self, Class *klass, const char *file, int line,
+             const char *func) {
+    if (self && !SI_obj_is_a(self, klass)) {
+        Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
+                     Class_Get_Name(self->klass), Class_Get_Name(klass));
     }
+    return self;
+}
 
-    return false;
+Obj*
+Obj_certify(Obj *self, Class *klass, const char *file, int line,
+            const char *func) {
+    if (!self) {
+        Err_throw_at(ERR, file, line, func, "Object isn't a %o, it's NULL",
+                     Class_Get_Name(klass));
+    }
+    else if (!SI_obj_is_a(self, klass)) {
+        Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o",
+                     Class_Get_Name(self->klass), Class_Get_Name(klass));
+    }
+    return self;
 }
 
 bool
