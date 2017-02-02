@@ -84,31 +84,47 @@ public class Clownfish::Err inherits Clownfish::Obj {
 
     /** Run `routine` within the host's exception handling
      * environment, catching and returning any errors that occur.
-     * 
-     * If an unrecognized host exception is trapped, it will be wrapped in an
+     * `CFISH_Err_Attempt_t` is defined as:
+     *
+     *     typedef void (*CFISH_Err_Attempt_t)(void *context);
+     *
+     * `routine` is invoked with the `context` argument. If an
+     * unrecognized host exception is trapped, it will be wrapped in an
      * Err so that it can be handled by Clownfish code.
      *
+     * @param routine A function pointer.
+     * @param context A void pointer passed to `routine`.
      * @return an Err, or NULL if no exception occurs.
      */
     public inert incremented nullable Err*
     trap(CFISH_Err_Attempt_t routine, void *context);
 
     /** Print an error message to stderr with some C contextual information.
-     * Usually invoked via the WARN(pattern, ...) macro.
+     * Usually invoked via the WARN(pattern, ...) macro which
+     * fills `file`, `line`, and `func` with the current code location.
+     *
+     *     CFISH_WARN(pattern, ...)
      */
-    inert void
+    public inert void
     warn_at(const char *file, int line, const char *func,
             const char *pattern, ...);
 
-    /** Raise an exception. Usually invoked via the THROW macro.
+    /** Raise an exception. Usually invoked via the THROW macro which
+     * fills `file`, `line`, and `func` with the current code location.
+     *
+     *     CFISH_THROW(klass, pattern, ...)
      */
-    inert void
+    public inert void
     throw_at(Class *klass, const char *file, int line, const char *func,
              const char *pattern, ...);
 
     /** Throw an existing exception after tacking on additional context data.
+     * The following convenience macro fills `file`, `line`, and `func`
+     * with the current code location:
+     *
+     *     CFISH_RETHROW(error)
      */
-    inert void
+    public inert void
     rethrow(Err *error, const char *file, int line, const char *func);
 
     /** Raise an exception.  Clean up the supplied message by decrementing its
@@ -141,20 +157,28 @@ public class Clownfish::Err inherits Clownfish::Obj {
               const char *pattern, ...);
 
     /** Verify that `obj` is either NULL or inherits from
-     * `klass`.
+     * `klass`. Throws an exception if the test fails. The following
+     * convenience macro fills `file`, `line`, and `func` with the
+     * current code location:
+     *
+     *     CFISH_DOWNCAST(obj, klass)
      *
      * @return the object.
      */
-    inert nullable Obj*
+    public inert nullable Obj*
     downcast(Obj *obj, Class *klass, const char *file, int line,
                 const char *func);
 
     /** Verify that `obj` is not NULL and inherits from
-     * `klass`.
+     * `klass`. Throws an exception if the test fails. The following
+     * convenience macro fills `file`, `line`, and `func` with the
+     * current code location:
+     *
+     *     CFISH_CERTIFY(obj, klass)
      *
      * @return the object.
      */
-    inert Obj*
+    public inert Obj*
     certify(Obj *obj, Class *klass, const char *file, int line,
             const char *func);
 

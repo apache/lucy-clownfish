@@ -45,7 +45,11 @@ public final class Clownfish::String nickname Str
     public inert bool
     utf8_valid(const char *ptr, size_t len);
 
-    /** Throws an error if the string isn't valid UTF-8.
+    /** Throws an error if the string isn't valid UTF-8. The following
+     * convenience macro fills `file`, `line`, and `func` with the current
+     * code location:
+     *
+     *     CFISH_VALIDATE_UTF8(text, size)
      */
     public inert void
     validate_utf8(const char *text, size_t size, const char *file, int line,
@@ -139,7 +143,39 @@ public final class Clownfish::String nickname Str
     public inert incremented String*
     new_wrap_trusted_utf8(const char *utf8, size_t size);
 
-    inert incremented String*
+    /** Initialize a String allocated on the stack. This function should
+     * be called via the following macros:
+     *
+     *     CFISH_SSTR_WRAP_C(ptr)
+     *
+     * Returns a stack string containing the UTF-8 C string
+     * `const char *ptr`.
+     *
+     *     CFISH_SSTR_WRAP_UTF8(ptr, size)
+     *
+     * Returns a stack string containing `size_t size` bytes of UTF-8 data
+     * in `const char *ptr`.
+     *
+     * The UTF-8 data is not checked for validity. The memory pointed to
+     * by `ptr` must stay unchanged for the lifetime of the stack string,
+     * especially when passed as `decremented` argument. It's not required
+     * to release stack strings with `DECREF`, making them practical to be
+     * used with string literals:
+     *
+     *     Vec_Push(vec, SSTR_WRAP_C("element"));
+     *
+     * Calling `INCREF` on a stack string returns a heap-allocated copy of
+     * the string as a separate object, making it crucial to always store
+     * the return value:
+     *
+     *     String *dest = INCREF(source);
+     *
+     * @param allocation A stack memory region allocated with `alloca` by
+     * the SSTR_WRAP macros.
+     * @param utf8 Pointer to UTF-8 character data.
+     * @param size Size of UTF-8 character data in bytes.
+     */
+    public inert incremented String*
     init_stack_string(void *allocation, const char *utf8, size_t size);
 
     /** Initialize a String which wraps an external buffer containing UTF-8
