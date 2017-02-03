@@ -4923,7 +4923,6 @@ chaz_MakeFile_add_exe(chaz_MakeFile *self, const char *dir,
 
 void
 S_chaz_MakeFile_finish_exe(chaz_MakeFile *self, chaz_MakeBinary *binary) {
-    const char *link = chaz_CC_link_command();
     const char *link_flags_string;
     char *command;
 
@@ -4938,8 +4937,8 @@ S_chaz_MakeFile_finish_exe(chaz_MakeFile *self, chaz_MakeBinary *binary) {
     /* Objects in dollar var must come before flags since flags may
      * contain libraries.
      */
-    command = chaz_Util_join(" ", link, binary->dollar_var, link_flags_string,
-                             NULL);
+    command = chaz_Util_join(" ", "$(LINK)", binary->dollar_var,
+                             link_flags_string, NULL);
     chaz_MakeRule_add_command(binary->rule, command);
     free(command);
 }
@@ -4975,7 +4974,6 @@ chaz_MakeFile_add_shared_lib(chaz_MakeFile *self, const char *dir,
 void
 S_chaz_MakeFile_finish_shared_lib(chaz_MakeFile *self,
                                   chaz_MakeBinary *binary) {
-    const char *link = chaz_CC_link_command();
     const char *link_flags_string;
     int binfmt = chaz_CC_binary_format();
     char *no_v_name
@@ -5000,8 +4998,8 @@ S_chaz_MakeFile_finish_shared_lib(chaz_MakeFile *self,
     chaz_CFlags_set_link_output(binary->link_flags, "$@");
     link_flags_string = chaz_CFlags_get_string(binary->link_flags);
 
-    command = chaz_Util_join(" ", link, binary->dollar_var, link_flags_string,
-                             NULL);
+    command = chaz_Util_join(" ", "$(LINK)", binary->dollar_var,
+                             link_flags_string, NULL);
     chaz_MakeRule_add_command(binary->rule, command);
     free(command);
 
@@ -5184,6 +5182,9 @@ chaz_MakeFile_write(chaz_MakeFile *self) {
         /* Make sure that mingw32-make uses the cmd.exe shell. */
         fprintf(out, "SHELL = cmd\n");
     }
+
+    fprintf(out, "CC = %s\n", chaz_CC_get_cc());
+    fprintf(out, "LINK = %s\n", chaz_CC_link_command());
 
     for (i = 0; self->vars[i]; i++) {
         chaz_MakeVar *var = self->vars[i];
@@ -8690,14 +8691,12 @@ cfish_MakeFile_destroy(cfish_MakeFile *self) {
 
 static void
 cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
-    const char *dir_sep = chaz_OS_dir_sep();
-    const char *host    = chaz_CLI_strval(self->cli, "host");
+    const char *host = chaz_CLI_strval(self->cli, "host");
 
     const char *lib_objs      = NULL;
     const char *test_lib_objs = NULL;
 
     chaz_MakeVar  *var;
-    chaz_MakeRule *rule;
 
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
     chaz_CFlags *makefile_cflags;
@@ -8711,8 +8710,6 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
     chaz_MakeFile_add_var(self->makefile, "BASE_DIR", self->base_dir);
 
     /* C compiler */
-
-    chaz_MakeFile_add_var(self->makefile, "CC", chaz_CC_get_cc());
 
     makefile_cflags = chaz_CC_new_cflags();
 
@@ -8962,23 +8959,11 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     chaz_MakeRule_add_command(rule, "$(TEST_CFISH_EXE)");
 
     if (chaz_OS_shell_type() == CHAZ_OS_POSIX) {
-        const char *valgrind_command;
-
         rule = chaz_MakeFile_add_rule(self->makefile, "valgrind",
                                       "$(TEST_CFISH_EXE)");
-        if (chaz_CC_binary_format() == CHAZ_CC_BINFMT_ELF) {
-            valgrind_command = "LD_LIBRARY_PATH=. CLOWNFISH_VALGRIND=1"
-                               " valgrind"
-                               " --leak-check=full"
-                               " $(TEST_CFISH_EXE)";
-        }
-        else {
-            valgrind_command = "CLOWNFISH_VALGRIND=1"
-                               " valgrind"
-                               " --leak-check=full"
-                               " $(TEST_CFISH_EXE)";
-        }
-        chaz_MakeRule_add_command(rule, valgrind_command);
+        chaz_MakeRule_add_command(rule,
+                                  "valgrind --leak-check=full"
+                                  " $(TEST_CFISH_EXE)");
     }
 
     if (chaz_CLI_defined(self->cli, "enable-coverage")) {
