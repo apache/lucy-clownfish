@@ -576,14 +576,6 @@ static char*
 S_charmony_feature_defines() {
     char *defines = CFCUtil_strdup("");
 
-#ifdef CHY_LITTLE_END
-    // Needed by NumberUtils.cfh.
-    defines = CFCUtil_cat(defines, "#define CFISH_LITTLE_END\n", NULL);
-#endif
-#ifdef CHY_BIG_END
-    // Needed by NumberUtils.cfh.
-    defines = CFCUtil_cat(defines, "#define CFISH_BIG_END\n", NULL);
-#endif
 #ifdef CHY_HAS_FUNC_MACRO
     // Needed by Err.cfh.
     defines = CFCUtil_cat(defines, "#define CFISH_HAS_FUNC_MACRO\n", NULL);
