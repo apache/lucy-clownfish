@@ -98,7 +98,7 @@ static void
 S_add_compiler_flags(struct chaz_CLI *cli) {
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
 
-    if (chaz_Probe_gcc_version_num()) {
+    if (chaz_CC_is_gcc()) {
         chaz_CFlags_append(extra_cflags,
             "-pedantic -Wall -Wextra -Wno-variadic-macros"
             " -Wno-overlength-strings");
@@ -109,8 +109,8 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
         /* Tell GCC explicitly to run with maximum options. */
         chaz_CFlags_append(extra_cflags, "-std=gnu99 -D_GNU_SOURCE");
     }
-    else if (chaz_Probe_msvc_version_num()) {
-        if (chaz_Probe_msvc_version_num() < 1800) {
+    else if (chaz_CC_is_msvc()) {
+        if (chaz_CC_test_msvc_version("< 1800")) {
             /* Compile as C++ under MSVC11 and below. */
             chaz_CFlags_append(extra_cflags, "/TP");
         }
@@ -123,11 +123,6 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
         /* Thwart stupid warnings. */
         chaz_CFlags_append(extra_cflags,
 	    "/D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS /wd4996");
-
-        if (chaz_Probe_msvc_version_num() < 1300) {
-            /* Redefine 'for' to fix broken 'for' scoping under MSVC6. */
-            chaz_CFlags_append(extra_cflags, "/Dfor=\"if(0);else for\"");
-        }
     }
 }
 

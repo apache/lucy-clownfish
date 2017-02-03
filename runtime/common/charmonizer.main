@@ -186,7 +186,7 @@ static void
 S_add_compiler_flags(struct chaz_CLI *cli) {
     chaz_CFlags *extra_cflags = chaz_CC_get_extra_cflags();
 
-    if (chaz_Probe_gcc_version_num()) {
+    if (chaz_CC_is_gcc()) {
         if (!chaz_CC_is_mingw()) {
             /* When using the MSVCRT, -pedantic complains about %I64 format
              * specifiers.
@@ -208,8 +208,8 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
             chaz_CFlags_append(extra_cflags, "-ffloat-store");
         }
     }
-    else if (chaz_Probe_msvc_version_num()) {
-        if (chaz_Probe_msvc_version_num() < 1800) {
+    else if (chaz_CC_is_msvc()) {
+        if (chaz_CC_test_msvc_version("< 1800")) {
             /* Compile as C++ under MSVC11 and below. */
             chaz_CFlags_append(extra_cflags, "/TP");
         }
@@ -218,11 +218,6 @@ S_add_compiler_flags(struct chaz_CLI *cli) {
         /* Thwart stupid warnings. */
         chaz_CFlags_append(extra_cflags, "/D_CRT_SECURE_NO_WARNINGS");
         chaz_CFlags_append(extra_cflags, "/D_SCL_SECURE_NO_WARNINGS");
-
-        if (chaz_Probe_msvc_version_num() < 1300) {
-            /* Redefine 'for' to fix broken 'for' scoping under MSVC6. */
-            chaz_CFlags_append(extra_cflags, "/Dfor=\"if(0);else for\"");
-        }
     }
 
     chaz_CFlags_hide_symbols(extra_cflags);
@@ -398,7 +393,7 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
              * library.
              */
             compile_flags = chaz_MakeBinary_get_compile_flags(self->lib);
-            if (chaz_CC_msvc_version_num()) {
+            if (chaz_CC_is_msvc()) {
                 /* Python uses /MT. */
                 chaz_CFlags_append(compile_flags, "/MT");
             }
@@ -452,7 +447,7 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
              * library.
              */
             compile_flags = chaz_MakeBinary_get_compile_flags(self->test_lib);
-            if (chaz_CC_msvc_version_num()) {
+            if (chaz_CC_is_msvc()) {
                 /* Python uses /MT. */
                 chaz_CFlags_append(compile_flags, "/MT");
             }
