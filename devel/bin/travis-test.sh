@@ -27,7 +27,11 @@ test_c() {
     make -j test
     cd ../../runtime/c
     ./configure
-    make -j test
+    if [ -z "$TARGET_CC" ]; then
+        make -j test
+    else
+        make -j
+    fi
 }
 
 test_perl() {

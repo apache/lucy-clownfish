@@ -21,6 +21,12 @@ script: devel/bin/travis-test.sh
 matrix:
   include:
     - env: CLOWNFISH_HOST=c
+    - env: CLOWNFISH_HOST=c TARGET_CC=arm-linux-gnueabihf-gcc
+      addons:
+        apt:
+          packages:
+            - gcc-arm-linux-gnueabihf
+            - libc6-dev-armhf-cross
     - env: CLOWNFISH_HOST=go
     - env: CLOWNFISH_HOST=perl PERL_VERSION=5.20-extras
     - env: CLOWNFISH_HOST=perl PERL_VERSION=5.18-extras
