@@ -1871,7 +1871,7 @@ _new(hierarchy, header, footer)
     const char   *header;
     const char   *footer;
 CODE:
-    CFCBindCore *self = CFCBindCore_new(hierarchy, header, footer);
+    CFCBindCore *self = CFCBindCore_new(hierarchy, header, footer, 0);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL

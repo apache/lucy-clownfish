@@ -45,6 +45,7 @@ struct CFCArgs {
     char **parcels;
     char  *header_filename;
     char  *footer_filename;
+    int    charmonic;
 };
 typedef struct CFCArgs CFCArgs;
 
@@ -109,6 +110,10 @@ S_parse_arguments(int argc, char **argv, CFCArgs *args) {
     for (i = 1; i < argc; i++) {
         char *arg = argv[i];
 
+        if (strcmp(arg, "--charmonic") == 0) {
+            args->charmonic = 1;
+            continue;
+        }
         if (S_parse_string_argument(arg, "--dest", &args->dest)) {
             continue;
         }
@@ -238,7 +243,7 @@ main(int argc, char **argv) {
         footer = CFCUtil_strdup("");
     }
 
-    core_binding = CFCBindCore_new(hierarchy, header, footer);
+    core_binding = CFCBindCore_new(hierarchy, header, footer, args.charmonic);
     CFCBindCore_write_all_modified(core_binding, 0);
 
     c_binding = CFCC_new(hierarchy, header, footer);

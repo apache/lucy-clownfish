@@ -44,7 +44,8 @@ S_CFC_Binding_Core_Init(VALUE self_rb, VALUE params) {
     Data_Get_Struct(hierarchy, CFCHierarchy, hierarchy_obj);
     Data_Get_Struct(self_rb, CFCBindCore, self);
 
-    self = CFCBindCore_new(hierarchy_obj, StringValuePtr(header), StringValuePtr(footer));
+    self = CFCBindCore_new(hierarchy_obj, StringValuePtr(header),
+                           StringValuePtr(footer), 0);
 
     DATA_PTR(self_rb) = self;
     return self_rb;

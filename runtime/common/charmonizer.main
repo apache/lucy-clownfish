@@ -129,6 +129,7 @@ int main(int argc, const char **argv) {
     chaz_Floats_run();
     chaz_LargeFiles_run();
     chaz_Memory_run();
+    chaz_SymbolVisibility_run();
     chaz_VariadicMacros_run();
 
     /* Local definitions. */
@@ -530,8 +531,8 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
     rule = chaz_MakeFile_add_rule(self->makefile, self->autogen_target,
                                   cfc_exe);
     chaz_MakeRule_add_prereq(rule, "$(CLOWNFISH_HEADERS)");
-    cfc_command = chaz_Util_join("", cfc_exe, " --source=", self->core_dir,
-                                 " --source=", self->test_dir,
+    cfc_command = chaz_Util_join("", cfc_exe, " --charmonic --source=",
+                                 self->core_dir, " --source=", self->test_dir,
                                  " --dest=autogen --header=cfc_header", NULL);
     chaz_MakeRule_add_command(rule, cfc_command);
 

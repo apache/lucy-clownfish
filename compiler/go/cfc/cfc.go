@@ -146,7 +146,8 @@ func NewBindCore(hierarchy *Hierarchy, header string, footer string) *BindCore {
 	defer C.free(unsafe.Pointer(headerCString))
 	defer C.free(unsafe.Pointer(footerCString))
 	obj := &BindCore{
-		C.CFCBindCore_new(hierarchy.ref, headerCString, footerCString),
+		C.CFCBindCore_new(hierarchy.ref, headerCString, footerCString,
+				  0),
 	}
 	runtime.SetFinalizer(obj, (*BindCore).finalize)
 	return obj

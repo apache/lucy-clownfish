@@ -306,7 +306,7 @@ S_CFCBindCore_new(PyTypeObject *type, PyObject *args,
                                              &footer);
     if (!result) { return NULL; }
     CFCHierarchy *hierarchy = S_to_Hierarchy(hierarchy_wrapped);
-    CFCBindCore *obj = CFCBindCore_new(hierarchy, header, footer);
+    CFCBindCore *obj = CFCBindCore_new(hierarchy, header, footer, 0);
     return S_wrap_cfcbase(BindCore_pytype, obj);
 }
 
