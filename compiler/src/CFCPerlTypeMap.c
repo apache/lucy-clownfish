@@ -153,10 +153,7 @@ CFCPerlTypeMap_to_perl(CFCType *type, const char *cf_var) {
             result = CFCUtil_sprintf("newSViv(%s)", cf_var);
         }
         else if (strcmp(specifier, "uint64_t") == 0) {
-            char pattern[] =
-                "sizeof(UV) == 8 ? "
-                "newSVuv((UV)%s) : newSVnv((NV)CFISH_U64_TO_DOUBLE(%s))";
-            result = CFCUtil_sprintf(pattern, cf_var, cf_var);
+            result = CFCUtil_sprintf("newSVuv(%s)", cf_var);
         }
         else if (strcmp(specifier, "uint32_t") == 0) {
             result = CFCUtil_sprintf("newSVuv(%s)", cf_var);
@@ -245,9 +242,7 @@ static const char typemap_output[] =
     "\n"
     "CFISH_BIG_UNSIGNED_INT\n"
     "    if (sizeof(UV) == 8) { sv_setuv($arg, (UV)$var); }\n"
-    "    else {\n"
-    "        sv_setnv($arg, (NV)CFISH_U64_TO_DOUBLE($var));\n"
-    "    }\n"
+    "    else                 { sv_setnv($arg, (NV)$var); }\n"
     "\n";
 
 void

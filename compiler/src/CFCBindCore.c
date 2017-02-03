@@ -613,15 +613,13 @@ S_charmony_string_defines() {
         "#define CFISH_INLINE %s\n"
         "#define CFISH_EXPORT %s\n"
         "#define CFISH_IMPORT %s\n"
-        "#define CFISH_FUNC_MACRO %s\n"
-        "#define CFISH_U64_TO_DOUBLE(x) %s\n";
+        "#define CFISH_FUNC_MACRO %s\n";
     char *defines
         = CFCUtil_sprintf(pattern,
                           XSTRING(CHY_INLINE),
                           XSTRING(CHY_EXPORT),
                           XSTRING(CHY_IMPORT),
-                          XSTRING(CHY_FUNC_MACRO),
-                          XSTRING(CHY_U64_TO_DOUBLE(x)));
+                          XSTRING(CHY_FUNC_MACRO));
 
     return defines;
 }
