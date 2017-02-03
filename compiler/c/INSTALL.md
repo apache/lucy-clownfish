@@ -8,41 +8,58 @@ Building under UNIX and derivatives or Cygwin
     $ make
     $ make test
 
+Use the installation script of the Clownfish runtime to install.
+
 Building under Windows
 ----------------------
 
-You need MSVC or gcc as C compiler and nmake or mingw32-make as make utility.
+You need MSVC or gcc as C compiler and nmake, mingw32-make, or standard
+GNU make as make utility.
 
-When using cmd.exe configure with:
+Configure under cmd.exe:
 
-    $ configure.bat
+    configure.bat
 
-When using the MSYS shell configure with:
+Configure under a POSIX shell like MSYS:
 
-    $ ./configure
+    ./configure
 
-When building with nmake run:
+Build with nmake:
 
-    $ nmake
-    $ nmake test
+    nmake
+    nmake test
 
-When building with mingw32-make run:
+Build with standard GNU make:
 
-    $ mingw32-make
-    $ mingw32-make test
+    make
+    make test
+
+Build with mingw32-make:
+
+    mingw32-make
+    mingw32-make test
 
 Configuration
 -------------
 
-    ./configure [ options ] [ -- cflags ]
+    [ environment ] ./configure [ options ] [ -- cflags ]
 
-Options include
+### Options
 
-    --enable-coverage
-        Enable code coverage. Create HTML pages with coverage data using
-        lcov by running "make coverage".
+- `--enable-coverage`
 
-    --with-system-cmark
-        The Clownfish compiler is built with a bundled version of libcmark
-        by default. Use this option if you want to link against the system
-        libcmark.
+  Enable code coverage. Create HTML pages with coverage data using
+  lcov by running "make coverage".
+
+- `--with-system-cmark`
+
+  The Clownfish compiler is built with a bundled version of libcmark
+  by default. Use this option if you want to link against the system
+  libcmark.
+
+### Environment variables
+
+- `CC`
+
+  The C compiler.
+
