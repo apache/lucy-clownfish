@@ -503,8 +503,8 @@ cfish_MakeFile_write_c_cfc_rules(cfish_MakeFile *self) {
 
     chaz_MakeRule *rule;
 
-    const char *dir_sep  = chaz_OS_dir_sep();
-    const char *exe_ext  = chaz_CC_exe_ext();
+    const char *dir_sep = chaz_OS_dir_sep();
+    const char *exe_ext = chaz_OS_exe_ext();
 
     char *cfc_dir;
     char *cfc_exe;

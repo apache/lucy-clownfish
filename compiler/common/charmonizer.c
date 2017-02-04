@@ -983,6 +983,13 @@ chaz_OS_dir_sep(void);
 int
 chaz_OS_shell_type(void);
 
+/* Return the file extension for executables on this system. This can be
+ * a different value than returned by chaz_CC_exe_ext() when
+ * cross-compiling.
+ */
+const char*
+chaz_OS_exe_ext(void);
+
 /* Initialize the Charmonizer/Core/OperatingSystem module.
  */
 void
@@ -4802,8 +4809,6 @@ S_chaz_Make_audition(const char *make) {
 chaz_MakeFile*
 chaz_MakeFile_new() {
     chaz_MakeFile *self = (chaz_MakeFile*)calloc(1, sizeof(chaz_MakeFile));
-    const char    *exe_ext  = chaz_CC_exe_ext();
-    const char    *obj_ext  = chaz_CC_obj_ext();
     char *generated;
 
     self->vars     = (chaz_MakeVar**)calloc(1, sizeof(chaz_MakeVar*));
@@ -4813,8 +4818,9 @@ chaz_MakeFile_new() {
     self->clean     = S_chaz_MakeRule_new("clean", NULL);
     self->distclean = S_chaz_MakeRule_new("distclean", "clean");
 
-    generated = chaz_Util_join("", "charmonizer", exe_ext, " charmonizer",
-                               obj_ext, " charmony.h Makefile", NULL);
+    /* MSVC leaves .obj files around when creating executables. */
+    generated = chaz_Util_join("", "charmonizer", chaz_OS_exe_ext(),
+                               " charmonizer.obj charmony.h Makefile", NULL);
     chaz_MakeRule_add_rm_command(self->distclean, generated);
 
     free(generated);
@@ -5899,6 +5905,15 @@ chaz_OS_dir_sep(void) {
 int
 chaz_OS_shell_type(void) {
     return chaz_OS.shell_type;
+}
+
+const char*
+chaz_OS_exe_ext(void) {
+#ifdef _WIN32
+    return ".exe";
+#else
+    return "";
+#endif
 }
 
 int
