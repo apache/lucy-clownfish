@@ -81,6 +81,9 @@ static void
 cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self);
 
 static void
+cfish_MakeFile_write_c_install_rules(cfish_MakeFile *self);
+
+static void
 S_cfh_file_callback(const char *dir, char *file, void *context);
 
 static int
@@ -311,6 +314,7 @@ cfish_MakeFile_destroy(cfish_MakeFile *self) {
 static void
 cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
     const char *host = chaz_CLI_strval(self->cli, "host");
+    int is_c = strcmp(host, "c") == 0;
 
     const char *lib_objs      = NULL;
     const char *test_lib_objs = NULL;
@@ -355,15 +359,15 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
 
     /* Core library. */
 
-    if (strcmp(host, "c") == 0 || strcmp(host, "perl") == 0) {
+    if (is_c || strcmp(host, "perl") == 0) {
         /* Shared library for C and Perl. */
 
         chaz_MakeFile_add_rule(self->makefile, "all",
                                "$(CLOWNFISH_SHARED_LIB)");
 
-        self->lib
-            = chaz_MakeFile_add_shared_lib(self->makefile, NULL, "clownfish",
-                                           cfish_version, cfish_major_version);
+        self->lib = chaz_MakeFile_add_shared_lib(self->makefile, NULL,
+                                                 "clownfish", cfish_version,
+                                                 cfish_major_version, is_c);
         lib_objs = "$(CLOWNFISH_SHARED_LIB_OBJS)";
 
         compile_flags = chaz_MakeBinary_get_compile_flags(self->lib);
@@ -381,8 +385,8 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
                                "$(CLOWNFISH_STATIC_LIB)"
                                " $(TESTCFISH_STATIC_LIB)");
 
-        self->lib
-            = chaz_MakeFile_add_static_lib(self->makefile, NULL, "clownfish");
+        self->lib = chaz_MakeFile_add_static_lib(self->makefile, NULL,
+                                                 "clownfish", 0);
         lib_objs = "$(CLOWNFISH_STATIC_LIB_OBJS)";
 
         if (strcmp(host, "python") == 0) {
@@ -412,12 +416,13 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
 
     /* Test library. */
 
-    if (strcmp(host, "c") == 0 || strcmp(host, "perl") == 0) {
+    if (is_c || strcmp(host, "perl") == 0) {
         /* Shared library for C and Perl. */
 
         self->test_lib
             = chaz_MakeFile_add_shared_lib(self->makefile, NULL, "testcfish",
-                                           cfish_version, cfish_major_version);
+                                           cfish_version, cfish_major_version,
+                                           0);
         test_lib_objs = "$(TESTCFISH_SHARED_LIB_OBJS)";
 
         compile_flags = chaz_MakeBinary_get_compile_flags(self->test_lib);
@@ -435,8 +440,8 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
     else {
         /* Static library for Go and Python. */
 
-        self->test_lib
-            = chaz_MakeFile_add_static_lib(self->makefile, NULL, "testcfish");
+        self->test_lib = chaz_MakeFile_add_static_lib(self->makefile, NULL,
+                                                      "testcfish", 0);
         test_lib_objs = "$(TESTCFISH_STATIC_LIB_OBJS)";
 
         if (strcmp(host, "python") == 0) {
@@ -468,9 +473,10 @@ cfish_MakeFile_write(cfish_MakeFile *self, chaz_CFlags *extra_link_flags) {
     chaz_MakeFile_add_rule(self->makefile, test_lib_objs,
                            self->autogen_target);
 
-    if (strcmp(host, "c") == 0) {
+    if (is_c) {
         cfish_MakeFile_write_c_cfc_rules(self);
         cfish_MakeFile_write_c_test_rules(self);
+        cfish_MakeFile_write_c_install_rules(self);
     }
 
     /* Targets to compile object files for Perl. */
@@ -558,7 +564,7 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
     chaz_CFlags     *link_flags;
     chaz_MakeRule   *rule;
 
-    exe = chaz_MakeFile_add_exe(self->makefile, "t", "test_cfish");
+    exe = chaz_MakeFile_add_exe(self->makefile, "t", "test_cfish", 0);
     chaz_MakeBinary_add_src_file(exe, "t", "test_cfish.c");
 
     link_flags = chaz_MakeBinary_get_link_flags(exe);
@@ -620,6 +626,28 @@ cfish_MakeFile_write_c_test_rules(cfish_MakeFile *self) {
         chaz_MakeRule_add_rm_command(rule, "clownfish.info");
         chaz_MakeRule_add_recursive_rm_command(rule, "coverage");
     }
+}
+
+static void
+cfish_MakeFile_write_c_install_rules(cfish_MakeFile *self) {
+    const char *dir_sep = chaz_OS_dir_sep();
+    char *src;
+
+    src = chaz_Util_join(dir_sep, "autogen", "share", NULL);
+    chaz_MakeFile_install_dir(self->makefile, src, "$(DATADIR)", NULL);
+    free(src);
+
+    src = chaz_Util_join(dir_sep, "autogen", "man", NULL);
+    chaz_MakeFile_install_dir(self->makefile, src, "$(MANDIR)", NULL);
+    free(src);
+
+    chaz_MakeFile_install_pkgconfig(self->makefile, "clownfish", cfish_version,
+        "Name: Clownfish\n"
+        "Description: Symbiotic object system\n"
+        "URL: http://lucy.apache.org/\n"
+        "Version: $${version}\n"
+        "Libs: -L$${libdir} -lclownfish\n"
+    );
 }
 
 static void

@@ -4,47 +4,18 @@ Build instructions for the Clownfish C library
 Building under UNIX and derivatives or Cygwin
 ---------------------------------------------
 
-    ./configure
+    ./configure --prefix [ install prefix ]
     make
     make test
-    ./install.sh --prefix [ install prefix ]
+    make install
 
 Building under Windows
 ----------------------
 
 You need MSVC or gcc as C compiler and nmake, mingw32-make, or standard
-GNU make as make utility.
+GNU make as make utility. When building under cmd.exe, configure with:
 
-Configure under cmd.exe:
-
-    configure.bat
-
-Configure under a POSIX shell like MSYS:
-
-    ./configure
-
-Build with nmake:
-
-    nmake
-    nmake test
-
-Build with standard GNU make:
-
-    make
-    make test
-
-Build with mingw32-make:
-
-    mingw32-make
-    mingw32-make test
-
-Install under cmd.exe:
-
-    install.bat --prefix [ install prefix ]
-
-Install under a POSIX shell like MSYS:
-
-    ./install.sh --prefix [ install prefix ]
+    configure.bat --prefix [ install prefix ]
 
 Configuration
 -------------
@@ -53,23 +24,32 @@ Configuration
 
 ### Options
 
-- `--enable-coverage`
+    --enable-coverage
 
-  Enable code coverage. Create HTML pages with coverage data using
-  lcov by running "make coverage".
+Enable code coverage. Create HTML pages with coverage data using
+lcov by running "make coverage".
 
-- `--disable-threads`
+    --disable-threads
 
-  Disable thread support.
+Disable thread support.
+
+    --prefix
+    --bindir
+    --datarootdir
+    --datadir
+    --libdir
+    --mandir
+
+Installation directories following the GNU Autoconf convention.
 
 ### Environment variables
 
-- `CC`
+    CC
 
-  The C compiler.
+The C compiler.
 
-- `TARGET_CC`
+    TARGET_CC
 
-  The target compiler when cross-compiling. `CC` can be set in addition
-  to specify the host compiler.
+The target compiler when cross-compiling. `CC` can be set in addition
+to specify the host compiler.
 

@@ -195,7 +195,7 @@ S_write_makefile(struct chaz_CLI *cli) {
     if (strcmp(host, "c") == 0) {
         chaz_MakeFile_add_rule(makefile, "all", "$(CFC_EXE)");
 
-        exe = chaz_MakeFile_add_exe(makefile, NULL, "cfc");
+        exe = chaz_MakeFile_add_exe(makefile, NULL, "cfc", 1);
         chaz_MakeBinary_add_src_file(exe, NULL, "cfc.c");
         chaz_MakeBinary_add_prereq(exe, "$(CFC_STATIC_LIB)");
         link_flags = chaz_MakeBinary_get_link_flags(exe);
@@ -206,7 +206,7 @@ S_write_makefile(struct chaz_CLI *cli) {
         compile_flags = chaz_MakeBinary_get_compile_flags(exe);
         chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");
 
-        test_exe = chaz_MakeFile_add_exe(makefile, "t", "test_cfc");
+        test_exe = chaz_MakeFile_add_exe(makefile, "t", "test_cfc", 0);
         chaz_MakeBinary_add_src_file(test_exe, "t", "test_cfc.c");
         chaz_MakeBinary_add_prereq(test_exe, "$(CFC_STATIC_LIB)");
         link_flags = chaz_MakeBinary_get_link_flags(test_exe);
@@ -218,7 +218,7 @@ S_write_makefile(struct chaz_CLI *cli) {
         chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");
     }
 
-    lib = chaz_MakeFile_add_static_lib(makefile, NULL, "cfc");
+    lib = chaz_MakeFile_add_static_lib(makefile, NULL, "cfc", 0);
     chaz_MakeFile_add_rule(makefile, "static", "$(CFC_STATIC_LIB)");
     compile_flags = chaz_MakeBinary_get_compile_flags(lib);
     chaz_CFlags_append(compile_flags, "$(CFC_CFLAGS)");

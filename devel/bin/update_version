@@ -126,20 +126,6 @@ $buf =~ s/(Clownfish::CFC'\s*=>\s*)(.*?),/$1$x_yyyzzz_version,/g
     or die "no match";
 write_file( 'runtime/perl/Build.PL', $buf );
 
-# Update runtime/c/install.sh
-$buf = read_file('runtime/c/install.sh');
-$buf =~ s/\bversion=[\d.]+/version=$x_y_z_version/
-    or die "no match";
-$buf =~ s/\bmajor_version=[\d.]+/major_version=$x.$y/
-    or die "no match";
-write_file( 'runtime/c/install.sh', $buf );
-
-# Update runtime/c/install.bat
-$buf = read_file('runtime/c/install.bat');
-$buf =~ s/\bmajor_version=[\d.]+/major_version=$x.$y/
-    or die "no match";
-write_file( 'runtime/c/install.bat', $buf );
-
 # Update compiler/python/setup.py
 for my $path (qw( compiler/python/setup.py runtime/python/setup.py )) {
     $buf = read_file($path);
