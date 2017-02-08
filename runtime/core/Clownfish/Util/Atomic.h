@@ -45,6 +45,16 @@ cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
     }
 }
 
+/**************************** C11 stdatomic.h *****************************/
+#elif defined(CHY_HAS_STDATOMIC_H)
+#include <stdatomic.h>
+
+static CFISH_INLINE bool
+cfish_Atomic_cas_ptr(void *volatile *target, void *old_value, void *new_value) {
+    return atomic_compare_exchange_strong((void *_Atomic *)target, &old_value,
+                                          new_value);
+}
+
 /************************** Mac OS X 10.4 and later ***********************/
 #elif defined(CHY_HAS_OSATOMIC_CAS_PTR)
 #include <libkern/OSAtomic.h>
