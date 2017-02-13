@@ -255,6 +255,9 @@ CFCClass_inert(CFCClass *self);
 int
 CFCClass_abstract(CFCClass *self);
 
+int
+CFCClass_needs_documentation(CFCClass *self);
+
 const char*
 CFCClass_get_struct_sym(CFCClass *self);
 

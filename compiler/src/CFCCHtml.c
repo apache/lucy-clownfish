@@ -268,9 +268,7 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || !CFCClass_public(klass)) {
-            continue;
-        }
+        if (!CFCClass_needs_documentation(klass)) { continue; }
 
         const char *class_name = CFCClass_get_name(klass);
         char *path = CFCUtil_global_replace(class_name, "::", CHY_DIR_SEP);
@@ -341,6 +339,7 @@ S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs) {
     }
 
     // Compile class lists per parcel.
+    // TODO: Sort parcels. Don't derive filename from random parcel.
 
     char *class_lists    = CFCUtil_strdup("");
     char *parcel_names   = CFCUtil_strdup("");
@@ -348,7 +347,9 @@ S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs) {
 
     for (size_t i = 0; parcels[i]; i++) {
         CFCParcel *parcel = parcels[i];
-        if (CFCParcel_included(parcel)) { continue; }
+        if (CFCParcel_included(parcel) || !CFCParcel_is_installed(parcel)) {
+            continue;
+        }
 
         const char *prefix      = CFCParcel_get_prefix(parcel);
         const char *parcel_name = CFCParcel_get_name(parcel);

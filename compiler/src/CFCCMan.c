@@ -77,8 +77,6 @@ S_man_escape(const char *content);
 
 char*
 CFCCMan_create_man_page(CFCClass *klass) {
-    if (!CFCClass_public(klass)) { return NULL; }
-
     const char *class_name = CFCClass_get_name(klass);
 
     // Create NAME.

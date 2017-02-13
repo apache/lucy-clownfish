@@ -887,6 +887,13 @@ CFCClass_abstract(CFCClass *self) {
     return self->is_abstract;
 }
 
+int
+CFCClass_needs_documentation(CFCClass *self) {
+    return CFCClass_public(self)
+           && !CFCClass_included(self)
+           && CFCParcel_is_installed(self->parcel);
+}
+
 const char*
 CFCClass_get_struct_sym(CFCClass *self) {
     return self->struct_sym;

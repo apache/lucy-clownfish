@@ -92,7 +92,8 @@ CFCC_write_man_pages(CFCC *self) {
     size_t num_classes = 0;
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (!CFCClass_included(klass)) { ++num_classes; }
+        if (!CFCClass_needs_documentation(klass)) { continue; }
+        ++num_classes;
     }
     char **man_pages = (char**)CALLOCATE(num_classes, sizeof(char*));
 
@@ -101,7 +102,7 @@ CFCC_write_man_pages(CFCC *self) {
     // system.
     for (size_t i = 0, j = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
+        if (!CFCClass_needs_documentation(klass)) { continue; }
 
         char *man_page = CFCCMan_create_man_page(klass);
         man_pages[j++] = man_page;
@@ -114,10 +115,9 @@ CFCC_write_man_pages(CFCC *self) {
     // Write out any man pages that have changed.
     for (size_t i = 0, j = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
+        if (!CFCClass_needs_documentation(klass)) { continue; }
 
         char *raw_man_page = man_pages[j++];
-        if (!raw_man_page) { continue; }
         char *man_page = CFCUtil_sprintf("%s%s%s", self->man_header,
                                          raw_man_page, self->man_footer);
 
