@@ -147,8 +147,8 @@ static char*
 S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor);
 
 static char*
-S_html_create_func(CFCClass *klass, CFCCallable *func, const char *prefix,
-                   const char *short_sym);
+S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
+                   const char *prefix, const char *short_sym);
 
 static char*
 S_html_create_param_list(CFCClass *klass, CFCCallable *func);
@@ -668,8 +668,8 @@ S_html_create_functions(CFCClass *klass) {
                              name, "</dt>\n", NULL);
 
         char *short_sym = CFCFunction_short_func_sym(func, klass);
-        char *func_html = S_html_create_func(klass, (CFCCallable*)func, prefix,
-                                             short_sym);
+        char *func_html = S_html_create_func(klass, klass, (CFCCallable*)func,
+                                             prefix, short_sym);
         result = CFCUtil_cat(result, func_html, NULL);
         FREEMEM(func_html);
         FREEMEM(short_sym);
@@ -761,9 +761,10 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
         }
         result = CFCUtil_cat(result, "</dt>\n", NULL);
 
-        char       *short_sym = CFCMethod_short_method_sym(method, klass);
-        char *method_html = S_html_create_func(klass, (CFCCallable*)method,
-                                               prefix, short_sym);
+        char *short_sym = CFCMethod_short_method_sym(method, klass);
+        char *method_html
+            = S_html_create_func(klass, ancestor, (CFCCallable*)method, prefix,
+                                 short_sym);
         result = CFCUtil_cat(result, method_html, NULL);
         FREEMEM(method_html);
         FREEMEM(short_sym);
@@ -777,8 +778,8 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
 }
 
 static char*
-S_html_create_func(CFCClass *klass, CFCCallable *func, const char *prefix,
-                   const char *short_sym) {
+S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
+                   const char *prefix, const char *short_sym) {
     CFCType    *ret_type      = CFCCallable_get_return_type(func);
     char       *ret_html      = S_type_to_html(ret_type, "", klass);
     const char *ret_array     = CFCType_get_array(ret_type);
@@ -817,7 +818,7 @@ S_html_create_func(CFCClass *klass, CFCCallable *func, const char *prefix,
     if (docucomment) {
         // Description
         const char *raw_desc = CFCDocuComment_get_description(docucomment);
-        char *desc = S_md_to_html(raw_desc, klass, 0);
+        char *desc = S_md_to_html(raw_desc, doc_class, 0);
         result = CFCUtil_cat(result, desc, NULL);
         FREEMEM(desc);
 
@@ -829,7 +830,7 @@ S_html_create_func(CFCClass *klass, CFCCallable *func, const char *prefix,
         if (param_names[0]) {
             result = CFCUtil_cat(result, "<dl>\n", NULL);
             for (size_t i = 0; param_names[i] != NULL; i++) {
-                char *doc = S_md_to_html(param_docs[i], klass, 0);
+                char *doc = S_md_to_html(param_docs[i], doc_class, 0);
                 result = CFCUtil_cat(result, "<dt>", param_names[i],
                                      "</dt>\n<dd>", doc, "</dd>\n",
                                      NULL);
@@ -842,7 +843,7 @@ S_html_create_func(CFCClass *klass, CFCCallable *func, const char *prefix,
         const char *retval_doc = CFCDocuComment_get_retval(docucomment);
         if (retval_doc && strlen(retval_doc)) {
             char *md = CFCUtil_sprintf("**Returns:** %s", retval_doc);
-            char *html = S_md_to_html(md, klass, 0);
+            char *html = S_md_to_html(md, doc_class, 0);
             result = CFCUtil_cat(result, html, NULL);
             FREEMEM(html);
             FREEMEM(md);
