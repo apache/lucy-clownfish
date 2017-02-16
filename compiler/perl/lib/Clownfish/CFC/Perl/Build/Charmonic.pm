@@ -52,6 +52,13 @@ my $CHARMONY_PM_PATH     = 'Charmony.pm';
 sub ACTION_charmony {
     my $self = shift;
 
+    # Charmonizer doesn't support fat binaries on macOS.
+    for my $key (qw( ccflags ldflags lddlflags )) {
+        my $flags = $self->config($key);
+        $flags =~ s/-arch \w+\s*//g;
+        $self->config( $key => $flags );
+    }
+
     my $cc              = $self->config('cc');
     my $is_msvc         = lc($cc) =~ /^cl\b/;
     my $charmonizer_c   = $self->charmonizer_params('charmonizer_c');
