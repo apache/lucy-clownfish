@@ -157,12 +157,12 @@ public final class Clownfish::String nickname Str
      * in `const char *ptr`.
      *
      * The UTF-8 data is not checked for validity. The memory pointed to
-     * by `ptr` must stay unchanged for the lifetime of the stack string,
-     * especially when passed as `decremented` argument. It's not required
-     * to release stack strings with `DECREF`, making them practical to be
-     * used with string literals:
+     * by `ptr` must stay unchanged for the lifetime of the stack string.
+     * Stack strings must never be released with `DECREF` and they must
+     * not be passed as decremented arguments. They're typically used
+     * with string literals:
      *
-     *     Vec_Push(vec, SSTR_WRAP_C("element"));
+     *     String *s = SSTR_WRAP_C("text");
      *
      * Calling `INCREF` on a stack string returns a heap-allocated copy of
      * the string as a separate object, making it crucial to always store
