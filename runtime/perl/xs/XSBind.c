@@ -884,6 +884,7 @@ cfish_Err_get_error() {
     PUTBACK;
     FREETMPS;
     LEAVE;
+    CFISH_DECREF(error);
     return error;
 }
 
@@ -906,6 +907,7 @@ cfish_Err_set_error(cfish_Err *error) {
     call_pv("Clownfish::Err::set_error", G_VOID | G_DISCARD);
     FREETMPS;
     LEAVE;
+    CFISH_DECREF(error);
 }
 
 void
