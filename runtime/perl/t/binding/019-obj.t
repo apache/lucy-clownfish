@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 25;
+use Test::More tests => 26;
 use Clownfish::Test;
 
 package TestObj;
@@ -159,4 +159,18 @@ is( $overridden_alias_test->invoke_aliased_from_c, 'Perl',
 eval { SubclassFinalTestObj->new; };
 like( $@, qr/Can't subclass final class Clownfish::Vector/,
       "Final class can't be subclassed" );
+
+SKIP: {
+    skip( "Circular references leak", 1 )
+        if $ENV{CLOWNFISH_VALGRIND};
+
+    # Create a circular reference on purpose. These objects shouldn't be
+    # destroyed during Perl's global destruction because it could cause
+    # memory corruption.
+    my $ref1 = Clownfish::Test::RefObj->new;
+    my $ref2 = Clownfish::Test::RefObj->new;
+    $ref1->set_ref($ref2);
+    $ref2->set_ref($ref1);
+    pass ( "Created circular reference" );
+}
 

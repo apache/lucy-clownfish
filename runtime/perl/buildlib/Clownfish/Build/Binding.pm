@@ -640,6 +640,8 @@ END_XS_CODE
 }
 
 sub bind_obj {
+    my @hand_rolled = qw( Destroy );
+
     my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
     my $synopsis = <<'END_SYNOPSIS';
     package MyObj;
@@ -737,13 +739,26 @@ END_POD
         pod    => $to_perl_pod,
     );
     $pod_spec->add_method(
-        method => 'Destroy',
         alias  => 'DESTROY',
         pod    => $destroy_pod,
     );
 
     my $xs_code = <<'END_XS_CODE';
 MODULE = Clownfish     PACKAGE = Clownfish::Obj
+
+void
+DESTROY(self)
+    cfish_Obj *self
+PPCODE:
+    /*
+     * During global destruction, DESTROY is called in random order on
+     * objects remaining because of refcount leaks or circular references.
+     * This can cause memory corruption with Clownfish objects, so better
+     * leak instead of corrupting memory.
+     */
+    if (!PL_dirty) {
+        CFISH_Obj_Destroy(self);
+    }
 
 SV*
 get_class(self)
@@ -790,12 +805,9 @@ END_XS_CODE
     my $binding = Clownfish::CFC::Binding::Perl::Class->new(
         class_name => "Clownfish::Obj",
     );
-    $binding->bind_method(
-        alias  => 'DESTROY',
-        method => 'Destroy',
-    );
     $binding->append_xs($xs_code);
     $binding->set_pod_spec($pod_spec);
+    $binding->exclude_method($_) for @hand_rolled;
 
     Clownfish::CFC::Binding::Perl::Class->register($binding);
 }
