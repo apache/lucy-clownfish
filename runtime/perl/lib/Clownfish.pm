@@ -159,6 +159,7 @@ sub error {$Clownfish::Err::error}
     our @EXPORT_OK = qw( $true_singleton $false_singleton );
     our $true_singleton  = Clownfish::Boolean->singleton(1);
     our $false_singleton = Clownfish::Boolean->singleton(0);
+    sub DESTROY { }    # leak all
 }
 
 1;
