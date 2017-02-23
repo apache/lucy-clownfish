@@ -747,17 +747,21 @@ END_POD
 MODULE = Clownfish     PACKAGE = Clownfish::Obj
 
 void
-DESTROY(self)
-    cfish_Obj *self
+DESTROY(sv)
+    SV *sv
 PPCODE:
-    /*
-     * During global destruction, DESTROY is called in random order on
-     * objects remaining because of refcount leaks or circular references.
-     * This can cause memory corruption with Clownfish objects, so better
-     * leak instead of corrupting memory.
-     */
-    if (!PL_dirty) {
-        CFISH_Obj_Destroy(self);
+    if (sv_derived_from(sv, "Clownfish::Obj")) {
+        /*
+         * During global destruction, DESTROY is called in random order on
+         * objects remaining because of refcount leaks or circular references.
+         * This can cause memory corruption with Clownfish objects, so better
+         * leak instead of corrupting memory.
+         */
+        SV *inner = SvRV(sv);
+        if (SvREFCNT(inner) <= 1) {
+            cfish_Obj *self = INT2PTR(cfish_Obj*, SvIV(inner));
+            CFISH_Obj_Destroy(self);
+        }
     }
 
 SV*
