@@ -269,7 +269,9 @@ CFCPerlClass_method_bindings(CFCClass *klass) {
          * directly calls the implementing function, rather than invokes the
          * method on the object using vtable method dispatch.  Doing things
          * this way allows SUPER:: invocations from Perl-space to work
-         * properly.
+         * properly. (The callback to the Perl method is stored in the
+         * vtable as well. Using dynamic dispatch for SUPER:: invocations
+         * would result in calling the Perl method over and over.)
          */
         CFCPerlMethod *meth_binding = CFCPerlMethod_new(klass, method);
         size_t size = (num_bound + 2) * sizeof(CFCPerlMethod*);
