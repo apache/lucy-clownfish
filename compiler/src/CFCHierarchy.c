@@ -256,6 +256,9 @@ CFCHierarchy_build(CFCHierarchy *self) {
     for (size_t i = 0; self->trees[i] != NULL; i++) {
         CFCClass_grow_tree(self->trees[i]);
     }
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel_sort_classes(parcels[i]);
+    }
 
     FREEMEM(source_parcels);
 }

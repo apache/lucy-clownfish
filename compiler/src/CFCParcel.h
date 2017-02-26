@@ -179,6 +179,16 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang);
 void
 CFCParcel_add_class(CFCParcel *self, struct CFCClass *klass);
 
+/** Sort parents before child classes.
+ */
+void
+CFCParcel_sort_classes(CFCParcel *self);
+
+/** Return the ordered list of classes in the parcel.
+ */
+struct CFCClass**
+CFCParcel_get_classes(CFCParcel *self);
+
 /** Search the parcel and all direct prerequisites for a class with
  * struct_sym. Return the parcel in which the class was found or NULL.
  */

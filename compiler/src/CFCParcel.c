@@ -609,6 +609,76 @@ CFCParcel_add_class(CFCParcel *self, CFCClass *klass) {
     self->num_classes = num_classes + 1;
 }
 
+static int
+S_compare_class_name(const void *va, const void *vb) {
+    const char *a = CFCClass_get_name(*(CFCClass**)va);
+    const char *b = CFCClass_get_name(*(CFCClass**)vb);
+
+    return strcmp(a, b);
+}
+
+void
+CFCParcel_sort_classes(CFCParcel *self) {
+    size_t num_classes = self->num_classes;
+    size_t alloc_size  = (num_classes + 1) * sizeof(CFCClass*);
+    CFCClass **classes = self->classes;
+    CFCClass **sorted  = (CFCClass**)MALLOCATE(alloc_size);
+
+    // Perform a depth-first search of the classes in the parcel, and store
+    // the classes in the order that they were visited. This makes sure
+    // that subclasses are sorted after their parents.
+    //
+    // To avoid a recursive algorithm, the end of the sorted array is used
+    // as a stack for classes that have yet to be visited.
+    //
+    // Root and child classes are sorted by name to get a deterministic
+    // order.
+
+    // Find subtree roots in parcel.
+    size_t todo = num_classes;
+    for (size_t i = 0; i < num_classes; i++) {
+        CFCClass *klass  = classes[i];
+        CFCClass *parent = CFCClass_get_parent(klass);
+        if (!parent || !CFCClass_in_parcel(parent, self)) {
+            sorted[--todo] = klass;
+        }
+    }
+
+    qsort(&sorted[todo], num_classes - todo, sizeof(sorted[0]),
+          S_compare_class_name);
+
+    size_t num_sorted = 0;
+    while (todo < num_classes) {
+        CFCClass *klass = sorted[todo++];
+        sorted[num_sorted++] = klass;
+
+        // Find children in parcel.
+        CFCClass **children = CFCClass_children(klass);
+        size_t prev_todo = todo;
+        for (size_t i = 0; children[i]; i++) {
+            CFCClass *child = children[i];
+            if (CFCClass_in_parcel(child, self)) {
+                if (todo <= num_sorted) {
+                    CFCUtil_die("Internal error in CFCParcel_sort_classes");
+                }
+                sorted[--todo] = child;
+            }
+        }
+
+        qsort(&sorted[todo], prev_todo - todo, sizeof(sorted[0]),
+              S_compare_class_name);
+    }
+
+    if (num_sorted != num_classes) {
+        CFCUtil_die("Internal error in CFCParcel_sort_classes");
+    }
+
+    sorted[num_classes] = NULL;
+
+    FREEMEM(self->classes);
+    self->classes = sorted;
+}
+
 static CFCParcel*
 S_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
     for (size_t i = 0; self->classes[i]; ++i) {
@@ -645,6 +715,11 @@ CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
 int
 CFCParcel_is_cfish(CFCParcel *self) {
     return !strcmp(self->prefix, "cfish_");
+}
+
+CFCClass**
+CFCParcel_get_classes(CFCParcel *self) {
+    return self->classes;
 }
 
 /**************************************************************************/
