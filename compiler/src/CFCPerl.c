@@ -288,7 +288,7 @@ S_write_host_h(CFCPerl *self, CFCParcel *parcel) {
 
 static void
 S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
-    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCClass **ordered = CFCParcel_get_classes(parcel);
     const char  *prefix      = CFCParcel_get_prefix(parcel);
     const char  *privacy_sym = CFCParcel_get_privacy_sym(parcel);
     char        *includes    = CFCUtil_strdup("");
@@ -298,8 +298,6 @@ S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
         if (CFCClass_inert(klass)) { continue; }
-        const char *class_prefix = CFCClass_get_prefix(klass);
-        if (strcmp(class_prefix, prefix) != 0) { continue; }
 
         const char *class_name = CFCClass_get_name(klass);
 
@@ -462,7 +460,6 @@ S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
     FREEMEM(alias_adds);
     FREEMEM(cb_defs);
     FREEMEM(includes);
-    FREEMEM(ordered);
 }
 
 void
@@ -529,7 +526,6 @@ CFCPerl_write_bindings(CFCPerl *self, const char *boot_class,
     CFCUTIL_NULL_CHECK(boot_class);
     CFCUTIL_NULL_CHECK(parcels);
 
-    CFCClass     **ordered  = CFCHierarchy_ordered_classes(self->hierarchy);
     CFCPerlClass **registry = CFCPerlClass_registry();
     char *privacy_syms    = CFCUtil_strdup("");
     char *includes        = CFCUtil_strdup("");
@@ -559,86 +555,81 @@ CFCPerl_write_bindings(CFCPerl *self, const char *boot_class,
                                NULL);
         bootstrap_calls = CFCUtil_cat(bootstrap_calls, "    ", prefix,
                                       "bootstrap_perl();\n", NULL);
-    }
 
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
+        CFCClass **ordered  = CFCParcel_get_classes(parcel);
+        for (size_t j = 0; ordered[j] != NULL; j++) {
+            CFCClass *klass = ordered[j];
 
-        CFCParcel *parcel = CFCClass_get_parcel(klass);
-        int found = false;
-        for (size_t j = 0; parcels[j]; j++) {
-            if (parcel == parcels[j]) {
-                found = true;
-                break;
+            // Pound-includes for generated headers.
+            const char *include_h = CFCClass_include_h(klass);
+            includes = CFCUtil_cat(includes, "#include \"", include_h, "\"\n",
+                                   NULL);
+
+            if (CFCClass_inert(klass)) { continue; }
+            int num_xsubs = 0;
+
+            // Constructors.
+            CFCPerlConstructor **constructors
+                = CFCPerlClass_constructor_bindings(klass);
+            for (size_t k = 0; constructors[k] != NULL; k++) {
+                CFCPerlSub *xsub = (CFCPerlSub*)constructors[k];
+
+                // Add the XSUB function definition.
+                char *xsub_def
+                    = CFCPerlConstructor_xsub_def(constructors[k], klass);
+                generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
+                                           NULL);
+                FREEMEM(xsub_def);
+
+                // Add XSUB initialization at boot.
+                xsub_specs = S_add_xsub_spec(xsub_specs, xsub);
+                num_xsubs += 1;
+
+                CFCBase_decref((CFCBase*)constructors[k]);
             }
+            FREEMEM(constructors);
+
+            // Methods.
+            CFCPerlMethod **methods = CFCPerlClass_method_bindings(klass);
+            for (size_t k = 0; methods[k] != NULL; k++) {
+                CFCPerlSub *xsub = (CFCPerlSub*)methods[k];
+
+                // Add the XSUB function definition.
+                char *xsub_def = CFCPerlMethod_xsub_def(methods[k], klass);
+                if (xsub_def) {
+                    generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
+                                               NULL);
+                    FREEMEM(xsub_def);
+                }
+
+                // Add XSUB initialization at boot.
+                xsub_specs = S_add_xsub_spec(xsub_specs, xsub);
+                num_xsubs += 1;
+
+                CFCBase_decref((CFCBase*)methods[k]);
+            }
+            FREEMEM(methods);
+
+            // Append XSBind_ClassSpec entry.
+            const char *class_name = CFCClass_get_name(klass);
+            CFCClass *parent = CFCClass_get_parent(klass);
+            char *parent_name;
+            if (parent) {
+                parent_name = CFCUtil_sprintf("\"%s\"",
+                                              CFCClass_get_name(parent));
+            }
+            else {
+                parent_name = CFCUtil_strdup("NULL");
+            }
+            char *class_spec
+                = CFCUtil_sprintf("{ \"%s\", %s, %d }", class_name,
+                                  parent_name, num_xsubs);
+            const char *sep = class_specs[0] == '\0' ? "" : ",\n";
+            class_specs = CFCUtil_cat(class_specs, sep, "        ", class_spec,
+                                      NULL);
+            FREEMEM(class_spec);
+            FREEMEM(parent_name);
         }
-        if (!found) { continue; }
-
-        // Pound-includes for generated headers.
-        const char *include_h = CFCClass_include_h(klass);
-        includes = CFCUtil_cat(includes, "#include \"", include_h, "\"\n",
-                               NULL);
-
-        if (CFCClass_inert(klass)) { continue; }
-        int num_xsubs = 0;
-
-        // Constructors.
-        CFCPerlConstructor **constructors
-            = CFCPerlClass_constructor_bindings(klass);
-        for (size_t j = 0; constructors[j] != NULL; j++) {
-            CFCPerlSub *xsub = (CFCPerlSub*)constructors[j];
-
-            // Add the XSUB function definition.
-            char *xsub_def
-                = CFCPerlConstructor_xsub_def(constructors[j], klass);
-            generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
-                                       NULL);
-            FREEMEM(xsub_def);
-
-            // Add XSUB initialization at boot.
-            xsub_specs = S_add_xsub_spec(xsub_specs, xsub);
-            num_xsubs += 1;
-
-            CFCBase_decref((CFCBase*)constructors[j]);
-        }
-        FREEMEM(constructors);
-
-        // Methods.
-        CFCPerlMethod **methods = CFCPerlClass_method_bindings(klass);
-        for (size_t j = 0; methods[j] != NULL; j++) {
-            CFCPerlSub *xsub = (CFCPerlSub*)methods[j];
-
-            // Add the XSUB function definition.
-            char *xsub_def = CFCPerlMethod_xsub_def(methods[j], klass);
-            generated_xs = CFCUtil_cat(generated_xs, xsub_def, "\n",
-                                       NULL);
-            FREEMEM(xsub_def);
-
-            // Add XSUB initialization at boot.
-            xsub_specs = S_add_xsub_spec(xsub_specs, xsub);
-            num_xsubs += 1;
-
-            CFCBase_decref((CFCBase*)methods[j]);
-        }
-        FREEMEM(methods);
-
-        // Append XSBind_ClassSpec entry.
-        const char *class_name = CFCClass_get_name(klass);
-        CFCClass *parent = CFCClass_get_parent(klass);
-        char *parent_name;
-        if (parent) {
-            parent_name = CFCUtil_sprintf("\"%s\"", CFCClass_get_name(parent));
-        }
-        else {
-            parent_name = CFCUtil_strdup("NULL");
-        }
-        char *class_spec = CFCUtil_sprintf("{ \"%s\", %s, %d }", class_name,
-                                           parent_name, num_xsubs);
-        const char *sep = class_specs[0] == '\0' ? "" : ",\n";
-        class_specs = CFCUtil_cat(class_specs, sep, "        ", class_spec,
-                                  NULL);
-        FREEMEM(class_spec);
-        FREEMEM(parent_name);
     }
 
     // Hand-rolled XS.
@@ -719,7 +710,6 @@ CFCPerl_write_bindings(CFCPerl *self, const char *boot_class,
     FREEMEM(generated_xs);
     FREEMEM(includes);
     FREEMEM(privacy_syms);
-    FREEMEM(ordered);
 }
 
 void

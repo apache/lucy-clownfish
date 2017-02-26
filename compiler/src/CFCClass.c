@@ -864,13 +864,6 @@ CFCClass_abstract(CFCClass *self) {
 }
 
 int
-CFCClass_needs_documentation(CFCClass *self) {
-    return CFCClass_public(self)
-           && !CFCClass_included(self)
-           && CFCParcel_is_installed(self->parcel);
-}
-
-int
 CFCClass_in_parcel(CFCClass *self, struct CFCParcel *parcel) {
     return CFCClass_get_parcel(self) == parcel;
 }

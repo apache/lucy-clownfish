@@ -117,7 +117,7 @@ static const char footer_template[] =
     "{autogen_footer}";
 
 char*
-S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs);
+S_create_index_doc(CFCCHtml *self, CFCDocument **docs);
 
 char*
 S_create_standalone_doc(CFCCHtml *self, CFCDocument *doc);
@@ -227,14 +227,21 @@ CFCCHtml_destroy(CFCCHtml *self) {
 
 void
 CFCCHtml_write_html_docs(CFCCHtml *self) {
-    CFCHierarchy  *hierarchy    = self->hierarchy;
-    CFCClass     **ordered      = CFCHierarchy_ordered_classes(hierarchy);
+    CFCParcel    **parcels      = CFCParcel_all_parcels();
     CFCDocument  **doc_registry = CFCDocument_get_registry();
     const char    *doc_path     = self->doc_path;
 
     size_t num_classes = 0;
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        ++num_classes;
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel *parcel = parcels[i];
+        if (!CFCParcel_is_installed(parcel)) { continue; }
+
+        CFCClass **ordered = CFCParcel_get_classes(parcel);
+        for (size_t j = 0; ordered[j] != NULL; j++) {
+            CFCClass *klass = ordered[j];
+            if (!CFCClass_public(klass)) { continue; }
+            ++num_classes;
+        }
     }
 
     size_t num_md_docs = 0;
@@ -247,7 +254,6 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
     CFCDocument **md_docs = (CFCDocument**)MALLOCATE(bytes);
     memcpy(md_docs, doc_registry, bytes);
 
-    qsort(ordered, num_classes, sizeof(*ordered), S_compare_class_name);
     qsort(md_docs, num_md_docs, sizeof(*md_docs), S_compare_doc_path);
 
     size_t   max_docs  = 1 + num_classes + num_md_docs;
@@ -259,24 +265,30 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
     // while generating the pages, we leak memory but don't clutter up the file
     // system.
 
-    char *index_doc = S_create_index_doc(self, ordered, md_docs);
+    char *index_doc = S_create_index_doc(self, md_docs);
     if (index_doc != NULL) {
         filenames[num_docs] = CFCUtil_strdup(self->index_filename);
         html_docs[num_docs] = index_doc;
         num_docs++;
     }
 
-    for (size_t i = 0; ordered[i] != NULL; i++) {
-        CFCClass *klass = ordered[i];
-        if (!CFCClass_needs_documentation(klass)) { continue; }
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel *parcel = parcels[i];
+        if (!CFCParcel_is_installed(parcel)) { continue; }
 
-        const char *class_name = CFCClass_get_name(klass);
-        char *path = CFCUtil_global_replace(class_name, "::", CHY_DIR_SEP);
-        filenames[num_docs] = CFCUtil_sprintf("%s.html", path);
-        html_docs[num_docs] = CFCCHtml_create_html_doc(self, klass);
-        ++num_docs;
+        CFCClass **ordered = CFCParcel_get_classes(parcel);
+        for (size_t j = 0; ordered[j] != NULL; j++) {
+            CFCClass *klass = ordered[j];
+            if (!CFCClass_public(klass)) { continue; }
 
-        FREEMEM(path);
+            const char *class_name = CFCClass_get_name(klass);
+            char *path = CFCUtil_global_replace(class_name, "::", CHY_DIR_SEP);
+            filenames[num_docs] = CFCUtil_sprintf("%s.html", path);
+            html_docs[num_docs] = CFCCHtml_create_html_doc(self, klass);
+            ++num_docs;
+
+            FREEMEM(path);
+        }
     }
 
     for (size_t i = 0; md_docs[i] != NULL; i++) {
@@ -303,11 +315,10 @@ CFCCHtml_write_html_docs(CFCCHtml *self) {
     FREEMEM(html_docs);
     FREEMEM(filenames);
     FREEMEM(md_docs);
-    FREEMEM(ordered);
 }
 
 char*
-S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs) {
+S_create_index_doc(CFCCHtml *self, CFCDocument **docs) {
     CFCParcel **parcels = CFCParcel_all_parcels();
 
     // Compile standalone document list.
@@ -347,22 +358,24 @@ S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs) {
 
     for (size_t i = 0; parcels[i]; i++) {
         CFCParcel *parcel = parcels[i];
-        if (CFCParcel_included(parcel) || !CFCParcel_is_installed(parcel)) {
-            continue;
-        }
-
-        const char *prefix      = CFCParcel_get_prefix(parcel);
-        const char *parcel_name = CFCParcel_get_name(parcel);
+        if (!CFCParcel_is_installed(parcel)) { continue; }
 
         char *class_list = CFCUtil_strdup("");
+        CFCClass **classes = CFCParcel_get_classes(parcel);
 
-        for (size_t i = 0; classes[i] != NULL; i++) {
-            CFCClass *klass = classes[i];
-            if (strcmp(CFCClass_get_prefix(klass), prefix) != 0
-                || !CFCClass_public(klass)
-            ) {
-                continue;
-            }
+        // Copy class array.
+        size_t num_classes = 0;
+        while (classes[num_classes]) { num_classes += 1; }
+        size_t alloc_size = (num_classes + 1) * sizeof(CFCClass*);
+        CFCClass **sorted = (CFCClass**)MALLOCATE(alloc_size);
+        memcpy(sorted, classes, alloc_size);
+
+        // Sort by class name.
+        qsort(sorted, num_classes, sizeof(*sorted), S_compare_class_name);
+
+        for (size_t i = 0; sorted[i] != NULL; i++) {
+            CFCClass *klass = sorted[i];
+            if (!CFCClass_public(klass)) { continue; }
 
             const char *class_name = CFCClass_get_name(klass);
             char *url = S_class_to_url(klass, NULL, 0);
@@ -373,6 +386,8 @@ S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs) {
         }
 
         if (class_list[0] != '\0') {
+            const char *parcel_name = CFCParcel_get_name(parcel);
+
             const char *pattern =
                 "<h2>Classes in parcel %s</h2>\n"
                 "<ul>\n"
@@ -382,7 +397,6 @@ S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs) {
             class_lists = CFCUtil_cat(class_lists, html, NULL);
             FREEMEM(html);
 
-            const char *parcel_name = CFCParcel_get_name(parcel);
             const char *sep = parcel_names[0] == '\0' ? "" : ", ";
             parcel_names = CFCUtil_cat(parcel_names, sep, parcel_name, NULL);
 
@@ -390,6 +404,7 @@ S_create_index_doc(CFCCHtml *self, CFCClass **classes, CFCDocument **docs) {
             filename = CFCUtil_cat(filename, parcel_prefix, NULL);
         }
 
+        FREEMEM(sorted);
         FREEMEM(class_list);
     }
 
@@ -493,11 +508,9 @@ char*
 CFCCHtml_create_html_body(CFCCHtml *self, CFCClass *klass) {
     if (self->index_filename == NULL) {
         // Create index filename by creating index doc.
-        CFCClass    **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
         CFCDocument **docs    = CFCDocument_get_registry();
-        char *index_doc = S_create_index_doc(self, ordered, docs);
+        char *index_doc = S_create_index_doc(self, docs);
         FREEMEM(index_doc);
-        FREEMEM(ordered);
 
         if (self->index_filename == NULL) {
             CFCUtil_die("Empty hierarchy");

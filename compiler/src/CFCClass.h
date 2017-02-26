@@ -256,9 +256,6 @@ int
 CFCClass_abstract(CFCClass *self);
 
 int
-CFCClass_needs_documentation(CFCClass *self);
-
-int
 CFCClass_in_parcel(CFCClass *self, struct CFCParcel *parcel);
 
 int

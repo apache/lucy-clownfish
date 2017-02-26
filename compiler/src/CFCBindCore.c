@@ -61,8 +61,8 @@ static void
 S_write_platform_h(CFCBindCore *self);
 
 static void
-S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
-                       const char *dest_dir, const char *host_lang);
+S_write_host_data_json(CFCParcel *parcel, const char *dest_dir,
+                       const char *host_lang);
 
 static const CFCMeta CFCBINDCORE_META = {
     "Clownfish::CFC::Binding::Core",
@@ -149,11 +149,9 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
     // classes.
     char *typedefs    = CFCUtil_strdup("");
     char *class_decls = CFCUtil_strdup("");
-    CFCClass **ordered = CFCHierarchy_ordered_classes(hierarchy);
+    CFCClass **ordered = CFCParcel_get_classes(parcel);
     for (int i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        const char *class_prefix = CFCClass_get_prefix(klass);
-        if (strcmp(class_prefix, prefix) != 0) { continue; }
 
         if (!CFCClass_inert(klass)) {
             const char *full_struct = CFCClass_full_struct_sym(klass);
@@ -165,7 +163,6 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
                                       ";\n", NULL);
         }
     }
-    FREEMEM(ordered);
 
     // Special includes and macros for Clownfish parcel.
     const char *cfish_includes =
@@ -399,12 +396,10 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
     char *includes     = CFCUtil_strdup("");
     char *c_data       = CFCUtil_strdup("");
     CFCBindSpecs *specs = CFCBindSpecs_new();
-    CFCClass **ordered = CFCHierarchy_ordered_classes(hierarchy);
+    CFCClass **ordered = CFCParcel_get_classes(parcel);
 
     for (int i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        const char *class_prefix = CFCClass_get_prefix(klass);
-        if (strcmp(class_prefix, prefix) != 0) { continue; }
 
         const char *include_h = CFCClass_include_h(klass);
         includes = CFCUtil_cat(includes, "#include \"", include_h,
@@ -427,7 +422,6 @@ S_write_parcel_c(CFCBindCore *self, CFCParcel *parcel) {
 
     char *spec_defs      = CFCBindSpecs_defs(specs);
     char *spec_init_func = CFCBindSpecs_init_func_def(specs);
-    FREEMEM(ordered);
 
     char *prereq_bootstrap = CFCUtil_strdup("");
     CFCParcel **prereq_parcels = CFCParcel_prereq_parcels(parcel);
@@ -728,20 +722,20 @@ CFCBindCore_copy_headers(CFCBindCore *self, const char *dest_dir) {
 void
 CFCBindCore_write_host_data_json(CFCBindCore *self, const char *dest_dir,
                                  const char *host_lang) {
+    CHY_UNUSED_VAR(self);
     CFCParcel **parcels = CFCParcel_all_parcels();
 
     for (size_t i = 0; parcels[i] != NULL; i++) {
         CFCParcel *parcel = parcels[i];
         if (!CFCParcel_included(parcel) && CFCParcel_is_installed(parcel)) {
-            S_write_host_data_json(self, parcel, dest_dir, host_lang);
+            S_write_host_data_json(parcel, dest_dir, host_lang);
         }
     }
 }
 
 static void
-S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
-                       const char *dest_dir, const char *host_lang) {
-    const char *prefix      = CFCParcel_get_prefix(parcel);
+S_write_host_data_json(CFCParcel *parcel, const char *dest_dir,
+                       const char *host_lang) {
     const char *parcel_name = CFCParcel_get_name(parcel);
     CFCVersion *version     = CFCParcel_get_version(parcel);
     const char *vstring     = CFCVersion_get_vstring(version);
@@ -756,13 +750,10 @@ S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
     }
 
     char *classes_json = CFCUtil_strdup("");
-    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCClass **ordered = CFCParcel_get_classes(parcel);
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        const char *class_prefix = CFCClass_get_prefix(klass);
-        if (strcmp(class_prefix, prefix) != 0) { continue; }
-
         CFCBindClass *class_binding = CFCBindClass_new(klass);
 
         char *class_json = CFCBindClass_host_data_json(class_binding);
@@ -774,7 +765,6 @@ S_write_host_data_json(CFCBindCore *self, CFCParcel *parcel,
         FREEMEM(class_json);
         CFCBase_decref((CFCBase*)class_binding);
     }
-    FREEMEM(ordered);
 
     if (classes_json[0] != '\0') {
         const char *pattern =

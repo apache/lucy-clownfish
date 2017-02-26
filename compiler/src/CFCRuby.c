@@ -171,13 +171,12 @@ S_write_boot_h(CFCRuby *self) {
 
 static void
 S_write_boot_c(CFCRuby *self) {
-    CFCClass **ordered   = CFCHierarchy_ordered_classes(self->hierarchy);
+    CFCClass **ordered   = CFCParcel_get_classes(self->parcel);
     char *pound_includes = CFCUtil_strdup("");
     const char *prefix   = CFCParcel_get_prefix(self->parcel);
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
 
         const char *include_h  = CFCClass_include_h(klass);
         pound_includes = CFCUtil_cat(pound_includes, "#include \"",
@@ -219,7 +218,6 @@ S_write_boot_c(CFCRuby *self) {
 
     FREEMEM(content);
     FREEMEM(pound_includes);
-    FREEMEM(ordered);
 }
 
 void

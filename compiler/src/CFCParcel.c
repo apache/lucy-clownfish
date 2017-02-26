@@ -297,7 +297,9 @@ S_new_from_json(const char *json, CFCFileSpec *file_spec) {
     }
     CFCParcel *self = CFCParcel_new(name, nickname, version, major_version,
                                     file_spec);
-    self->is_installed = installed;
+    if (!file_spec || !CFCFileSpec_included(file_spec)) {
+        self->is_installed = installed;
+    }
     if (prereqs) {
         S_set_prereqs(self, prereqs, path);
     }

@@ -118,10 +118,7 @@ S_gen_callbacks(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
     // Generate implementation files containing callback definitions.
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)
-            || CFCClass_inert(klass)
-            //|| CFCClass_get_parcel(klass) != parcel
-           ) {
+        if (CFCClass_inert(klass)) {
             continue;
         }
 
@@ -373,7 +370,7 @@ S_gen_type_linkups(CFCPython *self, CFCParcel *parcel, CFCClass **ordered) {
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass) || CFCClass_inert(klass)) {
+        if (CFCClass_inert(klass)) {
             continue;
         }
         const char *class_var = CFCClass_full_class_var(klass);
@@ -422,9 +419,6 @@ S_gen_class_bindings(CFCPython *self, CFCParcel *parcel,
     char *bindings = CFCUtil_strdup("");
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) {
-            continue;
-        }
         const char *class_name = CFCClass_get_name(klass);
         CFCPyClass *class_binding = CFCPyClass_singleton(class_name);
         if (!class_binding) {
@@ -457,8 +451,7 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
         helper_mod_name[i] = CFCUtil_tolower(helper_mod_name[i]);
     }
 
-    CFCClass  **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
-    CFCParcel **parcels = CFCParcel_all_parcels();
+    CFCClass  **ordered = CFCParcel_get_classes(parcel);
     char *privacy_syms       = CFCUtil_strdup("");
     char *callbacks          = S_gen_callbacks(self, parcel, ordered);
     char *type_linkups       = S_gen_type_linkups(self, parcel, ordered);
@@ -469,20 +462,15 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     char *module_adds        = CFCUtil_strdup("");
 
     // Add privacy defines and parcel bootstrapping calls.
-    for (size_t i = 0; parcels[i]; ++i) {
-        if (!CFCParcel_included(parcels[i])) {
-            const char *privacy_sym = CFCParcel_get_privacy_sym(parcels[i]);
-            privacy_syms = CFCUtil_cat(privacy_syms, "#define ", privacy_sym,
-                                       "\n", NULL);
-            const char *prefix = CFCParcel_get_prefix(parcels[i]);
-            parcel_boots = CFCUtil_cat(parcel_boots, "    ", prefix,
-                                       "bootstrap_parcel();\n", NULL);
-        }
-    }
+    const char *privacy_sym = CFCParcel_get_privacy_sym(parcel);
+    privacy_syms = CFCUtil_cat(privacy_syms, "#define ", privacy_sym,
+                               "\n", NULL);
+    const char *prefix = CFCParcel_get_prefix(parcel);
+    parcel_boots = CFCUtil_cat(parcel_boots, "    ", prefix,
+                               "bootstrap_parcel();\n", NULL);
 
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)) { continue; }
         const char *struct_sym = CFCClass_get_struct_sym(klass);
 
         const char *include_h  = CFCClass_include_h(klass);
@@ -569,7 +557,6 @@ S_write_module_file(CFCPython *self, CFCParcel *parcel, const char *dest) {
     FREEMEM(type_linkups);
     FREEMEM(callbacks);
     FREEMEM(privacy_syms);
-    FREEMEM(ordered);
 }
 
 void

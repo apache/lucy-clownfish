@@ -143,8 +143,8 @@ S_write_hostdefs(CFCGo *self) {
 
 // Pound-includes for generated headers.
 static char*
-S_gen_h_includes(CFCGo *self) {
-    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+S_gen_h_includes(CFCParcel *parcel) {
+    CFCClass **ordered = CFCParcel_get_classes(parcel);
     char *h_includes = CFCUtil_strdup("");
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
@@ -152,20 +152,14 @@ S_gen_h_includes(CFCGo *self) {
         h_includes = CFCUtil_cat(h_includes, "#include \"", include_h,
                                    "\"\n", NULL);
     }
-    FREEMEM(ordered);
     return h_includes;
 }
 
 static void
-S_register_classes(CFCGo *self, CFCParcel *parcel) {
-    CFCClass **ordered = CFCHierarchy_ordered_classes(self->hierarchy);
+S_register_classes(CFCParcel *parcel) {
+    CFCClass **ordered = CFCParcel_get_classes(parcel);
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        if (CFCClass_included(klass)
-            || CFCClass_get_parcel(klass) != parcel
-           ) {
-            continue;
-        }
         const char *class_name = CFCClass_get_name(klass);
         if (!CFCGoClass_singleton(class_name)) {
             CFCGoClass *binding = CFCGoClass_new(parcel, class_name);
@@ -365,9 +359,9 @@ S_write_cfbind_go(CFCGo *self, CFCParcel *parcel, const char *dest,
 
 void
 CFCGo_write_bindings(CFCGo *self, CFCParcel *parcel, const char *dest) {
-    char *h_includes = S_gen_h_includes(self);
+    char *h_includes = S_gen_h_includes(parcel);
 
-    S_register_classes(self, parcel);
+    S_register_classes(parcel);
     S_write_hostdefs(self);
     S_write_cfbind_go(self, parcel, dest, h_includes);
 

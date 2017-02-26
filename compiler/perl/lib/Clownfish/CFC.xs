@@ -1193,6 +1193,7 @@ ALIAS:
     prereq_parcels    = 20
     inherited_parcels = 22
     get_xs_module     = 24
+    get_classes       = 26
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -1249,6 +1250,11 @@ PPCODE:
         case 24: {
                 const char *xs_module = CFCParcel_get_host_module_name(self);
                 retval = newSVpvn(xs_module, strlen(xs_module));
+            }
+            break;
+        case 26: {
+                CFCClass **classes = CFCParcel_get_classes(self);
+                retval = S_array_of_cfcbase_to_av((CFCBase**)classes);
             }
             break;
     END_SET_OR_GET_SWITCH
