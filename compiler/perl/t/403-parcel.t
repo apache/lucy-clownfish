@@ -192,9 +192,20 @@ Clownfish::CFC::Model::Parcel->reap_singletons();
     ok( $crust->has_prereq($crust), 'has_prereq self' );
     ok( !$crust->has_prereq($foo), 'has_prereq false' );
 
-    $cfish->add_struct_sym('Swim');
-    $crust->add_struct_sym('Pinch');
-    $foo->add_struct_sym('Bar');
+    Clownfish::CFC::Model::Class->create(
+        parcel     => $cfish,
+        file_spec  => $cfish_file_spec,
+        class_name => 'Clownfish::Swim',
+    );
+    Clownfish::CFC::Model::Class->create(
+        parcel     => $crust,
+        class_name => 'Crustacean::Pinch',
+    );
+    Clownfish::CFC::Model::Class->create(
+        parcel     => $foo,
+        file_spec  => $foo_file_spec,
+        class_name => 'Foo::Bar',
+    );
     my $found;
     $found = $crust->lookup_struct_sym('Swim');
     is( $found->get_name, 'Clownfish', 'lookup_struct_sym prereq' );

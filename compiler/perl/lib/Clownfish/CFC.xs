@@ -1157,11 +1157,11 @@ CODE:
 OUTPUT: RETVAL
 
 void
-add_struct_sym(self, struct_sym)
-    CFCParcel  *self;
-    const char *struct_sym;
+add_class(self, klass)
+    CFCParcel *self;
+    CFCClass  *klass;
 PPCODE:
-    CFCParcel_add_struct_sym(self, struct_sym);
+    CFCParcel_add_class(self, klass);
 
 SV*
 lookup_struct_sym(self, struct_sym)

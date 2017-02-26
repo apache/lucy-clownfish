@@ -276,8 +276,8 @@ S_run_tests(CFCTest *test) {
 
     {
         static const char *const class_names[4] = {
-            "Foo", "Foo::FooJr", "Foo::FooJr::FooIII",
-            "Foo::FooJr::FooIII::Foo4th"
+            "Moo", "Moo::MooJr", "Moo::MooJr::MooIII",
+            "Moo::MooJr::MooIII::Moo4th"
         };
         for (int i = 0; i < 4; ++i) {
             const char *class_name = class_names[i];

@@ -300,6 +300,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     CFCUTIL_TRY {
         // Store in registry.
         S_register(self);
+        CFCParcel_add_class(parcel, self);
     }
     CFCUTIL_CATCH(error);
 
@@ -307,8 +308,6 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
         CFCBase_decref((CFCBase*)self);
         CFCUtil_rethrow(error);
     }
-
-    CFCParcel_add_struct_sym(parcel, self->struct_sym);
 
     return self;
 }
@@ -367,27 +366,13 @@ S_register(CFCClass *self) {
         registry_cap = new_cap;
     }
 
-    const char *prefix     = CFCParcel_get_prefix(self->parcel);
-    const char *name       = self->name;
-    const char *nickname   = self->nickname;
-    const char *struct_sym = self->full_struct_sym;
+    const char *name = self->name;
 
     for (size_t i = 0; i < registry_size; i++) {
-        CFCClass   *other        = registry[i];
-        const char *other_prefix = CFCParcel_get_prefix(other->parcel);
+        CFCClass *other = registry[i];
 
         if (strcmp(name, other->name) == 0) {
             CFCUtil_die("Two classes with name %s", name);
-        }
-        if (strcmp(struct_sym, other->full_struct_sym) == 0) {
-            CFCUtil_die("Class name conflict between %s and %s",
-                        name, other->name);
-        }
-        if (strcmp(prefix, other_prefix) == 0
-            && strcmp(nickname, other->nickname) == 0
-           ) {
-            CFCUtil_die("Class nickname conflict between %s and %s",
-                        name, other->name);
         }
     }
 

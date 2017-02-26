@@ -246,6 +246,7 @@ $class = $parser->parse($class_content);
 ok( $class->final, "final class_declaration" );
 
 Clownfish::CFC::Model::Class->_clear_registry();
+Clownfish::CFC::Model::Parcel->reap_singletons();
 
 {
     eval {
@@ -256,6 +257,7 @@ Clownfish::CFC::Model::Class->_clear_registry();
     like( $@, qr/inert class/i, "inert class can't inherit" );
 
     Clownfish::CFC::Model::Class->_clear_registry();
+    Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 
 {
@@ -267,5 +269,6 @@ Clownfish::CFC::Model::Class->_clear_registry();
     like( $@, qr/inert class/i, "can't inherit from inert class" );
 
     Clownfish::CFC::Model::Class->_clear_registry();
+    Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 

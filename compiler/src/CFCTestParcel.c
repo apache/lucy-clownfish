@@ -20,6 +20,7 @@
 
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
+#include "CFCClass.h"
 #include "CFCFileSpec.h"
 #include "CFCParcel.h"
 #include "CFCSymbol.h"
@@ -278,9 +279,16 @@ S_run_extended_tests(CFCTest *test) {
         OK(test, CFCParcel_has_prereq(crust, crust), "has_prereq self");
         OK(test, !CFCParcel_has_prereq(crust, foo), "has_prereq false");
 
-        CFCParcel_add_struct_sym(cfish, "Swim");
-        CFCParcel_add_struct_sym(crust, "Pinch");
-        CFCParcel_add_struct_sym(foo, "Bar");
+        CFCClass *swim
+            = CFCClass_create(cfish, NULL, "Clownfish::Swim", NULL, NULL,
+                              cfish_file_spec, "Clownfish::Obj", false, false,
+                              false);
+        CFCClass *pinch
+            = CFCClass_create(crust, NULL, "Crustacean::Pinch", NULL, NULL,
+                              NULL, "Clownfish::Obj", false, false, false);
+        CFCClass *bar
+            = CFCClass_create(foo, NULL, "Foo::Bar", NULL, NULL, foo_file_spec,
+                              "Clownfish::Obj", false, false, false);
         CFCParcel *found;
         found = CFCParcel_lookup_struct_sym(crust, "Swim");
         OK(test, found == cfish, "lookup_struct_sym prereq");
@@ -290,12 +298,16 @@ S_run_extended_tests(CFCTest *test) {
         OK(test, found == NULL, "lookup_struct_sym other");
 
         FREEMEM(prereq_parcels);
+        CFCBase_decref((CFCBase*)bar);
+        CFCBase_decref((CFCBase*)pinch);
+        CFCBase_decref((CFCBase*)swim);
         CFCBase_decref((CFCBase*)crust);
         CFCBase_decref((CFCBase*)cfish_version);
         CFCBase_decref((CFCBase*)cfish_file_spec);
         CFCBase_decref((CFCBase*)cfish);
         CFCBase_decref((CFCBase*)foo_file_spec);
         CFCBase_decref((CFCBase*)foo);
+        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 }

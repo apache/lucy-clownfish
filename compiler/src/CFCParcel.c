@@ -46,8 +46,8 @@ struct CFCParcel {
     int is_installed;
     char **inherited_parcels;
     size_t num_inherited_parcels;
-    char **struct_syms;
-    size_t num_struct_syms;
+    CFCClass **classes;
+    size_t num_classes;
     CFCPrereq **prereqs;
     size_t num_prereqs;
 };
@@ -214,8 +214,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     // Initialize arrays.
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
     self->num_inherited_parcels = 0;
-    self->struct_syms = (char**)CALLOCATE(1, sizeof(char*));
-    self->num_struct_syms = 0;
+    self->classes = (CFCClass**)CALLOCATE(1, sizeof(CFCClass*));
+    self->num_classes = 0;
     self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
     self->num_prereqs = 0;
 
@@ -368,7 +368,10 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->PREFIX);
     FREEMEM(self->privacy_sym);
     CFCUtil_free_string_array(self->inherited_parcels);
-    CFCUtil_free_string_array(self->struct_syms);
+    for (size_t i = 0; self->classes[i]; ++i) {
+        CFCBase_decref((CFCBase*)self->classes[i]);
+    }
+    FREEMEM(self->classes);
     for (size_t i = 0; self->prereqs[i]; ++i) {
         CFCBase_decref((CFCBase*)self->prereqs[i]);
     }
@@ -580,20 +583,37 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang) {
 }
 
 void
-CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym) {
-    size_t num_struct_syms = self->num_struct_syms + 1;
-    size_t size = (num_struct_syms + 1) * sizeof(char*);
-    char **struct_syms = (char**)REALLOCATE(self->struct_syms, size);
-    struct_syms[num_struct_syms-1] = CFCUtil_strdup(struct_sym);
-    struct_syms[num_struct_syms]   = NULL;
-    self->struct_syms     = struct_syms;
-    self->num_struct_syms = num_struct_syms;
+CFCParcel_add_class(CFCParcel *self, CFCClass *klass) {
+    const char *struct_sym = CFCClass_get_struct_sym(klass);
+    const char *nickname   = CFCClass_get_nickname(klass);
+
+    for (size_t i = 0; self->classes[i]; ++i) {
+        CFCClass *other = self->classes[i];
+
+        if (strcmp(struct_sym, CFCClass_get_struct_sym(other)) == 0) {
+            CFCUtil_die("Class name conflict between %s and %s",
+                        CFCClass_get_name(klass), CFCClass_get_name(other));
+        }
+        if (strcmp(nickname, CFCClass_get_nickname(other)) == 0) {
+            CFCUtil_die("Class nickname conflict between %s and %s",
+                        CFCClass_get_name(klass), CFCClass_get_name(other));
+        }
+    }
+
+    size_t num_classes = self->num_classes;
+    size_t size = (num_classes + 2) * sizeof(CFCClass*);
+    CFCClass **classes = (CFCClass**)REALLOCATE(self->classes, size);
+    classes[num_classes]   = (CFCClass*)CFCBase_incref((CFCBase*)klass);
+    classes[num_classes+1] = NULL;
+    self->classes     = classes;
+    self->num_classes = num_classes + 1;
 }
 
 static CFCParcel*
 S_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
-    for (size_t i = 0; self->struct_syms[i]; ++i) {
-        if (strcmp(self->struct_syms[i], struct_sym) == 0) {
+    for (size_t i = 0; self->classes[i]; ++i) {
+        const char *other_sym = CFCClass_get_struct_sym(self->classes[i]);
+        if (strcmp(other_sym, struct_sym) == 0) {
             return self;
         }
     }

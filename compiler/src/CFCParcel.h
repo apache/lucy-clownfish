@@ -38,6 +38,7 @@ extern "C" {
 
 typedef struct CFCParcel CFCParcel;
 typedef struct CFCPrereq CFCPrereq;
+struct CFCClass;
 struct CFCFileSpec;
 struct CFCVersion;
 
@@ -176,7 +177,7 @@ void
 CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang);
 
 void
-CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym);
+CFCParcel_add_class(CFCParcel *self, struct CFCClass *klass);
 
 /** Search the parcel and all direct prerequisites for a class with
  * struct_sym. Return the parcel in which the class was found or NULL.

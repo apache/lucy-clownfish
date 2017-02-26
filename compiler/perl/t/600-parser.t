@@ -143,7 +143,7 @@ SKIP: {
 }
 
 is( $parser->parse("class $_ { }")->get_name, $_, "class_name: $_" )
-    for (qw( Foo Foo::FooJr Foo::FooJr::FooIII Foo::FooJr::FooIII::Foo4th ));
+    for (qw( Moo Moo::MooJr Moo::MooJr::MooIII Moo::MooJr::MooIII::Moo4th ));
 
 SKIP: {
     skip( "Can't recover from bad class name under flex/lemon parser", 6 );
