@@ -45,13 +45,13 @@ S_register(CFCClass *self);
 
 struct CFCClass {
     CFCBase base;
-    struct CFCParcel *parcel;
+    CFCWeakPtr parcel;
     char *exposure;
     char *name;
     char *nickname;
     int tree_grown;
     CFCDocuComment *docucomment;
-    struct CFCClass *parent;
+    CFCWeakPtr parent;
     struct CFCClass **children;
     size_t num_kids;
     CFCFunction **functions;
@@ -225,12 +225,11 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     }
 
     // Assign.
-    self->parcel          = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
+    self->parcel          = CFCWeakPtr_new((CFCBase*)parcel);
     self->exposure        = CFCUtil_strdup(exposure);
     self->name            = CFCUtil_strdup(name);
     self->nickname        = CFCUtil_strdup(real_nickname);
     self->tree_grown      = false;
-    self->parent          = NULL;
     self->children        = (CFCClass**)CALLOCATE(1, sizeof(CFCClass*));
     self->num_kids        = 0;
     self->functions       = (CFCFunction**)CALLOCATE(1, sizeof(CFCFunction*));
@@ -326,12 +325,12 @@ S_free_cfcbase_array(CFCBase **array) {
 
 void
 CFCClass_destroy(CFCClass *self) {
-    CFCBase_decref((CFCBase*)self->parcel);
+    CFCWeakPtr_destroy(&self->parcel);
     FREEMEM(self->exposure);
     FREEMEM(self->name);
     FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->docucomment);
-    CFCBase_decref((CFCBase*)self->parent);
+    CFCWeakPtr_destroy(&self->parent);
     CFCBase_decref((CFCBase*)self->file_spec);
     S_free_cfcbase_array((CFCBase**)self->children);
     S_free_cfcbase_array((CFCBase**)self->functions);
@@ -425,13 +424,7 @@ CFCClass_fetch_by_struct_sym(const char *struct_sym) {
 void
 CFCClass_clear_registry(void) {
     for (size_t i = 0; i < registry_size; i++) {
-        CFCClass *klass = registry[i];
-        if (klass->parent) {
-            // Break circular ref.
-            CFCBase_decref((CFCBase*)klass->parent);
-            klass->parent = NULL;
-        }
-        CFCBase_decref((CFCBase*)klass);
+        CFCBase_decref((CFCBase*)registry[i]);
     }
     FREEMEM(registry);
     registry_size = 0;
@@ -840,14 +833,12 @@ CFCClass_get_nickname(CFCClass *self) {
 
 void
 CFCClass_set_parent(CFCClass *self, CFCClass *parent) {
-    CFCClass *old_parent = self->parent;
-    self->parent = (CFCClass*)CFCBase_incref((CFCBase*)parent);
-    CFCBase_decref((CFCBase*)old_parent);
+    CFCWeakPtr_set(&self->parent, (CFCBase*)parent);
 }
 
 CFCClass*
 CFCClass_get_parent(CFCClass *self) {
-    return self->parent;
+    return (CFCClass*)CFCWeakPtr_deref(self->parent);
 }
 
 const char*
@@ -951,22 +942,22 @@ CFCClass_include_h(CFCClass *self) {
 
 CFCParcel*
 CFCClass_get_parcel(CFCClass *self) {
-    return self->parcel;
+    return (CFCParcel*)CFCWeakPtr_deref(self->parcel);
 }
 
 const char*
 CFCClass_get_prefix(CFCClass *self) {
-    return CFCParcel_get_prefix(self->parcel);
+    return CFCParcel_get_prefix(CFCClass_get_parcel(self));
 }
 
 const char*
 CFCClass_get_Prefix(CFCClass *self) {
-    return CFCParcel_get_Prefix(self->parcel);
+    return CFCParcel_get_Prefix(CFCClass_get_parcel(self));
 }
 
 const char*
 CFCClass_get_PREFIX(CFCClass *self) {
-    return CFCParcel_get_PREFIX(self->parcel);
+    return CFCParcel_get_PREFIX(CFCClass_get_parcel(self));
 }
 
 const char*
