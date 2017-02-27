@@ -231,6 +231,13 @@ CFCMethod_imp_func(CFCMethod *self, struct CFCClass *klass);
 char*
 CFCMethod_short_imp_func(CFCMethod *self, struct CFCClass *klass);
 
+/** Return the DocuComment for the method, which may be inherited. If
+ * `class_ptr` is non-NULL, use it to store the class where the comment
+ * found.
+ */
+struct CFCDocuComment*
+CFCMethod_get_docucomment(CFCMethod *self, struct CFCClass **class_ptr);
+
 #ifdef __cplusplus
 }
 #endif

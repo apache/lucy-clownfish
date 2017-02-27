@@ -2423,17 +2423,18 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-_gen_subroutine_pod(func, alias, klass, code_sample, class_name, is_constructor)
+_gen_subroutine_pod(func, alias, klass, code_sample, class_name, is_constructor, docucomment, base_class)
     CFCCallable *func;
     const char *alias;
     CFCClass *klass;
     const char *code_sample;
-    const char *class_name;
     int is_constructor;
+    CFCDocuComment *docucomment;
+    CFCClass *base_class;
 CODE:
     char *value = CFCPerlPod_gen_subroutine_pod(func, alias, klass,
-                                                code_sample, class_name,
-                                                is_constructor);
+                                                code_sample, is_constructor,
+                                                docucomment, base_class);
     RETVAL = S_sv_eat_c_string(value);
 OUTPUT: RETVAL
 

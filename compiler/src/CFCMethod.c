@@ -453,6 +453,29 @@ CFCMethod_short_imp_func(CFCMethod *self, CFCClass *klass) {
     return S_short_method_sym(self, klass, "_IMP");
 }
 
+CFCDocuComment*
+CFCMethod_get_docucomment(CFCMethod *self, CFCClass **class_ptr) {
+    CFCMethod  *method = self;
+    const char *name   = CFCMethod_get_name(self);
+
+    do {
+        CFCClass *klass = S_fresh_class(method);
+
+        CFCDocuComment *comment = method->callable.docucomment;
+        if (comment) {
+            if (class_ptr) { *class_ptr = klass; }
+            return comment;
+        }
+
+        CFCClass *parent = CFCClass_get_parent(klass);
+        if (!parent) { break; }
+        method = CFCClass_method(parent, name);
+    } while (method);
+
+    if (class_ptr) { *class_ptr = NULL; }
+    return NULL;
+}
+
 static CFCClass*
 S_fresh_class(CFCMethod *self) {
     return (CFCClass*)CFCWeakPtr_deref(self->fresh_class);

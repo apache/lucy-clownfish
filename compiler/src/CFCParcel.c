@@ -427,6 +427,11 @@ CFCParcel_is_installed(CFCParcel *self) {
     return self->is_installed;
 }
 
+void
+CFCParcel_set_installed(CFCParcel *self, int is_installed) {
+    self->is_installed = is_installed;
+}
+
 CFCVersion*
 CFCParcel_get_version(CFCParcel *self) {
     return self->version;

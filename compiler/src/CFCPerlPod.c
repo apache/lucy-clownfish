@@ -84,16 +84,16 @@ static char*
 S_camel_to_lower(const char *camel);
 
 static char*
-S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level);
+S_nodes_to_pod(cmark_node *node, CFCClass *base_class, int header_level);
 
 static char*
-S_node_to_pod(cmark_node *node, CFCClass *klass, int header_level);
+S_node_to_pod(cmark_node *node, CFCClass *base_class, int header_level);
 
 static char*
 S_pod_escape(const char *content);
 
 static char*
-S_convert_link(cmark_node *link, CFCClass *klass, int header_level);
+S_convert_link(cmark_node *link, CFCClass *base_class, int header_level);
 
 static char*
 S_pod_link(const char *text, const char *name);
@@ -189,7 +189,6 @@ CFCPerlPod_get_description(CFCPerlPod *self) {
 
 char*
 CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
-    const char *class_name = CFCClass_get_name(klass);
     char *abstract_pod = CFCUtil_strdup("");
     char *methods_pod  = CFCUtil_strdup("");
 
@@ -222,6 +221,10 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
             }
         }
 
+        CFCClass *base_class = NULL;
+        CFCDocuComment *comment
+            = CFCMethod_get_docucomment(method, &base_class);
+
         if (meth_spec) {
             // Found custom POD.
             if (meth_spec->pod) {
@@ -231,8 +234,8 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
                 meth_pod
                     = CFCPerlPod_gen_subroutine_pod((CFCCallable*)method,
                                                     meth_spec->alias, klass,
-                                                    meth_spec->sample,
-                                                    class_name, false);
+                                                    meth_spec->sample, false,
+                                                    comment, base_class);
             }
         }
         else {
@@ -257,8 +260,8 @@ CFCPerlPod_methods_pod(CFCPerlPod *self, CFCClass *klass) {
             char *perl_name = CFCPerlMethod_perl_name(method);
             meth_pod
                 = CFCPerlPod_gen_subroutine_pod((CFCCallable*)method,
-                                                perl_name, klass, NULL,
-                                                class_name, false);
+                                                perl_name, klass, NULL, false,
+                                                comment, base_class);
             FREEMEM(perl_name);
         }
 
@@ -289,7 +292,6 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
     if (!self->num_constructors) {
         return CFCUtil_strdup("");
     }
-    const char *class_name = CFCClass_get_name(klass);
     char *pod = CFCUtil_strdup("=head1 CONSTRUCTORS\n\n");
     for (size_t i = 0; i < self->num_constructors; i++) {
         NamePod slot = self->constructors[i];
@@ -303,10 +305,11 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
                 CFCUtil_die("Can't find constructor '%s' in class '%s'",
                             func_name, CFCClass_get_name(klass));
             }
+            CFCDocuComment *comment = CFCFunction_get_docucomment(pod_func);
             char *sub_pod
                 = CFCPerlPod_gen_subroutine_pod((CFCCallable*)pod_func,
                                                 slot.alias, klass, slot.sample,
-                                                class_name, true);
+                                                true, comment, klass);
             pod = CFCUtil_cat(pod, sub_pod, NULL);
             FREEMEM(sub_pod);
         }
@@ -317,9 +320,11 @@ CFCPerlPod_constructors_pod(CFCPerlPod *self, CFCClass *klass) {
 char*
 CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
                               const char *alias, CFCClass *klass,
-                              const char *code_sample,
-                              const char *class_name, int is_constructor) {
-    const char *func_name = CFCCallable_get_name(func);
+                              const char *code_sample, int is_constructor,
+                              CFCDocuComment *docucomment,
+                              CFCClass *base_class) {
+    const char *class_name = CFCClass_get_name(klass);
+    const char *func_name  = CFCCallable_get_name(func);
 
     // Only allow "public" subs to be exposed as part of the public API.
     if (!CFCCallable_public(func)) {
@@ -339,18 +344,6 @@ CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
         pod = CFCUtil_cat(pod, code_sample, "\n", NULL);
     }
 
-    // Get documentation, which may be inherited.
-    CFCDocuComment *docucomment = CFCCallable_get_docucomment(func);
-    if (!docucomment) {
-        CFCClass *parent = klass;
-        while (NULL != (parent = CFCClass_get_parent(parent))) {
-            CFCCallable *parent_func
-                = (CFCCallable*)CFCClass_method(parent, func_name);
-            if (!parent_func) { break; }
-            docucomment = CFCCallable_get_docucomment(parent_func);
-            if (docucomment) { break; }
-        }
-    }
     if (!docucomment) {
         return pod;
     }
@@ -358,7 +351,7 @@ CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
     // Incorporate "description" text from DocuComment.
     const char *long_doc = CFCDocuComment_get_description(docucomment);
     if (long_doc && strlen(long_doc)) {
-        char *perlified = CFCPerlPod_md_to_pod(long_doc, klass, 3);
+        char *perlified = CFCPerlPod_md_to_pod(long_doc, base_class, 3);
         pod = CFCUtil_cat(pod, perlified, NULL);
         FREEMEM(perlified);
     }
@@ -369,7 +362,8 @@ CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
     if (param_names[0]) {
         pod = CFCUtil_cat(pod, "=over\n\n", NULL);
         for (size_t i = 0; param_names[i] != NULL; i++) {
-            char *perlified = CFCPerlPod_md_to_pod(param_docs[i], klass, 3);
+            char *perlified
+                = CFCPerlPod_md_to_pod(param_docs[i], base_class, 3);
             pod = CFCUtil_cat(pod, "=item *\n\nB<", param_names[i], "> - ",
                               perlified, NULL);
             FREEMEM(perlified);
@@ -380,7 +374,7 @@ CFCPerlPod_gen_subroutine_pod(CFCCallable *func,
     // Add return value description, if any.
     const char *retval_doc = CFCDocuComment_get_retval(docucomment);
     if (retval_doc && strlen(retval_doc)) {
-        char *perlified = CFCPerlPod_md_to_pod(retval_doc, klass, 3);
+        char *perlified = CFCPerlPod_md_to_pod(retval_doc, base_class, 3);
         pod = CFCUtil_cat(pod, "Returns: ", perlified, NULL);
         FREEMEM(perlified);
     }
@@ -635,11 +629,11 @@ CFCPerlPod_md_doc_to_pod(const char *module, const char *md) {
 }
 
 char*
-CFCPerlPod_md_to_pod(const char *md, CFCClass *klass, int header_level) {
+CFCPerlPod_md_to_pod(const char *md, CFCClass *base_class, int header_level) {
     int options = CMARK_OPT_SMART
                   | CMARK_OPT_VALIDATE_UTF8;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
-    char *pod = S_node_to_pod(doc, klass, header_level);
+    char *pod = S_node_to_pod(doc, base_class, header_level);
     cmark_node_free(doc);
 
     return pod;
@@ -647,11 +641,11 @@ CFCPerlPod_md_to_pod(const char *md, CFCClass *klass, int header_level) {
 
 // Convert a node and its siblings.
 static char*
-S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
+S_nodes_to_pod(cmark_node *node, CFCClass *base_class, int header_level) {
     char *result = CFCUtil_strdup("");
 
     while (node != NULL) {
-        char *pod = S_node_to_pod(node, klass, header_level);
+        char *pod = S_node_to_pod(node, base_class, header_level);
         result = CFCUtil_cat(result, pod, NULL);
         FREEMEM(pod);
 
@@ -663,7 +657,7 @@ S_nodes_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
 
 // Convert a single node.
 static char*
-S_node_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
+S_node_to_pod(cmark_node *node, CFCClass *base_class, int header_level) {
     char *result = CFCUtil_strdup("");
     if (node == NULL) {
         return result;
@@ -795,7 +789,7 @@ S_node_to_pod(cmark_node *node, CFCClass *klass, int header_level) {
 
             case CMARK_NODE_LINK:
                 if (ev_type == CMARK_EVENT_ENTER) {
-                    char *pod = S_convert_link(node, klass, header_level);
+                    char *pod = S_convert_link(node, base_class, header_level);
                     result = CFCUtil_cat(result, pod, NULL);
                     FREEMEM(pod);
                     cmark_iter_reset(iter, node, CMARK_EVENT_EXIT);
@@ -887,11 +881,14 @@ S_pod_escape(const char *content) {
 }
 
 static char*
-S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
+S_convert_link(cmark_node *link, CFCClass *base_class, int header_level) {
     cmark_node *child = cmark_node_first_child(link);
     const char *uri   = cmark_node_get_url(link);
-    char       *text  = S_nodes_to_pod(child, doc_class, header_level);
+    char       *text  = S_nodes_to_pod(child, base_class, header_level);
     char       *retval;
+
+    // TODO: Pass real pod_class as argument.
+    CFCClass *pod_class = base_class;
 
     if (!CFCUri_is_clownfish_uri(uri)) {
         retval = S_pod_link(text, uri);
@@ -901,7 +898,7 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
 
     char       *new_uri  = NULL;
     char       *new_text = NULL;
-    CFCUri     *uri_obj  = CFCUri_new(uri, doc_class);
+    CFCUri     *uri_obj  = CFCUri_new(uri, base_class);
     CFCUriType  type     = CFCUri_get_type(uri_obj);
 
     switch (type) {
@@ -919,7 +916,7 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
         case CFC_URI_CLASS: {
             CFCClass *klass = CFCUri_get_class(uri_obj);
 
-            if (klass != doc_class) {
+            if (klass != pod_class) {
                 const char *class_name = CFCClass_get_name(klass);
                 new_uri = CFCUtil_strdup(class_name);
             }
@@ -962,7 +959,7 @@ S_convert_link(cmark_node *link, CFCClass *doc_class, int header_level) {
                 }
             }
 
-            if (klass == doc_class) {
+            if (klass == pod_class) {
                 new_uri = CFCUtil_sprintf("/%s", perl_name);
             }
             else {

@@ -39,7 +39,7 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_DOCU_COMMENT = {
     "Clownfish::CFC::Model::DocuComment",
-    19,
+    34,
     S_run_tests
 };
 
@@ -319,9 +319,110 @@ S_test_generator(CFCTest *test) {
 }
 
 static void
+S_test_hierarchy(CFCTest *test) {
+    CFCHierarchy *hierarchy = CFCHierarchy_new("autogen");
+    CFCParser *parser = CFCParser_new();
+
+    CFCParcel *base_parcel
+        = CFCTest_parse_parcel(test, parser, "parcel Base;");
+    CFCClass *base_class = CFCTest_parse_class(test, parser,
+        "public class Base {\n"
+        "    /** [](Linked)\n"
+        "     */\n"
+        "    public void\n"
+        "    Method(Base *self);\n"
+        "}\n"
+    );
+    CFCClass *linked_class = CFCTest_parse_class(test, parser,
+        "public class Linked {}"
+    );
+
+    // Override method without DocuComment.
+    CFCParcel *override_parcel
+        = CFCTest_parse_parcel(test, parser, "parcel Override;");
+    CFCClass *override_class = CFCTest_parse_class(test, parser,
+        "public class Override inherits Base {\n"
+        "    public void\n"
+        "    Method(Override *self);\n"
+        "}\n"
+    );
+
+    CFCParcel *inherit_parcel
+        = CFCTest_parse_parcel(test, parser, "parcel Inherit;");
+    CFCParcel_set_installed(inherit_parcel, true);
+    CFCClass *inherit_class = CFCTest_parse_class(test, parser,
+        "public class Inherit inherits Override {}"
+    );
+
+    CFCClass_add_child(base_class, override_class);
+    CFCClass_add_child(override_class, inherit_class);
+    CFCClass_grow_tree(base_class);
+
+    CFCCHtml *chtml = CFCCHtml_new(hierarchy, "", "");
+    char *html = CFCCHtml_create_html_body(chtml, inherit_class);
+    const char *expected_html =
+        "<h1>Inherit</h1>\n"
+        "<table>\n"
+        "<tr>\n"
+        "<td class=\"label\">parcel</td>\n"
+        "<td><a href=\"inherit.html\">Inherit</a></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">class variable</td>\n"
+        "<td><code><span class=\"prefix\">INHERIT_</span>INHERIT</code></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">struct symbol</td>\n"
+        "<td><code><span class=\"prefix\">inherit_</span>Inherit</code></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">class nickname</td>\n"
+        "<td><code><span class=\"prefix\">inherit_</span>Inherit</code></td>\n"
+        "</tr>\n"
+        "<tr>\n"
+        "<td class=\"label\">header file</td>\n"
+        "<td><code>class.h</code></td>\n"
+        "</tr>\n"
+        "</table>\n"
+        "<h2>Name</h2>\n"
+        "<p>Inherit</p>\n"
+        "<h2>Methods</h2>\n"
+        "<h3>Methods inherited from Override</h3>\n"
+        "<dl>\n"
+        "<dt id=\"func_Method\">Method</dt>\n"
+        "<dd>\n"
+        "<pre><code>void\n"
+        "<span class=\"prefix\">inherit_</span><strong>Inherit_Method</strong>(\n"
+        "    <span class=\"prefix\">inherit_</span>Inherit *<strong>self</strong>\n"
+        ");\n"
+        "</code></pre>\n"
+        "<p><a href=\"Linked.html\">Linked</a></p>\n"
+        "</dd>\n"
+        "</dl>\n"
+        "<h2>Inheritance</h2>\n"
+        "<p>Inherit is a <a href=\"Override.html\">Override</a> is a <a href=\"Base.html\">Base</a>.</p>\n";
+    STR_EQ(test, html, expected_html, "create HTML");
+
+    FREEMEM(html);
+    CFCBase_decref((CFCBase*)chtml);
+    CFCBase_decref((CFCBase*)inherit_class);
+    CFCBase_decref((CFCBase*)inherit_parcel);
+    CFCBase_decref((CFCBase*)override_class);
+    CFCBase_decref((CFCBase*)override_parcel);
+    CFCBase_decref((CFCBase*)linked_class);
+    CFCBase_decref((CFCBase*)base_class);
+    CFCBase_decref((CFCBase*)base_parcel);
+    CFCBase_decref((CFCBase*)parser);
+    CFCBase_decref((CFCBase*)hierarchy);
+
+    CFCDocument_clear_registry();
+}
+
+static void
 S_run_tests(CFCTest *test) {
     S_test_parser(test);
     S_test_md_to_pod(test);
     S_test_generator(test);
+    S_test_hierarchy(test);
 }
 

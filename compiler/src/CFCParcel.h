@@ -100,6 +100,9 @@ CFCParcel_set_host_module_name(CFCParcel *self, const char *name);
 int
 CFCParcel_is_installed(CFCParcel *self);
 
+void
+CFCParcel_set_installed(CFCParcel *self, int is_installed);
+
 struct CFCVersion*
 CFCParcel_get_version(CFCParcel *self);
 

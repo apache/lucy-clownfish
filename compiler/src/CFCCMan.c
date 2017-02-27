@@ -58,7 +58,8 @@ static char*
 S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor);
 
 static char*
-S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym);
+S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym,
+                  CFCDocuComment *docucomment, CFCClass *base_class);
 
 static char*
 S_man_create_param_list(CFCClass *klass, CFCCallable *func);
@@ -67,10 +68,10 @@ static char*
 S_man_create_inheritance(CFCClass *klass);
 
 static char*
-S_md_to_man(CFCClass *klass, const char *md, int level);
+S_md_to_man(const char *md, CFCClass *base_class, int level);
 
 static char*
-S_nodes_to_man(CFCClass *klass, cmark_node *node, int level);
+S_nodes_to_man(cmark_node *node, CFCClass *base_class, int level);
 
 static char*
 S_man_escape(const char *content);
@@ -131,7 +132,7 @@ S_man_create_name(CFCClass *klass) {
         raw_brief = CFCDocuComment_get_brief(docucom);
     }
     if (raw_brief && raw_brief[0] != '\0') {
-        char *brief = S_md_to_man(klass, raw_brief, 0);
+        char *brief = S_md_to_man(raw_brief, klass, 0);
         result = CFCUtil_cat(result, " \\- ", brief, NULL);
         FREEMEM(brief);
     }
@@ -158,7 +159,7 @@ S_man_create_description(CFCClass *klass) {
     const char *raw_description = CFCDocuComment_get_long(docucom);
     if (!raw_description || raw_description[0] == '\0') { return result; }
 
-    char *description = S_md_to_man(klass, raw_description, 0);
+    char *description = S_md_to_man(raw_description, klass, 0);
     result = CFCUtil_cat(result, ".SH DESCRIPTION\n", description, NULL);
     FREEMEM(description);
 
@@ -181,9 +182,10 @@ S_man_create_functions(CFCClass *klass) {
         const char *name = CFCFunction_get_name(func);
         result = CFCUtil_cat(result, ".TP\n.B ", name, "\n", NULL);
 
+        CFCDocuComment *comment = CFCFunction_get_docucomment(func);
         char *full_func_sym = CFCFunction_full_func_sym(func, klass);
         char *function_man = S_man_create_func(klass, (CFCCallable*)func,
-                                               full_func_sym);
+                                               full_func_sym, comment, klass);
         result = CFCUtil_cat(result, function_man, NULL);
         FREEMEM(function_man);
         FREEMEM(full_func_sym);
@@ -256,9 +258,14 @@ S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
         }
         result = CFCUtil_cat(result, "\n", NULL);
 
+        // Get documentation, which may be inherited.
+        CFCClass *base_class = NULL;
+        CFCDocuComment *comment
+            = CFCMethod_get_docucomment(method, &base_class);
+
         char *full_sym = CFCMethod_full_method_sym(method, klass);
         char *method_man = S_man_create_func(klass, (CFCCallable*)method,
-                                             full_sym);
+                                             full_sym, comment, base_class);
         result = CFCUtil_cat(result, method_man, NULL);
         FREEMEM(method_man);
         FREEMEM(full_sym);
@@ -268,7 +275,8 @@ S_man_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
 }
 
 static char*
-S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym) {
+S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym,
+                  CFCDocuComment *docucomment, CFCClass *base_class) {
     CFCType    *return_type   = CFCCallable_get_return_type(func);
     const char *return_type_c = CFCType_to_c(return_type);
     const char *incremented   = "";
@@ -291,24 +299,10 @@ S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym) {
 
     FREEMEM(param_list);
 
-    // Get documentation, which may be inherited.
-    CFCDocuComment *docucomment = CFCCallable_get_docucomment(func);
-    if (!docucomment) {
-        const char *name = CFCCallable_get_name(func);
-        CFCClass *parent = klass;
-        while (NULL != (parent = CFCClass_get_parent(parent))) {
-            CFCCallable *parent_func
-                = (CFCCallable*)CFCClass_method(parent, name);
-            if (!parent_func) { break; }
-            docucomment = CFCCallable_get_docucomment(parent_func);
-            if (docucomment) { break; }
-        }
-    }
-
     if (docucomment) {
         // Description
         const char *raw_desc = CFCDocuComment_get_description(docucomment);
-        char *desc = S_md_to_man(klass, raw_desc, 1);
+        char *desc = S_md_to_man(raw_desc, base_class, 1);
         result = CFCUtil_cat(result, ".IP\n", desc, NULL);
         FREEMEM(desc);
 
@@ -320,7 +314,7 @@ S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym) {
         if (param_names[0]) {
             result = CFCUtil_cat(result, ".RS\n", NULL);
             for (size_t i = 0; param_names[i] != NULL; i++) {
-                char *doc = S_md_to_man(klass, param_docs[i], 1);
+                char *doc = S_md_to_man(param_docs[i], base_class, 1);
                 result = CFCUtil_cat(result, ".TP\n.I ", param_names[i],
                                      "\n", doc, NULL);
                 FREEMEM(doc);
@@ -331,7 +325,7 @@ S_man_create_func(CFCClass *klass, CFCCallable *func, const char *full_sym) {
         // Return value
         const char *retval_doc = CFCDocuComment_get_retval(docucomment);
         if (retval_doc && strlen(retval_doc)) {
-            char *doc = S_md_to_man(klass, retval_doc, 1);
+            char *doc = S_md_to_man(retval_doc, base_class, 1);
             result = CFCUtil_cat(result, ".IP\n.B Returns:\n", doc, NULL);
             FREEMEM(doc);
         }
@@ -409,12 +403,12 @@ S_man_create_inheritance(CFCClass *klass) {
 }
 
 static char*
-S_md_to_man(CFCClass *klass, const char *md, int level) {
+S_md_to_man(const char *md, CFCClass *base_class, int level) {
     int options = CMARK_OPT_NORMALIZE
                   | CMARK_OPT_SMART
                   | CMARK_OPT_VALIDATE_UTF8;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
-    char *result = S_nodes_to_man(klass, doc, level);
+    char *result = S_nodes_to_man(doc, base_class, level);
     cmark_node_free(doc);
 
     return result;
@@ -448,7 +442,7 @@ S_md_to_man(CFCClass *klass, const char *md, int level) {
 #define ADJUST_VSPACE    2
 
 static char*
-S_nodes_to_man(CFCClass *klass, cmark_node *node, int level) {
+S_nodes_to_man(cmark_node *node, CFCClass *base_class, int level) {
     char *result = CFCUtil_strdup("");
     int needs_adjust = 0;
     int found_matching_code_block = false;
@@ -612,7 +606,7 @@ S_nodes_to_man(CFCClass *klass, cmark_node *node, int level) {
                         && !cmark_node_first_child(node)
                     ) {
                         // Empty link text.
-                        CFCUri *uri_obj = CFCUri_new(url, klass);
+                        CFCUri *uri_obj = CFCUri_new(url, base_class);
                         char *link_text = CFCC_link_text(uri_obj);
                         if (link_text) {
                             result = CFCUtil_cat(result, link_text, NULL);

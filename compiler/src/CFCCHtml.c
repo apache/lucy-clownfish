@@ -129,32 +129,31 @@ static int
 S_compare_doc_path(const void *va, const void *vb);
 
 static char*
-S_html_create_name(CFCClass *klass);
+S_html_create_name(CFCClass *klass, int dir_level);
 
 static char*
-S_html_create_synopsis(CFCClass *klass);
+S_html_create_description(CFCClass *klass, int dir_level);
 
 static char*
-S_html_create_description(CFCClass *klass);
+S_html_create_functions(CFCClass *klass, int dir_level);
 
 static char*
-S_html_create_functions(CFCClass *klass);
+S_html_create_methods(CFCClass *klass, int dir_level);
 
 static char*
-S_html_create_methods(CFCClass *klass);
+S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor,
+                            int dir_level);
 
 static char*
-S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor);
+S_html_create_func(CFCClass *klass, CFCCallable *func, const char *short_sym,
+                   CFCDocuComment *docucomment, CFCClass *base_class,
+                   int dir_level);
 
 static char*
-S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
-                   const char *prefix, const char *short_sym);
+S_html_create_param_list(CFCClass *klass, CFCCallable *func, int dir_level);
 
 static char*
-S_html_create_param_list(CFCClass *klass, CFCCallable *func);
-
-static char*
-S_html_create_inheritance(CFCClass *klass);
+S_html_create_inheritance(CFCClass *klass, int dir_level);
 
 static char*
 S_md_to_html(const char *md, CFCClass *klass, int dir_level);
@@ -169,19 +168,20 @@ static void
 S_transform_link(cmark_node *link, CFCClass *klass, int dir_level);
 
 static char*
-S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class);
+S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class,
+               int dir_level);
 
 static char*
-S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *base, int dir_level);
+S_cfc_uri_to_url(CFCUri *uri_obj, int dir_level);
 
 static char*
-S_class_to_url(CFCClass *klass, CFCClass *base, int dir_level);
+S_class_to_url(CFCClass *klass, int dir_level);
 
 static char*
-S_document_to_url(CFCDocument *doc, CFCClass *base, int dir_level);
+S_document_to_url(CFCDocument *doc, int dir_level);
 
 static char*
-S_relative_url(const char *url, CFCClass *base, int dir_level);
+S_relative_url(const char *url, int dir_level);
 
 CFCCHtml*
 CFCCHtml_new(CFCHierarchy *hierarchy, const char *header, const char *footer) {
@@ -378,7 +378,7 @@ S_create_index_doc(CFCCHtml *self, CFCDocument **docs) {
             if (!CFCClass_public(klass)) { continue; }
 
             const char *class_name = CFCClass_get_name(klass);
-            char *url = S_class_to_url(klass, NULL, 0);
+            char *url = S_class_to_url(klass, 0);
             class_list
                 = CFCUtil_cat(class_list, "<li><a href=\"", url, "\">",
                               class_name, "</a></li>\n", NULL);
@@ -527,33 +527,38 @@ CFCCHtml_create_html_body(CFCCHtml *self, CFCClass *klass) {
     const char *struct_sym     = CFCClass_get_struct_sym(klass);
     const char *include_h      = CFCClass_include_h(klass);
 
-    // Create NAME.
-    char *name = S_html_create_name(klass);
+    size_t dir_level = 0;
+    for (size_t i = 0; class_name[i]; i++) {
+        if (class_name[i] == ':' && class_name[i+1] == ':') {
+            dir_level++;
+            i++;
+        }
+    }
 
-    // Create SYNOPSIS.
-    char *synopsis = S_html_create_synopsis(klass);
+    // Create NAME.
+    char *name = S_html_create_name(klass, dir_level);
 
     // Create DESCRIPTION.
-    char *description = S_html_create_description(klass);
+    char *description = S_html_create_description(klass, dir_level);
 
     // Create CONSTRUCTORS.
-    char *functions_html = S_html_create_functions(klass);
+    char *functions_html = S_html_create_functions(klass, dir_level);
 
     // Create METHODS, possibly including an ABSTRACT METHODS section.
-    char *methods_html = S_html_create_methods(klass);
+    char *methods_html = S_html_create_methods(klass, dir_level);
 
     // Build an INHERITANCE section describing class ancestry.
-    char *inheritance = S_html_create_inheritance(klass);
+    char *inheritance = S_html_create_inheritance(klass, dir_level);
 
-    char *index_url = S_relative_url(self->index_filename, klass, 0);
+    char *index_url = S_relative_url(self->index_filename, dir_level);
 
     // Put it all together.
     const char pattern[] =
-        "<h1>%s</h1>\n"
+        "<h1>%s</h1>\n" // Class name
         "<table>\n"
         "<tr>\n"
         "<td class=\"label\">parcel</td>\n"
-        "<td><a href=\"%s\">%s</a></td>\n"
+        "<td><a href=\"%s\">%s</a></td>\n" // Index URL, parcel name
         "</tr>\n"
         "<tr>\n"
         "<td class=\"label\">class variable</td>\n"
@@ -572,22 +577,21 @@ CFCCHtml_create_html_body(CFCCHtml *self, CFCClass *klass) {
         "<td><code>%s</code></td>\n"
         "</tr>\n"
         "</table>\n"
-        "%s"
-        "%s"
-        "%s"
-        "%s"
-        "%s"
-        "%s";
+        "%s" // Name
+        "%s" // Description
+        "%s" // Functions
+        "%s" // Methods
+        "%s" // Inheritance
+        ;
     char *html_body
         = CFCUtil_sprintf(pattern, class_name, index_url,
                           parcel_name, PREFIX, class_var, prefix, struct_sym,
-                          prefix, class_nickname, include_h, name, synopsis,
+                          prefix, class_nickname, include_h, name,
                           description, functions_html, methods_html,
                           inheritance);
 
     FREEMEM(index_url);
     FREEMEM(name);
-    FREEMEM(synopsis);
     FREEMEM(description);
     FREEMEM(functions_html);
     FREEMEM(methods_html);
@@ -613,7 +617,7 @@ S_compare_doc_path(const void *va, const void *vb) {
 }
 
 static char*
-S_html_create_name(CFCClass *klass) {
+S_html_create_name(CFCClass *klass, int dir_level) {
     const char     *class_name = CFCClass_get_name(klass);
     char           *md         = CFCUtil_strdup(class_name);
     CFCDocuComment *docucom    = CFCClass_get_docucomment(klass);
@@ -625,7 +629,7 @@ S_html_create_name(CFCClass *klass) {
         }
     }
 
-    char *html = S_md_to_html(md, klass, 0);
+    char *html = S_md_to_html(md, klass, dir_level);
 
     const char *format =
         "<h2>Name</h2>\n"
@@ -638,20 +642,14 @@ S_html_create_name(CFCClass *klass) {
 }
 
 static char*
-S_html_create_synopsis(CFCClass *klass) {
-    CHY_UNUSED_VAR(klass);
-    return CFCUtil_strdup("");
-}
-
-static char*
-S_html_create_description(CFCClass *klass) {
+S_html_create_description(CFCClass *klass, int dir_level) {
     CFCDocuComment *docucom = CFCClass_get_docucomment(klass);
     char           *desc    = NULL;
 
     if (docucom) {
         const char *raw_desc = CFCDocuComment_get_long(docucom);
         if (raw_desc && raw_desc[0] != '\0') {
-            desc = S_md_to_html(raw_desc, klass, 0);
+            desc = S_md_to_html(raw_desc, klass, dir_level);
         }
     }
 
@@ -664,9 +662,8 @@ S_html_create_description(CFCClass *klass) {
 }
 
 static char*
-S_html_create_functions(CFCClass *klass) {
+S_html_create_functions(CFCClass *klass, int dir_level) {
     CFCFunction **functions = CFCClass_functions(klass);
-    const char   *prefix    = CFCClass_get_prefix(klass);
     char         *result    = CFCUtil_strdup("");
 
     for (int func_num = 0; functions[func_num] != NULL; func_num++) {
@@ -681,9 +678,12 @@ S_html_create_functions(CFCClass *klass) {
         result = CFCUtil_cat(result, "<dt id=\"func_", name, "\">",
                              name, "</dt>\n", NULL);
 
+        CFCDocuComment *comment = CFCFunction_get_docucomment(func);
+
         char *short_sym = CFCFunction_short_func_sym(func, klass);
-        char *func_html = S_html_create_func(klass, klass, (CFCCallable*)func,
-                                             prefix, short_sym);
+        char *func_html
+            = S_html_create_func(klass, (CFCCallable*)func, short_sym,
+                                 comment, klass, dir_level);
         result = CFCUtil_cat(result, func_html, NULL);
         FREEMEM(func_html);
         FREEMEM(short_sym);
@@ -697,7 +697,7 @@ S_html_create_functions(CFCClass *klass) {
 }
 
 static char*
-S_html_create_methods(CFCClass *klass) {
+S_html_create_methods(CFCClass *klass, int dir_level) {
     char *methods_html  = CFCUtil_strdup("");
     char *result;
 
@@ -711,7 +711,8 @@ S_html_create_methods(CFCClass *klass) {
             break;
         }
 
-        char *fresh_html = S_html_create_fresh_methods(klass, ancestor);
+        char *fresh_html
+            = S_html_create_fresh_methods(klass, ancestor, dir_level);
         if (fresh_html[0] != '\0') {
             if (ancestor == klass) {
                 methods_html = CFCUtil_cat(methods_html, fresh_html, NULL);
@@ -736,12 +737,12 @@ S_html_create_methods(CFCClass *klass) {
     return result;
 }
 
-/** Return HTML for the fresh methods of `ancestor`.
+/** Return HTML for the methods of `klass` inherited from `ancestor`.
  */
 static char*
-S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
+S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor,
+                            int dir_level) {
     CFCMethod  **fresh_methods = CFCClass_fresh_methods(ancestor);
-    const char  *prefix        = CFCClass_get_prefix(klass);
     char        *result        = CFCUtil_strdup("");
 
     for (int meth_num = 0; fresh_methods[meth_num] != NULL; meth_num++) {
@@ -775,10 +776,25 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
         }
         result = CFCUtil_cat(result, "</dt>\n", NULL);
 
+        // Get documentation, which may be inherited.
+        //
+        // This means that there can be three classes in the inheritance
+        // chain that are involved in the whole process.
+        //
+        // klass (doc_class): The class for which the documentation is
+        //                    created.
+        // ancestor:          A superclass from which the method is
+        //                    inherited.
+        // base_class:        Another superclass with the actual docucomment.
+        //                    This class must be used to resolve URIs.
+        CFCClass *base_class;
+        CFCDocuComment *comment
+            = CFCMethod_get_docucomment(method, &base_class);
+
         char *short_sym = CFCMethod_short_method_sym(method, klass);
         char *method_html
-            = S_html_create_func(klass, ancestor, (CFCCallable*)method, prefix,
-                                 short_sym);
+            = S_html_create_func(klass, (CFCCallable*)method, short_sym,
+                                 comment, base_class, dir_level);
         result = CFCUtil_cat(result, method_html, NULL);
         FREEMEM(method_html);
         FREEMEM(short_sym);
@@ -792,10 +808,12 @@ S_html_create_fresh_methods(CFCClass *klass, CFCClass *ancestor) {
 }
 
 static char*
-S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
-                   const char *prefix, const char *short_sym) {
+S_html_create_func(CFCClass *klass, CFCCallable *func, const char *short_sym,
+                   CFCDocuComment *docucomment, CFCClass *base_class,
+                   int dir_level) {
+    const char *prefix        = CFCClass_get_prefix(klass);
     CFCType    *ret_type      = CFCCallable_get_return_type(func);
-    char       *ret_html      = S_type_to_html(ret_type, "", klass);
+    char       *ret_html      = S_type_to_html(ret_type, "", klass, dir_level);
     const char *ret_array     = CFCType_get_array(ret_type);
     const char *ret_array_str = ret_array ? ret_array : "";
     const char *incremented   = "";
@@ -804,7 +822,7 @@ S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
         incremented = " <span class=\"comment\">// incremented</span>";
     }
 
-    char *param_list = S_html_create_param_list(klass, func);
+    char *param_list = S_html_create_param_list(klass, func, dir_level);
 
     const char *pattern =
         "<dd>\n"
@@ -815,24 +833,10 @@ S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
 
     FREEMEM(param_list);
 
-    // Get documentation, which may be inherited.
-    CFCDocuComment *docucomment = CFCCallable_get_docucomment(func);
-    if (!docucomment) {
-        const char *name = CFCCallable_get_name(func);
-        CFCClass *parent = klass;
-        while (NULL != (parent = CFCClass_get_parent(parent))) {
-            CFCCallable *parent_func
-                = (CFCCallable*)CFCClass_method(parent, name);
-            if (!parent_func) { break; }
-            docucomment = CFCCallable_get_docucomment(parent_func);
-            if (docucomment) { break; }
-        }
-    }
-
     if (docucomment) {
         // Description
         const char *raw_desc = CFCDocuComment_get_description(docucomment);
-        char *desc = S_md_to_html(raw_desc, doc_class, 0);
+        char *desc = S_md_to_html(raw_desc, base_class, dir_level);
         result = CFCUtil_cat(result, desc, NULL);
         FREEMEM(desc);
 
@@ -844,7 +848,7 @@ S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
         if (param_names[0]) {
             result = CFCUtil_cat(result, "<dl>\n", NULL);
             for (size_t i = 0; param_names[i] != NULL; i++) {
-                char *doc = S_md_to_html(param_docs[i], doc_class, 0);
+                char *doc = S_md_to_html(param_docs[i], base_class, dir_level);
                 result = CFCUtil_cat(result, "<dt>", param_names[i],
                                      "</dt>\n<dd>", doc, "</dd>\n",
                                      NULL);
@@ -857,7 +861,7 @@ S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
         const char *retval_doc = CFCDocuComment_get_retval(docucomment);
         if (retval_doc && strlen(retval_doc)) {
             char *md = CFCUtil_sprintf("**Returns:** %s", retval_doc);
-            char *html = S_md_to_html(md, doc_class, 0);
+            char *html = S_md_to_html(md, base_class, dir_level);
             result = CFCUtil_cat(result, html, NULL);
             FREEMEM(html);
             FREEMEM(md);
@@ -871,7 +875,7 @@ S_html_create_func(CFCClass *klass, CFCClass *doc_class, CFCCallable *func,
 }
 
 static char*
-S_html_create_param_list(CFCClass *klass, CFCCallable *func) {
+S_html_create_param_list(CFCClass *klass, CFCCallable *func, int dir_level) {
     CFCParamList  *param_list = CFCCallable_get_param_list(func);
     CFCVariable  **variables  = CFCParamList_get_variables(param_list);
 
@@ -899,7 +903,7 @@ S_html_create_param_list(CFCClass *klass, CFCCallable *func) {
             type_html = CFCUtil_sprintf(pattern, prefix, struct_sym);
         }
         else {
-            type_html = S_type_to_html(type, " ", klass);
+            type_html = S_type_to_html(type, " ", klass, dir_level);
         }
 
         const char *sep = variables[i+1] ? "," : "";
@@ -924,7 +928,7 @@ S_html_create_param_list(CFCClass *klass, CFCCallable *func) {
 }
 
 static char*
-S_html_create_inheritance(CFCClass *klass) {
+S_html_create_inheritance(CFCClass *klass, int dir_level) {
     CFCClass *ancestor = CFCClass_get_parent(klass);
     char     *result   = CFCUtil_strdup("");
 
@@ -935,7 +939,7 @@ S_html_create_inheritance(CFCClass *klass) {
                          NULL);
     while (ancestor) {
         const char *ancestor_name = CFCClass_get_name(ancestor);
-        char *ancestor_url = S_class_to_url(ancestor, klass, 0);
+        char *ancestor_url = S_class_to_url(ancestor, dir_level);
         result = CFCUtil_cat(result, " is a <a href=\"", ancestor_url, "\">",
                              ancestor_name, "</a>", NULL);
         FREEMEM(ancestor_url);
@@ -947,11 +951,11 @@ S_html_create_inheritance(CFCClass *klass) {
 }
 
 static char*
-S_md_to_html(const char *md, CFCClass *klass, int dir_level) {
+S_md_to_html(const char *md, CFCClass *base_class, int dir_level) {
     int options = CMARK_OPT_SMART
                   | CMARK_OPT_VALIDATE_UTF8;
     cmark_node *doc = cmark_parse_document(md, strlen(md), options);
-    S_transform_doc(doc, klass, dir_level);
+    S_transform_doc(doc, base_class, dir_level);
     char *html = cmark_render_html(doc, CMARK_OPT_SAFE);
     cmark_node_free(doc);
 
@@ -959,7 +963,7 @@ S_md_to_html(const char *md, CFCClass *klass, int dir_level) {
 }
 
 static void
-S_transform_doc(cmark_node *node, CFCClass *klass, int dir_level) {
+S_transform_doc(cmark_node *node, CFCClass *base_class, int dir_level) {
     int found_matching_code_block = false;
     cmark_iter *iter = cmark_iter_new(node);
     cmark_event_type ev_type;
@@ -976,7 +980,7 @@ S_transform_doc(cmark_node *node, CFCClass *klass, int dir_level) {
 
             case CMARK_NODE_LINK:
                 if (ev_type == CMARK_EVENT_EXIT) {
-                    S_transform_link(cur, klass, dir_level);
+                    S_transform_link(cur, base_class, dir_level);
                 }
                 break;
 
@@ -1016,15 +1020,15 @@ S_transform_code_block(cmark_node *code_block, int found_matching_code_block) {
 }
 
 static void
-S_transform_link(cmark_node *link, CFCClass *doc_class, int dir_level) {
+S_transform_link(cmark_node *link, CFCClass *base_class, int dir_level) {
     const char *uri_string = cmark_node_get_url(link);
     if (!uri_string || !CFCUri_is_clownfish_uri(uri_string)) {
         return;
     }
 
-    CFCUri     *uri_obj  = CFCUri_new(uri_string, doc_class);
+    CFCUri     *uri_obj  = CFCUri_new(uri_string, base_class);
     CFCUriType  uri_type = CFCUri_get_type(uri_obj);
-    char       *url      = S_cfc_uri_to_url(uri_obj, doc_class, dir_level);
+    char       *url      = S_cfc_uri_to_url(uri_obj, dir_level);
 
     if (uri_type == CFC_URI_NULL || uri_type == CFC_URI_ERROR) {
         // Replace link with text.
@@ -1066,7 +1070,8 @@ S_transform_link(cmark_node *link, CFCClass *doc_class, int dir_level) {
 }
 
 static char*
-S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class) {
+S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class,
+               int dir_level) {
     const char *specifier = CFCType_get_specifier(type);
     char *specifier_html = NULL;
 
@@ -1096,7 +1101,7 @@ S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class) {
             specifier_html = CFCUtil_sprintf(pattern, prefix, struct_sym);
         }
         else {
-            char *url = S_class_to_url(klass, doc_class, 0);
+            char *url = S_class_to_url(klass, dir_level);
             const char *pattern =
                 "<span class=\"prefix\">%s</span>"
                 "<a href=\"%s\">%s</a>";
@@ -1126,14 +1131,15 @@ S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class) {
 
 // Return a relative URL for a CFCUri object.
 static char*
-S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
+S_cfc_uri_to_url(CFCUri *uri_obj, int dir_level) {
     char *url = NULL;
     CFCUriType type = CFCUri_get_type(uri_obj);
 
     switch (type) {
         case CFC_URI_CLASS: {
+            // TODO: Don't link to the HTML document itself.
             CFCClass *klass = CFCUri_get_class(uri_obj);
-            url = S_class_to_url(klass, doc_class, dir_level);
+            url = S_class_to_url(klass, dir_level);
             break;
         }
 
@@ -1141,7 +1147,7 @@ S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
         case CFC_URI_METHOD: {
             CFCClass *klass = CFCUri_get_class(uri_obj);
             const char *name = CFCUri_get_callable_name(uri_obj);
-            char *class_url = S_class_to_url(klass, doc_class, dir_level);
+            char *class_url = S_class_to_url(klass, dir_level);
             url = CFCUtil_sprintf("%s#func_%s", class_url, name);
             FREEMEM(class_url);
             break;
@@ -1149,7 +1155,7 @@ S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
 
         case CFC_URI_DOCUMENT: {
             CFCDocument *doc = CFCUri_get_document(uri_obj);
-            url = S_document_to_url(doc, doc_class, dir_level);
+            url = S_document_to_url(doc, dir_level);
             break;
         }
 
@@ -1162,11 +1168,11 @@ S_cfc_uri_to_url(CFCUri *uri_obj, CFCClass *doc_class, int dir_level) {
 
 // Return a relative URL to a class.
 static char*
-S_class_to_url(CFCClass *klass, CFCClass *base, int dir_level) {
+S_class_to_url(CFCClass *klass, int dir_level) {
     const char *class_name = CFCClass_get_name(klass);
     char *path    = CFCUtil_global_replace(class_name, "::", CHY_DIR_SEP);
     char *url     = CFCUtil_sprintf("%s.html", path);
-    char *rel_url = S_relative_url(url, base, dir_level);
+    char *rel_url = S_relative_url(url, dir_level);
 
     FREEMEM(url);
     FREEMEM(path);
@@ -1175,11 +1181,11 @@ S_class_to_url(CFCClass *klass, CFCClass *base, int dir_level) {
 
 // Return a relative URL to a document.
 static char*
-S_document_to_url(CFCDocument *doc, CFCClass *base, int dir_level) {
+S_document_to_url(CFCDocument *doc, int dir_level) {
     const char *path_part = CFCDocument_get_path_part(doc);
     char *slashy  = CFCUtil_global_replace(path_part, CHY_DIR_SEP, "/");
     char *url     = CFCUtil_sprintf("%s.html", slashy);
-    char *rel_url = S_relative_url(url, base, dir_level);
+    char *rel_url = S_relative_url(url, dir_level);
 
     FREEMEM(url);
     FREEMEM(slashy);
@@ -1187,17 +1193,7 @@ S_document_to_url(CFCDocument *doc, CFCClass *base, int dir_level) {
 }
 
 static char*
-S_relative_url(const char *url, CFCClass *base, int dir_level) {
-    if (base) {
-        const char *base_name = CFCClass_get_name(base);
-        for (size_t i = 0; base_name[i]; i++) {
-            if (base_name[i] == ':' && base_name[i+1] == ':') {
-                dir_level++;
-                i++;
-            }
-        }
-    }
-
+S_relative_url(const char *url, int dir_level) {
     // Create path back to root
     size_t bytes = (size_t)(dir_level * 3);
     char *prefix = (char*)MALLOCATE(bytes + 1);
