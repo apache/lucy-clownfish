@@ -165,8 +165,7 @@ char*
 CFCBindMeth_abstract_method_def(CFCMethod *method, CFCClass *klass) {
     CFCType    *ret_type      = CFCMethod_get_return_type(method);
     const char *ret_type_str  = CFCType_to_c(ret_type);
-    CFCType    *type          = CFCMethod_self_type(method);
-    const char *class_var     = CFCType_get_class_var(type);
+    const char *class_var     = CFCClass_full_class_var(klass);
     const char *meth_name     = CFCMethod_get_name(method);
     CFCParamList *param_list  = CFCMethod_get_param_list(method);
     const char *params        = CFCParamList_to_c(param_list);

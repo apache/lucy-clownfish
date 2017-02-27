@@ -113,7 +113,8 @@ S_gen_declaration(CFCVariable *var, const char *val) {
             if (strcmp(specifier, "cfish_Hash") != 0
                 && strcmp(specifier, "cfish_Vector") != 0
                 ) {
-                const char *class_var = CFCType_get_class_var(type);
+                CFCClass *klass = CFCType_get_class(type);
+                const char *class_var = CFCClass_full_class_var(klass);
                 char pattern[] =
                     "    CFBindArg wrap_arg_%s = {%s, &%s_ARG};\n"
                     ;
@@ -262,9 +263,10 @@ S_build_pymeth_invocation(CFCMethod *method) {
         invocation = CFCUtil_sprintf(pattern, micro_sym);
     }
     else if (CFCType_is_object(return_type)) {
+        CFCClass *klass = CFCType_get_class(return_type);
+        const char *ret_class = CFCClass_full_class_var(klass);
         const char *nullable
             = CFCType_nullable(return_type) ? "true" : "false";
-        const char *ret_class = CFCType_get_class_var(return_type);
         const char pattern[] =
             "    %s cfcb_RESULT = (%s)CALL_PYMETH_OBJ((PyObject*)self, \"%s\", cfcb_ARGS, %s, %s);";
         invocation = CFCUtil_sprintf(pattern, ret_type_str, ret_type_str, micro_sym,

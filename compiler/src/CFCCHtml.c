@@ -1071,19 +1071,15 @@ S_type_to_html(CFCType *type, const char *sep, CFCClass *doc_class) {
     char *specifier_html = NULL;
 
     if (CFCType_is_object(type)) {
-        CFCClass   *klass = NULL;
-
-        // Don't link to doc class.
-        if (strcmp(specifier, CFCClass_full_struct_sym(doc_class)) != 0) {
-            klass = CFCClass_fetch_by_struct_sym(specifier);
-            if (!klass) {
-                CFCUtil_warn("Class '%s' not found", specifier);
-            }
-            else if (!CFCClass_public(klass)) {
-                CFCUtil_warn("Non-public class '%s' used in public method",
-                             specifier);
-                klass = NULL;
-            }
+        CFCClass *klass = CFCType_get_class(type);
+        if (klass == doc_class) {
+            // Don't link to doc class.
+            klass = NULL;
+        }
+        else if (!CFCClass_public(klass)) {
+            CFCUtil_warn("Non-public class '%s' used in public method",
+                         specifier);
+            klass = NULL;
         }
 
         const char *underscore = strchr(specifier, '_');

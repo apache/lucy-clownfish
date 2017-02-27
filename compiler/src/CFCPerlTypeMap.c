@@ -41,8 +41,9 @@ CFCPerlTypeMap_from_perl(CFCType *type, const char *xs_var,
     char *result = NULL;
 
     if (CFCType_is_object(type)) {
-        const char *struct_sym   = CFCType_get_specifier(type);
-        const char *class_var    = CFCType_get_class_var(type);
+        CFCClass *klass = CFCType_get_class(type);
+        const char *struct_sym   = CFCClass_full_struct_sym(klass);
+        const char *class_var    = CFCClass_full_class_var(klass);
         const char *nullable_str = CFCType_nullable(type) ? "_nullable" : "";
         const char *allocation;
         if (strcmp(struct_sym, "cfish_String") == 0
