@@ -297,7 +297,6 @@ ALIAS:
     methods               = 36
     member_vars           = 38
     inert_vars            = 40
-    tree_to_ladder        = 42
     fresh_methods         = 44
     fresh_member_vars     = 46
     privacy_symbol        = 48
@@ -398,12 +397,6 @@ PPCODE:
         case 40:
             retval = S_array_of_cfcbase_to_av((CFCBase**)CFCClass_inert_vars(self));
             break;
-        case 42: {
-                CFCClass **ladder = CFCClass_tree_to_ladder(self);
-                retval = S_array_of_cfcbase_to_av((CFCBase**)ladder);
-                FREEMEM(ladder);
-                break;
-            }
         case 44: {
                 CFCMethod **fresh = CFCClass_fresh_methods(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)fresh);
@@ -792,7 +785,6 @@ ALIAS:
     get_include_dest  = 4
     get_source_dest   = 6
     files             = 8
-    ordered_classes   = 10
     get_source_dirs   = 12
     get_include_dirs  = 14
 PPCODE:
@@ -816,12 +808,6 @@ PPCODE:
         case 8:
             retval = S_array_of_cfcbase_to_av(
                 (CFCBase**)CFCHierarchy_files(self));
-            break;
-        case 10: {
-                CFCClass **ladder = CFCHierarchy_ordered_classes(self);
-                retval = S_array_of_cfcbase_to_av((CFCBase**)ladder);
-                FREEMEM(ladder);
-            }
             break;
         case 12: {
                 const char **source_dirs = CFCHierarchy_get_source_dirs(self);

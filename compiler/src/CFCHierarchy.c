@@ -644,29 +644,6 @@ S_add_tree(CFCHierarchy *self, CFCClass *klass) {
     self->trees[self->num_trees] = NULL;
 }
 
-CFCClass**
-CFCHierarchy_ordered_classes(CFCHierarchy *self) {
-    size_t num_classes = 0;
-    size_t max_classes = 10;
-    CFCClass **ladder = (CFCClass**)MALLOCATE(
-                            (max_classes + 1) * sizeof(CFCClass*));
-    for (size_t i = 0; self->trees[i] != NULL; i++) {
-        CFCClass *tree = self->trees[i];
-        CFCClass **child_ladder = CFCClass_tree_to_ladder(tree);
-        for (size_t j = 0; child_ladder[j] != NULL; j++) {
-            if (num_classes == max_classes) {
-                max_classes += 10;
-                ladder = (CFCClass**)REALLOCATE(
-                             ladder, (max_classes + 1) * sizeof(CFCClass*));
-            }
-            ladder[num_classes++] = child_ladder[j];
-        }
-        FREEMEM(child_ladder);
-    }
-    ladder[num_classes] = NULL;
-    return ladder;
-}
-
 void
 CFCHierarchy_write_log(CFCHierarchy *self) {
     // For now, we only write an empty file that can be used as a Makefile

@@ -162,12 +162,6 @@ CFCClass_resolve_types(CFCClass *self);
 void
 CFCClass_grow_tree(CFCClass *self);
 
-/** Return this class and all its child classes as an array, where all
- * children appear after their parent nodes.
- */
-CFCClass**
-CFCClass_tree_to_ladder(CFCClass *self);
-
 /** Read host-specific data for the class from a JSON hash.
  */
 void

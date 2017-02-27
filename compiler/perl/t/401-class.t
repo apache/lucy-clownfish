@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 54;
+use Test::More tests => 53;
 use Clownfish::CFC::Model::Class;
 use Clownfish::CFC::Parser;
 
@@ -149,9 +149,6 @@ is_deeply( $foo_jr->functions,         [], "don't inherit inert funcs" );
 is_deeply( $foo_jr->fresh_member_vars, [], "fresh_member_vars" );
 is_deeply( $foo_jr->inert_vars,        [], "don't inherit inert vars" );
 is_deeply( $final_foo->fresh_methods,  [], "fresh_methods" );
-
-is_deeply( $foo->tree_to_ladder, [ $foo, $foo_jr, $final_foo ],
-    'tree_to_ladder' );
 
 ok( $parser->parse("$_ class Iam$_ { }")->$_, "class_modifier: $_" )
     for (qw( final inert ));

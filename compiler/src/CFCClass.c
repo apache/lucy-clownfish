@@ -655,15 +655,6 @@ S_establish_ancestry(CFCClass *self) {
     }
 }
 
-static size_t
-S_family_tree_size(CFCClass *self) {
-    size_t count = 1; // self
-    for (size_t i = 0; i < self->num_kids; i++) {
-        count += S_family_tree_size(self->children[i]);
-    }
-    return count;
-}
-
 static CFCBase**
 S_copy_cfcbase_array(CFCBase **array, size_t num_elems) {
     CFCBase **copy = (CFCBase**)MALLOCATE((num_elems + 1) * sizeof(CFCBase*));
@@ -698,26 +689,6 @@ CFCClass_grow_tree(CFCClass *self) {
     S_bequeath_methods(self);
 
     self->tree_grown = 1;
-}
-
-// Return value is valid only so long as object persists (elements are not
-// refcounted).
-CFCClass**
-CFCClass_tree_to_ladder(CFCClass *self) {
-    size_t ladder_len = S_family_tree_size(self);
-    CFCClass **ladder = (CFCClass**)MALLOCATE((ladder_len + 1) * sizeof(CFCClass*));
-    ladder[ladder_len] = NULL;
-    size_t step = 0;
-    ladder[step++] = self;
-    for (size_t i = 0; i < self->num_kids; i++) {
-        CFCClass *child = self->children[i];
-        CFCClass **child_ladder = CFCClass_tree_to_ladder(child);
-        for (size_t j = 0; child_ladder[j] != NULL; j++) {
-            ladder[step++] = child_ladder[j];
-        }
-        FREEMEM(child_ladder);
-    }
-    return ladder;
 }
 
 void

@@ -44,7 +44,7 @@ S_has_symbol(CFCSymbol **symbols, const char *name);
 
 const CFCTestBatch CFCTEST_BATCH_CLASS = {
     "Clownfish::CFC::Model::Class",
-    97,
+    93,
     S_run_tests
 };
 
@@ -308,15 +308,6 @@ S_run_tests(CFCTest *test) {
     {
         CFCMethod **fresh_methods = CFCClass_fresh_methods(final_foo);
         OK(test, fresh_methods[0] == NULL, "fresh_methods[0]");
-    }
-
-    {
-        CFCClass **ladder = CFCClass_tree_to_ladder(foo);
-        OK(test, ladder[0] == foo, "ladder[0]");
-        OK(test, ladder[1] == foo_jr, "ladder[1]");
-        OK(test, ladder[2] == final_foo, "ladder[2]");
-        OK(test, ladder[3] == NULL, "ladder[3]");
-        FREEMEM(ladder);
     }
 
     {
