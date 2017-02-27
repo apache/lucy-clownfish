@@ -37,7 +37,7 @@ struct CFCType {
     char    *specifier;
     char    *class_var;
     int      indirection;
-    struct CFCParcel *parcel;
+    CFCWeakPtr parcel;
     char    *c_string;
     size_t   width;
     char    *array;
@@ -92,7 +92,7 @@ CFCType*
 CFCType_init(CFCType *self, int flags, struct CFCParcel *parcel,
              const char *specifier, int indirection) {
     self->flags       = flags;
-    self->parcel      = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
+    self->parcel      = CFCWeakPtr_new((CFCBase*)parcel);
     self->specifier   = CFCUtil_strdup(specifier);
     self->indirection = indirection;
     self->c_string    = NULL;
@@ -295,8 +295,9 @@ CFCType_resolve(CFCType *self) {
 
     char *specifier = self->specifier;
     if (CFCUtil_isupper(specifier[0])) {
+        CFCParcel *src_parcel = CFCType_get_parcel(self);
         CFCParcel *parcel
-            = CFCParcel_lookup_struct_sym(self->parcel, specifier);
+            = CFCParcel_lookup_struct_sym(src_parcel, specifier);
         if (!parcel) {
             CFCUtil_die("No class found for type '%s'", specifier);
         }
@@ -313,7 +314,7 @@ CFCType_destroy(CFCType *self) {
     if (self->child) {
         CFCBase_decref((CFCBase*)self->child);
     }
-    CFCBase_decref((CFCBase*)self->parcel);
+    CFCWeakPtr_destroy(&self->parcel);
     FREEMEM(self->specifier);
     FREEMEM(self->c_string);
     FREEMEM(self->array);
@@ -396,7 +397,7 @@ CFCType_get_indirection(CFCType *self) {
 
 struct CFCParcel*
 CFCType_get_parcel(CFCType *self) {
-    return self->parcel;
+    return (CFCParcel*)CFCWeakPtr_deref(self->parcel);
 }
 
 const char*
