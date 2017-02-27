@@ -1150,12 +1150,27 @@ PPCODE:
     CFCParcel_add_class(self, klass);
 
 SV*
-lookup_struct_sym(self, struct_sym)
-    CFCParcel  *self;
-    const char *struct_sym;
+_fetch_class(self, string)
+    CFCParcel *self;
+    const char *string;
+ALIAS:
+    class              = 1
+    class_by_short_sym = 2
+    class_by_full_sym  = 3
 CODE:
-    CFCParcel *parcel = CFCParcel_lookup_struct_sym(self, struct_sym);
-    RETVAL = S_cfcbase_to_perlref(parcel);
+    CFCClass *klass = NULL;
+    switch (ix) {
+        case 1:
+            klass = CFCParcel_class(self, string);
+            break;
+        case 2:
+            klass = CFCParcel_class_by_short_sym(self, string);
+            break;
+        case 3:
+            klass = CFCParcel_class_by_full_sym(self, string);
+            break;
+    }
+    RETVAL = S_cfcbase_to_perlref(klass);
 OUTPUT: RETVAL
 
 void

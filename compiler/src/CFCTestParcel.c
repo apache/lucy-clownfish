@@ -289,13 +289,13 @@ S_run_extended_tests(CFCTest *test) {
         CFCClass *bar
             = CFCClass_create(foo, NULL, "Foo::Bar", NULL, NULL, foo_file_spec,
                               "Clownfish::Obj", false, false, false);
-        CFCParcel *found;
-        found = CFCParcel_lookup_struct_sym(crust, "Swim");
-        OK(test, found == cfish, "lookup_struct_sym prereq");
-        found = CFCParcel_lookup_struct_sym(crust, "Pinch");
-        OK(test, found == crust, "lookup_struct_sym self");
-        found = CFCParcel_lookup_struct_sym(crust, "Bar");
-        OK(test, found == NULL, "lookup_struct_sym other");
+        CFCClass *klass;
+        klass = CFCParcel_class_by_short_sym(crust, "Swim");
+        OK(test, klass == swim, "class_by_short_sym prereq");
+        klass = CFCParcel_class_by_short_sym(crust, "Pinch");
+        OK(test, klass == pinch, "class_by_short_sym self");
+        klass = CFCParcel_class_by_short_sym(crust, "Bar");
+        OK(test, klass == NULL, "class_by_short_sym other");
 
         FREEMEM(prereq_parcels);
         CFCBase_decref((CFCBase*)bar);

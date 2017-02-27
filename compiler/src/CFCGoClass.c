@@ -72,8 +72,8 @@ CFCGoClass_new(CFCParcel *parcel, const char *class_name) {
     CFCGoClass *self = (CFCGoClass*)CFCBase_allocate(&CFCGOCLASS_META);
     self->parcel = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
     self->class_name = CFCUtil_strdup(class_name);
-    // Client may be NULL, since fetch_singleton() does not always succeed.
-    CFCClass *client = CFCClass_fetch_singleton(class_name);
+    // Client may be NULL, since class() does not always succeed.
+    CFCClass *client = CFCParcel_class(parcel, class_name);
     self->client = (CFCClass*)CFCBase_incref((CFCBase*)client);
     return self;
 }
@@ -133,7 +133,7 @@ CFCGoClass_singleton(const char *class_name) {
 CFCClass*
 CFCGoClass_get_client(CFCGoClass *self) {
     if (!self->client) {
-        CFCClass *client = CFCClass_fetch_singleton(self->class_name);
+        CFCClass *client = CFCParcel_class(self->parcel, self->class_name);
         self->client = (CFCClass*)CFCBase_incref((CFCBase*)client);
     }
     return self->client;

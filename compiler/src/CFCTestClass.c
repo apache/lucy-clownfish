@@ -105,8 +105,8 @@ S_run_tests(CFCTest *test) {
     CFCClass_add_inert_var(foo, widget);
 
     {
-        CFCClass *should_be_foo = CFCClass_fetch_singleton("Foo");
-        OK(test, should_be_foo == foo, "fetch_singleton");
+        CFCClass *should_be_foo = CFCParcel_class(neato, "Foo");
+        OK(test, should_be_foo == foo, "Fetch class from parcel");
     }
 
     {

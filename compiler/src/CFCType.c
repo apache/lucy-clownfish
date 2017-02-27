@@ -295,16 +295,14 @@ CFCType_resolve(CFCType *self) {
 
     char *specifier = self->specifier;
     if (CFCUtil_isupper(specifier[0])) {
-        CFCParcel *src_parcel = CFCType_get_parcel(self);
-        CFCParcel *parcel
-            = CFCParcel_lookup_struct_sym(src_parcel, specifier);
-        if (!parcel) {
+        CFCParcel *parcel = CFCType_get_parcel(self);
+        CFCClass  *klass  = CFCParcel_class_by_short_sym(parcel, specifier);
+        if (!klass) {
             CFCUtil_die("No class found for type '%s'", specifier);
         }
 
-        // Create actual specifier with prefix.
-        const char *prefix = CFCParcel_get_prefix(parcel);
-        self->specifier = CFCUtil_sprintf("%s%s", prefix, specifier);
+        // Upgrade specifier to full struct sym.
+        self->specifier = CFCUtil_strdup(CFCClass_full_struct_sym(klass));
         FREEMEM(specifier);
     }
 }

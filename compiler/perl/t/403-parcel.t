@@ -206,13 +206,13 @@ Clownfish::CFC::Model::Parcel->reap_singletons();
         file_spec  => $foo_file_spec,
         class_name => 'Foo::Bar',
     );
-    my $found;
-    $found = $crust->lookup_struct_sym('Swim');
-    is( $found->get_name, 'Clownfish', 'lookup_struct_sym prereq' );
-    $found = $crust->lookup_struct_sym('Pinch');
-    is( $found->get_name, 'Crustacean', 'lookup_struct_sym self' );
-    $found = $crust->lookup_struct_sym('Bar');
-    ok( !$found, 'lookup_struct_sym other' );
+    my $class;
+    $class = $crust->class_by_short_sym('Swim');
+    is( $class->get_name, 'Clownfish::Swim', 'class_by_short_sym prereq' );
+    $class = $crust->class_by_short_sym('Pinch');
+    is( $class->get_name, 'Crustacean::Pinch', 'class_by_short_sym self' );
+    $class = $crust->class_by_short_sym('Bar');
+    ok( !$class, 'class_by_short_sym other' );
 
     Clownfish::CFC::Model::Parcel->reap_singletons();
 }

@@ -184,16 +184,29 @@ CFCParcel_add_class(CFCParcel *self, struct CFCClass *klass);
 void
 CFCParcel_sort_classes(CFCParcel *self);
 
+/** Search for a class by class name. Doesn't search prereqs. Returns
+ * NULL if no class was found.
+ */
+struct CFCClass*
+CFCParcel_class(CFCParcel *self, const char *class_name);
+
+/** Search for a class by short struct symbol. Searches direct prereqs.
+ * Returns NULL if no class was found. Throws an exception if the
+ * struct symbol doesn't match unambiguously.
+ */
+struct CFCClass*
+CFCParcel_class_by_short_sym(CFCParcel *self, const char *struct_sym);
+
+/** Search for a class by full struct symbol. Searches direct prereqs.
+ * Returns NULL if no class was found.
+ */
+struct CFCClass*
+CFCParcel_class_by_full_sym(CFCParcel *self, const char *full_struct_sym);
+
 /** Return the ordered list of classes in the parcel.
  */
 struct CFCClass**
 CFCParcel_get_classes(CFCParcel *self);
-
-/** Search the parcel and all direct prerequisites for a class with
- * struct_sym. Return the parcel in which the class was found or NULL.
- */
-CFCParcel*
-CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym);
 
 /** Indicate whether the parcel is "clownfish", the main Clownfish runtime.
  */

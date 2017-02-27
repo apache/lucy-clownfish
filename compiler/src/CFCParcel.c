@@ -571,7 +571,7 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang) {
         CFCJson **children = CFCJson_get_children(class_hash);
         for (int i = 0; children[i]; i += 2) {
             const char *class_name = CFCJson_get_string(children[i]);
-            CFCClass *klass = CFCClass_fetch_singleton(class_name);
+            CFCClass *klass = CFCParcel_class(self, class_name);
             if (!klass) {
                 CFCUtil_die("Class '%s' in '%s' not found", class_name, path);
             }
@@ -681,37 +681,91 @@ CFCParcel_sort_classes(CFCParcel *self) {
     self->classes = sorted;
 }
 
-static CFCParcel*
-S_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
+CFCClass*
+CFCParcel_class(CFCParcel *self, const char *class_name) {
     for (size_t i = 0; self->classes[i]; ++i) {
-        const char *other_sym = CFCClass_get_struct_sym(self->classes[i]);
-        if (strcmp(other_sym, struct_sym) == 0) {
-            return self;
+        CFCClass *klass = self->classes[i];
+        if (strcmp(CFCClass_get_name(klass), class_name) == 0) {
+            return klass;
         }
     }
 
     return NULL;
 }
 
-CFCParcel*
-CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
-    CFCParcel *parcel = S_lookup_struct_sym(self, struct_sym);
+static CFCClass*
+S_class_by_struct_sym(CFCParcel *self, const char *struct_sym,
+                      size_t prefix_len) {
+    // If prefix_len is 0, struct_sym is a short symbol without prefix.
+    // Search for a class and check for ambiguity.
+    //
+    // If prefix_len is greater than 0, struct_sym is a full symbol with prefix.
+    // Return a matching class as soon as it's found.
+
+    if (prefix_len != 0
+        && strncmp(self->prefix, struct_sym, prefix_len) != 0
+       ) {
+        return NULL;
+    }
+
+    const char *short_struct_sym = struct_sym + prefix_len;
+    for (size_t i = 0; self->classes[i]; ++i) {
+        CFCClass *klass = self->classes[i];
+        if (strcmp(CFCClass_get_struct_sym(klass), short_struct_sym) == 0) {
+            return klass;
+        }
+    }
+
+    return NULL;
+}
+
+static CFCClass*
+S_class_by_struct_sym_prereq(CFCParcel *self, const char *struct_sym,
+                             size_t prefix_len) {
+    CFCClass *klass = S_class_by_struct_sym(self, struct_sym, prefix_len);
+    if (klass && prefix_len != 0) { return klass; }
 
     for (size_t i = 0; self->prereqs[i]; ++i) {
         const char *prereq_name   = CFCPrereq_get_name(self->prereqs[i]);
         CFCParcel  *prereq_parcel = CFCParcel_fetch(prereq_name);
-        CFCParcel *maybe_parcel
-            = S_lookup_struct_sym(prereq_parcel, struct_sym);
+        CFCClass *candidate
+            = S_class_by_struct_sym(prereq_parcel, struct_sym, prefix_len);
 
-        if (maybe_parcel) {
-            if (parcel) {
-                CFCUtil_die("Type '%s' is ambigious", struct_sym);
+        if (candidate) {
+            if (prefix_len != 0) { return candidate; }
+            if (klass) {
+                CFCUtil_warn("Type '%s' is ambiguous. Do you mean %s or %s?",
+                             struct_sym, CFCClass_full_struct_sym(klass),
+                             CFCClass_full_struct_sym(candidate));
+                return NULL;
             }
-            parcel = maybe_parcel;
+            klass = candidate;
         }
     }
 
-    return parcel;
+    return klass;
+}
+
+CFCClass*
+CFCParcel_class_by_short_sym(CFCParcel *self, const char *struct_sym) {
+    return S_class_by_struct_sym_prereq(self, struct_sym, 0);
+}
+
+CFCClass*
+CFCParcel_class_by_full_sym(CFCParcel *self, const char *full_struct_sym) {
+    size_t prefix_len = 0;
+    size_t sym_len    = strlen(full_struct_sym);
+    while (prefix_len < sym_len
+           && !CFCUtil_isupper(full_struct_sym[prefix_len])
+          ) {
+        prefix_len += 1;
+    }
+    if (!prefix_len) {
+        CFCUtil_die("Full struct symbol '%s' has invalid prefix",
+                    full_struct_sym);
+    }
+
+    return S_class_by_struct_sym_prereq(self, full_struct_sym, prefix_len);
 }
 
 int

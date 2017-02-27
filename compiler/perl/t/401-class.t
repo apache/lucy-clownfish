@@ -21,7 +21,7 @@ use Clownfish::CFC::Model::Class;
 use Clownfish::CFC::Parser;
 
 my $parser = Clownfish::CFC::Parser->new;
-$parser->parse('parcel Neato;');
+my $neato = $parser->parse('parcel Neato;');
 
 my $thing = Clownfish::CFC::Model::Variable->new(
     type => $parser->parse('Thing*'),
@@ -45,8 +45,8 @@ my $foo = Clownfish::CFC::Model::Class->create(%foo_create_args);
 $foo->add_function($tread_water);
 $foo->add_member_var($thing);
 $foo->add_inert_var($widget);
-my $should_be_foo = Clownfish::CFC::Model::Class->fetch_singleton('Foo');
-is( $$foo, $$should_be_foo, "fetch_singleton" );
+my $should_be_foo = $neato->class('Foo');
+is( $$foo, $$should_be_foo, "Fetch class from parcel" );
 
 eval { Clownfish::CFC::Model::Class->create(%foo_create_args) };
 like( $@, qr/two classes with name/i,
