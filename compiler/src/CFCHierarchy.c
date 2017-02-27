@@ -232,12 +232,6 @@ CFCHierarchy_build(CFCHierarchy *self) {
         S_find_prereqs(self, source_parcels[i]);
     }
 
-    // Read .cfh and .md files.
-    for (size_t i = 0; self->sources[i] != NULL; i++) {
-        S_parse_cf_files(self, self->sources[i], false);
-        S_find_doc_files(self->sources[i]);
-    }
-
     // Read .cfh files of included parcels.
     parcels = CFCParcel_all_parcels();
     for (size_t i = 0; parcels[i] != NULL; i++) {
@@ -246,6 +240,12 @@ CFCHierarchy_build(CFCHierarchy *self) {
             const char *source_dir = CFCParcel_get_source_dir(parcel);
             S_parse_cf_files(self, source_dir, true);
         }
+    }
+
+    // Read .cfh and .md files of source parcels.
+    for (size_t i = 0; self->sources[i] != NULL; i++) {
+        S_parse_cf_files(self, self->sources[i], false);
+        S_find_doc_files(self->sources[i]);
     }
 
     for (int i = 0; self->classes[i] != NULL; i++) {
@@ -375,9 +375,11 @@ S_find_prereq(CFCHierarchy *self, CFCParcel *parent, CFCPrereq *prereq) {
                     CFCParcel_get_name(parent));
     }
 
-    CFCParcel_register(parcel);
-
+    // Make sure to register prereq parcels first, so that prereq
+    // parent classes precede subclasses.
     S_find_prereqs(self, parcel);
+
+    CFCParcel_register(parcel);
 
     CFCBase_decref((CFCBase*)parcel);
 }

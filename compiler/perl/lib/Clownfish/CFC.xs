@@ -183,22 +183,6 @@ CODE:
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
 
-SV*
-fetch_singleton(unused, class_name)
-    SV *unused;
-    const char *class_name;
-CODE:
-    CHY_UNUSED_VAR(unused);
-    CFCClass *klass = CFCClass_fetch_singleton(class_name);
-    RETVAL = S_cfcbase_to_perlref(klass);
-OUTPUT: RETVAL
-
-void
-_clear_registry(...)
-PPCODE:
-    CHY_UNUSED_VAR(items);
-    CFCClass_clear_registry();
-
 void
 add_child(self, child)
     CFCClass *self;

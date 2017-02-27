@@ -205,7 +205,6 @@ S_run_basic_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)param_list);
     CFCBase_decref((CFCBase*)method);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 
@@ -245,7 +244,6 @@ S_run_parser_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)neato_parcel);
     CFCBase_decref((CFCBase*)parser);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 
@@ -288,7 +286,6 @@ S_run_overridden_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)overrider_param_list);
     CFCBase_decref((CFCBase*)overrider);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 
@@ -337,7 +334,6 @@ S_run_final_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)not_final);
     CFCBase_decref((CFCBase*)final);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 

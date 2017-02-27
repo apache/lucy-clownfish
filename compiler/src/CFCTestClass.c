@@ -449,7 +449,6 @@ S_run_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)inert_foo);
     CFCBase_decref((CFCBase*)do_stuff);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 

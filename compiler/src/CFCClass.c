@@ -35,14 +35,6 @@
 #include "CFCFileSpec.h"
 #include "CFCJson.h"
 
-static CFCClass **registry = NULL;
-static size_t registry_size = 0;
-static size_t registry_cap  = 0;
-
-// Store a new CFCClass in a registry.
-static void
-S_register(CFCClass *self);
-
 struct CFCClass {
     CFCBase base;
     CFCWeakPtr parcel;
@@ -298,8 +290,6 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     char *error;
 
     CFCUTIL_TRY {
-        // Store in registry.
-        S_register(self);
         CFCParcel_add_class(parcel, self);
     }
     CFCUTIL_CATCH(error);
@@ -351,70 +341,6 @@ CFCClass_destroy(CFCClass *self) {
     FREEMEM(self->privacy_symbol);
     FREEMEM(self->include_h);
     CFCBase_destroy((CFCBase*)self);
-}
-
-static void
-S_register(CFCClass *self) {
-    if (registry_size == registry_cap) {
-        size_t new_cap = registry_cap + 10;
-        registry = (CFCClass**)REALLOCATE(
-                       registry,
-                       (new_cap + 1) * sizeof(CFCClass*));
-        for (size_t i = registry_cap; i <= new_cap; i++) {
-            registry[i] = NULL;
-        }
-        registry_cap = new_cap;
-    }
-
-    const char *name = self->name;
-
-    for (size_t i = 0; i < registry_size; i++) {
-        CFCClass *other = registry[i];
-
-        if (strcmp(name, other->name) == 0) {
-            CFCUtil_die("Two classes with name %s", name);
-        }
-    }
-
-    registry[registry_size] = (CFCClass*)CFCBase_incref((CFCBase*)self);
-    registry_size++;
-}
-
-#define MAX_SINGLETON_LEN 256
-
-CFCClass*
-CFCClass_fetch_singleton(const char *class_name) {
-    CFCUTIL_NULL_CHECK(class_name);
-
-    for (size_t i = 0; i < registry_size; i++) {
-        if (strcmp(registry[i]->name, class_name) == 0) {
-            return registry[i];
-        }
-    }
-    return NULL;
-}
-
-CFCClass*
-CFCClass_fetch_by_struct_sym(const char *struct_sym) {
-    CFCUTIL_NULL_CHECK(struct_sym);
-
-    for (size_t i = 0; i < registry_size; i++) {
-        if (strcmp(registry[i]->full_struct_sym, struct_sym) == 0) {
-            return registry[i];
-        }
-    }
-    return NULL;
-}
-
-void
-CFCClass_clear_registry(void) {
-    for (size_t i = 0; i < registry_size; i++) {
-        CFCBase_decref((CFCBase*)registry[i]);
-    }
-    FREEMEM(registry);
-    registry_size = 0;
-    registry_cap  = 0;
-    registry      = NULL;
 }
 
 void

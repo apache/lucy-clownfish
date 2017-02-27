@@ -137,7 +137,6 @@ S_run_tests(CFCTest *test) {
         for (int i = 0; i < 7; ++i) {
             CFCBase_decref((CFCBase*)class_list[i]);
         }
-        CFCClass_clear_registry();
     }
 
     {
@@ -316,7 +315,6 @@ S_run_tests(CFCTest *test) {
 
     CFCBase_decref((CFCBase*)parser);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 

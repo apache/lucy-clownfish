@@ -22,7 +22,6 @@ $VERSION = eval $VERSION;
 our $MAJOR_VERSION = 0.006000;
 
 END {
-    Clownfish::CFC::Model::Class->_clear_registry();
     Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 

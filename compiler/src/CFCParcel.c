@@ -55,6 +55,9 @@ struct CFCParcel {
 static void
 S_set_prereqs(CFCParcel *self, CFCJson *node, const char *path);
 
+static CFCClass*
+S_fetch_class(CFCParcel *self, const char *class_name, int search_prereqs);
+
 static CFCParcel **registry = NULL;
 static size_t num_registered = 0;
 
@@ -591,12 +594,20 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang) {
 
 void
 CFCParcel_add_class(CFCParcel *self, CFCClass *klass) {
+    // Ensure unique class name.
+    const char *class_name = CFCClass_get_name(klass);
+    CFCClass *other = S_fetch_class(self, class_name, true);
+    if (other) {
+        CFCUtil_die("Two classes with name %s", class_name);
+    }
+
     const char *struct_sym = CFCClass_get_struct_sym(klass);
     const char *nickname   = CFCClass_get_nickname(klass);
 
     for (size_t i = 0; self->classes[i]; ++i) {
         CFCClass *other = self->classes[i];
 
+        // Ensure unique struct symbol and nickname in parcel.
         if (strcmp(struct_sym, CFCClass_get_struct_sym(other)) == 0) {
             CFCUtil_die("Class name conflict between %s and %s",
                         CFCClass_get_name(klass), CFCClass_get_name(other));
@@ -688,11 +699,26 @@ CFCParcel_sort_classes(CFCParcel *self) {
 
 CFCClass*
 CFCParcel_class(CFCParcel *self, const char *class_name) {
+    return S_fetch_class(self, class_name, false);
+}
+
+static CFCClass*
+S_fetch_class(CFCParcel *self, const char *class_name, int search_prereqs) {
     for (size_t i = 0; self->classes[i]; ++i) {
         CFCClass *klass = self->classes[i];
         if (strcmp(CFCClass_get_name(klass), class_name) == 0) {
             return klass;
         }
+    }
+
+    if (!search_prereqs) { return NULL; }
+
+    for (size_t i = 0; self->prereqs[i]; ++i) {
+        const char *prereq_name   = CFCPrereq_get_name(self->prereqs[i]);
+        CFCParcel  *prereq_parcel = CFCParcel_fetch(prereq_name);
+
+        CFCClass *klass = S_fetch_class(prereq_parcel, class_name, true);
+        if (klass) { return klass; }
     }
 
     return NULL;

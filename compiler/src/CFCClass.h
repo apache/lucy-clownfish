@@ -87,26 +87,6 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
 void
 CFCClass_destroy(CFCClass *self);
 
-/** Retrieve a Class, if one has already been created.
- *
- * @param class_name The name of the Class.
- */
-CFCClass*
-CFCClass_fetch_singleton(const char *class_name);
-
-/** Retrieve a Class by its struct sym.
- *
- * @param full_struct_sym The Class's full struct sym.
- */
-CFCClass*
-CFCClass_fetch_by_struct_sym(const char *full_struct_sym);
-
-/** Empty out the registry, decrementing the refcount of all Class singleton
- * objects.
- */
-void
-CFCClass_clear_registry(void);
-
 /** Add a child class.
  */
 void

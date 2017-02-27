@@ -165,7 +165,6 @@ S_run_basic_tests(CFCTest *test) {
 
     CFCBase_decref((CFCBase*)hierarchy);
     FREEMEM(cfbase_path);
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 
@@ -210,7 +209,6 @@ S_run_include_tests(CFCTest *test) {
         OK(test, all_included, "All classes included");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -248,7 +246,6 @@ S_run_include_tests(CFCTest *test) {
         OK(test, all_not_included, "All classes not included");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -286,7 +283,6 @@ S_run_clash_tests(CFCTest *test) {
            "source/source filename clash");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -307,7 +303,6 @@ S_run_clash_tests(CFCTest *test) {
            "source/include class name clash");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -330,7 +325,6 @@ S_run_clash_tests(CFCTest *test) {
            "source class with included parcel");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 

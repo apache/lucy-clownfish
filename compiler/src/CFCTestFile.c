@@ -119,8 +119,6 @@ S_run_tests(CFCTest *test) {
         OK(test, blocks[4] == NULL, "blocks[4]");
 
         CFCBase_decref((CFCBase*)file);
-
-        CFCClass_clear_registry();
     }
 
     CFCBase_decref((CFCBase*)file_spec);

@@ -307,7 +307,6 @@ S_run_extended_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)cfish);
         CFCBase_decref((CFCBase*)foo_file_spec);
         CFCBase_decref((CFCBase*)foo);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 }

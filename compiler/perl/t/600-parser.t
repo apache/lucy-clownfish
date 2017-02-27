@@ -138,7 +138,6 @@ for (qw( Foo FooJr FooIII Foo4th )) {
     $type->resolve;
     is( $type->get_specifier, "crust_$_", "object_type_specifier: $_" )
 }
-Clownfish::CFC::Model::Class->_clear_registry();
 
 SKIP: {
     skip( "Can't recover from bad specifier under flex/lemon parser", 6 );
