@@ -885,6 +885,16 @@ CFCClass_needs_documentation(CFCClass *self) {
            && CFCParcel_is_installed(self->parcel);
 }
 
+int
+CFCClass_in_parcel(CFCClass *self, struct CFCParcel *parcel) {
+    return CFCClass_get_parcel(self) == parcel;
+}
+
+int
+CFCClass_in_same_parcel(CFCClass *self, CFCClass *other) {
+    return CFCClass_get_parcel(self) == CFCClass_get_parcel(other);
+}
+
 const char*
 CFCClass_get_struct_sym(CFCClass *self) {
     return self->struct_sym;

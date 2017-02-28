@@ -258,6 +258,12 @@ CFCClass_abstract(CFCClass *self);
 int
 CFCClass_needs_documentation(CFCClass *self);
 
+int
+CFCClass_in_parcel(CFCClass *self, struct CFCParcel *parcel);
+
+int
+CFCClass_in_same_parcel(CFCClass *self, CFCClass *other);
+
 const char*
 CFCClass_get_struct_sym(CFCClass *self);
 
