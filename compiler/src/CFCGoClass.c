@@ -281,7 +281,7 @@ CFCGoClass_gen_ctors(CFCGoClass *self) {
        ) {
         return CFCUtil_strdup("");
     }
-    CFCParcel    *parcel     = CFCClass_get_parcel(self->client);
+    CFCParcel    *parcel     = self->parcel;
     CFCParamList *param_list = CFCFunction_get_param_list(ctor_func);
     CFCType      *ret_type   = CFCFunction_get_return_type(ctor_func);
     const char   *struct_sym = CFCClass_get_struct_sym(self->client);

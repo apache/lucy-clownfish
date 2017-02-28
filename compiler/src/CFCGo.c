@@ -238,7 +238,7 @@ S_gen_autogen_go(CFCGo *self, CFCParcel *parcel) {
         CFCGoClass *class_binding = registry[i];
         CFCClass *client = CFCGoClass_get_client(class_binding);
 
-        if (CFCClass_get_parcel(client) != parcel) {
+        if (!CFCClass_in_parcel(client, parcel)) {
             continue;
         }
 

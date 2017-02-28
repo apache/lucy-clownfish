@@ -160,7 +160,7 @@ CFCBindSpecs_add_class(CFCBindSpecs *self, CFCClass *klass) {
         parent_ptr = CFCUtil_strdup("NULL");
     }
     else {
-        if (CFCClass_get_parcel(klass) == CFCClass_get_parcel(parent)) {
+        if (CFCClass_in_same_parcel(klass, parent)) {
             parent_ptr
                 = CFCUtil_sprintf("&%s", CFCClass_full_class_var(parent));
         }
@@ -379,7 +379,7 @@ S_parent_offset(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
     char *parent_offset = NULL;
     char *parent_offset_sym = CFCMethod_full_offset_sym(method, parent);
 
-    if (CFCClass_get_parcel(parent) == CFCClass_get_parcel(klass)) {
+    if (CFCClass_in_same_parcel(klass, parent)) {
         parent_offset = CFCUtil_sprintf("&%s", parent_offset_sym);
     }
     else {

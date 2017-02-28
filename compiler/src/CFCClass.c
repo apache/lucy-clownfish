@@ -239,7 +239,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
 
     // Cache several derived symbols.
 
-    const char *prefix = CFCClass_get_prefix(self);
+    const char *prefix = CFCParcel_get_prefix(parcel);
     self->struct_sym        = CFCUtil_strdup(struct_sym);
     self->full_struct_sym   = CFCUtil_sprintf("%s%s", prefix, struct_sym);
     self->ivars_struct      = CFCUtil_sprintf("%sIVARS", struct_sym);
@@ -251,7 +251,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     self->full_ivars_offset = CFCUtil_sprintf("%s_OFFSET",
                                               self->full_ivars_func);
 
-    const char *PREFIX = CFCClass_get_PREFIX(self);
+    const char *PREFIX = CFCParcel_get_PREFIX(parcel);
     size_t struct_sym_len = strlen(struct_sym);
     char *short_class_var = (char*)MALLOCATE(struct_sym_len + 1);
     size_t i;
@@ -663,11 +663,10 @@ CFCClass_num_member_vars(CFCClass *self) {
 // outside this package.
 size_t
 CFCClass_num_non_package_ivars(CFCClass *self) {
-    CFCParcel *parcel       = CFCClass_get_parcel(self);
     CFCClass  *ancestor     = CFCClass_get_parent(self);
     size_t num_non_package_members = 0;
 
-    while (ancestor && CFCClass_get_parcel(ancestor) == parcel) {
+    while (ancestor && CFCClass_in_same_parcel(ancestor, self)) {
         ancestor = CFCClass_get_parent(ancestor);
     }
     if (ancestor) {
