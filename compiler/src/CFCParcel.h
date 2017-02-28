@@ -182,10 +182,11 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang);
 void
 CFCParcel_add_class(CFCParcel *self, struct CFCClass *klass);
 
-/** Sort parents before child classes.
+/** Set up parent/child relationship of classes and sort parents before
+ * child classes.
  */
 void
-CFCParcel_sort_classes(CFCParcel *self);
+CFCParcel_connect_and_sort_classes(CFCParcel *self);
 
 /** Search for a class by class name. Doesn't search prereqs. Returns
  * NULL if no class was found.

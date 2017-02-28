@@ -56,7 +56,7 @@ static void
 S_set_prereqs(CFCParcel *self, CFCJson *node, const char *path);
 
 static CFCClass*
-S_fetch_class(CFCParcel *self, const char *class_name, int search_prereqs);
+S_fetch_class(CFCParcel *self, const char *class_name, int level);
 
 static CFCParcel **registry = NULL;
 static size_t num_registered = 0;
@@ -596,7 +596,7 @@ void
 CFCParcel_add_class(CFCParcel *self, CFCClass *klass) {
     // Ensure unique class name.
     const char *class_name = CFCClass_get_name(klass);
-    CFCClass *other = S_fetch_class(self, class_name, true);
+    CFCClass *other = S_fetch_class(self, class_name, 2);
     if (other) {
         CFCUtil_die("Two classes with name %s", class_name);
     }
@@ -636,7 +636,7 @@ S_compare_class_name(const void *va, const void *vb) {
 }
 
 void
-CFCParcel_sort_classes(CFCParcel *self) {
+CFCParcel_connect_and_sort_classes(CFCParcel *self) {
     size_t num_classes = self->num_classes;
     size_t alloc_size  = (num_classes + 1) * sizeof(CFCClass*);
     CFCClass **classes = self->classes;
@@ -652,12 +652,26 @@ CFCParcel_sort_classes(CFCParcel *self) {
     // Root and child classes are sorted by name to get a deterministic
     // order.
 
-    // Find subtree roots in parcel.
+    // Set up parent/child relationship of classes and find subtree roots
+    // in parcel.
     size_t todo = num_classes;
     for (size_t i = 0; i < num_classes; i++) {
         CFCClass *klass  = classes[i];
-        CFCClass *parent = CFCClass_get_parent(klass);
+        CFCClass *parent = NULL;
+
+        const char *parent_name = CFCClass_get_parent_class_name(klass);
+        if (parent_name) {
+            parent = S_fetch_class(self, parent_name, 1);
+            if (!parent) {
+                CFCUtil_die("Parent class '%s' of '%s' not found in parcel"
+                            " '%s' or its prerequisites", parent_name,
+                            CFCClass_get_name(klass), self->name);
+            }
+            CFCClass_add_child(parent, klass);
+        }
+
         if (!parent || !CFCClass_in_parcel(parent, self)) {
+            // Subtree root.
             sorted[--todo] = klass;
         }
     }
@@ -670,17 +684,16 @@ CFCParcel_sort_classes(CFCParcel *self) {
         CFCClass *klass = sorted[todo++];
         sorted[num_sorted++] = klass;
 
-        // Find children in parcel.
+        // Push children on stack. Since this function is called first for
+        // prereq parcels, we can be sure that the class doesn't have
+        // children from another parcel yet.
         CFCClass **children = CFCClass_children(klass);
         size_t prev_todo = todo;
         for (size_t i = 0; children[i]; i++) {
-            CFCClass *child = children[i];
-            if (CFCClass_in_parcel(child, self)) {
-                if (todo <= num_sorted) {
-                    CFCUtil_die("Internal error in CFCParcel_sort_classes");
-                }
-                sorted[--todo] = child;
+            if (todo <= num_sorted) {
+                CFCUtil_die("Internal error in CFCParcel_sort_classes");
             }
+            sorted[--todo] = children[i];
         }
 
         qsort(&sorted[todo], prev_todo - todo, sizeof(sorted[0]),
@@ -699,11 +712,15 @@ CFCParcel_sort_classes(CFCParcel *self) {
 
 CFCClass*
 CFCParcel_class(CFCParcel *self, const char *class_name) {
-    return S_fetch_class(self, class_name, false);
+    return S_fetch_class(self, class_name, 0);
 }
 
 static CFCClass*
-S_fetch_class(CFCParcel *self, const char *class_name, int search_prereqs) {
+S_fetch_class(CFCParcel *self, const char *class_name, int level) {
+    // level == 0: Only search parcel.
+    // level == 1: Search parcel and direct prereqs.
+    // level == 2: Search parcel an indirect prereqs.
+
     for (size_t i = 0; self->classes[i]; ++i) {
         CFCClass *klass = self->classes[i];
         if (strcmp(CFCClass_get_name(klass), class_name) == 0) {
@@ -711,13 +728,14 @@ S_fetch_class(CFCParcel *self, const char *class_name, int search_prereqs) {
         }
     }
 
-    if (!search_prereqs) { return NULL; }
+    if (level == 0) { return NULL; }
+    if (level == 1) { level = 0; }
 
     for (size_t i = 0; self->prereqs[i]; ++i) {
         const char *prereq_name   = CFCPrereq_get_name(self->prereqs[i]);
         CFCParcel  *prereq_parcel = CFCParcel_fetch(prereq_name);
 
-        CFCClass *klass = S_fetch_class(prereq_parcel, class_name, true);
+        CFCClass *klass = S_fetch_class(prereq_parcel, class_name, level);
         if (klass) { return klass; }
     }
 

@@ -76,10 +76,6 @@ struct CFCClass {
     char *include_h;
 };
 
-// Link up parents and kids.
-static void
-S_establish_ancestry(CFCClass *self);
-
 // Pass down member vars to from parent to children.
 static void
 S_bequeath_member_vars(CFCClass *self);
@@ -365,16 +361,12 @@ CFCClass_add_child(CFCClass *self, CFCClass *child) {
         = (CFCClass*)CFCBase_incref((CFCBase*)child);
     self->children[self->num_kids] = NULL;
 
+    // Set parent of child.
+    CFCWeakPtr_set(&child->parent, (CFCBase*)self);
+
     // Add parcel dependency.
     CFCParcel *parcel       = CFCClass_get_parcel(self);
     CFCParcel *child_parcel = CFCClass_get_parcel(child);
-    if (!CFCParcel_has_prereq(child_parcel, parcel)) {
-        CFCUtil_die("Class '%s' inherits from '%s', but parcel '%s' is not a"
-                    " prerequisite of '%s'",
-                    child->name, self->name,
-                    CFCParcel_get_name(parcel),
-                    CFCParcel_get_name(child_parcel));
-    }
     CFCParcel_add_inherited_parcel(child_parcel, parcel);
 }
 
@@ -569,18 +561,6 @@ S_bequeath_methods(CFCClass *self) {
     }
 }
 
-// Let the children know who their parent class is.
-static void
-S_establish_ancestry(CFCClass *self) {
-    for (size_t i = 0; i < self->num_kids; i++) {
-        CFCClass *child = self->children[i];
-        // This is a circular reference and thus a memory leak, but we don't
-        // care, because we have to have everything in memory at once anyway.
-        CFCClass_set_parent(child, self);
-        S_establish_ancestry(child);
-    }
-}
-
 static CFCBase**
 S_copy_cfcbase_array(CFCBase **array, size_t num_elems) {
     CFCBase **copy = (CFCBase**)MALLOCATE((num_elems + 1) * sizeof(CFCBase*));
@@ -596,7 +576,6 @@ CFCClass_grow_tree(CFCClass *self) {
     if (self->tree_grown) {
         CFCUtil_die("Can't call grow_tree more than once");
     }
-    S_establish_ancestry(self);
 
     // Copy fresh variabless for root class.
     self->member_vars
@@ -711,11 +690,6 @@ CFCClass_inert_vars(CFCClass *self) {
 const char*
 CFCClass_get_nickname(CFCClass *self) {
     return self->nickname;
-}
-
-void
-CFCClass_set_parent(CFCClass *self, CFCClass *parent) {
-    CFCWeakPtr_set(&self->parent, (CFCBase*)parent);
 }
 
 CFCClass*

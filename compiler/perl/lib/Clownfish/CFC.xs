@@ -264,7 +264,6 @@ ALIAS:
     get_exposure          = 2
     get_name              = 4
     get_nickname          = 6
-    set_parent            = 7
     get_parent            = 8
     get_path_part         = 10
     get_parent_class_name = 12
@@ -303,17 +302,6 @@ PPCODE:
                 retval = newSVpvn(value, strlen(value));
             }
             break;
-        case 7: {
-                CFCClass *parent = NULL;
-                if (SvOK(ST(1))
-                    && sv_derived_from(ST(1), "Clownfish::CFC::Model::Class")
-                   ) {
-                    IV objint = SvIV((SV*)SvRV(ST(1)));
-                    parent = INT2PTR(CFCClass*, objint);
-                }
-                CFCClass_set_parent(self, parent);
-                break;
-            }
         case 8: {
                 CFCClass *parent = CFCClass_get_parent(self);
                 retval = S_cfcbase_to_perlref(parent);

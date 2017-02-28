@@ -200,11 +200,6 @@ CFCClass_inert_vars(CFCClass *self);
 const char*
 CFCClass_get_nickname(CFCClass *self);
 
-/** Set the parent Class. (Not class name, Class.)
- */
-void
-CFCClass_set_parent(CFCClass *self, CFCClass *parent);
-
 CFCClass*
 CFCClass_get_parent(CFCClass *self);
 

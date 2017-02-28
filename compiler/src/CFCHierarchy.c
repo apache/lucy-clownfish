@@ -68,7 +68,7 @@ typedef struct CFCFindFilesContext {
 } CFCFindFilesContext;
 
 static void
-S_parse_source_cfp_files(const char *source_dir);
+S_parse_source_cfp_files(CFCHierarchy *self, const char *source_dir);
 
 static void
 S_find_prereqs(CFCHierarchy *self, CFCParcel *parcel);
@@ -91,9 +91,6 @@ S_find_files(const char *path, void *arg);
 
 static char*
 S_extract_path_part(const char *path, const char *dir, const char *ext);
-
-static void
-S_connect_classes(CFCHierarchy *self);
 
 static void
 S_add_file(CFCHierarchy *self, CFCFile *file);
@@ -216,24 +213,12 @@ void
 CFCHierarchy_build(CFCHierarchy *self) {
     // Read .cfp files.
     for (size_t i = 0; self->sources[i] != NULL; i++) {
-        S_parse_source_cfp_files(self->sources[i]);
+        S_parse_source_cfp_files(self, self->sources[i]);
     }
 
-    // Copy array of source parcels.
     CFCParcel **parcels = CFCParcel_all_parcels();
-    size_t num_source_parcels = 0;
-    while (parcels[num_source_parcels] != NULL) { num_source_parcels++; }
-    size_t alloc_size = num_source_parcels * sizeof(CFCParcel*);
-    CFCParcel **source_parcels = (CFCParcel**)MALLOCATE(alloc_size);
-    memcpy(source_parcels, parcels, alloc_size);
-
-    // Find prerequisite parcels.
-    for (size_t i = 0; i < num_source_parcels; i++) {
-        S_find_prereqs(self, source_parcels[i]);
-    }
 
     // Read .cfh files of included parcels.
-    parcels = CFCParcel_all_parcels();
     for (size_t i = 0; parcels[i] != NULL; i++) {
         CFCParcel *parcel = parcels[i];
         if (CFCParcel_included(parcel)) {
@@ -252,19 +237,18 @@ CFCHierarchy_build(CFCHierarchy *self) {
         CFCClass_resolve_types(self->classes[i]);
     }
 
-    S_connect_classes(self);
+    // It's important that prereq parcels are processed first.
+    for (size_t i = 0; parcels[i] != NULL; i++) {
+        CFCParcel_connect_and_sort_classes(parcels[i]);
+    }
+
     for (size_t i = 0; self->trees[i] != NULL; i++) {
         CFCClass_grow_tree(self->trees[i]);
     }
-    for (size_t i = 0; parcels[i] != NULL; i++) {
-        CFCParcel_sort_classes(parcels[i]);
-    }
-
-    FREEMEM(source_parcels);
 }
 
 static void
-S_parse_source_cfp_files(const char *source_dir) {
+S_parse_source_cfp_files(CFCHierarchy *self, const char *source_dir) {
     CFCFindFilesContext context;
     context.ext       = ".cfp";
     context.paths     = (char**)CALLOCATE(1, sizeof(char*));
@@ -278,6 +262,7 @@ S_parse_source_cfp_files(const char *source_dir) {
         CFCFileSpec *file_spec
             = CFCFileSpec_new(source_dir, path_part, ".cfp", false);
         CFCParcel *parcel = CFCParcel_new_from_file(file_spec);
+
         const char *name = CFCParcel_get_name(parcel);
         CFCParcel *existing = CFCParcel_fetch(name);
         if (existing) {
@@ -285,9 +270,13 @@ S_parse_source_cfp_files(const char *source_dir) {
                         CFCParcel_get_name(parcel),
                         CFCParcel_get_cfp_path(existing), path);
         }
-        else {
-            CFCParcel_register(parcel);
-        }
+
+        // Make sure to register prereq parcels first, so that prereq
+        // parent classes precede subclasses.
+        S_find_prereqs(self, parcel);
+
+        CFCParcel_register(parcel);
+
         CFCBase_decref((CFCBase*)parcel);
         CFCBase_decref((CFCBase*)file_spec);
         FREEMEM(path_part);
@@ -536,32 +525,6 @@ S_extract_path_part(const char *path, const char *dir, const char *ext) {
     return CFCUtil_strndup(src, path_part_len);
 }
 
-static void
-S_connect_classes(CFCHierarchy *self) {
-    // Wrangle the classes into hierarchies and figure out inheritance.
-    for (int i = 0; self->classes[i] != NULL; i++) {
-        CFCClass *klass = self->classes[i];
-        const char *parent_name = CFCClass_get_parent_class_name(klass);
-        if (parent_name) {
-            for (size_t j = 0; ; j++) {
-                CFCClass *maybe_parent = self->classes[j];
-                if (!maybe_parent) {
-                    CFCUtil_die("Parent class '%s' not defined", parent_name);
-                }
-                const char *maybe_parent_name
-                    = CFCClass_get_name(maybe_parent);
-                if (strcmp(parent_name, maybe_parent_name) == 0) {
-                    CFCClass_add_child(maybe_parent, klass);
-                    break;
-                }
-            }
-        }
-        else {
-            S_add_tree(self, klass);
-        }
-    }
-}
-
 void
 CFCHierarchy_read_host_data_json(CFCHierarchy *self, const char *host_lang) {
     CHY_UNUSED_VAR(self);
@@ -700,6 +663,8 @@ S_add_file(CFCHierarchy *self, CFCFile *file) {
     self->files[self->num_files] = NULL;
 
     for (size_t i = 0; classes[i] != NULL; i++) {
+        CFCClass *klass = classes[i];
+
         if (self->num_classes == self->classes_cap) {
             self->classes_cap += 10;
             self->classes = (CFCClass**)REALLOCATE(
@@ -707,8 +672,13 @@ S_add_file(CFCHierarchy *self, CFCFile *file) {
                               (self->classes_cap + 1) * sizeof(CFCClass*));
         }
         self->classes[self->num_classes++]
-            = (CFCClass*)CFCBase_incref((CFCBase*)classes[i]);
+            = (CFCClass*)CFCBase_incref((CFCBase*)klass);
         self->classes[self->num_classes] = NULL;
+
+        const char *parent_name = CFCClass_get_parent_class_name(klass);
+        if (!parent_name) {
+            S_add_tree(self, klass);
+        }
     }
 }
 
