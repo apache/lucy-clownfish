@@ -635,6 +635,9 @@ CFCParcel_connect_and_sort_classes(CFCParcel *self) {
             // Subtree root.
             sorted[--todo] = klass;
         }
+
+        // Resolve types.
+        CFCClass_resolve_types(klass);
     }
 
     qsort(&sorted[todo], num_classes - todo, sizeof(sorted[0]),
