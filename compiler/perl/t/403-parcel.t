@@ -18,7 +18,7 @@ use warnings;
 use lib 'buildlib';
 
 use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
-use Test::More tests => 32;
+use Test::More tests => 31;
 use File::Spec::Functions qw( catdir );
 
 BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
@@ -70,10 +70,6 @@ $included_foo->register;
 my $parcels = Clownfish::CFC::Model::Parcel->all_parcels;
 my @names = sort(map { $_->get_name } @$parcels);
 is_deeply( \@names, [ "Foo", "IncludedFoo" ], "all_parcels" );
-
-$foo->add_inherited_parcel($included_foo);
-my @inh_names = sort(map { $_->get_name } @{ $foo->inherited_parcels });
-is_deeply( \@inh_names, [ "IncludedFoo" ], "inherited_parcels" );
 
 my $json = qq|
         {

@@ -47,7 +47,7 @@ S_run_extended_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    41,
+    39,
     S_run_tests
 };
 
@@ -151,16 +151,6 @@ S_run_basic_tests(CFCTest *test) {
                "all_parcels returns parcel Foo");
         STR_EQ(test, CFCParcel_get_name(all_parcels[1]), "IncludedFoo",
                "all_parcels returns parcel IncludedFoo");
-    }
-
-    {
-        CFCParcel_add_inherited_parcel(foo, included_foo);
-        CFCParcel **inh_parcels = CFCParcel_inherited_parcels(foo);
-        OK(test, inh_parcels[0] && !inh_parcels[1],
-           "inherited_parcels returns one parcel");
-        STR_EQ(test, CFCParcel_get_name(inh_parcels[0]), "IncludedFoo",
-               "inh_parcels returns parcel IncludedFoo");
-        FREEMEM(inh_parcels);
     }
 
     CFCBase_decref((CFCBase*)included_foo);

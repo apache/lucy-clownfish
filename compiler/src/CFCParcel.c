@@ -44,8 +44,6 @@ struct CFCParcel {
     char *PREFIX;
     char *privacy_sym;
     int is_installed;
-    char **inherited_parcels;
-    size_t num_inherited_parcels;
     CFCClass **classes;
     size_t num_classes;
     CFCPrereq **prereqs;
@@ -215,8 +213,6 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     self->is_installed = false;
 
     // Initialize arrays.
-    self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
-    self->num_inherited_parcels = 0;
     self->classes = (CFCClass**)CALLOCATE(1, sizeof(CFCClass*));
     self->num_classes = 0;
     self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
@@ -372,7 +368,6 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->Prefix);
     FREEMEM(self->PREFIX);
     FREEMEM(self->privacy_sym);
-    CFCUtil_free_string_array(self->inherited_parcels);
     for (size_t i = 0; self->classes[i]; ++i) {
         CFCBase_decref((CFCBase*)self->classes[i]);
     }
@@ -482,40 +477,6 @@ CFCParcel_get_source_dir(CFCParcel *self) {
 int
 CFCParcel_included(CFCParcel *self) {
     return self->file_spec ? CFCFileSpec_included(self->file_spec) : false;
-}
-
-void
-CFCParcel_add_inherited_parcel(CFCParcel *self, CFCParcel *inherited) {
-    const char *name     = CFCParcel_get_name(self);
-    const char *inh_name = CFCParcel_get_name(inherited);
-
-    if (strcmp(name, inh_name) == 0) { return; }
-
-    for (size_t i = 0; self->inherited_parcels[i]; ++i) {
-        const char *other_name = self->inherited_parcels[i];
-        if (strcmp(other_name, inh_name) == 0) { return; }
-    }
-
-    size_t num_parcels = self->num_inherited_parcels;
-    self->inherited_parcels
-        = (char**)REALLOCATE(self->inherited_parcels,
-                             (num_parcels + 2) * sizeof(char*));
-    self->inherited_parcels[num_parcels]   = CFCUtil_strdup(inh_name);
-    self->inherited_parcels[num_parcels+1] = NULL;
-    self->num_inherited_parcels = num_parcels + 1;
-}
-
-CFCParcel**
-CFCParcel_inherited_parcels(CFCParcel *self) {
-    CFCParcel **parcels
-        = (CFCParcel**)CALLOCATE(self->num_inherited_parcels + 1,
-                                 sizeof(CFCParcel*));
-
-    for (size_t i = 0; self->inherited_parcels[i]; ++i) {
-        parcels[i] = CFCParcel_fetch(self->inherited_parcels[i]);
-    }
-
-    return parcels;
 }
 
 CFCPrereq**

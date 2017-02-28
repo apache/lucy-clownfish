@@ -1097,13 +1097,6 @@ CODE:
     RETVAL = S_array_of_cfcbase_to_av((CFCBase**)all_parcels);
 OUTPUT: RETVAL
 
-void
-add_inherited_parcel(self, inherited)
-    CFCParcel *self;
-    CFCParcel *inherited;
-PPCODE:
-    CFCParcel_add_inherited_parcel(self, inherited);
-
 int
 has_prereq(self, parcel)
     CFCParcel *self;
@@ -1162,7 +1155,6 @@ ALIAS:
     get_prereqs       = 14
     included          = 16
     prereq_parcels    = 20
-    inherited_parcels = 22
     get_xs_module     = 24
     get_classes       = 26
 PPCODE:
@@ -1208,12 +1200,6 @@ PPCODE:
             break;
         case 20: {
                 CFCParcel **parcels = CFCParcel_prereq_parcels(self);
-                retval = S_array_of_cfcbase_to_av((CFCBase**)parcels);
-                FREEMEM(parcels);
-            }
-            break;
-        case 22: {
-                CFCParcel **parcels = CFCParcel_inherited_parcels(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)parcels);
                 FREEMEM(parcels);
             }

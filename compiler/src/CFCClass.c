@@ -363,11 +363,6 @@ CFCClass_add_child(CFCClass *self, CFCClass *child) {
 
     // Set parent of child.
     CFCWeakPtr_set(&child->parent, (CFCBase*)self);
-
-    // Add parcel dependency.
-    CFCParcel *parcel       = CFCClass_get_parcel(self);
-    CFCParcel *child_parcel = CFCClass_get_parcel(child);
-    CFCParcel_add_inherited_parcel(child_parcel, parcel);
 }
 
 void
