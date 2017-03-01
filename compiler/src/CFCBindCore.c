@@ -657,6 +657,7 @@ S_write_platform_h(CFCBindCore *self) {
     remove(filepath);
     CFCUtil_write_file(filepath, file_content, strlen(file_content));
     FREEMEM(filepath);
+    FREEMEM(file_content);
 }
 
 void
