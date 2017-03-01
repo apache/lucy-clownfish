@@ -250,7 +250,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.6.0' ) }
         param_list  => undef,
         name        => undef,
         docucomment => undef,
-        class_name  => undef,
+        class       => undef,
         abstract    => undef,
         final       => undef,
         exposure    => 'parcel',
@@ -264,7 +264,7 @@ BEGIN { XSLoader::load( 'Clownfish::CFC', '0.6.0' ) }
         $args{final}    ||= 0;
         return _new(
             @args{
-                qw( exposure name return_type param_list docucomment class_name
+                qw( exposure name return_type param_list docucomment class
                     final abstract )
                 }
         );

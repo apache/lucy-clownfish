@@ -46,23 +46,22 @@ struct CFCJson;
  * method.
  * @param return_type See Clownfish::CFC::Model::Function.
  * @param param_list - A Clownfish::CFC::Model::ParamList.  The first element
- * must be an object of the class identified by C<class_name>.
+ * must be an object of C<klass>.
  * @param docucomment see Clownfish::CFC::Model::Function.  May be NULL.
- * @param class_name The full name of the class in whose namespace the
- * method is fresh.
+ * @param klass The class in whose namespace the method is fresh.
  * @param is_final - Indicate whether the method is final.
  * @param is_abstract - Indicate whether the method is abstract.
  */
 CFCMethod*
 CFCMethod_new(const char *exposure, const char *name,
               struct CFCType *return_type, struct CFCParamList *param_list,
-              struct CFCDocuComment *docucomment, const char *class_name,
+              struct CFCDocuComment *docucomment, struct CFCClass *klass,
               int is_final, int is_abstract);
 
 CFCMethod*
 CFCMethod_init(CFCMethod *self, const char *exposure, const char *name,
                struct CFCType *return_type, struct CFCParamList *param_list,
-               struct CFCDocuComment *docucomment, const char *class_name,
+               struct CFCDocuComment *docucomment, struct CFCClass *klass,
                int is_final, int is_abstract);
 
 void

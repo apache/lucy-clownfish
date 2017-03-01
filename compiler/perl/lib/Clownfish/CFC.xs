@@ -826,23 +826,21 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Method
 
 SV*
-_new(exposure_sv, name, return_type, param_list, docucomment, class_name_sv, is_final, is_abstract)
+_new(exposure_sv, name, return_type, param_list, docucomment, klass, is_final, is_abstract)
     SV *exposure_sv;
     const char *name;
     CFCType *return_type;
     CFCParamList *param_list;
     CFCDocuComment *docucomment;
-    SV *class_name_sv;
+    CFCClass *klass;
     int is_final;
     int is_abstract;
 CODE:
     const char *exposure =
         SvOK(exposure_sv) ? SvPV_nolen(exposure_sv) : NULL;
-    const char *class_name =
-        SvOK(class_name_sv) ? SvPV_nolen(class_name_sv) : NULL;
     CFCMethod *self
         = CFCMethod_new(exposure, name, return_type, param_list, docucomment,
-                        class_name, is_final, is_abstract);
+                        klass, is_final, is_abstract);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL

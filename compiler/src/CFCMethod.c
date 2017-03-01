@@ -36,13 +36,19 @@
 struct CFCMethod {
     CFCCallable callable;
     CFCMethod *novel_method;
-    char *fresh_class_name;
+    CFCWeakPtr fresh_class;
     char *host_alias;
     int is_final;
     int is_abstract;
     int is_novel;
     int is_excluded;
 };
+
+static CFCClass*
+S_fresh_class(CFCMethod *self);
+
+static const char*
+S_fresh_class_name(CFCMethod *self);
 
 static const CFCMeta CFCMETHOD_META = {
     "Clownfish::CFC::Model::Method",
@@ -53,10 +59,10 @@ static const CFCMeta CFCMETHOD_META = {
 CFCMethod*
 CFCMethod_new(const char *exposure, const char *name, CFCType *return_type,
               CFCParamList *param_list, CFCDocuComment *docucomment,
-              const char *class_name, int is_final, int is_abstract) {
+              CFCClass *klass, int is_final, int is_abstract) {
     CFCMethod *self = (CFCMethod*)CFCBase_allocate(&CFCMETHOD_META);
     return CFCMethod_init(self, exposure, name, return_type, param_list,
-                          docucomment, class_name, is_final, is_abstract);
+                          docucomment, klass, is_final, is_abstract);
 }
 
 static int
@@ -84,14 +90,9 @@ S_validate_meth_name(const char *meth_name) {
 CFCMethod*
 CFCMethod_init(CFCMethod *self, const char *exposure, const char *name,
                CFCType *return_type, CFCParamList *param_list,
-               CFCDocuComment *docucomment, const char *class_name,
+               CFCDocuComment *docucomment, CFCClass *klass,
                int is_final, int is_abstract) {
-    // Validate class_name.
-    CFCUTIL_NULL_CHECK(class_name);
-    if (!CFCClass_validate_class_name(class_name)) {
-        CFCBase_decref((CFCBase*)self);
-        CFCUtil_die("Invalid class_name: '%s'", class_name);
-    }
+    CFCUTIL_NULL_CHECK(klass);
     // Validate name.
     if (!S_validate_meth_name(name)) {
         CFCBase_decref((CFCBase*)self);
@@ -108,24 +109,21 @@ CFCMethod_init(CFCMethod *self, const char *exposure, const char *name,
     if (!args[0]) { CFCUtil_die("Missing 'self' argument"); }
     CFCType *type = CFCVariable_get_type(args[0]);
     const char *specifier  = CFCType_get_specifier(type);
-    const char *last_colon = strrchr(class_name, ':');
-    const char *struct_sym = last_colon ? last_colon + 1 : class_name;
+    const char *struct_sym = CFCClass_get_struct_sym(klass);
     if (strcmp(specifier, struct_sym) != 0) {
-        const char *first_underscore = strchr(specifier, '_');
-        int mismatch = !first_underscore
-                       || strcmp(first_underscore + 1, struct_sym) != 0;
-        if (mismatch) {
+        const char *full_struct_sym = CFCClass_full_struct_sym(klass);
+        if (strcmp(specifier, full_struct_sym) != 0) {
             CFCUtil_die("First arg type doesn't match class: '%s' '%s'",
-                        class_name, specifier);
+                        CFCClass_get_name(klass), specifier);
         }
     }
 
-    self->novel_method      = NULL;
-    self->fresh_class_name  = CFCUtil_strdup(class_name);
-    self->host_alias        = NULL;
-    self->is_final          = is_final;
-    self->is_abstract       = is_abstract;
-    self->is_excluded       = false;
+    self->novel_method = NULL;
+    self->fresh_class  = CFCWeakPtr_new((CFCBase*)klass);
+    self->host_alias   = NULL;
+    self->is_final     = is_final;
+    self->is_abstract  = is_abstract;
+    self->is_excluded  = false;
 
     // Assume that this method is novel until we discover when applying
     // inheritance that it overrides another.
@@ -142,7 +140,7 @@ CFCMethod_resolve_types(CFCMethod *self) {
 void
 CFCMethod_destroy(CFCMethod *self) {
     CFCBase_decref((CFCBase*)self->novel_method);
-    FREEMEM(self->fresh_class_name);
+    CFCWeakPtr_destroy(&self->fresh_class);
     FREEMEM(self->host_alias);
     CFCCallable_destroy((CFCCallable*)self);
 }
@@ -209,12 +207,14 @@ CFCMethod_override(CFCMethod *self, CFCMethod *orig) {
     if (CFCMethod_final(orig)) {
         const char *orig_name  = CFCMethod_get_name(orig);
         CFCUtil_die("Attempt to override final method '%s' from '%s' by '%s'",
-                    orig_name, orig->fresh_class_name, self->fresh_class_name);
+                    orig_name, S_fresh_class_name(orig),
+                    S_fresh_class_name(self));
     }
     if (!CFCMethod_compatible(self, orig)) {
         const char *orig_name  = CFCMethod_get_name(orig);
         CFCUtil_die("Non-matching signatures for method '%s' in '%s' and '%s'",
-                    orig_name, orig->fresh_class_name, self->fresh_class_name);
+                    orig_name, S_fresh_class_name(orig),
+                    S_fresh_class_name(self));
     }
 
     // Mark the Method as no longer novel.
@@ -234,7 +234,7 @@ CFCMethod_finalize(CFCMethod *self) {
                         self->callable.return_type,
                         self->callable.param_list,
                         self->callable.docucomment,
-                        self->fresh_class_name, true, self->is_abstract);
+                        S_fresh_class(self), true, self->is_abstract);
     finalized->novel_method
         = (CFCMethod*)CFCBase_incref((CFCBase*)self->novel_method);
     finalized->is_novel = self->is_novel;
@@ -289,14 +289,14 @@ CFCMethod_set_host_alias(CFCMethod *self, const char *alias) {
     if (!self->is_novel) {
         const char *name = CFCMethod_get_name(self);
         CFCUtil_die("Can't set_host_alias %s -- method %s not novel in %s",
-                    alias, name, self->fresh_class_name);
+                    alias, name, S_fresh_class_name(self));
     }
     if (self->host_alias) {
         const char *name = CFCMethod_get_name(self);
         if (strcmp(self->host_alias, alias) == 0) { return; }
         CFCUtil_die("Can't set_host_alias %s -- already set to %s for method"
                     " %s in %s", alias, self->host_alias, name,
-                    self->fresh_class_name);
+                    S_fresh_class_name(self));
     }
     self->host_alias = CFCUtil_strdup(alias);
 }
@@ -312,7 +312,7 @@ CFCMethod_exclude_from_host(CFCMethod *self) {
     if (!self->is_novel) {
         const char *name = CFCMethod_get_name(self);
         CFCUtil_die("Can't exclude_from_host -- method %s not novel in %s",
-                    name, self->fresh_class_name);
+                    name, S_fresh_class_name(self));
     }
     self->is_excluded = true;
 }
@@ -414,8 +414,7 @@ CFCMethod_get_exposure(CFCMethod *self) {
 
 int
 CFCMethod_is_fresh(CFCMethod *self, CFCClass *klass) {
-    const char *class_name = CFCClass_get_name(klass);
-    return strcmp(self->fresh_class_name, class_name) == 0;
+    return S_fresh_class(self) == klass;
 }
 
 int
@@ -452,5 +451,15 @@ CFCMethod_imp_func(CFCMethod *self, CFCClass *klass) {
 char*
 CFCMethod_short_imp_func(CFCMethod *self, CFCClass *klass) {
     return S_short_method_sym(self, klass, "_IMP");
+}
+
+static CFCClass*
+S_fresh_class(CFCMethod *self) {
+    return (CFCClass*)CFCWeakPtr_deref(self->fresh_class);
+}
+
+static const char*
+S_fresh_class_name(CFCMethod *self) {
+    return CFCClass_get_name(S_fresh_class(self));
 }
 

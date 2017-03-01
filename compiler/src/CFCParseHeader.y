@@ -113,9 +113,8 @@ S_new_sub(CFCParser *state, CFCDocuComment *docucomment,
             CFCUtil_die("Methods must not be inline");
         }
         CFCClass *klass = CFCParser_get_class(state);
-        const char *class_name = CFCClass_get_name(klass);
         sub = (CFCBase*)CFCMethod_new(exposure, name, type, param_list,
-                                      docucomment, class_name, is_final,
+                                      docucomment, klass, is_final,
                                       is_abstract);
     }
 
