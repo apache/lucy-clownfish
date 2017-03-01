@@ -156,7 +156,7 @@ S_run_tests(CFCTest *test) {
     }
 
     CFCParser_set_parcel(parser, neato);
-    CFCParser_set_class_name(parser, "Foo");
+    CFCParser_set_class(parser, foo);
     CFCMethod *do_stuff
         = CFCTest_parse_method(test, parser, "void Do_Stuff(Foo *self);");
     CFCClass_add_method(foo, do_stuff);
@@ -166,7 +166,7 @@ S_run_tests(CFCTest *test) {
                           false, true, false);
 
     {
-        CFCParser_set_class_name(parser, "InertFoo");
+        CFCParser_set_class(parser, inert_foo);
         CFCMethod *inert_do_stuff
             = CFCTest_parse_method(test, parser,
                                    "void Do_Stuff(InertFoo *self);");

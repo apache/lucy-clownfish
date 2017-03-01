@@ -99,24 +99,24 @@ is( $final_foo->get_parent_class_name, 'Foo::FooJr',
     "get_parent_class_name" );
 
 $parser->parse("parcel Neato;");
-$parser->set_class_name("Foo");
+$parser->set_class($foo);
 my $do_stuff = $parser->parse('void Do_Stuff(Foo *self);')
     or die "parsing failure";
 $foo->add_method($do_stuff);
-
-$parser->set_class_name("InertFoo");
-my $inert_do_stuff = $parser->parse('void Do_Stuff(InertFoo *self);')
-    or die "parsing failure";
-$parser->set_class_name("");
 
 my %inert_args = (
     parcel     => 'Neato',
     class_name => 'InertFoo',
     inert      => 1,
 );
+my $inert_foo = Clownfish::CFC::Model::Class->create(%inert_args);
+$parser->set_class($inert_foo);
+my $inert_do_stuff = $parser->parse('void Do_Stuff(InertFoo *self);')
+    or die "parsing failure";
+$parser->set_class(undef);
+
 eval {
-    my $class = Clownfish::CFC::Model::Class->create(%inert_args);
-    $class->add_method($inert_do_stuff);
+    $inert_foo->add_method($inert_do_stuff);
 };
 like(
     $@,

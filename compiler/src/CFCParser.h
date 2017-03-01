@@ -30,6 +30,7 @@ extern "C" {
 
 typedef struct CFCParser CFCParser;
 struct CFCBase;
+struct CFCClass;
 struct CFCParcel;
 struct CFCFile;
 struct CFCFileSpec;
@@ -83,16 +84,10 @@ struct CFCParcel*
 CFCParser_get_parcel(CFCParser *self);
 
 void
-CFCParser_set_class_name(CFCParser *self, const char *class_name);
+CFCParser_set_class(CFCParser *self, struct CFCClass *klass);
 
-const char*
-CFCParser_get_class_name(CFCParser *self);
-
-void
-CFCParser_set_class_final(CFCParser *self, int is_final);
-
-int
-CFCParser_get_class_final(CFCParser *self);
+struct CFCClass*
+CFCParser_get_class(CFCParser *self);
 
 void
 CFCParser_set_file_spec(CFCParser *self, struct CFCFileSpec *file_spec);

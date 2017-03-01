@@ -121,10 +121,14 @@ is_deeply(
     "initial values"
 );
 
-$parser->set_class_name('Stuff::Obj');
+my $stuff_obj = Clownfish::CFC::Model::Class->create(
+    parcel     => "Crustacean",
+    class_name => "Crust::Stuff",
+);
+$parser->set_class($stuff_obj);
 ok( $parser->parse($_), "declaration statement: $_" )
     for (
-    'public Foo* Spew_Foo(Obj *self, uint32_t *how_many);',
+    'public Foo* Spew_Foo(Stuff *self, uint32_t *how_many);',
     'public inert Hash *hash;',
     );
 

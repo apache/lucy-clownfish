@@ -42,7 +42,7 @@ S_test_initial_value(CFCTest *test, CFCParser *parser,
 
 const CFCTestBatch CFCTEST_BATCH_PARSER = {
     "Clownfish::CFC::Model::Parser",
-    203,
+    205,
     S_run_tests
 };
 
@@ -261,7 +261,11 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCParser_set_class_name(parser, "Stuff::Obj");
+        CFCParcel *stuff = CFCTest_parse_parcel(test, parser, "parcel Stuff;");
+        CFCClass *stuff_obj
+            = CFCClass_create(stuff, NULL, "Stuff::Obj", NULL, NULL, NULL,
+                              NULL, false, false, false);
+        CFCParser_set_class(parser, stuff_obj);
 
         const char *method_string =
             "public Foo* Spew_Foo(Obj *self, uint32_t *how_many);";
@@ -272,6 +276,9 @@ S_run_tests(CFCTest *test) {
             "public inert Hash *hash;";
         CFCVariable *var = CFCTest_parse_variable(test, parser, var_string);
         CFCBase_decref((CFCBase*)var);
+
+        CFCBase_decref((CFCBase*)stuff_obj);
+        CFCBase_decref((CFCBase*)stuff);
     }
 
     {

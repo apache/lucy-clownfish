@@ -18,6 +18,7 @@
 
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
+#include "CFCClass.h"
 #include "CFCFunction.h"
 #include "CFCParamList.h"
 #include "CFCParcel.h"
@@ -25,6 +26,11 @@
 #include "CFCTest.h"
 #include "CFCType.h"
 #include "CFCUtil.h"
+
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
 
 static void
 S_run_tests(CFCTest *test);
@@ -68,7 +74,10 @@ S_run_tests(CFCTest *test) {
     }
 
     {
-        CFCParser_set_class_name(parser, "Neato::Obj");
+        CFCClass *neato_obj
+            = CFCClass_create(neato_parcel, NULL, "Neato::Obj", NULL, NULL,
+                              NULL, NULL, false, false, false);
+        CFCParser_set_class(parser, neato_obj);
         static const char *func_strings[2] = {
             "inert int running_count(int biscuit);",
             "public inert Hash* init_fave_hash(int32_t num_buckets,"
@@ -79,6 +88,7 @@ S_run_tests(CFCTest *test) {
                 = CFCTest_parse_function(test, parser, func_strings[i]);
             CFCBase_decref((CFCBase*)func);
         }
+        CFCBase_decref((CFCBase*)neato_obj);
     }
 
     CFCBase_decref((CFCBase*)return_type);

@@ -28,6 +28,11 @@
 #include "CFCType.h"
 #include "CFCUtil.h"
 
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
+
 static void
 S_run_tests(CFCTest *test);
 
@@ -225,7 +230,10 @@ S_run_parser_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
-    CFCParser_set_class_name(parser, "Neato::Obj");
+    CFCClass *neato_obj
+        = CFCClass_create(neato_parcel, NULL, "Neato::Obj", NULL, NULL, NULL,
+                          NULL, false, false, false);
+    CFCParser_set_class(parser, neato_obj);
 
     {
         static const char *method_strings[4] = {
@@ -249,6 +257,7 @@ S_run_parser_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)method);
     }
 
+    CFCBase_decref((CFCBase*)neato_obj);
     CFCBase_decref((CFCBase*)neato_parcel);
     CFCBase_decref((CFCBase*)parser);
 

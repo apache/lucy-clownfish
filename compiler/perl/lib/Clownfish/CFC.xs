@@ -2509,11 +2509,11 @@ PPCODE:
     CFCParser_set_parcel(self, parcel);
 
 void
-set_class_name(self, class_name)
-    CFCParser  *self;
-    const char *class_name;
+set_class(self, klass)
+    CFCParser *self;
+    CFCClass  *klass;
 PPCODE:
-    CFCParser_set_class_name(self, class_name);
+    CFCParser_set_class(self, klass);
 
 SV*
 get_parcel(self)

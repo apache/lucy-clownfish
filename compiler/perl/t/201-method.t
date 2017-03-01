@@ -133,7 +133,11 @@ for my $meth_meth (qw( short_method_sym full_method_sym full_offset_sym)) {
     like( $@, qr/invoker/, "$meth_meth requires invoker" );
 }
 
-$parser->set_class_name("Neato::Obj");
+my $neato_obj = Clownfish::CFC::Model::Class->create(
+    parcel     => "Neato",
+    class_name => "Neato::Obj",
+);
+$parser->set_class($neato_obj);
 isa_ok(
     $parser->parse($_),
     "Clownfish::CFC::Model::Method",
