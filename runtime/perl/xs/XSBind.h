@@ -222,6 +222,11 @@ cfish_XSBind_bootstrap(pTHX_ size_t num_classes,
                        const cfish_XSBind_XSubSpec *xsub_specs,
                        const char *file);
 
+/** Destroy a Clownfish SV.
+ */
+CFISH_VISIBLE void
+cfish_XSBind_destroy(pTHX_ SV *sv);
+
 #define XSBIND_PARAM(key, required) \
     { key, (int16_t)sizeof("" key) - 1, (char)required }
 
@@ -252,6 +257,7 @@ cfish_XSBind_bootstrap(pTHX_ size_t num_classes,
 #define XSBind_invalid_args_error      cfish_XSBind_invalid_args_error
 #define XSBind_undef_arg_error         cfish_XSBind_undef_arg_error
 #define XSBind_bootstrap               cfish_XSBind_bootstrap
+#define XSBind_destroy                 cfish_XSBind_destroy
 
 /* Strip the prefix from some common ClownFish symbols where we know there's
  * no conflict with Perl.  It's a little inconsistent to do this rather than

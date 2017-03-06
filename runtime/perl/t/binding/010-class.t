@@ -30,7 +30,7 @@ my $storage = Clownfish::Hash->new;
 
 {
     my $subclassed_obj = MyObj->new;
-    $stringified = $subclassed_obj->to_string;
+    $stringified = "$subclassed_obj";
 
     isa_ok( $subclassed_obj, "MyObj", "Perl isa reports correct subclass" );
 
@@ -43,12 +43,13 @@ my $storage = Clownfish::Hash->new;
 my $resurrected = $storage->fetch("test");
 
 isa_ok( $resurrected, "MyObj", "subclass name survived Perl destruction" );
-is( $resurrected->to_string, $stringified,
-    "It's the same Hash from earlier (though a different Perl object)" );
+is( "$resurrected", $stringified, "It's the same hashref from earlier" );
 
 is( $resurrected->get_class_name,
     "MyObj", "subclassed object still performs correctly at the C level" );
 
-my $methods = Clownfish::Class::_fresh_host_methods('MyObj');
-is_deeply( $methods->to_perl, ['oodle'], "fresh_host_methods" );
+my $methods = Clownfish::Class::_fresh_host_methods('MyObj')->to_perl;
+# Remove overload methods starting with '('.
+$methods = [ grep { $_ !~ /^\(/ } @$methods ];
+is_deeply( $methods, ['oodle'], "fresh_host_methods" );
 

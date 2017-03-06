@@ -153,6 +153,9 @@ Class_bootstrap(const cfish_ParcelSpec *parcel_spec) {
         if (spec->flags & cfish_ClassSpec_FINAL) {
             klass->flags |= CFISH_fFINAL;
         }
+        if (klass->obj_alloc_size == sizeof(Obj)) {
+            klass->flags |= CFISH_fEMPTY;
+        }
 
         if (parent) {
             // Copy parent vtable.
@@ -290,7 +293,7 @@ Class_init_registry() {
 }
 
 static Class*
-S_simple_subclass(Class *parent, String *name) {
+S_subclass_from_host(Class *parent, String *name) {
     if (parent->flags & CFISH_fFINAL) {
         THROW(ERR, "Can't subclass final class %o", Class_Get_Name(parent));
     }
@@ -309,6 +312,13 @@ S_simple_subclass(Class *parent, String *name) {
 
     memcpy(subclass->vtable, parent->vtable,
            parent->class_alloc_size - offsetof(Class, vtable));
+
+    if ((subclass->flags & (CFISH_fHOST | CFISH_fEMPTY)) == CFISH_fEMPTY) {
+        // Subclassing an empty class for the first time.
+        subclass->flags |= CFISH_fHOST;
+        subclass->obj_alloc_size = sizeof(cfish_HostObjWrapper);
+        Class_adjust_host_subclass(subclass);
+    }
 
     return subclass;
 }
@@ -336,7 +346,7 @@ Class_singleton(String *class_name, Class *parent) {
             }
         }
 
-        singleton = S_simple_subclass(parent, class_name);
+        singleton = S_subclass_from_host(parent, class_name);
 
         // Allow host methods to override.
         fresh_host_methods = Class_fresh_host_methods(class_name);

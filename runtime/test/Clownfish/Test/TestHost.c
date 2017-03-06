@@ -23,7 +23,31 @@
 
 TestHost*
 TestHost_new() {
-    return (TestHost*)Class_Make_Obj(TESTHOST);
+    TestHost *self = (TestHost*)Class_Make_Obj(TESTHOST);
+    return TestHost_init(self);
+}
+
+TestHost*
+TestHost_init(TestHost *self) {
+    Obj_init((Obj*)self);
+    TestHost_Do_Init(self);
+    return self;
+}
+
+void
+TestHost_Do_Init_IMP(TestHost *self) {
+    UNUSED_VAR(self);
+}
+
+void
+TestHost_Destroy_IMP(TestHost *self) {
+    TestHost_Do_Destroy(self);
+    SUPER_DESTROY(self, TESTHOST);
+}
+
+void
+TestHost_Do_Destroy_IMP(TestHost *self) {
+    UNUSED_VAR(self);
 }
 
 Obj*

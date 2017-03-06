@@ -90,6 +90,11 @@ public final class Clownfish::Class inherits Clownfish::Obj {
     inert incremented Vector*
     fresh_host_methods(String *class_name);
 
+    /** Perform final adjustments to a host subclass.
+     */
+    inert void
+    adjust_host_subclass(Class *klass);
+
     /** Replace a function pointer in the Class's vtable.
      */
     public void

@@ -992,6 +992,11 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     return NULL;
 }
 
+void
+cfish_Class_adjust_host_subclass(cfish_Class *klass) {
+    CFISH_UNUSED_VAR(klass);
+}
+
 /**** Method ***************************************************************/
 
 cfish_String*

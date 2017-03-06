@@ -82,11 +82,11 @@ PPCODE:
     cfish_String *str = CFISH_Obj_To_String(obj);
     CFISH_DECREF(str);
 
-int
-refcount(obj)
-    cfish_Obj *obj;
+U32
+refcount(sv)
+    SV *sv;
 CODE:
-    RETVAL = (int)CFISH_REFCOUNT_NN(obj);
+    RETVAL = SvREFCNT(SvROK(sv) ? SvRV(sv) : sv);
 OUTPUT: RETVAL
 END_XS_CODE
 
@@ -750,27 +750,7 @@ void
 DESTROY(sv)
     SV *sv
 PPCODE:
-    if (sv_derived_from(sv, "Clownfish::Obj")) {
-        /*
-         * During global destruction, DESTROY is called in random order on
-         * objects remaining because of refcount leaks or circular references.
-         * This can cause memory corruption with Clownfish objects, so better
-         * leak instead of corrupting memory.
-         *
-         * Unfortunately, Perl's global destruction is still severely broken
-         * as of early 2017. Global "our" variables are destroyed in random
-         * order even without circular references. The following check will
-         * skip some objects that could be safely destroyed, but it's the
-         * best we can do.
-         *
-         * See https://rt.perl.org/Ticket/Display.html?id=32714
-         */
-        SV *inner = SvRV(sv);
-        if (!PL_dirty || SvREFCNT(inner) <= 1) {
-            cfish_Obj *self = INT2PTR(cfish_Obj*, SvIV(inner));
-            CFISH_Obj_Destroy(self);
-        }
-    }
+    XSBind_destroy(aTHX_ sv);
 
 SV*
 get_class(self)

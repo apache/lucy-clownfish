@@ -165,6 +165,11 @@ Class_find_parent_class(String *class_name) {
     UNREACHABLE_RETURN(String*);
 }
 
+void
+Class_adjust_host_subclass(Class *klass) {
+    UNUSED_VAR(klass);
+}
+
 /**** Method ***************************************************************/
 
 String*

@@ -22,6 +22,16 @@ class Clownfish::Test::TestHost {
     inert incremented TestHost*
     new();
 
+    /** Invokes the (possibly overridden) method [](.Do_Init).
+     */
+    inert TestHost*
+    init(TestHost *self);
+
+    /** Called from constructor.
+     */
+    void
+    Do_Init(TestHost *self);
+
     Obj*
     Test_Obj_Pos_Arg(TestHost *self, Obj *arg);
 
@@ -76,6 +86,17 @@ class Clownfish::Test::TestHost {
 
     incremented String*
     Invoke_Aliased_From_C(TestHost* self);
+
+    /** A destructor that invokes the (possibly overridden) method
+     * [](.Do_Destroy).
+     */
+    public void
+    Destroy(TestHost* self);
+
+    /** Called from destructor.
+     */
+    void
+    Do_Destroy(TestHost *self);
 }
 
 

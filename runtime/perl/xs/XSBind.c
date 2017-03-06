@@ -35,6 +35,14 @@
 #include "Clownfish/Util/Atomic.h"
 #include "Clownfish/Util/Memory.h"
 
+// Support older Perls.
+#ifndef XS_INTERNAL
+  #define XS_INTERNAL XS
+#endif
+#ifndef HvNAMELEN
+  #define HvNAMELEN(hv) strlen(HvNAME(hv))
+#endif
+
 #define XSBIND_REFCOUNT_FLAG   1
 #define XSBIND_REFCOUNT_SHIFT  1
 
@@ -46,6 +54,22 @@ typedef struct {
     SV            *root_sv;
     cfish_PtrHash *seen;
 } cfish_ConversionCache;
+
+// Indicate whether the class is a descendent of `ancestor`.
+static bool
+S_class_is_a(cfish_Class *klass, cfish_Class *ancestor);
+
+// Create a new host object wrapper.
+static cfish_Obj*
+S_new_wrapper(cfish_Class *klass, SV *sv);
+
+// Defer a decref on the wrapper.
+static void
+S_mortalize_wrapper(pTHX_ cfish_Obj *obj);
+
+// Destroy host object wrapper.
+static void
+S_destroy_wrapper(cfish_HostObjWrapper *wrapper);
 
 static bool
 S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
@@ -62,39 +86,70 @@ S_perl_hash_to_cfish_hash(pTHX_ HV *phash, cfish_ConversionCache *cache);
 static cfish_Vector*
 S_perl_array_to_cfish_array(pTHX_ AV *parray, cfish_ConversionCache *cache);
 
+static bool
+S_class_is_a(cfish_Class *klass, cfish_Class *ancestor) {
+    while (klass != NULL) {
+        if (klass == ancestor) {
+            return true;
+        }
+        klass = klass->parent;
+    }
+
+    return false;
+}
+
 cfish_Obj*
 XSBind_new_blank_obj(pTHX_ SV *either_sv) {
-    cfish_Class *klass;
+    HV *stash = NULL;
+    const char *class_name_ptr;
+    STRLEN class_name_len;
 
     // Get a Class.
-    if (sv_isobject(either_sv)
-        && sv_derived_from(either_sv, "Clownfish::Obj")
-       ) {
+    if (sv_isobject(either_sv)) {
         // Use the supplied object's Class.
-        IV iv_ptr = SvIV(SvRV(either_sv));
-        cfish_Obj *self = INT2PTR(cfish_Obj*, iv_ptr);
-        klass = self->klass;
+        stash = SvSTASH(SvRV(either_sv));
+        class_name_ptr = HvNAME(stash);
+        class_name_len = HvNAMELEN(stash);
     }
     else {
         // Use the supplied class name string to find a Class.
-        STRLEN len;
-        char *ptr = SvPVutf8(either_sv, len);
-        cfish_String *class_name = CFISH_SSTR_WRAP_UTF8(ptr, len);
-        klass = cfish_Class_singleton(class_name, NULL);
+        class_name_ptr = SvPVutf8(either_sv, class_name_len);
     }
 
+    cfish_String *class_name
+        = CFISH_SSTR_WRAP_UTF8(class_name_ptr, class_name_len);
+    cfish_Class *klass = cfish_Class_singleton(class_name, NULL);
+
     // Use the Class to allocate a new blank object of the right size.
-    return CFISH_Class_Make_Obj(klass);
+    cfish_Obj *obj = CFISH_Class_Make_Obj(klass);
+
+    if (klass->flags & CFISH_fHOST) {
+        // Mortalize host object wrapper so it will be destroyed after
+        // the Perl SV was extracted and returned.
+        S_mortalize_wrapper(aTHX_ obj);
+    }
+
+    return obj;
 }
 
+// Used to thaw Lucy objects.
 cfish_Obj*
 XSBind_foster_obj(pTHX_ SV *sv, cfish_Class *klass) {
     cfish_Obj *obj
         = (cfish_Obj*)cfish_Memory_wrapped_calloc(klass->obj_alloc_size, 1);
-    SV *inner_obj = SvRV((SV*)sv);
+    SV *inner_obj = SvRV(sv);
     obj->klass = klass;
-    sv_setiv(inner_obj, PTR2IV(obj));
-    obj->ref.host_obj = inner_obj;
+
+    if (klass->flags & CFISH_fHOST) {
+        obj->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;
+        cfish_HostObjWrapper *wrapper = (cfish_HostObjWrapper*)obj;
+        wrapper->wrapped = inner_obj;
+    }
+    else {
+        sv_setiv(inner_obj, PTR2IV(obj));
+        obj->ref.host_obj = inner_obj;
+    }
+
     return obj;
 }
 
@@ -150,16 +205,34 @@ S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
                       void *allocation, cfish_ConversionCache *cache,
                       cfish_Obj **obj_ptr) {
     if (sv_isobject(sv)) {
-        cfish_String *class_name = CFISH_Class_Get_Name(klass);
-        // Assume that the class name is always NULL-terminated. Somewhat
-        // dangerous but should be safe.
-        if (sv_derived_from(sv, CFISH_Str_Get_Ptr8(class_name))) {
-            // Unwrap a real Clownfish object.
-            IV tmp = SvIV(SvRV(sv));
-            cfish_Obj *obj = INT2PTR(cfish_Obj*, tmp);
-            if (increment) {
-                obj = CFISH_INCREF(obj);
+        // Get the Class of the SV.
+        SV *inner = SvRV(sv);
+        HV *stash = SvSTASH(inner);
+        cfish_String *sv_class_name
+            = CFISH_SSTR_WRAP_UTF8(HvNAME(stash), HvNAMELEN(stash));
+        cfish_Class *sv_class = cfish_Class_fetch_class(sv_class_name);
+
+        if (S_class_is_a(sv_class, klass)) {
+            cfish_Obj *obj;
+
+            if (sv_class->flags & CFISH_fHOST) {
+                // Create wrapper object.
+                obj = S_new_wrapper(sv_class, inner);
+                if (increment) {
+                    SvREFCNT_inc_simple_void_NN(inner);
+                }
+                else {
+                    S_mortalize_wrapper(aTHX_ obj);
+                }
             }
+            else {
+                // Unwrap a real Clownfish object.
+                obj = INT2PTR(cfish_Obj*, SvIV(inner));
+                if (increment) {
+                    obj = CFISH_INCREF(obj);
+                }
+            }
+
             *obj_ptr = obj;
             return true;
         }
@@ -230,6 +303,42 @@ S_maybe_perl_to_cfish(pTHX_ SV *sv, cfish_Class *klass, bool increment,
     }
 
     return false;
+}
+
+static cfish_Obj*
+S_new_wrapper(cfish_Class *klass, SV *sv) {
+    cfish_HostObjWrapper *wrapper
+        = (cfish_HostObjWrapper*)CFISH_CALLOCATE(klass->obj_alloc_size, 1);
+    wrapper->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;
+    wrapper->klass     = klass;
+    wrapper->wrapped   = sv;
+    return (cfish_Obj*)wrapper;
+}
+
+static void
+S_mortalize_wrapper(pTHX_ cfish_Obj *obj) {
+    cfish_HostObjWrapper *wrapper = (cfish_HostObjWrapper*)obj;
+
+    // Create a mortalized SV. Its class must not be the actual host subclass.
+    // Otherwise, XSBind_destroy would invoke the destructor of the host
+    // subclass instead of the wrapper destructor. Since wrapper objects are
+    // never passed to Perl and the "ref.host_obj" slot is only used for
+    // refcounting, it's OK to simply bless into Clownfish::Obj.
+    SV *mortalized = newSV(0);
+    sv_setref_pv(mortalized, "Clownfish::Obj", wrapper);
+    wrapper->ref.host_obj = mortalized;
+    sv_2mortal(mortalized);
+
+    // The wrapper dtor will decref the wrapped SV, so compensate.
+    SvREFCNT_inc_simple_void_NN(wrapper->wrapped);
+}
+
+static void
+S_destroy_wrapper(cfish_HostObjWrapper *wrapper) {
+    dTHX;
+    SvREFCNT_dec(wrapper->wrapped);
+    // Don't call SUPER_DESTROY, free wrapper directly.
+    CFISH_FREEMEM(wrapper);
 }
 
 const char*
@@ -552,6 +661,52 @@ XSBind_bootstrap(pTHX_ size_t num_classes,
     }
 }
 
+void
+XSBind_destroy(pTHX_ SV *sv) {
+    if (!sv_isobject(sv)) { return; }
+    SV *inner = SvRV(sv);
+
+    // During global destruction, DESTROY is called in random order on
+    // objects remaining because of refcount leaks or circular references.
+    // This can cause memory corruption with Clownfish objects, so better
+    // leak instead of corrupting memory.
+    //
+    // Unfortunately, Perl's global destruction is still severely broken
+    // as of early 2017. Global "our" variables are destroyed in random
+    // order even without circular references. The following check will
+    // skip some objects that could be safely destroyed, but it's the
+    // best we can do.
+    //
+    // See https://rt.perl.org/Ticket/Display.html?id=32714
+    if (PL_dirty && SvREFCNT(inner) > 1) { return; }
+
+    // Find Class.
+    HV *stash = SvSTASH(inner);
+    cfish_String *class_name
+        = CFISH_SSTR_WRAP_UTF8(HvNAME(stash), HvNAMELEN(stash));
+    cfish_Class *klass = cfish_Class_fetch_class(class_name);
+    if (!klass) { return; }
+
+    if (klass->flags & CFISH_fHOST) {
+        cfish_Obj *wrapper = S_new_wrapper(klass, inner);
+
+        // Find the real destructor which will also take care of
+        // freeing the wrapper.
+        for (klass = klass->parent; klass; klass = klass->parent) {
+            if (!(klass->flags & CFISH_fHOST)) {
+                CFISH_Obj_Destroy_t dtor
+                    = CFISH_METHOD_PTR(klass, CFISH_Obj_Destroy);
+                dtor(wrapper);
+                break;
+            }
+        }
+    }
+    else {
+        cfish_Obj *self = INT2PTR(cfish_Obj*, SvIV(inner));
+        CFISH_Obj_Destroy(self);
+    }
+}
+
 /***************************************************************************
  * The routines below are declared within the Clownfish core but left
  * unimplemented and must be defined for each host language.
@@ -705,19 +860,33 @@ cfish_dec_refcount(void *vself) {
 SV*
 XSBind_cfish_obj_to_sv_inc(pTHX_ cfish_Obj *obj) {
     if (obj == NULL) { return newSV(0); }
+#if PERL_VERSION <= 8
+    SV *inner;
+#endif
 
     SV *perl_obj;
-    if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
-        perl_obj = S_lazy_init_host_obj(aTHX_ obj, true);
+    if (obj->klass->flags & CFISH_fHOST) {
+        cfish_HostObjWrapper *wrapper = (cfish_HostObjWrapper*)obj;
+        perl_obj = newRV_inc((SV*)wrapper->wrapped);
+#if PERL_VERSION <= 8
+        inner = (SV*)wrapper->wrapped;
+#endif
     }
     else {
-        perl_obj = newRV_inc((SV*)obj->ref.host_obj);
+        if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
+            perl_obj = S_lazy_init_host_obj(aTHX_ obj, true);
+        }
+        else {
+            perl_obj = newRV_inc((SV*)obj->ref.host_obj);
+        }
+#if PERL_VERSION <= 8
+        inner = (SV*)obj->ref.host_obj;
+#endif
     }
 
     // Enable overloading for Perl 5.8.x
 #if PERL_VERSION <= 8
-    HV *stash = SvSTASH((SV*)obj->ref.host_obj);
-    if (Gv_AMG(stash)) {
+    if (Gv_AMG(SvSTASH(inner))) {
         SvAMAGIC_on(perl_obj);
     }
 #endif
@@ -728,19 +897,33 @@ XSBind_cfish_obj_to_sv_inc(pTHX_ cfish_Obj *obj) {
 SV*
 XSBind_cfish_obj_to_sv_noinc(pTHX_ cfish_Obj *obj) {
     if (obj == NULL) { return newSV(0); }
+#if PERL_VERSION <= 8
+    SV *inner;
+#endif
 
     SV *perl_obj;
-    if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
-        perl_obj = S_lazy_init_host_obj(aTHX_ obj, false);
+    if (obj->klass->flags & CFISH_fHOST) {
+        cfish_HostObjWrapper *wrapper = (cfish_HostObjWrapper*)obj;
+        perl_obj = newRV_noinc((SV*)wrapper->wrapped);
+#if PERL_VERSION <= 8
+        inner = (SV*)wrapper->wrapped;
+#endif
     }
     else {
-        perl_obj = newRV_noinc((SV*)obj->ref.host_obj);
+        if (obj->ref.count & XSBIND_REFCOUNT_FLAG) {
+            perl_obj = S_lazy_init_host_obj(aTHX_ obj, false);
+        }
+        else {
+            perl_obj = newRV_noinc((SV*)obj->ref.host_obj);
+        }
+#if PERL_VERSION <= 8
+        inner = (SV*)obj->ref.host_obj;
+#endif
     }
 
     // Enable overloading for Perl 5.8.x
 #if PERL_VERSION <= 8
-    HV *stash = SvSTASH((SV*)obj->ref.host_obj);
-    if (Gv_AMG(stash)) {
+    if (Gv_AMG(SvSTASH(inner))) {
         SvAMAGIC_on(perl_obj);
     }
 #endif
@@ -763,6 +946,32 @@ CFISH_Class_Make_Obj_IMP(cfish_Class *self) {
         = (cfish_Obj*)cfish_Memory_wrapped_calloc(self->obj_alloc_size, 1);
     obj->klass = self;
     obj->ref.count = (1 << XSBIND_REFCOUNT_SHIFT) | XSBIND_REFCOUNT_FLAG;
+
+    if (self->flags & CFISH_fHOST) {
+        dTHX;
+
+        // Bless an empty hashref. sv_bless only works through an RV, so
+        // bless manually.
+        SV *sv = (SV*)newHV();
+        SvOBJECT_on(sv);
+#if PERL_VERSION <= 16
+        PL_sv_objcount++;
+#endif
+        SvUPGRADE(sv, SVt_PVMG);
+        HV *stash = gv_stashpvn(CFISH_Str_Get_Ptr8(self->name),
+                                CFISH_Str_Get_Size(self->name), GV_ADD);
+        SvSTASH_set(sv, (HV*)SvREFCNT_inc(stash));
+#if PERL_VERSION >= 10 && PERL_VERSION <= 16
+        // Enable overloading.
+        if (Gv_AMG(stash)) {
+            SvFLAGS(sv) |= SVf_AMAGIC;
+        }
+#endif
+
+        cfish_HostObjWrapper *wrapper = (cfish_HostObjWrapper*)obj;
+        wrapper->wrapped = sv;
+    }
+
     return obj;
 }
 
@@ -829,6 +1038,59 @@ cfish_Class_find_parent_class(cfish_String *class_name) {
     FREETMPS;
     LEAVE;
     return parent_class;
+}
+
+XS_INTERNAL(XS_HostObjWrapper__nil) {
+    dXSARGS;
+    CFISH_UNUSED_VAR(items);
+    XSRETURN_EMPTY;
+}
+
+XS_INTERNAL(XS_HostObjWrapper__deref_scalar) {
+    dXSARGS;
+    SP -= items;
+    if (items != 3) {
+        XSBind_invalid_args_error(aTHX_ cv, "self, other, swap");
+    }
+
+    // Return address of the inner HV wrapped in an RV.
+    ST(0) = newRV_noinc(newSViv(PTR2IV(SvRV(ST(0)))));
+    sv_2mortal(ST(0));
+    XSRETURN(1);
+}
+
+void
+cfish_Class_adjust_host_subclass(cfish_Class *klass) {
+    // Override Destroy with the wrapper dtor.
+    CFISH_Class_Override(klass, (cfish_method_t)S_destroy_wrapper,
+                         CFISH_Obj_Destroy_OFFSET);
+
+    // Overload scalar dereferencing to keep deprecated inside-out objects
+    // working. How to install overload magic from C seems to be undocumented.
+    // The following is based on the code xsubpp generates if it finds an
+    // OVERLOAD keyword.
+
+    dTHX;
+#if PERL_VERSION <= 8
+    PL_amagic_generation++;
+#endif
+    cfish_String *class_name  = CFISH_Class_Get_Name(klass);
+    cfish_String *name;
+    const char *name_ptr;
+
+    name     = cfish_Str_newf("%o::()", class_name);
+    name_ptr = CFISH_Str_Get_Ptr8(name);
+    // fallback => 1
+    sv_setsv(get_sv(name_ptr, GV_ADD), &PL_sv_yes);
+    // A sub named '()' must be present.
+    newXS(name_ptr, XS_HostObjWrapper__nil, __FILE__);
+    CFISH_DECREF(name);
+
+    // The internal name for overload methods starts with a '('.
+    name     = cfish_Str_newf("%o::(${}", class_name);
+    name_ptr = CFISH_Str_Get_Ptr8(name);
+    newXS(name_ptr, XS_HostObjWrapper__deref_scalar, __FILE__);
+    CFISH_DECREF(name);
 }
 
 /*************************** Clownfish::Method ******************************/
@@ -967,12 +1229,11 @@ cfish_Err_trap(CFISH_Err_Attempt_t routine, void *context) {
     else {
         SV *dollar_at = get_sv("@", FALSE);
         if (SvTRUE(dollar_at)) {
-            if (sv_isobject(dollar_at)
-                && sv_derived_from(dollar_at,"Clownfish::Err")
-               ) {
-                IV error_iv = SvIV(SvRV(dollar_at));
-                error = INT2PTR(cfish_Err*, error_iv);
-                CFISH_INCREF(error);
+            cfish_Obj *obj;
+            bool success = S_maybe_perl_to_cfish(aTHX_ dollar_at, CFISH_ERR,
+                                                 true, NULL, NULL, &obj);
+            if (success) {
+                error = (cfish_Err*)obj;
             }
             else {
                 STRLEN len;

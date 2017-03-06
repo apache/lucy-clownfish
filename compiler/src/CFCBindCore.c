@@ -199,6 +199,12 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "   void *klass;\n"
         "} cfish_Dummy;\n"
         "\n"
+        "typedef struct cfish_HostObjWrapper {\n"
+        "   CFISH_OBJ_HEAD\n"
+        "   void *klass;\n"
+        "   void *wrapped;\n"
+        "} cfish_HostObjWrapper;\n"
+        "\n"
         "/* Access the function pointer for a given method from the object.\n"
         " */\n"
         "static CFISH_INLINE cfish_method_t\n"
@@ -287,6 +293,8 @@ S_write_parcel_h(CFCBindCore *self, CFCParcel *parcel) {
         "/* Flags for internal use. */\n"
         "#define CFISH_fREFCOUNTSPECIAL 0x00000001\n"
         "#define CFISH_fFINAL           0x00000002\n"
+        "#define CFISH_fEMPTY           0x00000004\n"
+        "#define CFISH_fHOST            0x00000008\n"
         ;
     const char *cfish_defs_2 =
         "#ifdef CFISH_USE_SHORT_NAMES\n"
