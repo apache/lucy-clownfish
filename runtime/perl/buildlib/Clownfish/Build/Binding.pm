@@ -756,9 +756,17 @@ PPCODE:
          * objects remaining because of refcount leaks or circular references.
          * This can cause memory corruption with Clownfish objects, so better
          * leak instead of corrupting memory.
+         *
+         * Unfortunately, Perl's global destruction is still severely broken
+         * as of early 2017. Global "our" variables are destroyed in random
+         * order even without circular references. The following check will
+         * skip some objects that could be safely destroyed, but it's the
+         * best we can do.
+         *
+         * See https://rt.perl.org/Ticket/Display.html?id=32714
          */
         SV *inner = SvRV(sv);
-        if (SvREFCNT(inner) <= 1) {
+        if (!PL_dirty || SvREFCNT(inner) <= 1) {
             cfish_Obj *self = INT2PTR(cfish_Obj*, SvIV(inner));
             CFISH_Obj_Destroy(self);
         }

@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 26;
+use Test::More tests => 27;
 use Clownfish::Test;
 
 package TestObj;
@@ -172,5 +172,27 @@ SKIP: {
     $ref1->set_ref($ref2);
     $ref2->set_ref($ref1);
     pass ( "Created circular reference" );
+}
+
+SKIP: {
+    skip( "Global destruction check doesn't work reliably", 1 )
+        if $ENV{CLOWNFISH_VALGRIND};
+
+    {
+        package LeakyObj;
+        use base qw( Clownfish::Obj );
+
+        sub DESTROY {
+            # The assignment increases the object's refcount.
+            my $self = shift;
+            $self->SUPER::DESTROY;
+        }
+    }
+
+    # Will unfortunately be destroyed during global destruction, not in the
+    # END phase as one would expect.
+    # See https://rt.perl.org/Ticket/Display.html?id=32714
+    our $leaky = LeakyObj->new;
+    pass( "Created LeakyObj" );
 }
 
