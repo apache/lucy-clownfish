@@ -89,12 +89,6 @@ CFCHierarchy_propagate_modified(CFCHierarchy *self, int modified);
 void
 CFCHierarchy_write_log(CFCHierarchy *self);
 
-/** Return all Classes as an array with the property that every parent class
- * will precede all of its children.
- */
-struct CFCClass**
-CFCHierarchy_ordered_classes(CFCHierarchy *self);
-
 struct CFCFile**
 CFCHierarchy_files(CFCHierarchy *self);
 

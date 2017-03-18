@@ -55,7 +55,7 @@ S_run_clash_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_HIERARCHY = {
     "Clownfish::CFC::Model::Hierarchy",
-    41,
+    42,
     S_run_tests
 };
 
@@ -115,13 +115,18 @@ S_run_basic_tests(CFCTest *test) {
     OK(test, files[3] == NULL, "recursed and found all three files");
 
     {
-        CFCClass **ordered_classes = CFCHierarchy_ordered_classes(hierarchy);
-        OK(test, ordered_classes[0] != NULL, "ordered_classes[0]");
-        OK(test, ordered_classes[1] != NULL, "ordered_classes[1]");
-        OK(test, ordered_classes[2] != NULL, "ordered_classes[2]");
-        OK(test, ordered_classes[3] != NULL, "ordered_classes[3]");
-        OK(test, ordered_classes[4] == NULL, "all classes");
-        FREEMEM(ordered_classes);
+        CFCParcel *parcel = CFCParcel_fetch("Animal");
+        OK(test, parcel != NULL, "Fetch parcel Animal");
+        CFCClass **classes = CFCParcel_get_classes(parcel);
+        STR_EQ(test, CFCClass_get_name(classes[0]), "Animal::Util",
+               "classes[0]");
+        STR_EQ(test, CFCClass_get_name(classes[1]), "Clownfish::Obj",
+               "classes[1]");
+        STR_EQ(test, CFCClass_get_name(classes[2]), "Animal",
+               "classes[2]");
+        STR_EQ(test, CFCClass_get_name(classes[3]), "Animal::Dog",
+               "classes[3]");
+        OK(test, classes[4] == NULL, "all classes");
     }
 
     // Generate fake C files, with times set to two seconds ago.
@@ -160,7 +165,6 @@ S_run_basic_tests(CFCTest *test) {
 
     CFCBase_decref((CFCBase*)hierarchy);
     FREEMEM(cfbase_path);
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 
@@ -180,30 +184,31 @@ S_run_include_tests(CFCTest *test) {
 
         CFCHierarchy_build(hierarchy);
 
-        CFCClass **classes    = CFCHierarchy_ordered_classes(hierarchy);
-        CFCClass  *rottweiler = NULL;;
-        int num_classes;
-        int num_source_classes = 0;
-        for (num_classes = 0; classes[num_classes]; ++num_classes) {
-            CFCClass *klass = classes[num_classes];
-            int expect_included = 1;
-            const char *class_name = CFCClass_get_name(klass);
-            if (strcmp(class_name, "Animal::Rottweiler") == 0) {
-                rottweiler      = klass;
-                expect_included = 0;
-                ++num_source_classes;
-            }
-            INT_EQ(test, CFCClass_included(klass), expect_included,
-                   "included");
-        }
-        INT_EQ(test, num_classes, 5, "class count");
-        INT_EQ(test, num_source_classes, 1, "source class count");
-        STR_EQ(test, CFCClass_get_name(CFCClass_get_parent(rottweiler)),
-               "Animal::Dog", "parent of included class");
+        CFCParcel *parcel;
+        CFCClass **classes;
 
-        FREEMEM(classes);
+        parcel = CFCParcel_fetch("AnimalExtension");
+        OK(test, parcel != NULL, "Fetch parcel AnimalExtension");
+        classes = CFCParcel_get_classes(parcel);
+        STR_EQ(test, CFCClass_get_name(classes[0]), "Animal::Rottweiler",
+               "classes[0]");
+        OK(test, !CFCClass_included(classes[0]), "not included");
+        OK(test, classes[1] == NULL, "classes[1]");
+        STR_EQ(test, CFCClass_get_name(CFCClass_get_parent(classes[0])),
+               "Animal::Dog", "parent from different parcel");
+
+        parcel = CFCParcel_fetch("Animal");
+        OK(test, parcel != NULL, "Fetch parcel Animal");
+        classes = CFCParcel_get_classes(parcel);
+        int all_included = 1;
+        int num_classes;
+        for (num_classes = 0; classes[num_classes]; num_classes++) {
+            if (!CFCClass_included(classes[num_classes])) { all_included = 0; }
+        }
+        INT_EQ(test, num_classes, 4, "4 classes in parcel Animal");
+        OK(test, all_included, "All classes included");
+
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -214,25 +219,33 @@ S_run_include_tests(CFCTest *test) {
 
         CFCHierarchy_build(hierarchy);
 
-        CFCClass **classes    = CFCHierarchy_ordered_classes(hierarchy);
-        CFCClass  *rottweiler = NULL;;
-        int num_classes;
-        for (num_classes = 0; classes[num_classes]; ++num_classes) {
-            CFCClass *klass = classes[num_classes];
-            const char *class_name = CFCClass_get_name(klass);
-            if (strcmp(class_name, "Animal::Rottweiler") == 0) {
-                rottweiler = klass;
-            }
-            OK(test, !CFCClass_included(klass), "not included");
-        }
-        INT_EQ(test, num_classes, 5, "class count");
-        OK(test, rottweiler != NULL, "found rottweiler");
-        STR_EQ(test, CFCClass_get_name(CFCClass_get_parent(rottweiler)),
-               "Animal::Dog", "parent of class from second source");
+        CFCParcel *parcel;
+        CFCClass **classes;
 
-        FREEMEM(classes);
+        parcel = CFCParcel_fetch("AnimalExtension");
+        OK(test, parcel != NULL, "Fetch parcel AnimalExtension");
+        classes = CFCParcel_get_classes(parcel);
+        STR_EQ(test, CFCClass_get_name(classes[0]), "Animal::Rottweiler",
+               "classes[0]");
+        OK(test, !CFCClass_included(classes[0]), "not included");
+        OK(test, classes[1] == NULL, "classes[1]");
+        STR_EQ(test, CFCClass_get_name(CFCClass_get_parent(classes[0])),
+               "Animal::Dog", "parent from different parcel");
+
+        parcel = CFCParcel_fetch("Animal");
+        OK(test, parcel != NULL, "Fetch parcel Animal");
+        classes = CFCParcel_get_classes(parcel);
+        int all_not_included = 1;
+        int num_classes;
+        for (num_classes = 0; classes[num_classes]; num_classes++) {
+            if (CFCClass_included(classes[num_classes])) {
+                all_not_included = 0;
+            }
+        }
+        INT_EQ(test, num_classes, 4, "4 classes in parcel Animal");
+        OK(test, all_not_included, "All classes not included");
+
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -270,7 +283,6 @@ S_run_clash_tests(CFCTest *test) {
            "source/source filename clash");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -291,7 +303,6 @@ S_run_clash_tests(CFCTest *test) {
            "source/include class name clash");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 
@@ -314,7 +325,6 @@ S_run_clash_tests(CFCTest *test) {
            "source class with included parcel");
 
         CFCBase_decref((CFCBase*)hierarchy);
-        CFCClass_clear_registry();
         CFCParcel_reap_singletons();
     }
 

@@ -183,22 +183,6 @@ CODE:
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
 
-SV*
-fetch_singleton(unused, class_name)
-    SV *unused;
-    const char *class_name;
-CODE:
-    CHY_UNUSED_VAR(unused);
-    CFCClass *klass = CFCClass_fetch_singleton(class_name);
-    RETVAL = S_cfcbase_to_perlref(klass);
-OUTPUT: RETVAL
-
-void
-_clear_registry(...)
-PPCODE:
-    CHY_UNUSED_VAR(items);
-    CFCClass_clear_registry();
-
 void
 add_child(self, child)
     CFCClass *self;
@@ -280,7 +264,6 @@ ALIAS:
     get_exposure          = 2
     get_name              = 4
     get_nickname          = 6
-    set_parent            = 7
     get_parent            = 8
     get_path_part         = 10
     get_parent_class_name = 12
@@ -297,7 +280,6 @@ ALIAS:
     methods               = 36
     member_vars           = 38
     inert_vars            = 40
-    tree_to_ladder        = 42
     fresh_methods         = 44
     fresh_member_vars     = 46
     privacy_symbol        = 48
@@ -320,17 +302,6 @@ PPCODE:
                 retval = newSVpvn(value, strlen(value));
             }
             break;
-        case 7: {
-                CFCClass *parent = NULL;
-                if (SvOK(ST(1))
-                    && sv_derived_from(ST(1), "Clownfish::CFC::Model::Class")
-                   ) {
-                    IV objint = SvIV((SV*)SvRV(ST(1)));
-                    parent = INT2PTR(CFCClass*, objint);
-                }
-                CFCClass_set_parent(self, parent);
-                break;
-            }
         case 8: {
                 CFCClass *parent = CFCClass_get_parent(self);
                 retval = S_cfcbase_to_perlref(parent);
@@ -398,12 +369,6 @@ PPCODE:
         case 40:
             retval = S_array_of_cfcbase_to_av((CFCBase**)CFCClass_inert_vars(self));
             break;
-        case 42: {
-                CFCClass **ladder = CFCClass_tree_to_ladder(self);
-                retval = S_array_of_cfcbase_to_av((CFCBase**)ladder);
-                FREEMEM(ladder);
-                break;
-            }
         case 44: {
                 CFCMethod **fresh = CFCClass_fresh_methods(self);
                 retval = S_array_of_cfcbase_to_av((CFCBase**)fresh);
@@ -792,7 +757,6 @@ ALIAS:
     get_include_dest  = 4
     get_source_dest   = 6
     files             = 8
-    ordered_classes   = 10
     get_source_dirs   = 12
     get_include_dirs  = 14
 PPCODE:
@@ -817,12 +781,6 @@ PPCODE:
             retval = S_array_of_cfcbase_to_av(
                 (CFCBase**)CFCHierarchy_files(self));
             break;
-        case 10: {
-                CFCClass **ladder = CFCHierarchy_ordered_classes(self);
-                retval = S_array_of_cfcbase_to_av((CFCBase**)ladder);
-                FREEMEM(ladder);
-            }
-            break;
         case 12: {
                 const char **source_dirs = CFCHierarchy_get_source_dirs(self);
                 retval = S_string_array_to_av(source_dirs);
@@ -840,23 +798,21 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::Method
 
 SV*
-_new(exposure_sv, name, return_type, param_list, docucomment, class_name_sv, is_final, is_abstract)
+_new(exposure_sv, name, return_type, param_list, docucomment, klass, is_final, is_abstract)
     SV *exposure_sv;
     const char *name;
     CFCType *return_type;
     CFCParamList *param_list;
     CFCDocuComment *docucomment;
-    SV *class_name_sv;
+    CFCClass *klass;
     int is_final;
     int is_abstract;
 CODE:
     const char *exposure =
         SvOK(exposure_sv) ? SvPV_nolen(exposure_sv) : NULL;
-    const char *class_name =
-        SvOK(class_name_sv) ? SvPV_nolen(class_name_sv) : NULL;
     CFCMethod *self
         = CFCMethod_new(exposure, name, return_type, param_list, docucomment,
-                        class_name, is_final, is_abstract);
+                        klass, is_final, is_abstract);
     RETVAL = S_cfcbase_to_perlref(self);
     CFCBase_decref((CFCBase*)self);
 OUTPUT: RETVAL
@@ -1141,13 +1097,6 @@ CODE:
     RETVAL = S_array_of_cfcbase_to_av((CFCBase**)all_parcels);
 OUTPUT: RETVAL
 
-void
-add_inherited_parcel(self, inherited)
-    CFCParcel *self;
-    CFCParcel *inherited;
-PPCODE:
-    CFCParcel_add_inherited_parcel(self, inherited);
-
 int
 has_prereq(self, parcel)
     CFCParcel *self;
@@ -1157,19 +1106,34 @@ CODE:
 OUTPUT: RETVAL
 
 void
-add_struct_sym(self, struct_sym)
-    CFCParcel  *self;
-    const char *struct_sym;
+add_class(self, klass)
+    CFCParcel *self;
+    CFCClass  *klass;
 PPCODE:
-    CFCParcel_add_struct_sym(self, struct_sym);
+    CFCParcel_add_class(self, klass);
 
 SV*
-lookup_struct_sym(self, struct_sym)
-    CFCParcel  *self;
-    const char *struct_sym;
+_fetch_class(self, string)
+    CFCParcel *self;
+    const char *string;
+ALIAS:
+    class              = 1
+    class_by_short_sym = 2
+    class_by_full_sym  = 3
 CODE:
-    CFCParcel *parcel = CFCParcel_lookup_struct_sym(self, struct_sym);
-    RETVAL = S_cfcbase_to_perlref(parcel);
+    CFCClass *klass = NULL;
+    switch (ix) {
+        case 1:
+            klass = CFCParcel_class(self, string);
+            break;
+        case 2:
+            klass = CFCParcel_class_by_short_sym(self, string);
+            break;
+        case 3:
+            klass = CFCParcel_class_by_full_sym(self, string);
+            break;
+    }
+    RETVAL = S_cfcbase_to_perlref(klass);
 OUTPUT: RETVAL
 
 void
@@ -1191,8 +1155,8 @@ ALIAS:
     get_prereqs       = 14
     included          = 16
     prereq_parcels    = 20
-    inherited_parcels = 22
     get_xs_module     = 24
+    get_classes       = 26
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -1240,15 +1204,14 @@ PPCODE:
                 FREEMEM(parcels);
             }
             break;
-        case 22: {
-                CFCParcel **parcels = CFCParcel_inherited_parcels(self);
-                retval = S_array_of_cfcbase_to_av((CFCBase**)parcels);
-                FREEMEM(parcels);
-            }
-            break;
         case 24: {
                 const char *xs_module = CFCParcel_get_host_module_name(self);
                 retval = newSVpvn(xs_module, strlen(xs_module));
+            }
+            break;
+        case 26: {
+                CFCClass **classes = CFCParcel_get_classes(self);
+                retval = S_array_of_cfcbase_to_av((CFCBase**)classes);
             }
             break;
     END_SET_OR_GET_SWITCH
@@ -2418,17 +2381,18 @@ CODE:
 OUTPUT: RETVAL
 
 SV*
-_gen_subroutine_pod(func, alias, klass, code_sample, class_name, is_constructor)
+_gen_subroutine_pod(func, alias, klass, code_sample, class_name, is_constructor, docucomment, base_class)
     CFCCallable *func;
     const char *alias;
     CFCClass *klass;
     const char *code_sample;
-    const char *class_name;
     int is_constructor;
+    CFCDocuComment *docucomment;
+    CFCClass *base_class;
 CODE:
     char *value = CFCPerlPod_gen_subroutine_pod(func, alias, klass,
-                                                code_sample, class_name,
-                                                is_constructor);
+                                                code_sample, is_constructor,
+                                                docucomment, base_class);
     RETVAL = S_sv_eat_c_string(value);
 OUTPUT: RETVAL
 
@@ -2502,11 +2466,11 @@ PPCODE:
     CFCParser_set_parcel(self, parcel);
 
 void
-set_class_name(self, class_name)
-    CFCParser  *self;
-    const char *class_name;
+set_class(self, klass)
+    CFCParser *self;
+    CFCClass  *klass;
 PPCODE:
-    CFCParser_set_class_name(self, class_name);
+    CFCParser_set_class(self, klass);
 
 SV*
 get_parcel(self)

@@ -32,44 +32,8 @@
   #define false 0
 #endif
 
-static char*
-S_method_def(CFCMethod *method, CFCClass *klass, int optimized_final_meth);
-
-/* Create a method invocation routine that resolves to a function name
- * directly, since this method may not be overridden.
- */
-static char*
-S_optimized_final_method_def(CFCMethod *method, CFCClass *klass) {
-    return S_method_def(method, klass, true);
-}
-
-/* Create a method invocation routine which uses vtable dispatch.
- */
-static char*
-S_virtual_method_def(CFCMethod *method, CFCClass *klass) {
-    return S_method_def(method, klass, false);
-}
-
 char*
 CFCBindMeth_method_def(CFCMethod *method, CFCClass *klass) {
-    // If the method is final and the class where it is declared final is in
-    // the same parcel as the invocant, we can optimize the call by resolving
-    // to the implementing function directly.
-    if (CFCMethod_final(method)) {
-        CFCClass *ancestor = klass;
-        while (ancestor && !CFCMethod_is_fresh(method, ancestor)) {
-            ancestor = CFCClass_get_parent(ancestor);
-        }
-        if (CFCClass_get_parcel(ancestor) == CFCClass_get_parcel(klass)) {
-            return S_optimized_final_method_def(method, klass);
-        }
-    }
-
-    return S_virtual_method_def(method, klass);
-}
-
-static char*
-S_method_def(CFCMethod *method, CFCClass *klass, int optimized_final_meth) {
     CFCParamList *param_list = CFCMethod_get_param_list(method);
     const char *PREFIX         = CFCClass_get_PREFIX(klass);
     const char *invoker_struct = CFCClass_full_struct_sym(klass);
@@ -94,6 +58,20 @@ S_method_def(CFCMethod *method, CFCClass *klass, int optimized_final_meth) {
     CFCType *return_type = CFCMethod_get_return_type(method);
     const char *ret_type_str = CFCType_to_c(return_type);
     const char *maybe_return = CFCType_is_void(return_type) ? "" : "return ";
+
+    // If the method is final and the class where it is declared final is in
+    // the same parcel as the invocant, we can optimize the call by resolving
+    // to the implementing function directly.
+    int optimized_final_meth = false;
+    if (CFCMethod_final(method)) {
+        CFCClass *ancestor = klass;
+        while (ancestor && !CFCMethod_is_fresh(method, ancestor)) {
+            ancestor = CFCClass_get_parent(ancestor);
+        }
+        if (CFCClass_in_same_parcel(ancestor, klass)) {
+            optimized_final_meth = true;
+        }
+    }
 
     const char innards_pattern[] =
         "    const %s method = (%s)cfish_obj_method(%s, %s);\n"
@@ -165,8 +143,7 @@ char*
 CFCBindMeth_abstract_method_def(CFCMethod *method, CFCClass *klass) {
     CFCType    *ret_type      = CFCMethod_get_return_type(method);
     const char *ret_type_str  = CFCType_to_c(ret_type);
-    CFCType    *type          = CFCMethod_self_type(method);
-    const char *class_var     = CFCType_get_class_var(type);
+    const char *class_var     = CFCClass_full_class_var(klass);
     const char *meth_name     = CFCMethod_get_name(method);
     CFCParamList *param_list  = CFCMethod_get_param_list(method);
     const char *params        = CFCParamList_to_c(param_list);

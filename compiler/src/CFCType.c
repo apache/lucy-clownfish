@@ -35,9 +35,9 @@ struct CFCType {
     CFCBase  base;
     int      flags;
     char    *specifier;
-    char    *class_var;
     int      indirection;
-    struct CFCParcel *parcel;
+    CFCWeakPtr parcel;
+    CFCWeakPtr klass;
     char    *c_string;
     size_t   width;
     char    *array;
@@ -92,14 +92,13 @@ CFCType*
 CFCType_init(CFCType *self, int flags, struct CFCParcel *parcel,
              const char *specifier, int indirection) {
     self->flags       = flags;
-    self->parcel      = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
+    self->parcel      = CFCWeakPtr_new((CFCBase*)parcel);
     self->specifier   = CFCUtil_strdup(specifier);
     self->indirection = indirection;
     self->c_string    = NULL;
     self->width       = 0;
     self->array       = NULL;
     self->child       = NULL;
-    self->class_var   = NULL;
 
     return self;
 }
@@ -295,15 +294,15 @@ CFCType_resolve(CFCType *self) {
 
     char *specifier = self->specifier;
     if (CFCUtil_isupper(specifier[0])) {
-        CFCParcel *parcel
-            = CFCParcel_lookup_struct_sym(self->parcel, specifier);
-        if (!parcel) {
+        CFCParcel *parcel = CFCType_get_parcel(self);
+        CFCClass  *klass  = CFCParcel_class_by_short_sym(parcel, specifier);
+        if (!klass) {
             CFCUtil_die("No class found for type '%s'", specifier);
         }
+        CFCWeakPtr_set(&self->klass, (CFCBase*)klass);
 
-        // Create actual specifier with prefix.
-        const char *prefix = CFCParcel_get_prefix(parcel);
-        self->specifier = CFCUtil_sprintf("%s%s", prefix, specifier);
+        // Upgrade specifier to full struct sym.
+        self->specifier = CFCUtil_strdup(CFCClass_full_struct_sym(klass));
         FREEMEM(specifier);
     }
 }
@@ -313,11 +312,11 @@ CFCType_destroy(CFCType *self) {
     if (self->child) {
         CFCBase_decref((CFCBase*)self->child);
     }
-    CFCBase_decref((CFCBase*)self->parcel);
+    CFCWeakPtr_destroy(&self->parcel);
+    CFCWeakPtr_destroy(&self->klass);
     FREEMEM(self->specifier);
     FREEMEM(self->c_string);
     FREEMEM(self->array);
-    FREEMEM(self->class_var);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -378,15 +377,13 @@ CFCType_get_specifier(CFCType *self) {
     return self->specifier;
 }
 
-const char*
-CFCType_get_class_var(CFCType *self) {
-    if (!self->class_var) {
-        self->class_var = CFCUtil_strdup(self->specifier);
-        for (int i = 0; self->class_var[i] != 0; i++) {
-            self->class_var[i] = CFCUtil_toupper(self->class_var[i]);
-        }
+CFCClass*
+CFCType_get_class(CFCType *self) {
+    CFCClass *klass = (CFCClass*)CFCWeakPtr_deref(self->klass);
+    if (!klass) {
+        CFCUtil_die("Type has no class");
     }
-    return self->class_var;
+    return klass;
 }
 
 int
@@ -396,7 +393,7 @@ CFCType_get_indirection(CFCType *self) {
 
 struct CFCParcel*
 CFCType_get_parcel(CFCType *self) {
-    return self->parcel;
+    return (CFCParcel*)CFCWeakPtr_deref(self->parcel);
 }
 
 const char*

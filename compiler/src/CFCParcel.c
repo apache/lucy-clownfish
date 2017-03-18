@@ -44,16 +44,17 @@ struct CFCParcel {
     char *PREFIX;
     char *privacy_sym;
     int is_installed;
-    char **inherited_parcels;
-    size_t num_inherited_parcels;
-    char **struct_syms;
-    size_t num_struct_syms;
+    CFCClass **classes;
+    size_t num_classes;
     CFCPrereq **prereqs;
     size_t num_prereqs;
 };
 
 static void
 S_set_prereqs(CFCParcel *self, CFCJson *node, const char *path);
+
+static CFCClass*
+S_fetch_class(CFCParcel *self, const char *class_name, int level);
 
 static CFCParcel **registry = NULL;
 static size_t num_registered = 0;
@@ -212,10 +213,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *nickname,
     self->is_installed = false;
 
     // Initialize arrays.
-    self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
-    self->num_inherited_parcels = 0;
-    self->struct_syms = (char**)CALLOCATE(1, sizeof(char*));
-    self->num_struct_syms = 0;
+    self->classes = (CFCClass**)CALLOCATE(1, sizeof(CFCClass*));
+    self->num_classes = 0;
     self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
     self->num_prereqs = 0;
 
@@ -297,7 +296,9 @@ S_new_from_json(const char *json, CFCFileSpec *file_spec) {
     }
     CFCParcel *self = CFCParcel_new(name, nickname, version, major_version,
                                     file_spec);
-    self->is_installed = installed;
+    if (!file_spec || !CFCFileSpec_included(file_spec)) {
+        self->is_installed = installed;
+    }
     if (prereqs) {
         S_set_prereqs(self, prereqs, path);
     }
@@ -367,8 +368,10 @@ CFCParcel_destroy(CFCParcel *self) {
     FREEMEM(self->Prefix);
     FREEMEM(self->PREFIX);
     FREEMEM(self->privacy_sym);
-    CFCUtil_free_string_array(self->inherited_parcels);
-    CFCUtil_free_string_array(self->struct_syms);
+    for (size_t i = 0; self->classes[i]; ++i) {
+        CFCBase_decref((CFCBase*)self->classes[i]);
+    }
+    FREEMEM(self->classes);
     for (size_t i = 0; self->prereqs[i]; ++i) {
         CFCBase_decref((CFCBase*)self->prereqs[i]);
     }
@@ -422,6 +425,11 @@ CFCParcel_is_installed(CFCParcel *self) {
     return self->is_installed;
 }
 
+void
+CFCParcel_set_installed(CFCParcel *self, int is_installed) {
+    self->is_installed = is_installed;
+}
+
 CFCVersion*
 CFCParcel_get_version(CFCParcel *self) {
     return self->version;
@@ -469,40 +477,6 @@ CFCParcel_get_source_dir(CFCParcel *self) {
 int
 CFCParcel_included(CFCParcel *self) {
     return self->file_spec ? CFCFileSpec_included(self->file_spec) : false;
-}
-
-void
-CFCParcel_add_inherited_parcel(CFCParcel *self, CFCParcel *inherited) {
-    const char *name     = CFCParcel_get_name(self);
-    const char *inh_name = CFCParcel_get_name(inherited);
-
-    if (strcmp(name, inh_name) == 0) { return; }
-
-    for (size_t i = 0; self->inherited_parcels[i]; ++i) {
-        const char *other_name = self->inherited_parcels[i];
-        if (strcmp(other_name, inh_name) == 0) { return; }
-    }
-
-    size_t num_parcels = self->num_inherited_parcels;
-    self->inherited_parcels
-        = (char**)REALLOCATE(self->inherited_parcels,
-                             (num_parcels + 2) * sizeof(char*));
-    self->inherited_parcels[num_parcels]   = CFCUtil_strdup(inh_name);
-    self->inherited_parcels[num_parcels+1] = NULL;
-    self->num_inherited_parcels = num_parcels + 1;
-}
-
-CFCParcel**
-CFCParcel_inherited_parcels(CFCParcel *self) {
-    CFCParcel **parcels
-        = (CFCParcel**)CALLOCATE(self->num_inherited_parcels + 1,
-                                 sizeof(CFCParcel*));
-
-    for (size_t i = 0; self->inherited_parcels[i]; ++i) {
-        parcels[i] = CFCParcel_fetch(self->inherited_parcels[i]);
-    }
-
-    return parcels;
 }
 
 CFCPrereq**
@@ -566,7 +540,7 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang) {
         CFCJson **children = CFCJson_get_children(class_hash);
         for (int i = 0; children[i]; i += 2) {
             const char *class_name = CFCJson_get_string(children[i]);
-            CFCClass *klass = CFCClass_fetch_singleton(class_name);
+            CFCClass *klass = CFCParcel_class(self, class_name);
             if (!klass) {
                 CFCUtil_die("Class '%s' in '%s' not found", class_name, path);
             }
@@ -580,51 +554,241 @@ CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang) {
 }
 
 void
-CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym) {
-    size_t num_struct_syms = self->num_struct_syms + 1;
-    size_t size = (num_struct_syms + 1) * sizeof(char*);
-    char **struct_syms = (char**)REALLOCATE(self->struct_syms, size);
-    struct_syms[num_struct_syms-1] = CFCUtil_strdup(struct_sym);
-    struct_syms[num_struct_syms]   = NULL;
-    self->struct_syms     = struct_syms;
-    self->num_struct_syms = num_struct_syms;
+CFCParcel_add_class(CFCParcel *self, CFCClass *klass) {
+    // Ensure unique class name.
+    const char *class_name = CFCClass_get_name(klass);
+    CFCClass *other = S_fetch_class(self, class_name, 2);
+    if (other) {
+        CFCUtil_die("Two classes with name %s", class_name);
+    }
+
+    const char *struct_sym = CFCClass_get_struct_sym(klass);
+    const char *nickname   = CFCClass_get_nickname(klass);
+
+    for (size_t i = 0; self->classes[i]; ++i) {
+        CFCClass *other = self->classes[i];
+
+        // Ensure unique struct symbol and nickname in parcel.
+        if (strcmp(struct_sym, CFCClass_get_struct_sym(other)) == 0) {
+            CFCUtil_die("Class name conflict between %s and %s",
+                        CFCClass_get_name(klass), CFCClass_get_name(other));
+        }
+        if (strcmp(nickname, CFCClass_get_nickname(other)) == 0) {
+            CFCUtil_die("Class nickname conflict between %s and %s",
+                        CFCClass_get_name(klass), CFCClass_get_name(other));
+        }
+    }
+
+    size_t num_classes = self->num_classes;
+    size_t size = (num_classes + 2) * sizeof(CFCClass*);
+    CFCClass **classes = (CFCClass**)REALLOCATE(self->classes, size);
+    classes[num_classes]   = (CFCClass*)CFCBase_incref((CFCBase*)klass);
+    classes[num_classes+1] = NULL;
+    self->classes     = classes;
+    self->num_classes = num_classes + 1;
 }
 
-static CFCParcel*
-S_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
-    for (size_t i = 0; self->struct_syms[i]; ++i) {
-        if (strcmp(self->struct_syms[i], struct_sym) == 0) {
-            return self;
+static int
+S_compare_class_name(const void *va, const void *vb) {
+    const char *a = CFCClass_get_name(*(CFCClass**)va);
+    const char *b = CFCClass_get_name(*(CFCClass**)vb);
+
+    return strcmp(a, b);
+}
+
+void
+CFCParcel_connect_and_sort_classes(CFCParcel *self) {
+    size_t num_classes = self->num_classes;
+    size_t alloc_size  = (num_classes + 1) * sizeof(CFCClass*);
+    CFCClass **classes = self->classes;
+    CFCClass **sorted  = (CFCClass**)MALLOCATE(alloc_size);
+
+    // Perform a depth-first search of the classes in the parcel, and store
+    // the classes in the order that they were visited. This makes sure
+    // that subclasses are sorted after their parents.
+    //
+    // To avoid a recursive algorithm, the end of the sorted array is used
+    // as a stack for classes that have yet to be visited.
+    //
+    // Root and child classes are sorted by name to get a deterministic
+    // order.
+
+    // Set up parent/child relationship of classes and find subtree roots
+    // in parcel.
+    size_t todo = num_classes;
+    for (size_t i = 0; i < num_classes; i++) {
+        CFCClass *klass  = classes[i];
+        CFCClass *parent = NULL;
+
+        const char *parent_name = CFCClass_get_parent_class_name(klass);
+        if (parent_name) {
+            parent = S_fetch_class(self, parent_name, 1);
+            if (!parent) {
+                CFCUtil_die("Parent class '%s' of '%s' not found in parcel"
+                            " '%s' or its prerequisites", parent_name,
+                            CFCClass_get_name(klass), self->name);
+            }
+            CFCClass_add_child(parent, klass);
+        }
+
+        if (!parent || !CFCClass_in_parcel(parent, self)) {
+            // Subtree root.
+            sorted[--todo] = klass;
+        }
+
+        // Resolve types.
+        CFCClass_resolve_types(klass);
+    }
+
+    qsort(&sorted[todo], num_classes - todo, sizeof(sorted[0]),
+          S_compare_class_name);
+
+    size_t num_sorted = 0;
+    while (todo < num_classes) {
+        CFCClass *klass = sorted[todo++];
+        sorted[num_sorted++] = klass;
+
+        // Push children on stack. Since this function is called first for
+        // prereq parcels, we can be sure that the class doesn't have
+        // children from another parcel yet.
+        CFCClass **children = CFCClass_children(klass);
+        size_t prev_todo = todo;
+        for (size_t i = 0; children[i]; i++) {
+            if (todo <= num_sorted) {
+                CFCUtil_die("Internal error in CFCParcel_sort_classes");
+            }
+            sorted[--todo] = children[i];
+        }
+
+        qsort(&sorted[todo], prev_todo - todo, sizeof(sorted[0]),
+              S_compare_class_name);
+    }
+
+    if (num_sorted != num_classes) {
+        CFCUtil_die("Internal error in CFCParcel_sort_classes");
+    }
+
+    sorted[num_classes] = NULL;
+
+    FREEMEM(self->classes);
+    self->classes = sorted;
+}
+
+CFCClass*
+CFCParcel_class(CFCParcel *self, const char *class_name) {
+    return S_fetch_class(self, class_name, 0);
+}
+
+static CFCClass*
+S_fetch_class(CFCParcel *self, const char *class_name, int level) {
+    // level == 0: Only search parcel.
+    // level == 1: Search parcel and direct prereqs.
+    // level == 2: Search parcel an indirect prereqs.
+
+    for (size_t i = 0; self->classes[i]; ++i) {
+        CFCClass *klass = self->classes[i];
+        if (strcmp(CFCClass_get_name(klass), class_name) == 0) {
+            return klass;
+        }
+    }
+
+    if (level == 0) { return NULL; }
+    if (level == 1) { level = 0; }
+
+    for (size_t i = 0; self->prereqs[i]; ++i) {
+        const char *prereq_name   = CFCPrereq_get_name(self->prereqs[i]);
+        CFCParcel  *prereq_parcel = CFCParcel_fetch(prereq_name);
+
+        CFCClass *klass = S_fetch_class(prereq_parcel, class_name, level);
+        if (klass) { return klass; }
+    }
+
+    return NULL;
+}
+
+static CFCClass*
+S_class_by_struct_sym(CFCParcel *self, const char *struct_sym,
+                      size_t prefix_len) {
+    // If prefix_len is 0, struct_sym is a short symbol without prefix.
+    // Search for a class and check for ambiguity.
+    //
+    // If prefix_len is greater than 0, struct_sym is a full symbol with prefix.
+    // Return a matching class as soon as it's found.
+
+    if (prefix_len != 0
+        && strncmp(self->prefix, struct_sym, prefix_len) != 0
+       ) {
+        return NULL;
+    }
+
+    const char *short_struct_sym = struct_sym + prefix_len;
+    for (size_t i = 0; self->classes[i]; ++i) {
+        CFCClass *klass = self->classes[i];
+        if (strcmp(CFCClass_get_struct_sym(klass), short_struct_sym) == 0) {
+            return klass;
         }
     }
 
     return NULL;
 }
 
-CFCParcel*
-CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
-    CFCParcel *parcel = S_lookup_struct_sym(self, struct_sym);
+static CFCClass*
+S_class_by_struct_sym_prereq(CFCParcel *self, const char *struct_sym,
+                             size_t prefix_len) {
+    CFCClass *klass = S_class_by_struct_sym(self, struct_sym, prefix_len);
+    if (klass && prefix_len != 0) { return klass; }
 
     for (size_t i = 0; self->prereqs[i]; ++i) {
         const char *prereq_name   = CFCPrereq_get_name(self->prereqs[i]);
         CFCParcel  *prereq_parcel = CFCParcel_fetch(prereq_name);
-        CFCParcel *maybe_parcel
-            = S_lookup_struct_sym(prereq_parcel, struct_sym);
+        CFCClass *candidate
+            = S_class_by_struct_sym(prereq_parcel, struct_sym, prefix_len);
 
-        if (maybe_parcel) {
-            if (parcel) {
-                CFCUtil_die("Type '%s' is ambigious", struct_sym);
+        if (candidate) {
+            if (prefix_len != 0) { return candidate; }
+            if (klass) {
+                CFCUtil_warn("Type '%s' is ambiguous. Do you mean %s or %s?",
+                             struct_sym, CFCClass_full_struct_sym(klass),
+                             CFCClass_full_struct_sym(candidate));
+                return NULL;
             }
-            parcel = maybe_parcel;
+            klass = candidate;
         }
     }
 
-    return parcel;
+    return klass;
+}
+
+CFCClass*
+CFCParcel_class_by_short_sym(CFCParcel *self, const char *struct_sym) {
+    return S_class_by_struct_sym_prereq(self, struct_sym, 0);
+}
+
+CFCClass*
+CFCParcel_class_by_full_sym(CFCParcel *self, const char *full_struct_sym) {
+    size_t prefix_len = 0;
+    size_t sym_len    = strlen(full_struct_sym);
+    while (prefix_len < sym_len
+           && !CFCUtil_isupper(full_struct_sym[prefix_len])
+          ) {
+        prefix_len += 1;
+    }
+    if (!prefix_len) {
+        CFCUtil_die("Full struct symbol '%s' has invalid prefix",
+                    full_struct_sym);
+    }
+
+    return S_class_by_struct_sym_prereq(self, full_struct_sym, prefix_len);
 }
 
 int
 CFCParcel_is_cfish(CFCParcel *self) {
     return !strcmp(self->prefix, "cfish_");
+}
+
+CFCClass**
+CFCParcel_get_classes(CFCParcel *self) {
+    return self->classes;
 }
 
 /**************************************************************************/

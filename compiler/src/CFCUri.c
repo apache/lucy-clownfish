@@ -24,12 +24,13 @@
 #include "CFCDocument.h"
 #include "CFCFunction.h"
 #include "CFCMethod.h"
+#include "CFCParcel.h"
 #include "CFCUtil.h"
 
 struct CFCUri {
     CFCBase      base;
     char        *string;
-    CFCClass    *doc_class;
+    CFCClass    *base_class;
     CFCUriType   type;
     CFCClass    *klass;
     CFCDocument *document;
@@ -50,6 +51,12 @@ static void
 S_resolve(CFCUri *self, const char *prefix, const char *struct_sym,
           const char *callable);
 
+static CFCClass*
+S_find_class_full(CFCUri *self, const char *parcel, const char *struct_sym);
+
+static CFCClass*
+S_find_class_short(CFCUri *self, const char *struct_sym);
+
 static void
 S_set_error(CFCUri *self, const char *error);
 
@@ -62,17 +69,17 @@ CFCUri_is_clownfish_uri(const char *uri) {
 }
 
 CFCUri*
-CFCUri_new(const char *uri, CFCClass *doc_class) {
+CFCUri_new(const char *uri, CFCClass *base_class) {
     CFCUri *self = (CFCUri*)CFCBase_allocate(&CFCURI_META);
-    return CFCUri_init(self, uri, doc_class);
+    return CFCUri_init(self, uri, base_class);
 }
 
 CFCUri*
-CFCUri_init(CFCUri *self, const char *uri, CFCClass *doc_class) {
+CFCUri_init(CFCUri *self, const char *uri, CFCClass *base_class) {
     CFCUTIL_NULL_CHECK(uri);
 
-    self->string    = CFCUtil_strdup(uri);
-    self->doc_class = (CFCClass*)CFCBase_incref((CFCBase*)doc_class);
+    self->string     = CFCUtil_strdup(uri);
+    self->base_class = (CFCClass*)CFCBase_incref((CFCBase*)base_class);
 
     return self;
 }
@@ -82,7 +89,7 @@ CFCUri_destroy(CFCUri *self) {
     FREEMEM(self->string);
     FREEMEM(self->callable);
     FREEMEM(self->error);
-    CFCBase_decref((CFCBase*)self->doc_class);
+    CFCBase_decref((CFCBase*)self->base_class);
     CFCBase_decref((CFCBase*)self->klass);
     CFCBase_decref((CFCBase*)self->document);
     CFCBase_destroy((CFCBase*)self);
@@ -147,24 +154,17 @@ done:
 static void
 S_resolve(CFCUri *self, const char *parcel, const char *struct_sym,
           const char *callable) {
-
     // Try to find a CFCClass.
-    CFCClass *doc_class = self->doc_class;
     CFCClass *klass     = NULL;
 
     if (parcel) {
-        char *full_struct_sym = CFCUtil_sprintf("%s_%s", parcel, struct_sym);
-        klass = CFCClass_fetch_by_struct_sym(full_struct_sym);
-        FREEMEM(full_struct_sym);
+        klass = S_find_class_full(self, parcel, struct_sym);
     }
-    else if (struct_sym && doc_class) {
-        const char *prefix = CFCClass_get_prefix(doc_class);
-        char *full_struct_sym = CFCUtil_sprintf("%s%s", prefix, struct_sym);
-        klass = CFCClass_fetch_by_struct_sym(full_struct_sym);
-        FREEMEM(full_struct_sym);
+    else if (struct_sym) {
+        klass = S_find_class_short(self, struct_sym);
     }
     else if (callable) {
-        klass = doc_class;
+        klass = self->base_class;
     }
 
     if (klass) {
@@ -226,6 +226,65 @@ S_resolve(CFCUri *self, const char *parcel, const char *struct_sym,
     }
 
     S_set_error(self, "Couldn't resolve Clownfish URI");
+}
+
+static CFCClass*
+S_find_class_full(CFCUri *self, const char *parcel, const char *struct_sym) {
+    char *full_struct_sym = CFCUtil_sprintf("%s_%s", parcel, struct_sym);
+    CFCClass *klass = NULL;
+
+    if (self->base_class) {
+        // Only look in parcel of base class.
+        CFCParcel *parcel = CFCClass_get_parcel(self->base_class);
+        klass = CFCParcel_class_by_full_sym(parcel, full_struct_sym);
+    }
+    else {
+        // Search all source parcels For standalone .md docs.
+        CFCParcel **parcels = CFCParcel_all_parcels();
+        for (size_t i = 0; parcels[i]; i++) {
+            CFCParcel *parcel = parcels[i];
+            if (CFCParcel_included(parcel)) { continue; }
+            klass = CFCParcel_class_by_full_sym(parcel, full_struct_sym);
+            if (klass) { break; }
+        }
+    }
+
+    FREEMEM(full_struct_sym);
+    return klass;
+}
+
+static CFCClass*
+S_find_class_short(CFCUri *self, const char *struct_sym) {
+    CFCClass *klass = NULL;
+
+    if (self->base_class) {
+        // Only look in parcel of base class.
+        CFCParcel *parcel = CFCClass_get_parcel(self->base_class);
+        klass = CFCParcel_class_by_short_sym(parcel, struct_sym);
+    }
+    else {
+        // Search all source parcels For standalone .md docs.
+        CFCParcel **parcels = CFCParcel_all_parcels();
+        for (size_t i = 0; parcels[i]; i++) {
+            CFCParcel *parcel = parcels[i];
+            if (CFCParcel_included(parcel)) { continue; }
+            CFCClass *candidate
+                = CFCParcel_class_by_short_sym(parcel, struct_sym);
+            if (candidate && candidate != klass) {
+                if (klass) {
+                    // Found in multiple parcels.
+                    CFCUtil_warn("Ambiguous class name '%s' in URI. Do you"
+                                 " mean '%s' or '%s'?", struct_sym,
+                                 CFCClass_full_struct_sym(klass),
+                                 CFCClass_full_struct_sym(candidate));
+                    return NULL;
+                }
+                klass = candidate;
+            }
+        }
+    }
+
+    return klass;
 }
 
 static void

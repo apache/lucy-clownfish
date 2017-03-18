@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 38;
+use Test::More tests => 30;
 
 BEGIN { use_ok('Clownfish::CFC::Model::Method') }
 use Clownfish::CFC::Parser;
@@ -24,10 +24,11 @@ use Clownfish::CFC::Parser;
 my $parser = Clownfish::CFC::Parser->new;
 $parser->parse('parcel Neato;')
     or die "failed to process parcel_definition";
+my $neato_foo = $parser->parse('class Neato::Foo {}');
 
 my %args = (
     return_type => $parser->parse('Obj*'),
-    class_name  => 'Neato::Foo',
+    class       => $neato_foo,
     param_list  => $parser->parse('(Foo *self, int32_t count = 0)'),
     name        => 'Return_An_Obj',
 );
@@ -47,24 +48,6 @@ eval {
     Clownfish::CFC::Model::Method->new( %args, name => 'return_an_obj' );
 };
 like( $@, qr/name/, "Invalid name kills constructor" );
-
-for (qw( foo 1Foo Foo_Bar 1FOOBAR )) {
-    eval {
-        Clownfish::CFC::Model::Method->new(
-            %args,
-            class_name => $_,
-        );
-    };
-    like( $@, qr/class_name/, "Reject invalid class name $_" );
-    my $bogus_middle = "Foo::" . $_ . "::Bar";
-    eval {
-        Clownfish::CFC::Model::Method->new(
-            %args,
-            class_name => $bogus_middle,
-        );
-    };
-    like( $@, qr/class_name/, "Reject invalid class name $bogus_middle" );
-}
 
 my $dupe = Clownfish::CFC::Model::Method->new(%args);
 ok( $method->compatible($dupe), "compatible()" );
@@ -113,7 +96,7 @@ ok( !$param_type_differs->compatible($method), "... reversed" );
 
 my $self_type_differs = Clownfish::CFC::Model::Method->new(
     %args,
-    class_name => 'Neato::Bar',
+    class      => $parser->parse('class Neato::Bar {}'),
     param_list => $parser->parse('(Bar *self, int32_t count = 0)'),
 );
 ok( $method->compatible($self_type_differs),
@@ -133,7 +116,11 @@ for my $meth_meth (qw( short_method_sym full_method_sym full_offset_sym)) {
     like( $@, qr/invoker/, "$meth_meth requires invoker" );
 }
 
-$parser->set_class_name("Neato::Obj");
+my $neato_obj = Clownfish::CFC::Model::Class->create(
+    parcel     => "Neato",
+    class_name => "Neato::Obj",
+);
+$parser->set_class($neato_obj);
 isa_ok(
     $parser->parse($_),
     "Clownfish::CFC::Model::Method",

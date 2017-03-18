@@ -28,18 +28,23 @@ extern "C" {
 
 typedef struct CFCBase CFCBase;
 typedef struct CFCMeta CFCMeta;
+typedef struct CFCWeakPtr CFCWeakPtr;
 typedef void (*CFCBase_destroy_t)(CFCBase *self);
 
 #ifdef CFC_NEED_BASE_STRUCT_DEF
 struct CFCBase {
     const CFCMeta *meta;
     unsigned refcount;
+    unsigned weak_refcount;
 };
 #endif
 struct CFCMeta {
     const char *cfc_class;
     size_t obj_alloc_size;
     CFCBase_destroy_t destroy;
+};
+struct CFCWeakPtr {
+    CFCBase *ptr_;
 };
 
 /** Allocate a new CFC object.
@@ -80,6 +85,18 @@ CFCBase_get_refcount(CFCBase *self);
  */
 const char*
 CFCBase_get_cfc_class(CFCBase *self);
+
+CFCWeakPtr
+CFCWeakPtr_new(CFCBase *base);
+
+CFCBase*
+CFCWeakPtr_deref(CFCWeakPtr self);
+
+void
+CFCWeakPtr_set(CFCWeakPtr *self, CFCBase *base);
+
+void
+CFCWeakPtr_destroy(CFCWeakPtr *self);
 
 #ifdef __cplusplus
 }

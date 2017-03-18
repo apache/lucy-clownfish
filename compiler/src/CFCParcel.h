@@ -38,6 +38,7 @@ extern "C" {
 
 typedef struct CFCParcel CFCParcel;
 typedef struct CFCPrereq CFCPrereq;
+struct CFCClass;
 struct CFCFileSpec;
 struct CFCVersion;
 
@@ -99,6 +100,9 @@ CFCParcel_set_host_module_name(CFCParcel *self, const char *name);
 int
 CFCParcel_is_installed(CFCParcel *self);
 
+void
+CFCParcel_set_installed(CFCParcel *self, int is_installed);
+
 struct CFCVersion*
 CFCParcel_get_version(CFCParcel *self);
 
@@ -142,18 +146,6 @@ CFCParcel_get_source_dir(CFCParcel *self);
 int
 CFCParcel_included(CFCParcel *self);
 
-/** Add another Parcel containing superclasses that subclasses in the Parcel
- * extend.
- */
-void
-CFCParcel_add_inherited_parcel(CFCParcel *self, CFCParcel *inherited);
-
-/** Return a NULL-terminated array of all Parcels containing superclasses that
- * subclasses in the Parcel extend. Must be freed by the caller.
- */
-CFCParcel**
-CFCParcel_inherited_parcels(CFCParcel *self);
-
 /** Return a NULL-terminated array of all prerequisites.
  */
 CFCPrereq**
@@ -176,13 +168,37 @@ void
 CFCParcel_read_host_data_json(CFCParcel *self, const char *host_lang);
 
 void
-CFCParcel_add_struct_sym(CFCParcel *self, const char *struct_sym);
+CFCParcel_add_class(CFCParcel *self, struct CFCClass *klass);
 
-/** Search the parcel and all direct prerequisites for a class with
- * struct_sym. Return the parcel in which the class was found or NULL.
+/** Set up parent/child relationship of classes and sort parents before
+ * child classes.
  */
-CFCParcel*
-CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym);
+void
+CFCParcel_connect_and_sort_classes(CFCParcel *self);
+
+/** Search for a class by class name. Doesn't search prereqs. Returns
+ * NULL if no class was found.
+ */
+struct CFCClass*
+CFCParcel_class(CFCParcel *self, const char *class_name);
+
+/** Search for a class by short struct symbol. Searches direct prereqs.
+ * Returns NULL if no class was found. Throws an exception if the
+ * struct symbol doesn't match unambiguously.
+ */
+struct CFCClass*
+CFCParcel_class_by_short_sym(CFCParcel *self, const char *struct_sym);
+
+/** Search for a class by full struct symbol. Searches direct prereqs.
+ * Returns NULL if no class was found.
+ */
+struct CFCClass*
+CFCParcel_class_by_full_sym(CFCParcel *self, const char *full_struct_sym);
+
+/** Return the ordered list of classes in the parcel.
+ */
+struct CFCClass**
+CFCParcel_get_classes(CFCParcel *self);
 
 /** Indicate whether the parcel is "clownfish", the main Clownfish runtime.
  */

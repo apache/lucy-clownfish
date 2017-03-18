@@ -20,6 +20,7 @@
 
 #define CFC_USE_TEST_MACROS
 #include "CFCBase.h"
+#include "CFCClass.h"
 #include "CFCFileSpec.h"
 #include "CFCParcel.h"
 #include "CFCSymbol.h"
@@ -46,7 +47,7 @@ S_run_extended_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    41,
+    39,
     S_run_tests
 };
 
@@ -150,16 +151,6 @@ S_run_basic_tests(CFCTest *test) {
                "all_parcels returns parcel Foo");
         STR_EQ(test, CFCParcel_get_name(all_parcels[1]), "IncludedFoo",
                "all_parcels returns parcel IncludedFoo");
-    }
-
-    {
-        CFCParcel_add_inherited_parcel(foo, included_foo);
-        CFCParcel **inh_parcels = CFCParcel_inherited_parcels(foo);
-        OK(test, inh_parcels[0] && !inh_parcels[1],
-           "inherited_parcels returns one parcel");
-        STR_EQ(test, CFCParcel_get_name(inh_parcels[0]), "IncludedFoo",
-               "inh_parcels returns parcel IncludedFoo");
-        FREEMEM(inh_parcels);
     }
 
     CFCBase_decref((CFCBase*)included_foo);
@@ -278,18 +269,28 @@ S_run_extended_tests(CFCTest *test) {
         OK(test, CFCParcel_has_prereq(crust, crust), "has_prereq self");
         OK(test, !CFCParcel_has_prereq(crust, foo), "has_prereq false");
 
-        CFCParcel_add_struct_sym(cfish, "Swim");
-        CFCParcel_add_struct_sym(crust, "Pinch");
-        CFCParcel_add_struct_sym(foo, "Bar");
-        CFCParcel *found;
-        found = CFCParcel_lookup_struct_sym(crust, "Swim");
-        OK(test, found == cfish, "lookup_struct_sym prereq");
-        found = CFCParcel_lookup_struct_sym(crust, "Pinch");
-        OK(test, found == crust, "lookup_struct_sym self");
-        found = CFCParcel_lookup_struct_sym(crust, "Bar");
-        OK(test, found == NULL, "lookup_struct_sym other");
+        CFCClass *swim
+            = CFCClass_create(cfish, NULL, "Clownfish::Swim", NULL, NULL,
+                              cfish_file_spec, "Clownfish::Obj", false, false,
+                              false);
+        CFCClass *pinch
+            = CFCClass_create(crust, NULL, "Crustacean::Pinch", NULL, NULL,
+                              NULL, "Clownfish::Obj", false, false, false);
+        CFCClass *bar
+            = CFCClass_create(foo, NULL, "Foo::Bar", NULL, NULL, foo_file_spec,
+                              "Clownfish::Obj", false, false, false);
+        CFCClass *klass;
+        klass = CFCParcel_class_by_short_sym(crust, "Swim");
+        OK(test, klass == swim, "class_by_short_sym prereq");
+        klass = CFCParcel_class_by_short_sym(crust, "Pinch");
+        OK(test, klass == pinch, "class_by_short_sym self");
+        klass = CFCParcel_class_by_short_sym(crust, "Bar");
+        OK(test, klass == NULL, "class_by_short_sym other");
 
         FREEMEM(prereq_parcels);
+        CFCBase_decref((CFCBase*)bar);
+        CFCBase_decref((CFCBase*)pinch);
+        CFCBase_decref((CFCBase*)swim);
         CFCBase_decref((CFCBase*)crust);
         CFCBase_decref((CFCBase*)cfish_version);
         CFCBase_decref((CFCBase*)cfish_file_spec);

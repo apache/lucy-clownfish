@@ -28,6 +28,11 @@
 #include "CFCType.h"
 #include "CFCUtil.h"
 
+#ifndef true
+  #define true 1
+  #define false 0
+#endif
+
 static void
 S_run_tests(CFCTest *test);
 
@@ -45,7 +50,7 @@ S_run_final_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_METHOD = {
     "Clownfish::CFC::Model::Method",
-    84,
+    76,
     S_run_tests
 };
 
@@ -59,13 +64,13 @@ S_run_tests(CFCTest *test) {
 
 static char*
 S_try_new_method(const char *name, CFCType *return_type,
-                 CFCParamList *param_list, const char *class_name) {
+                 CFCParamList *param_list, CFCClass *klass) {
     CFCMethod *method = NULL;
     char      *error;
 
     CFCUTIL_TRY {
         method = CFCMethod_new(NULL, name, return_type, param_list, NULL,
-                               class_name, 0, 0);
+                               klass, 0, 0);
     }
     CFCUTIL_CATCH(error);
 
@@ -78,6 +83,12 @@ S_run_basic_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
+    CFCClass *neato_foo
+        = CFCClass_create(neato_parcel, NULL, "Neato::Foo", NULL, NULL, NULL,
+                          NULL, false, false, false);
+    CFCClass *neato_bar
+        = CFCClass_create(neato_parcel, NULL, "Neato::Bar", NULL, NULL, NULL,
+                          NULL, false, false, false);
 
     CFCType *return_type = CFCTest_parse_type(test, parser, "Obj*");
     CFCParamList *param_list
@@ -85,48 +96,23 @@ S_run_basic_tests(CFCTest *test) {
                                    "(Foo *self, int32_t count = 0)");
     CFCMethod *method
         = CFCMethod_new(NULL, "Return_An_Obj", return_type, param_list, NULL,
-                        "Neato::Foo", 0, 0);
+                        neato_foo, 0, 0);
     OK(test, method != NULL, "new");
     OK(test, CFCSymbol_parcel((CFCSymbol*)method),
        "parcel exposure by default");
 
     {
         char *error = S_try_new_method("return_an_obj", return_type,
-                                       param_list, "Neato::Foo");
+                                       param_list, neato_foo);
         OK(test, error && strstr(error, "name"),
            "invalid name kills constructor");
         FREEMEM(error);
     }
 
     {
-        static const char *bad_class_names[4] = {
-            "foo", "1Foo", "Foo_Bar", "1FOOBAR"
-        };
-        for (int i = 0; i < 4; i++) {
-            const char *bad_class_name = bad_class_names[i];
-            char *error;
-
-            error = S_try_new_method("Return_An_Obj", return_type,
-                                     param_list, bad_class_name);
-            OK(test, error && strstr(error, "class_name"),
-               "Reject invalid class name %s", bad_class_name);
-            FREEMEM(error);
-
-            char *bogus_middle
-                = CFCUtil_sprintf("Foo::%s::Bar", bad_class_name);
-            error = S_try_new_method("Return_An_Obj", return_type,
-                                     param_list, bogus_middle);
-            OK(test, error && strstr(error, "class_name"),
-               "Reject invalid class name %s", bogus_middle);
-            FREEMEM(error);
-            FREEMEM(bogus_middle);
-        }
-    }
-
-    {
         CFCMethod *dupe
             = CFCMethod_new(NULL, "Return_An_Obj", return_type, param_list,
-                            NULL, "Neato::Foo", 0, 0);
+                            NULL, neato_foo, 0, 0);
         OK(test, CFCMethod_compatible(method, dupe), "compatible");
         CFCBase_decref((CFCBase*)dupe);
     }
@@ -134,7 +120,7 @@ S_run_basic_tests(CFCTest *test) {
     {
         CFCMethod *name_differs
             = CFCMethod_new(NULL, "Eat", return_type, param_list, NULL,
-                            "Neato::Foo", 0, 0);
+                            neato_foo, 0, 0);
         OK(test, !CFCMethod_compatible(method, name_differs),
            "different name spoils compatible");
         OK(test, !CFCMethod_compatible(name_differs, method),
@@ -162,7 +148,7 @@ S_run_basic_tests(CFCTest *test) {
                 = CFCTest_parse_param_list(test, parser, param_strings[i]);
             CFCMethod *other
                 = CFCMethod_new(NULL, "Return_An_Obj", return_type,
-                                other_param_list, NULL, "Neato::Foo", 0, 0);
+                                other_param_list, NULL, neato_foo, 0, 0);
             OK(test, !CFCMethod_compatible(method, other),
                "%s spoils compatible", test_names[i]);
             OK(test, !CFCMethod_compatible(other, method),
@@ -178,7 +164,7 @@ S_run_basic_tests(CFCTest *test) {
                                        "(Bar *self, int32_t count = 0)");
         CFCMethod *self_differs
             = CFCMethod_new(NULL, "Return_An_Obj", return_type,
-                            self_differs_list, NULL, "Neato::Bar", 0, 0);
+                            self_differs_list, NULL, neato_bar, 0, 0);
         OK(test, CFCMethod_compatible(method, self_differs),
            "different self type still compatible(),"
            " since can't test inheritance");
@@ -191,7 +177,7 @@ S_run_basic_tests(CFCTest *test) {
     {
         CFCMethod *aliased
             = CFCMethod_new(NULL, "Aliased", return_type, param_list, NULL,
-                            "Neato::Foo", 0, 0);
+                            neato_foo, 0, 0);
         OK(test, !CFCMethod_get_host_alias(aliased),
            "no host alias by default");
         CFCMethod_set_host_alias(aliased, "Host_Alias");
@@ -203,7 +189,7 @@ S_run_basic_tests(CFCTest *test) {
     {
         CFCMethod *excluded
             = CFCMethod_new(NULL, "Excluded", return_type, param_list, NULL,
-                            "Neato::Foo", 0, 0);
+                            neato_foo, 0, 0);
         OK(test, !CFCMethod_excluded_from_host(excluded),
            "not excluded by default");
         CFCMethod_exclude_from_host(excluded);
@@ -213,6 +199,8 @@ S_run_basic_tests(CFCTest *test) {
 
     CFCBase_decref((CFCBase*)parser);
     CFCBase_decref((CFCBase*)neato_parcel);
+    CFCBase_decref((CFCBase*)neato_foo);
+    CFCBase_decref((CFCBase*)neato_bar);
     CFCBase_decref((CFCBase*)return_type);
     CFCBase_decref((CFCBase*)param_list);
     CFCBase_decref((CFCBase*)method);
@@ -225,7 +213,10 @@ S_run_parser_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
-    CFCParser_set_class_name(parser, "Neato::Obj");
+    CFCClass *neato_obj
+        = CFCClass_create(neato_parcel, NULL, "Neato::Obj", NULL, NULL, NULL,
+                          NULL, false, false, false);
+    CFCParser_set_class(parser, neato_obj);
 
     {
         static const char *method_strings[4] = {
@@ -249,6 +240,7 @@ S_run_parser_tests(CFCTest *test) {
         CFCBase_decref((CFCBase*)method);
     }
 
+    CFCBase_decref((CFCBase*)neato_obj);
     CFCBase_decref((CFCBase*)neato_parcel);
     CFCBase_decref((CFCBase*)parser);
 
@@ -260,19 +252,25 @@ S_run_overridden_tests(CFCTest *test) {
     CFCParser *parser = CFCParser_new();
     CFCParcel *neato_parcel
         = CFCTest_parse_parcel(test, parser, "parcel Neato;");
+    CFCClass *neato_foo
+        = CFCClass_create(neato_parcel, NULL, "Neato::Foo", NULL, NULL, NULL,
+                          NULL, false, false, false);
+    CFCClass *neato_foo_jr
+        = CFCClass_create(neato_parcel, NULL, "Neato::Foo::FooJr", NULL, NULL,
+                          NULL, "Neato::Foo", false, false, false);
     CFCType *return_type = CFCTest_parse_type(test, parser, "Obj*");
 
     CFCParamList *param_list
         = CFCTest_parse_param_list(test, parser, "(Foo *self)");
     CFCMethod *orig
         = CFCMethod_new(NULL, "Return_An_Obj", return_type, param_list, NULL,
-                        "Neato::Foo", 0, 0);
+                        neato_foo, 0, 0);
 
     CFCParamList *overrider_param_list
         = CFCTest_parse_param_list(test, parser, "(FooJr *self)");
     CFCMethod *overrider
         = CFCMethod_new(NULL, "Return_An_Obj", return_type,
-                        overrider_param_list, NULL, "Neato::Foo::FooJr", 0, 0);
+                        overrider_param_list, NULL, neato_foo_jr, 0, 0);
 
     CFCMethod_override(overrider, orig);
     OK(test, !CFCMethod_novel(overrider),
@@ -280,6 +278,8 @@ S_run_overridden_tests(CFCTest *test) {
 
     CFCBase_decref((CFCBase*)parser);
     CFCBase_decref((CFCBase*)neato_parcel);
+    CFCBase_decref((CFCBase*)neato_foo);
+    CFCBase_decref((CFCBase*)neato_foo_jr);
     CFCBase_decref((CFCBase*)return_type);
     CFCBase_decref((CFCBase*)param_list);
     CFCBase_decref((CFCBase*)orig);
@@ -304,7 +304,7 @@ S_run_final_tests(CFCTest *test) {
 
     CFCMethod *not_final
         = CFCMethod_new(NULL, "Return_An_Obj", return_type, param_list, NULL,
-                        "Neato::Foo", 0, 0);
+                        foo_class, 0, 0);
     CFCMethod_resolve_types(not_final);
     CFCMethod *final = CFCMethod_finalize(not_final);
     OK(test, CFCMethod_compatible(not_final, final),
@@ -334,7 +334,6 @@ S_run_final_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)not_final);
     CFCBase_decref((CFCBase*)final);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 

@@ -16,12 +16,12 @@
 use strict;
 use warnings;
 
-use Test::More tests => 54;
+use Test::More tests => 53;
 use Clownfish::CFC::Model::Class;
 use Clownfish::CFC::Parser;
 
 my $parser = Clownfish::CFC::Parser->new;
-$parser->parse('parcel Neato;');
+my $neato = $parser->parse('parcel Neato;');
 
 my $thing = Clownfish::CFC::Model::Variable->new(
     type => $parser->parse('Thing*'),
@@ -45,8 +45,8 @@ my $foo = Clownfish::CFC::Model::Class->create(%foo_create_args);
 $foo->add_function($tread_water);
 $foo->add_member_var($thing);
 $foo->add_inert_var($widget);
-my $should_be_foo = Clownfish::CFC::Model::Class->fetch_singleton('Foo');
-is( $$foo, $$should_be_foo, "fetch_singleton" );
+my $should_be_foo = $neato->class('Foo');
+is( $$foo, $$should_be_foo, "Fetch class from parcel" );
 
 eval { Clownfish::CFC::Model::Class->create(%foo_create_args) };
 like( $@, qr/two classes with name/i,
@@ -99,24 +99,24 @@ is( $final_foo->get_parent_class_name, 'Foo::FooJr',
     "get_parent_class_name" );
 
 $parser->parse("parcel Neato;");
-$parser->set_class_name("Foo");
+$parser->set_class($foo);
 my $do_stuff = $parser->parse('void Do_Stuff(Foo *self);')
     or die "parsing failure";
 $foo->add_method($do_stuff);
-
-$parser->set_class_name("InertFoo");
-my $inert_do_stuff = $parser->parse('void Do_Stuff(InertFoo *self);')
-    or die "parsing failure";
-$parser->set_class_name("");
 
 my %inert_args = (
     parcel     => 'Neato',
     class_name => 'InertFoo',
     inert      => 1,
 );
+my $inert_foo = Clownfish::CFC::Model::Class->create(%inert_args);
+$parser->set_class($inert_foo);
+my $inert_do_stuff = $parser->parse('void Do_Stuff(InertFoo *self);')
+    or die "parsing failure";
+$parser->set_class(undef);
+
 eval {
-    my $class = Clownfish::CFC::Model::Class->create(%inert_args);
-    $class->add_method($inert_do_stuff);
+    $inert_foo->add_method($inert_do_stuff);
 };
 like(
     $@,
@@ -149,9 +149,6 @@ is_deeply( $foo_jr->functions,         [], "don't inherit inert funcs" );
 is_deeply( $foo_jr->fresh_member_vars, [], "fresh_member_vars" );
 is_deeply( $foo_jr->inert_vars,        [], "don't inherit inert vars" );
 is_deeply( $final_foo->fresh_methods,  [], "fresh_methods" );
-
-is_deeply( $foo->tree_to_ladder, [ $foo, $foo_jr, $final_foo ],
-    'tree_to_ladder' );
 
 ok( $parser->parse("$_ class Iam$_ { }")->$_, "class_modifier: $_" )
     for (qw( final inert ));
@@ -245,7 +242,7 @@ $class_content = qq|
 $class = $parser->parse($class_content);
 ok( $class->final, "final class_declaration" );
 
-Clownfish::CFC::Model::Class->_clear_registry();
+Clownfish::CFC::Model::Parcel->reap_singletons();
 
 {
     eval {
@@ -255,7 +252,7 @@ Clownfish::CFC::Model::Class->_clear_registry();
     };
     like( $@, qr/inert class/i, "inert class can't inherit" );
 
-    Clownfish::CFC::Model::Class->_clear_registry();
+    Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 
 {
@@ -266,6 +263,6 @@ Clownfish::CFC::Model::Class->_clear_registry();
     };
     like( $@, qr/inert class/i, "can't inherit from inert class" );
 
-    Clownfish::CFC::Model::Class->_clear_registry();
+    Clownfish::CFC::Model::Parcel->reap_singletons();
 }
 

@@ -24,6 +24,7 @@
 #include "CFCVariable.h"
 #include "CFCType.h"
 #include "CFCUtil.h"
+#include "CFCClass.h"
 
 #ifndef true
     #define true 1
@@ -109,32 +110,12 @@ CFCGoTypeMap_go_type_name(CFCType *type, CFCParcel *current_parcel) {
     }
     else if (CFCType_is_object(type)) {
         // Divide the specifier into prefix and struct name.
-        const char *specifier  = CFCType_get_specifier(type);
-        size_t      prefix_len = 0;
-        for (size_t max = strlen(specifier); prefix_len < max; prefix_len++) {
-            if (CFCUtil_isupper(specifier[prefix_len])) {
-                break;
-            }
-        }
-        if (!prefix_len) {
-            CFCUtil_die("Can't convert object type name '%s'", specifier);
-        }
-        const char *struct_sym = specifier + prefix_len;
-
-        // Find the parcel that the type lives in.
-        CFCParcel** all_parcels = CFCParcel_all_parcels();
-        CFCParcel *parcel = NULL;
-        for (int i = 0; all_parcels[i] != NULL; i++) {
-            const char *candidate = CFCParcel_get_prefix(all_parcels[i]);
-            if (strncmp(candidate, specifier, prefix_len) == 0
-                && strlen(candidate) == prefix_len
-               ) {
-                parcel = all_parcels[i];
-                break;
-            }
-        }
+        CFCClass   *klass      = CFCType_get_class(type);
+        const char *struct_sym = CFCClass_get_struct_sym(klass);
+        CFCParcel  *parcel     = CFCClass_get_parcel(klass);
         if (!parcel) {
-            CFCUtil_die("Can't find parcel for type '%s'", specifier);
+            CFCUtil_die("Can't find parcel for type '%s'",
+                        CFCType_get_specifier(type));
         }
 
         // If the type lives in this parcel, return only the struct sym

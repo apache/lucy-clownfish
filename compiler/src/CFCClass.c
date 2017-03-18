@@ -35,23 +35,15 @@
 #include "CFCFileSpec.h"
 #include "CFCJson.h"
 
-static CFCClass **registry = NULL;
-static size_t registry_size = 0;
-static size_t registry_cap  = 0;
-
-// Store a new CFCClass in a registry.
-static void
-S_register(CFCClass *self);
-
 struct CFCClass {
     CFCBase base;
-    struct CFCParcel *parcel;
+    CFCWeakPtr parcel;
     char *exposure;
     char *name;
     char *nickname;
     int tree_grown;
     CFCDocuComment *docucomment;
-    struct CFCClass *parent;
+    CFCWeakPtr parent;
     struct CFCClass **children;
     size_t num_kids;
     CFCFunction **functions;
@@ -83,10 +75,6 @@ struct CFCClass {
     char *privacy_symbol;
     char *include_h;
 };
-
-// Link up parents and kids.
-static void
-S_establish_ancestry(CFCClass *self);
 
 // Pass down member vars to from parent to children.
 static void
@@ -225,12 +213,11 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     }
 
     // Assign.
-    self->parcel          = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
+    self->parcel          = CFCWeakPtr_new((CFCBase*)parcel);
     self->exposure        = CFCUtil_strdup(exposure);
     self->name            = CFCUtil_strdup(name);
     self->nickname        = CFCUtil_strdup(real_nickname);
     self->tree_grown      = false;
-    self->parent          = NULL;
     self->children        = (CFCClass**)CALLOCATE(1, sizeof(CFCClass*));
     self->num_kids        = 0;
     self->functions       = (CFCFunction**)CALLOCATE(1, sizeof(CFCFunction*));
@@ -252,7 +239,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
 
     // Cache several derived symbols.
 
-    const char *prefix = CFCClass_get_prefix(self);
+    const char *prefix = CFCParcel_get_prefix(parcel);
     self->struct_sym        = CFCUtil_strdup(struct_sym);
     self->full_struct_sym   = CFCUtil_sprintf("%s%s", prefix, struct_sym);
     self->ivars_struct      = CFCUtil_sprintf("%sIVARS", struct_sym);
@@ -264,7 +251,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     self->full_ivars_offset = CFCUtil_sprintf("%s_OFFSET",
                                               self->full_ivars_func);
 
-    const char *PREFIX = CFCClass_get_PREFIX(self);
+    const char *PREFIX = CFCParcel_get_PREFIX(parcel);
     size_t struct_sym_len = strlen(struct_sym);
     char *short_class_var = (char*)MALLOCATE(struct_sym_len + 1);
     size_t i;
@@ -299,8 +286,7 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
     char *error;
 
     CFCUTIL_TRY {
-        // Store in registry.
-        S_register(self);
+        CFCParcel_add_class(parcel, self);
     }
     CFCUTIL_CATCH(error);
 
@@ -308,8 +294,6 @@ CFCClass_do_create(CFCClass *self, struct CFCParcel *parcel,
         CFCBase_decref((CFCBase*)self);
         CFCUtil_rethrow(error);
     }
-
-    CFCParcel_add_struct_sym(parcel, self->struct_sym);
 
     return self;
 }
@@ -326,12 +310,12 @@ S_free_cfcbase_array(CFCBase **array) {
 
 void
 CFCClass_destroy(CFCClass *self) {
-    CFCBase_decref((CFCBase*)self->parcel);
+    CFCWeakPtr_destroy(&self->parcel);
     FREEMEM(self->exposure);
     FREEMEM(self->name);
     FREEMEM(self->nickname);
     CFCBase_decref((CFCBase*)self->docucomment);
-    CFCBase_decref((CFCBase*)self->parent);
+    CFCWeakPtr_destroy(&self->parent);
     CFCBase_decref((CFCBase*)self->file_spec);
     S_free_cfcbase_array((CFCBase**)self->children);
     S_free_cfcbase_array((CFCBase**)self->functions);
@@ -353,90 +337,6 @@ CFCClass_destroy(CFCClass *self) {
     FREEMEM(self->privacy_symbol);
     FREEMEM(self->include_h);
     CFCBase_destroy((CFCBase*)self);
-}
-
-static void
-S_register(CFCClass *self) {
-    if (registry_size == registry_cap) {
-        size_t new_cap = registry_cap + 10;
-        registry = (CFCClass**)REALLOCATE(
-                       registry,
-                       (new_cap + 1) * sizeof(CFCClass*));
-        for (size_t i = registry_cap; i <= new_cap; i++) {
-            registry[i] = NULL;
-        }
-        registry_cap = new_cap;
-    }
-
-    const char *prefix     = CFCParcel_get_prefix(self->parcel);
-    const char *name       = self->name;
-    const char *nickname   = self->nickname;
-    const char *struct_sym = self->full_struct_sym;
-
-    for (size_t i = 0; i < registry_size; i++) {
-        CFCClass   *other        = registry[i];
-        const char *other_prefix = CFCParcel_get_prefix(other->parcel);
-
-        if (strcmp(name, other->name) == 0) {
-            CFCUtil_die("Two classes with name %s", name);
-        }
-        if (strcmp(struct_sym, other->full_struct_sym) == 0) {
-            CFCUtil_die("Class name conflict between %s and %s",
-                        name, other->name);
-        }
-        if (strcmp(prefix, other_prefix) == 0
-            && strcmp(nickname, other->nickname) == 0
-           ) {
-            CFCUtil_die("Class nickname conflict between %s and %s",
-                        name, other->name);
-        }
-    }
-
-    registry[registry_size] = (CFCClass*)CFCBase_incref((CFCBase*)self);
-    registry_size++;
-}
-
-#define MAX_SINGLETON_LEN 256
-
-CFCClass*
-CFCClass_fetch_singleton(const char *class_name) {
-    CFCUTIL_NULL_CHECK(class_name);
-
-    for (size_t i = 0; i < registry_size; i++) {
-        if (strcmp(registry[i]->name, class_name) == 0) {
-            return registry[i];
-        }
-    }
-    return NULL;
-}
-
-CFCClass*
-CFCClass_fetch_by_struct_sym(const char *struct_sym) {
-    CFCUTIL_NULL_CHECK(struct_sym);
-
-    for (size_t i = 0; i < registry_size; i++) {
-        if (strcmp(registry[i]->full_struct_sym, struct_sym) == 0) {
-            return registry[i];
-        }
-    }
-    return NULL;
-}
-
-void
-CFCClass_clear_registry(void) {
-    for (size_t i = 0; i < registry_size; i++) {
-        CFCClass *klass = registry[i];
-        if (klass->parent) {
-            // Break circular ref.
-            CFCBase_decref((CFCBase*)klass->parent);
-            klass->parent = NULL;
-        }
-        CFCBase_decref((CFCBase*)klass);
-    }
-    FREEMEM(registry);
-    registry_size = 0;
-    registry_cap  = 0;
-    registry      = NULL;
 }
 
 void
@@ -461,17 +361,8 @@ CFCClass_add_child(CFCClass *self, CFCClass *child) {
         = (CFCClass*)CFCBase_incref((CFCBase*)child);
     self->children[self->num_kids] = NULL;
 
-    // Add parcel dependency.
-    CFCParcel *parcel       = CFCClass_get_parcel(self);
-    CFCParcel *child_parcel = CFCClass_get_parcel(child);
-    if (!CFCParcel_has_prereq(child_parcel, parcel)) {
-        CFCUtil_die("Class '%s' inherits from '%s', but parcel '%s' is not a"
-                    " prerequisite of '%s'",
-                    child->name, self->name,
-                    CFCParcel_get_name(parcel),
-                    CFCParcel_get_name(child_parcel));
-    }
-    CFCParcel_add_inherited_parcel(child_parcel, parcel);
+    // Set parent of child.
+    CFCWeakPtr_set(&child->parent, (CFCBase*)self);
 }
 
 void
@@ -665,27 +556,6 @@ S_bequeath_methods(CFCClass *self) {
     }
 }
 
-// Let the children know who their parent class is.
-static void
-S_establish_ancestry(CFCClass *self) {
-    for (size_t i = 0; i < self->num_kids; i++) {
-        CFCClass *child = self->children[i];
-        // This is a circular reference and thus a memory leak, but we don't
-        // care, because we have to have everything in memory at once anyway.
-        CFCClass_set_parent(child, self);
-        S_establish_ancestry(child);
-    }
-}
-
-static size_t
-S_family_tree_size(CFCClass *self) {
-    size_t count = 1; // self
-    for (size_t i = 0; i < self->num_kids; i++) {
-        count += S_family_tree_size(self->children[i]);
-    }
-    return count;
-}
-
 static CFCBase**
 S_copy_cfcbase_array(CFCBase **array, size_t num_elems) {
     CFCBase **copy = (CFCBase**)MALLOCATE((num_elems + 1) * sizeof(CFCBase*));
@@ -701,7 +571,6 @@ CFCClass_grow_tree(CFCClass *self) {
     if (self->tree_grown) {
         CFCUtil_die("Can't call grow_tree more than once");
     }
-    S_establish_ancestry(self);
 
     // Copy fresh variabless for root class.
     self->member_vars
@@ -720,26 +589,6 @@ CFCClass_grow_tree(CFCClass *self) {
     S_bequeath_methods(self);
 
     self->tree_grown = 1;
-}
-
-// Return value is valid only so long as object persists (elements are not
-// refcounted).
-CFCClass**
-CFCClass_tree_to_ladder(CFCClass *self) {
-    size_t ladder_len = S_family_tree_size(self);
-    CFCClass **ladder = (CFCClass**)MALLOCATE((ladder_len + 1) * sizeof(CFCClass*));
-    ladder[ladder_len] = NULL;
-    size_t step = 0;
-    ladder[step++] = self;
-    for (size_t i = 0; i < self->num_kids; i++) {
-        CFCClass *child = self->children[i];
-        CFCClass **child_ladder = CFCClass_tree_to_ladder(child);
-        for (size_t j = 0; child_ladder[j] != NULL; j++) {
-            ladder[step++] = child_ladder[j];
-        }
-        FREEMEM(child_ladder);
-    }
-    return ladder;
 }
 
 void
@@ -814,11 +663,10 @@ CFCClass_num_member_vars(CFCClass *self) {
 // outside this package.
 size_t
 CFCClass_num_non_package_ivars(CFCClass *self) {
-    CFCParcel *parcel       = CFCClass_get_parcel(self);
     CFCClass  *ancestor     = CFCClass_get_parent(self);
     size_t num_non_package_members = 0;
 
-    while (ancestor && CFCClass_get_parcel(ancestor) == parcel) {
+    while (ancestor && CFCClass_in_same_parcel(ancestor, self)) {
         ancestor = CFCClass_get_parent(ancestor);
     }
     if (ancestor) {
@@ -838,16 +686,9 @@ CFCClass_get_nickname(CFCClass *self) {
     return self->nickname;
 }
 
-void
-CFCClass_set_parent(CFCClass *self, CFCClass *parent) {
-    CFCClass *old_parent = self->parent;
-    self->parent = (CFCClass*)CFCBase_incref((CFCBase*)parent);
-    CFCBase_decref((CFCBase*)old_parent);
-}
-
 CFCClass*
 CFCClass_get_parent(CFCClass *self) {
-    return self->parent;
+    return (CFCClass*)CFCWeakPtr_deref(self->parent);
 }
 
 const char*
@@ -888,10 +729,13 @@ CFCClass_abstract(CFCClass *self) {
 }
 
 int
-CFCClass_needs_documentation(CFCClass *self) {
-    return CFCClass_public(self)
-           && !CFCClass_included(self)
-           && CFCParcel_is_installed(self->parcel);
+CFCClass_in_parcel(CFCClass *self, struct CFCParcel *parcel) {
+    return CFCClass_get_parcel(self) == parcel;
+}
+
+int
+CFCClass_in_same_parcel(CFCClass *self, CFCClass *other) {
+    return CFCClass_get_parcel(self) == CFCClass_get_parcel(other);
 }
 
 const char*
@@ -951,22 +795,22 @@ CFCClass_include_h(CFCClass *self) {
 
 CFCParcel*
 CFCClass_get_parcel(CFCClass *self) {
-    return self->parcel;
+    return (CFCParcel*)CFCWeakPtr_deref(self->parcel);
 }
 
 const char*
 CFCClass_get_prefix(CFCClass *self) {
-    return CFCParcel_get_prefix(self->parcel);
+    return CFCParcel_get_prefix(CFCClass_get_parcel(self));
 }
 
 const char*
 CFCClass_get_Prefix(CFCClass *self) {
-    return CFCParcel_get_Prefix(self->parcel);
+    return CFCParcel_get_Prefix(CFCClass_get_parcel(self));
 }
 
 const char*
 CFCClass_get_PREFIX(CFCClass *self) {
-    return CFCParcel_get_PREFIX(self->parcel);
+    return CFCParcel_get_PREFIX(CFCClass_get_parcel(self));
 }
 
 const char*

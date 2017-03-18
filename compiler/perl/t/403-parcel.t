@@ -18,7 +18,7 @@ use warnings;
 use lib 'buildlib';
 
 use Clownfish::CFC::Test::TestUtils qw( test_files_dir );
-use Test::More tests => 32;
+use Test::More tests => 31;
 use File::Spec::Functions qw( catdir );
 
 BEGIN { use_ok('Clownfish::CFC::Model::Prereq') }
@@ -70,10 +70,6 @@ $included_foo->register;
 my $parcels = Clownfish::CFC::Model::Parcel->all_parcels;
 my @names = sort(map { $_->get_name } @$parcels);
 is_deeply( \@names, [ "Foo", "IncludedFoo" ], "all_parcels" );
-
-$foo->add_inherited_parcel($included_foo);
-my @inh_names = sort(map { $_->get_name } @{ $foo->inherited_parcels });
-is_deeply( \@inh_names, [ "IncludedFoo" ], "inherited_parcels" );
 
 my $json = qq|
         {
@@ -192,16 +188,27 @@ Clownfish::CFC::Model::Parcel->reap_singletons();
     ok( $crust->has_prereq($crust), 'has_prereq self' );
     ok( !$crust->has_prereq($foo), 'has_prereq false' );
 
-    $cfish->add_struct_sym('Swim');
-    $crust->add_struct_sym('Pinch');
-    $foo->add_struct_sym('Bar');
-    my $found;
-    $found = $crust->lookup_struct_sym('Swim');
-    is( $found->get_name, 'Clownfish', 'lookup_struct_sym prereq' );
-    $found = $crust->lookup_struct_sym('Pinch');
-    is( $found->get_name, 'Crustacean', 'lookup_struct_sym self' );
-    $found = $crust->lookup_struct_sym('Bar');
-    ok( !$found, 'lookup_struct_sym other' );
+    Clownfish::CFC::Model::Class->create(
+        parcel     => $cfish,
+        file_spec  => $cfish_file_spec,
+        class_name => 'Clownfish::Swim',
+    );
+    Clownfish::CFC::Model::Class->create(
+        parcel     => $crust,
+        class_name => 'Crustacean::Pinch',
+    );
+    Clownfish::CFC::Model::Class->create(
+        parcel     => $foo,
+        file_spec  => $foo_file_spec,
+        class_name => 'Foo::Bar',
+    );
+    my $class;
+    $class = $crust->class_by_short_sym('Swim');
+    is( $class->get_name, 'Clownfish::Swim', 'class_by_short_sym prereq' );
+    $class = $crust->class_by_short_sym('Pinch');
+    is( $class->get_name, 'Crustacean::Pinch', 'class_by_short_sym self' );
+    $class = $crust->class_by_short_sym('Bar');
+    ok( !$class, 'class_by_short_sym other' );
 
     Clownfish::CFC::Model::Parcel->reap_singletons();
 }

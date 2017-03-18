@@ -121,10 +121,14 @@ is_deeply(
     "initial values"
 );
 
-$parser->set_class_name('Stuff::Obj');
+my $stuff_obj = Clownfish::CFC::Model::Class->create(
+    parcel     => "Crustacean",
+    class_name => "Crust::Stuff",
+);
+$parser->set_class($stuff_obj);
 ok( $parser->parse($_), "declaration statement: $_" )
     for (
-    'public Foo* Spew_Foo(Obj *self, uint32_t *how_many);',
+    'public Foo* Spew_Foo(Stuff *self, uint32_t *how_many);',
     'public inert Hash *hash;',
     );
 
@@ -134,7 +138,6 @@ for (qw( Foo FooJr FooIII Foo4th )) {
     $type->resolve;
     is( $type->get_specifier, "crust_$_", "object_type_specifier: $_" )
 }
-Clownfish::CFC::Model::Class->_clear_registry();
 
 SKIP: {
     skip( "Can't recover from bad specifier under flex/lemon parser", 6 );
@@ -143,7 +146,7 @@ SKIP: {
 }
 
 is( $parser->parse("class $_ { }")->get_name, $_, "class_name: $_" )
-    for (qw( Foo Foo::FooJr Foo::FooJr::FooIII Foo::FooJr::FooIII::Foo4th ));
+    for (qw( Moo Moo::MooJr Moo::MooJr::MooIII Moo::MooJr::MooIII::Moo4th ));
 
 SKIP: {
     skip( "Can't recover from bad class name under flex/lemon parser", 6 );

@@ -22,13 +22,20 @@ CFCBase*
 CFCBase_allocate(const CFCMeta *meta) {
     CFCBase *self = (CFCBase*)CALLOCATE(meta->obj_alloc_size, 1);
     self->refcount = 1;
+    self->weak_refcount = 0;
     self->meta = meta;
     return self;
 }
 
 void
 CFCBase_destroy(CFCBase *self) {
-    FREEMEM(self);
+    if (self->weak_refcount == 0) {
+        FREEMEM(self);
+    }
+    else {
+        // Let WeakPtr free the memory.
+        self->refcount = 0;
+    }
 }
 
 CFCBase*
@@ -42,11 +49,15 @@ CFCBase_incref(CFCBase *self) {
 unsigned
 CFCBase_decref(CFCBase *self) {
     if (!self) { return 0; }
-    unsigned modified_refcount = --self->refcount;
-    if (modified_refcount == 0) {
-        self->meta->destroy(self);
+    if (self->refcount > 1) {
+        return --self->refcount;
     }
-    return modified_refcount;
+    else {
+        // Don't decrease refcount to 0 before calling `destroy`. This could
+        // make WeakPtrs free the object.
+        self->meta->destroy(self);
+        return 0;
+    }
 }
 
 unsigned
@@ -57,6 +68,48 @@ CFCBase_get_refcount(CFCBase *self) {
 const char*
 CFCBase_get_cfc_class(CFCBase *self) {
     return self->meta->cfc_class;
+}
+
+CFCWeakPtr
+CFCWeakPtr_new(CFCBase *base) {
+    CFCWeakPtr self = { base };
+    if (base) { base->weak_refcount += 1; }
+    return self;
+}
+
+CFCBase*
+CFCWeakPtr_deref(CFCWeakPtr self) {
+    if (self.ptr_ != NULL && self.ptr_->refcount == 0) {
+        // CFC doesn't access WeakPtrs after the strong refcount went to
+        // zero, so throw an exception.
+        CFCUtil_die("Invalid WeakPtr deref");
+    }
+    return self.ptr_;
+}
+
+void
+CFCWeakPtr_set(CFCWeakPtr *self, CFCBase *base) {
+    CFCBase *old_base = self->ptr_;
+    if (old_base == base) { return; }
+    if (old_base != NULL) {
+        old_base->weak_refcount -= 1;
+        if (old_base->refcount == 0 && old_base->weak_refcount == 0) {
+            FREEMEM(old_base);
+        }
+    }
+    self->ptr_ = base;
+    if (base) { base->weak_refcount += 1; }
+}
+
+void
+CFCWeakPtr_destroy(CFCWeakPtr *self) {
+    CFCBase *base = self->ptr_;
+    if (base == NULL) { return; }
+    base->weak_refcount -= 1;
+    if (base->refcount == 0 && base->weak_refcount == 0) {
+        FREEMEM(base);
+    }
+    self->ptr_ = NULL;
 }
 
 

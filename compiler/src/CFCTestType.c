@@ -337,7 +337,6 @@ S_run_object_tests(CFCTest *test) {
             }
 
             CFCBase_decref((CFCBase*)klass);
-            CFCClass_clear_registry();
         }
 
         CFCBase_decref((CFCBase*)neato_parcel);
@@ -441,7 +440,6 @@ S_run_object_tests(CFCTest *test) {
     CFCBase_decref((CFCBase*)foo_class);
     CFCBase_decref((CFCBase*)foo);
 
-    CFCClass_clear_registry();
     CFCParcel_reap_singletons();
 }
 

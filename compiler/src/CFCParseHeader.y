@@ -49,12 +49,11 @@ S_start_class(CFCParser *state, CFCDocuComment *docucomment, char *exposure,
         is_inert = !!strstr(modifiers, "inert");
         is_abstract = !!strstr(modifiers, "abstract");
     }
-    CFCParser_set_class_name(state, class_name);
-    CFCParser_set_class_final(state, is_final);
     CFCClass *klass = CFCClass_create(CFCParser_get_parcel(state), exposure,
                                       class_name, class_nickname, docucomment,
                                       file_spec, inheritance, is_final,
                                       is_inert, is_abstract);
+    CFCParser_set_class(state, klass);
     CFCBase_decref((CFCBase*)docucomment);
     return klass;
 }
@@ -92,7 +91,8 @@ S_new_sub(CFCParser *state, CFCDocuComment *docucomment,
         is_inline   = !!strstr(modifiers, "inline");
         is_inert    = !!strstr(modifiers, "inert");
     }
-    if (CFCParser_get_class_final(state) && !is_inert) {
+    CFCClass *klass = CFCParser_get_class(state);
+    if (CFCClass_final(klass) && !is_inert) {
         is_final = true;
     }
 
@@ -112,9 +112,9 @@ S_new_sub(CFCParser *state, CFCDocuComment *docucomment,
         if (is_inline) {
             CFCUtil_die("Methods must not be inline");
         }
-        const char *class_name = CFCParser_get_class_name(state);
+        CFCClass *klass = CFCParser_get_class(state);
         sub = (CFCBase*)CFCMethod_new(exposure, name, type, param_list,
-                                      docucomment, class_name, is_final,
+                                      docucomment, klass, is_final,
                                       is_abstract);
     }
 
@@ -337,7 +337,7 @@ parcel_definition(A) ::= PARCEL qualified_id(B) SEMICOLON.
 class_declaration(A) ::= class_defs(B) RIGHT_CURLY_BRACE.
 {
     A = B;
-    CFCParser_set_class_name(state, NULL);
+    CFCParser_set_class(state, NULL);
 }
 
 class_head(A) ::= docucomment(B) exposure_specifier(C) declaration_modifier_list(D) CLASS qualified_id(E) nickname(F) class_inheritance(G).  { A = S_start_class(state, B,    C,    D,    E,    F,    G   ); }

@@ -27,6 +27,7 @@ extern "C" {
 typedef struct CFCPerlPod CFCPerlPod;
 struct CFCCallable;
 struct CFCClass;
+struct CFCDocuComment;
 
 CFCPerlPod*
 CFCPerlPod_new(void);
@@ -128,12 +129,15 @@ CFCPerlPod_md_to_pod(const char *md, struct CFCClass *klass, int header_level);
  * @param code_sample Optional example usage code.
  * @param is_construtor Indicate whether this is a constructor, as the default
  * argument handling is different for constructors.
+ * @param docucomment An optional docucomment.
+ * @param base_class The class to resolve relative URIs in the docucomment.
  */
 char*
 CFCPerlPod_gen_subroutine_pod(struct CFCCallable *func,
                               const char *alias, struct CFCClass *klass,
-                              const char *code_sample,
-                              const char *class_name, int is_constructor);
+                              const char *code_sample, int is_constructor,
+                              struct CFCDocuComment *docucomment,
+                              struct CFCClass *base_class);
 
 #ifdef __cplusplus
 }

@@ -88,8 +88,6 @@ my $file_spec = Clownfish::CFC::Model::FileSpec->new(
     isa_ok( $blocks->[1], "Clownfish::CFC::Model::Class" );
     isa_ok( $blocks->[2], "Clownfish::CFC::Model::Class" );
     isa_ok( $blocks->[3], "Clownfish::CFC::Model::CBlock" );
-
-    Clownfish::CFC::Model::Class->_clear_registry();
 }
 
 

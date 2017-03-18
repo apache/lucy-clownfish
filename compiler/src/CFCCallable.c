@@ -91,11 +91,6 @@ CFCCallable_get_param_list(CFCCallable *self) {
     return self->param_list;
 }
 
-CFCDocuComment*
-CFCCallable_get_docucomment(CFCCallable *self) {
-    return self->docucomment;
-}
-
 const char*
 CFCCallable_get_name(CFCCallable *self) {
     return CFCSymbol_get_name((CFCSymbol*)self);

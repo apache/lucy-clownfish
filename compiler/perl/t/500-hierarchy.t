@@ -17,7 +17,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 21;
+use Test::More tests => 22;
 
 use Clownfish::CFC::Model::Hierarchy;
 use Clownfish::CFC::Util qw( a_isa_b );
@@ -70,7 +70,9 @@ my $animal = $files{'Animal'}       or die "No Animal";
 my $dog    = $files{'Animal::Dog'}  or die "No Dog";
 my $util   = $files{'Animal::Util'} or die "No Util";
 
-my $classes = $hierarchy->ordered_classes;
+my $parcel = Clownfish::CFC::Model::Parcel->fetch('Animal');
+ok( $parcel, "Fetch parcel Animal" );
+my $classes = $parcel->get_classes;
 is( scalar @$classes, 4, "all classes" );
 for my $class (@$classes) {
     die "not a Class" unless isa_ok( $class, "Clownfish::CFC::Model::Class" );

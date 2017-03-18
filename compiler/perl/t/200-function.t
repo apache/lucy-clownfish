@@ -44,7 +44,11 @@ like( $@, qr/extra_arg/, "Extra arg kills constructor" );
 eval { Clownfish::CFC::Model::Function->new( %args, name => 'Uh_Oh' ); };
 like( $@, qr/Uh_Oh/, "invalid name kills constructor" );
 
-$parser->set_class_name("Neato::Obj");
+my $neato_obj = Clownfish::CFC::Model::Class->create(
+    parcel     => "Neato",
+    class_name => "Neato::Obj",
+);
+$parser->set_class($neato_obj);
 isa_ok(
     $parser->parse($_),
     "Clownfish::CFC::Model::Function",

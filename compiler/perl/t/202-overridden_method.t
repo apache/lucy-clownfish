@@ -27,7 +27,7 @@ $parser->parse('parcel Neato;')
 
 my %args = (
     return_type => $parser->parse('Obj*'),
-    class_name  => 'Neato::Foo',
+    class       => $parser->parse('class Neato::Foo {}'),
     param_list  => $parser->parse('(Foo *self)'),
     name        => 'Return_An_Obj',
 );
@@ -36,7 +36,7 @@ my $orig      = Clownfish::CFC::Model::Method->new(%args);
 my $overrider = Clownfish::CFC::Model::Method->new(
     %args,
     param_list => $parser->parse('(FooJr *self)'),
-    class_name => 'Neato::Foo::FooJr',
+    class      => $parser->parse('class Neato::Foo::FooJr {}'),
 );
 $overrider->override($orig);
 ok( !$overrider->novel, "A Method which overrides another is not 'novel'" );

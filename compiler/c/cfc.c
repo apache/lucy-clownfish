@@ -263,7 +263,6 @@ main(int argc, char **argv) {
     FREEMEM(header);
     FREEMEM(footer);
 
-    CFCClass_clear_registry();
     CFCDocument_clear_registry();
     CFCParcel_reap_singletons();
 

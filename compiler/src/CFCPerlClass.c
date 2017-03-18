@@ -74,23 +74,28 @@ CFCPerlClass_init(CFCPerlClass *self, CFCParcel *parcel,
                   const char *class_name) {
     CFCUTIL_NULL_CHECK(class_name);
 
-    // Client may be NULL, since fetch_singleton() does not always succeed.
-    CFCClass *client = CFCClass_fetch_singleton(class_name);
-    if (client == NULL) {
-        if (parcel == NULL) {
-            CFCUtil_die("Missing parcel for class %s", class_name);
+    CFCClass *client;
+    if (!parcel) {
+        // Search all source parcels.
+        CFCParcel **parcels = CFCParcel_all_parcels();
+        for (size_t i = 0; parcels[i]; i++) {
+            CFCParcel *candidate = parcels[i];
+            if (CFCParcel_included(candidate)) { continue; }
+            client = CFCParcel_class(candidate, class_name);
+            if (client) {
+                parcel = candidate;
+                break;
+            }
+        }
+
+        if (!parcel) {
+            CFCUtil_die("Class '%s' not found and no parcel specified.",
+                        class_name);
         }
     }
     else {
-        CFCParcel *client_parcel = CFCClass_get_parcel(client);
-
-        if (parcel == NULL) {
-            parcel = client_parcel;
-        }
-        else if (client_parcel != parcel) {
-            CFCUtil_die("Wrong parcel %s for class %s",
-                        CFCParcel_get_name(parcel), class_name);
-        }
+        // Client may be NULL, since class() does not always succeed.
+        client = CFCParcel_class(parcel, class_name);
     }
 
     self->parcel = (CFCParcel*)CFCBase_incref((CFCBase*)parcel);
