@@ -311,7 +311,9 @@ S_write_host_c(CFCPerl *self, CFCParcel *parcel) {
             CFCMethod *method = fresh_methods[meth_num];
 
             // Define callback.
-            if (CFCMethod_novel(method) && !CFCMethod_final(method)) {
+            if (CFCMethod_novel(method)
+                && !CFCMethod_final(method)
+                && !CFCMethod_excluded_from_host(method)) {
                 char *cb_def = CFCPerlMethod_callback_def(method, klass);
                 cb_defs = CFCUtil_cat(cb_defs, cb_def, "\n", NULL);
                 FREEMEM(cb_def);

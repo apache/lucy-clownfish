@@ -339,7 +339,7 @@ S_add_novel_meth(CFCBindSpecs *self, CFCMethod *method, CFCClass *klass,
     const char *sep = meth_index == 0 ? "" : ",\n";
 
     char *full_override_sym;
-    if (!CFCMethod_final(method)) {
+    if (!CFCMethod_final(method) && !CFCMethod_excluded_from_host(method)) {
         full_override_sym = CFCMethod_full_override_sym(method, klass);
     }
     else {
