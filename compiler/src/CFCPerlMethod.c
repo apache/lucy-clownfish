@@ -472,10 +472,11 @@ S_callback_start(CFCMethod *method) {
     // Iterate over arguments, mapping them to Perl scalars.
     CFCVariable **arg_vars = CFCParamList_get_variables(param_list);
     for (int i = 1; arg_vars[i] != NULL; i++) {
-        CFCVariable *var      = arg_vars[i];
-        const char  *name     = CFCVariable_get_name(var);
-        CFCType     *type     = CFCVariable_get_type(var);
-        const char  *c_type   = CFCType_to_c(type);
+        CFCVariable *var       = arg_vars[i];
+        const char  *name      = CFCVariable_get_name(var);
+        CFCType     *type      = CFCVariable_get_type(var);
+        const char  *specifier = CFCType_get_specifier(type);
+        const char  *c_type    = CFCType_to_c(type);
 
         // Add labels when there are two or more parameters.
         if (num_args > 1) {
@@ -489,6 +490,9 @@ S_callback_start(CFCMethod *method) {
             // Wrap Clownfish object types in Perl objects.
             params = CFCUtil_cat(params, "    mPUSHs(XSBind_cfish_to_perl(",
                                  "aTHX_ (cfish_Obj*)", name, "));\n", NULL);
+        }
+        else if (strcmp(specifier, "bool") == 0) {
+            params = CFCUtil_cat(params, "    mPUSHi(!!", name, ");\n", NULL);
         }
         else if (CFCType_is_integer(type)) {
             // Convert primitive integer types to IV Perl scalars.

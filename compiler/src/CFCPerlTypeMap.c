@@ -180,7 +180,7 @@ CFCPerlTypeMap_to_perl(CFCType *type, const char *cf_var) {
             result = CFCUtil_sprintf("newSViv(%s)", cf_var);
         }
         else if (strcmp(specifier, "bool") == 0) {
-            result = CFCUtil_sprintf("newSViv(%s)", cf_var);
+            result = CFCUtil_sprintf("newSViv(!!%s)", cf_var);
         }
         else {
             FREEMEM(result);
