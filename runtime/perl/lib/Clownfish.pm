@@ -80,9 +80,11 @@ sub error {$Clownfish::Err::error}
         my $stash = \%{"$package\::"};
         my $methods
             = Clownfish::Vector->new( capacity => scalar keys %$stash );
-        while ( my ( $symbol, $glob ) = each %$stash ) {
-            next if ref $glob;
-            next unless *$glob{CODE};
+        while ( my ( $symbol, $entry ) = each %$stash ) {
+            # A subroutine is stored in the CODE slot of a typeglob. Since
+            # Perl 5.28 it may also be stored as a coderef.
+            next unless ref($entry) eq 'CODE'
+                        || ( ref(\$entry) eq 'GLOB' && *$entry{CODE} );
             $methods->push( Clownfish::String->new($symbol) );
         }
         return $methods;
