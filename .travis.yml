@@ -22,13 +22,10 @@ matrix:
   include:
     - env: CLOWNFISH_HOST=c
     - env: CLOWNFISH_HOST=go
-    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.20-extras
-    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.18-extras
-    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.16
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=blead
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.24-extras
     - env: CLOWNFISH_HOST=perl PERL_VERSION=5.14
-    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.12
-    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.10
-    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.8
+    - env: CLOWNFISH_HOST=perl PERL_VERSION=5.8.3
 #    - env: CLOWNFISH_HOST=python
 #      addons:
 #        apt:
