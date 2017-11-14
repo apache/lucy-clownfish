@@ -106,7 +106,7 @@ say qq|perl -MDigest -e '\$d = Digest->new("SHA-512"); open \$fh, |
     . qq|"<apache-clownfish-$x_y_z_version.tar.gz" or die; |
     . qq|\$d->addfile(\$fh); print \$d->hexdigest; |
     . qq|print "  apache-clownfish-$x_y_z_version.tar.gz\\n"' > |
-    . qq| apache-clownfish-$x_y_z_version.tar.gz.sha\n|;
+    . qq| apache-clownfish-$x_y_z_version.tar.gz.sha512\n|;
 
 say qq|# Sign the release.|;
 say qq|gpg --armor --output apache-clownfish-$x_y_z_version.tar.gz.asc |
@@ -116,7 +116,7 @@ say qq|# Add the artifacts and commit to the dev area on dist.apache.org.|;
 say qq|svn add |
     . qq|apache-clownfish-$x_y_z_version.tar.gz |
     . qq|apache-clownfish-$x_y_z_version.tar.gz.md5 |
-    . qq|apache-clownfish-$x_y_z_version.tar.gz.sha |
+    . qq|apache-clownfish-$x_y_z_version.tar.gz.sha512 |
     . qq|apache-clownfish-$x_y_z_version.tar.gz.asc |
     . qq|CHANGES-$x_y_z_version.txt |;
 say qq|svn ci -m "Add apache-clownfish-$x_y_z_version artifacts"\n|;
@@ -161,8 +161,8 @@ say qq|svnmucc -m "Publish Apache Clownfish $x_y_z_version" |
     . qq|release/lucy/clownfish/apache-clownfish-$x_y_z_version.tar.gz |
     . qq|mv dev/lucy/clownfish/apache-clownfish-$full_rc_version/apache-clownfish-$x_y_z_version.tar.gz.md5 |
     . qq|release/lucy/clownfish/apache-clownfish-$x_y_z_version.tar.gz.md5 |
-    . qq|mv dev/lucy/clownfish/apache-clownfish-$full_rc_version/apache-clownfish-$x_y_z_version.tar.gz.sha |
-    . qq|release/lucy/clownfish/apache-clownfish-$x_y_z_version.tar.gz.sha |
+    . qq|mv dev/lucy/clownfish/apache-clownfish-$full_rc_version/apache-clownfish-$x_y_z_version.tar.gz.sha512 |
+    . qq|release/lucy/clownfish/apache-clownfish-$x_y_z_version.tar.gz.sha512 |
     . qq|mv dev/lucy/clownfish/apache-clownfish-$full_rc_version/apache-clownfish-$x_y_z_version.tar.gz.asc |
     . qq|release/lucy/clownfish/apache-clownfish-$x_y_z_version.tar.gz.asc |
     . qq|mv dev/lucy/clownfish/apache-clownfish-$full_rc_version/CHANGES-$x_y_z_version.txt |
@@ -179,7 +179,7 @@ if ( $micro > 0 ) {
         . qq|-U https://dist.apache.org/repos/dist/release/lucy/clownfish |
         . qq|rm apache-clownfish-$prev.tar.gz |
         . qq|rm apache-clownfish-$prev.tar.gz.md5 |
-        . qq|rm apache-clownfish-$prev.tar.gz.sha |
+        . qq|rm apache-clownfish-$prev.tar.gz.sha512 |
         . qq|rm apache-clownfish-$prev.tar.gz.asc |
         . qq|rm CHANGES-$prev.txt |;
 }
