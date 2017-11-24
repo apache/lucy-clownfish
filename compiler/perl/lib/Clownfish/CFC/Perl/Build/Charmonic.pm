@@ -138,6 +138,7 @@ my $config;
 sub charmony {
     my ( undef, $key ) = @_;
     if (!$config) {
+        local @INC = ( @INC, '.' );
         eval { require 'Charmony.pm'; };
         if ( !$@ ) {
             $config = Charmony->config;
