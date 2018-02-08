@@ -264,15 +264,14 @@ S_run_void_tests(CFCTest *test) {
 
 static char*
 S_try_new_object(CFCParcel *parcel, const char *specifier, int indirection) {
-    CFCType *type = NULL;
-    char    *error;
+    char *error;
 
     CFCUTIL_TRY {
-        type = CFCType_new_object(0, parcel, specifier, indirection);
+        CFCType *type = CFCType_new_object(0, parcel, specifier, indirection);
+        CFCBase_decref((CFCBase*)type);
     }
     CFCUTIL_CATCH(error);
 
-    CFCBase_decref((CFCBase*)type);
     return error;
 }
 

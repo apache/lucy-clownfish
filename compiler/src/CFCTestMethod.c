@@ -65,16 +65,15 @@ S_run_tests(CFCTest *test) {
 static char*
 S_try_new_method(const char *name, CFCType *return_type,
                  CFCParamList *param_list, CFCClass *klass) {
-    CFCMethod *method = NULL;
-    char      *error;
+    char *error;
 
     CFCUTIL_TRY {
-        method = CFCMethod_new(NULL, name, return_type, param_list, NULL,
-                               klass, 0, 0);
+        CFCMethod *method = CFCMethod_new(NULL, name, return_type, param_list,
+                                          NULL, klass, 0, 0);
+        CFCBase_decref((CFCBase*)method);
     }
     CFCUTIL_CATCH(error);
 
-    CFCBase_decref((CFCBase*)method);
     return error;
 }
 

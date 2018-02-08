@@ -43,15 +43,14 @@ const CFCTestBatch CFCTEST_BATCH_VARIABLE = {
 
 static char*
 S_try_new_variable(const char *name, CFCType *type) {
-    CFCVariable *var = NULL;
-    char        *error;
+    char *error;
 
     CFCUTIL_TRY {
-        var = CFCVariable_new(NULL, name, type, 0);
+        CFCVariable *var = CFCVariable_new(NULL, name, type, 0);
+        CFCBase_decref((CFCBase*)var);
     }
     CFCUTIL_CATCH(error);
 
-    CFCBase_decref((CFCBase*)var);
     return error;
 }
 

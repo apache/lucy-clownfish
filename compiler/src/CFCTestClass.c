@@ -50,16 +50,15 @@ const CFCTestBatch CFCTEST_BATCH_CLASS = {
 
 static char*
 S_try_create(CFCParcel *parcel, const char *name, const char *nickname) {
-    CFCClass *klass = NULL;
-    char     *error;
+    char *error;
 
     CFCUTIL_TRY {
-        klass = CFCClass_create(parcel, NULL, name, nickname, NULL, NULL, NULL,
-                                false, false, false);
+        CFCClass *klass = CFCClass_create(parcel, NULL, name, nickname, NULL,
+                                          NULL, NULL, false, false, false);
+        CFCBase_decref((CFCBase*)klass);
     }
     CFCUTIL_CATCH(error);
 
-    CFCBase_decref((CFCBase*)klass);
     return error;
 }
 

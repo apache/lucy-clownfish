@@ -40,15 +40,14 @@ const CFCTestBatch CFCTEST_BATCH_SYMBOL = {
 
 static char*
 S_try_new_symbol(const char *name) {
-    CFCSymbol *symbol = NULL;
-    char      *error;
+    char *error;
 
     CFCUTIL_TRY {
-        symbol = CFCSymbol_new("parcel", name);
+        CFCSymbol *symbol = CFCSymbol_new("parcel", name);
+        CFCBase_decref((CFCBase*)symbol);
     }
     CFCUTIL_CATCH(error);
 
-    CFCBase_decref((CFCBase*)symbol);
     return error;
 }
 
